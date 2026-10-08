@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>OranPromo — Accueil</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&amp;family=Jost:wght@300;400;500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0A0A0A;text-decoration:none}a:hover{color:#555555}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FFFFFF; color: #0A0A0A; font-family: 'Jost', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+<header style="display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; padding: 14px 12px; border-bottom: 1px solid #E6E6E6">
+<button aria-label="Menu" style="width: 44px; height: 44px; border: none; background: transparent; display: flex; align-items: center; justify-content: center; padding: 0">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="1.2" stroke-linecap="square"><path d="M3 7h18M3 12h18M3 17h18"></path></svg></button>
+<div style="text-align: center; font-family: 'Bodoni Moda', serif; font-size: 22px; letter-spacing: 5px">ORANPROMO</div>
+<button aria-label="Rechercher" style="width: 44px; height: 44px; border: none; background: transparent; display: flex; align-items: center; justify-content: center; padding: 0">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="1.2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.8-3.8"></path></svg></button>
+</header>
+
+<nav aria-label="Quartiers" style="display: flex; justify-content: center; gap: 22px; padding: 14px 20px; font-size: 11px; letter-spacing: 2px">
+<a href="Catalogue.dc.html" style="padding-bottom: 4px; border-bottom: 1px solid #0A0A0A">TOUT ORAN</a>
+<a href="Catalogue.dc.html" style="color: #6F6F6F">AKID LOTFI</a>
+<a href="Catalogue.dc.html" style="color: #6F6F6F">GAMBETTA</a>
+<a href="Catalogue.dc.html" style="color: #6F6F6F">FRONT DE MER</a>
+</nav>
+
+<section style="position: relative; height: 260px; flex-shrink: 0; background: #2A2A2A; color: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 28px; gap: 10px">
+<span style="position: absolute; top: 14px; left: 0; right: 0; text-align: center; font-size: 11px; color: #BDBDBD; letter-spacing: 1px">[Photo : Santa Cruz et la baie d'Oran]</span>
+<h1 style="margin: 0; font-family: 'Bodoni Moda', serif; font-weight: 400; font-size: 34px; letter-spacing: 1px">Les promos d'Oran</h1>
+<p style="margin: 0; font-size: 11px; letter-spacing: 2px">RÉSERVEZ SUR WHATSAPP · PAYEZ EN BOUTIQUE</p>
+</section>
+
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding: 22px 20px 14px 20px">
+<h2 style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 2.5px">EN CE MOMENT</h2>
+<a href="Catalogue.dc.html" style="font-size: 11px; letter-spacing: 2px; border-bottom: 1px solid #0A0A0A; padding-bottom: 2px">TOUT VOIR</a>
+</div>
+
+<main style="padding: 0 20px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; row-gap: 20px">
+
+<a href="Fiche.dc.html" style="display: flex; flex-direction: column; gap: 10px">
+<div style="height: 190px; background: #F3F2EF; display: flex; align-items: center; justify-content: center; color: #8A8A8A; font-size: 11px">[Photo article]</div>
+<div style="display: flex; flex-direction: column; gap: 4px; text-align: center">
+<span style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">BOUTIQUE AMINE</span>
+<span style="font-size: 13px; font-weight: 300">Polo piqué bleu marine</span>
+<span style="font-size: 13px"><span style="color: #6F6F6F; text-decoration: line-through; margin-right: 6px">4 500</span>3 500 DA</span>
+</div>
+</a>
+
+<a href="Fiche.dc.html" style="display: flex; flex-direction: column; gap: 10px">
+<div style="height: 190px; background: #F3F2EF; display: flex; align-items: center; justify-content: center; color: #8A8A8A; font-size: 11px">[Photo article]</div>
+<div style="display: flex; flex-direction: column; gap: 4px; text-align: center">
+<span style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">DAR LINA</span>
+<span style="font-size: 13px; font-weight: 300">Robe d'été fleurie</span>
+<span style="font-size: 13px"><span style="color: #6F6F6F; text-decoration: line-through; margin-right: 6px">6 000</span>4 200 DA</span>
+</div>
+</a>
+
+</main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

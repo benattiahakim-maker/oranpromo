@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OranPromo
 
-## Getting Started
+Le click & collect des boutiques de vêtements d'Oran : les promos des boutiques en ligne, la réservation par WhatsApp, l'essai et le paiement en boutique.
 
-First, run the development server:
+- **Site** : Next.js 16 (TypeScript, Tailwind)
+- **Base, connexion, photos** : Supabase (projet `oranpromo`, région Paris)
+- **IA** : API Claude, côté serveur
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Installer sur un nouvel ordinateur
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Installer [Node.js](https://nodejs.org) (version LTS).
+2. Dans le dossier du projet :
+   ```
+   npm.cmd install
+   ```
+3. Copier `.env.example` en `.env.local` et remplir les valeurs (Supabase : Project Settings › API ; Claude : console.anthropic.com). Ne jamais commiter `.env.local`.
+4. Lancer le site :
+   ```
+   npm.cmd run dev
+   ```
+   puis ouvrir http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commandes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Commande | Rôle |
+| --- | --- |
+| `npm.cmd run dev` | site en local |
+| `npm.cmd test` | tests automatiques |
+| `npm.cmd run build` | vérifie que le site compile |
+| `npm.cmd run lint` | vérifie le style du code |
+| `npm.cmd run db:types` | régénère `lib/supabase/types.ts` après une migration |
 
-## Learn More
+## Faire travailler un agent
 
-To learn more about Next.js, take a look at the following resources:
+Donne-lui **une seule story** à la fois, par exemple :
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+> Réalise la story US-07 décrite dans docs/user-stories.md, en suivant CLAUDE.md.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Les règles des agents sont dans `CLAUDE.md` (Claude Code) et `.clinerules` (Cline). La documentation est dans `docs/`.
 
-## Deploy on Vercel
+## Avant la mise en ligne
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Configurer la connexion par SMS dans Supabase (Authentication › Sign In / Providers › Phone) avec un fournisseur SMS qui couvre l'Algérie.
+- Créer le compte administrateur : se connecter une fois, puis passer son profil en `admin` dans Supabase (Table Editor › profils).

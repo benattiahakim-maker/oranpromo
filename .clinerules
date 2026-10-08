@@ -1,0 +1,6 @@
+Lis et applique les règles du fichier CLAUDE.md à la racine du projet (elles valent pour tous les agents).
+
+Rappels importants pour Cline :
+- Crée et modifie les fichiers avec l'outil d'écriture de fichiers de Cline, jamais avec des commandes PowerShell.
+- Sous Windows, lance npm.cmd (pas npm).
+- Avant de dire terminé : npm.cmd run build, npm.cmd test, npm.cmd run lint, puis vérifie chaque critère d'acceptation de la story en citant le fichier qui le prouve.
