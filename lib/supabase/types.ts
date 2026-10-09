@@ -345,6 +345,10 @@ export type Database = {
         Args: never;
         Returns: boolean;
       };
+      debloquer_client: {
+        Args: { client: string };
+        Returns: undefined;
+      };
       passer_commande: {
         Args: { boutique: string; lignes: Json; note?: string | null };
         Returns: string;
