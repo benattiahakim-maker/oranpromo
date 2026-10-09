@@ -158,6 +158,7 @@ export type Database = {
           numero: number
           prete_le: string | null
           statut: Database["public"]["Enums"]["statut_commande"]
+          telephone_verifie: boolean
           terminee_le: string | null
           total: number
         }
@@ -179,6 +180,7 @@ export type Database = {
           numero?: never
           prete_le?: string | null
           statut?: Database["public"]["Enums"]["statut_commande"]
+          telephone_verifie?: boolean
           terminee_le?: string | null
           total?: number
         }
@@ -200,6 +202,7 @@ export type Database = {
           numero?: never
           prete_le?: string | null
           statut?: Database["public"]["Enums"]["statut_commande"]
+          telephone_verifie?: boolean
           terminee_le?: string | null
           total?: number
         }
@@ -485,6 +488,7 @@ export type Database = {
           nom: string | null
           role: Database["public"]["Enums"]["role_utilisateur"]
           telephone: string | null
+          telephone_verifie_le: string | null
         }
         Insert: {
           bloque?: boolean
@@ -497,6 +501,7 @@ export type Database = {
           nom?: string | null
           role?: Database["public"]["Enums"]["role_utilisateur"]
           telephone?: string | null
+          telephone_verifie_le?: string | null
         }
         Update: {
           bloque?: boolean
@@ -509,6 +514,7 @@ export type Database = {
           nom?: string | null
           role?: Database["public"]["Enums"]["role_utilisateur"]
           telephone?: string | null
+          telephone_verifie_le?: string | null
         }
         Relationships: [
           {
@@ -682,8 +688,16 @@ export type Database = {
         Args: { commande: string; motif: string }
         Returns: undefined
       }
+      controler_envoi_code: {
+        Args: { jeton: string; numero: string }
+        Returns: undefined
+      }
       debloquer_client: { Args: { client: string }; Returns: undefined }
       declarer_no_show: { Args: { commande: string }; Returns: undefined }
+      enregistrer_envoi_code: {
+        Args: { jeton: string; numero: string }
+        Returns: undefined
+      }
       messages_whatsapp_commande: {
         Args: { commande: string }
         Returns: {
