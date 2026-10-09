@@ -6,9 +6,10 @@
 ## Où on en est
 
 - Les **19 user stories du MVP sont codées** (US-01 à US-19). Elles sont dans la colonne Trello « À vérifier » : codées, mais pas encore toutes testées en vrai.
-- **672 tests** passent (+ 108 tests SQL), `npm run lint` et `npm run build` passent.
+- **753 tests** passent (+ 158 tests SQL), `npm run lint` et `npm run build` passent.
 - Déjà testé en vrai : la page d'accueil (ancienne version), la fiche article, la réservation WhatsApp.
 - Pas encore re-testé : la connexion par lien e-mail (corrigée le 9/10), le nouveau formulaire d'article, et tout ce qui a été fait le 9/10 après-midi (voir ci-dessous).
+- **Connexion des clients par téléphone (US-21)** : codée, **pas encore en service**. Le site reste en mode e-mail tant que le propriétaire n'a pas fait la checklist ci-dessous (« US-21 : à configurer par le propriétaire »).
 
 ## Journal des modifications
 
@@ -41,10 +42,44 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
    - **une seule contestation en attente à la fois** par compte ;
    - le **motif n'est plus lisible par la boutique** : il est dans la nouvelle table `contestations`, lue seulement par le client qui l'a écrit et par l'admin (la boutique voit seulement qu'une commande est contestée).
    - Migration `20261009235500_contestation_regles` **appliquée** sur Supabase le 9/10 vers 15 h (aucun motif existant à déplacer), types régénérés. Tests SQL : `supabase/tests/contestation_regles.test.sql` (14).
+11. **Connexion des clients par téléphone (US-21)**, remplace la carte « V2 · Connexion par SMS ». Détails : `docs/user-stories.md` (module 8) et `docs/architecture.md` (« Connexion des clients par téléphone »).
+   - **PR #24** : stories US-21 à US-21.4 et conception.
+   - **PR #25** (US-21.1, base) : numéro vérifié par code (`profils.telephone_verifie_le`, recopié depuis Supabase Auth, non modifiable à la main) ; numéros mobiles algériens seulement (`+213` puis 5, 6 ou 7, puis 8 chiffres), refusés par la base avant tout envoi de code ; en mode téléphone, commande refusée sans numéro vérifié (« Vérifiez votre numéro de téléphone par code avant de commander. ») ; limites d'envoi par numéro (1 code par minute, 5 par heure) contrôlées par la base avec le jeton du serveur. Migration `20261010090000_numero_verifie` **appliquée** le 9/10, types régénérés. Tests SQL : `numero_verifie.test.sql` (31).
+   - **PR #26** (US-21.2, écrans) : `/compte/connexion` en mode téléphone = numéro + code reçu par **WhatsApp**, bouton « Recevoir par SMS » en secours ; lien « Se connecter par e-mail » gardé ; `/compte` : vérification ou changement du numéro par code ; `/panier` : vérification demandée avant « Commander » pour les comptes existants. Captcha **Cloudflare Turnstile** avant chaque envoi de code (et sur le lien e-mail dès que la clé de site est définie, car Supabase l'exige alors pour toutes les connexions). Commerçants et admin : toujours le lien e-mail. Aucune migration.
+   - **PR #28** (US-21.3, blocage) : blocage par numéro **activé**, seulement pour les numéros vérifiés (index unique sur les numéros vérifiés ; les anciens numéros saisis à la main ne comptent jamais pour un autre compte) ; section admin « Numéro partagé » supprimée, remplacée par un bouton Bloquer / Débloquer sur chaque client de `/admin/clients` ; contestations inchangées. Migration `20261010100000_blocage_numero_verifie` **appliquée** le 9/10, types à jour. Tests SQL : `blocage_numero_verifie.test.sql` (23), `numero_non_verifie.test.sql` adapté (19).
+   - Deux interrupteurs, **e-mail par défaut** : variable `CONNEXION_CLIENT` (Vercel) et réglage `connexion_client` de la base. Aucune clé Twilio ni Turnstile secrète dans le code ou un commit : elles vont uniquement dans le tableau de bord Supabase.
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
 
-Reste à faire côté propriétaire : plafond de dépenses dans la console Anthropic ; tester en vrai tout ce qui précède ; régler `NEXT_PUBLIC_SITE_URL` à la mise en ligne.
+Reste à faire côté propriétaire : plafond de dépenses dans la console Anthropic ; tester en vrai tout ce qui précède ; régler `NEXT_PUBLIC_SITE_URL` à la mise en ligne ; configurer la connexion par téléphone (ci-dessous).
+
+## US-21 : à configurer par le propriétaire
+
+Rien n'est à mettre dans le code, dans `.env.local` ni dans un commit, sauf la clé de site Turnstile (publique). **Respecter l'ordre** : sinon les connexions (e-mail compris) peuvent être bloquées.
+
+1. **Twilio** (twilio.com) : créer le compte et le passer en compte payant (un compte d'essai n'envoie qu'aux numéros vérifiés à la main). Mettre une alerte de dépenses (Console > Billing).
+2. **Service Twilio Verify** (Console > Verify > Services > Create) : nom « OranPromo », code à 6 chiffres, canaux **SMS** et **WhatsApp** activés. Dans Verify > Settings > **Geo permissions** : n'autoriser que l'**Algérie**. Laisser **Fraud Guard** activé. Noter le *Service SID* (`VA…`).
+3. **Expéditeur WhatsApp** : Console Twilio > Messaging > Senders > WhatsApp senders : enregistrer un numéro dédié (pas un numéro déjà utilisé dans l'application WhatsApp) et le relier au compte Meta Business. **Meta doit approuver** l'expéditeur (vérification de l'entreprise et nom affiché, de quelques heures à plusieurs jours). Puis, dans le service Verify, canal WhatsApp : choisir cet expéditeur. Tant que ce n'est pas fait, seul le bouton « Recevoir par SMS » fonctionne.
+4. **Supabase** > Authentication > Sign In / Providers > **Phone** : activer, fournisseur **Twilio Verify**, coller *Account SID*, *Auth Token* et *Verify Service SID* (dans le tableau de bord uniquement). Laisser « Enable phone signup » activé. Vérifier aussi Authentication > Rate Limits (SMS par heure).
+5. **Cloudflare Turnstile** (dash.cloudflare.com > Turnstile > Add widget) : mode « Managed », domaines `127.0.0.1`, `localhost` et le futur domaine du site. Noter la clé de site et la clé secrète.
+6. **Vercel** (et `.env.local` sur le PC pour les essais) : `NEXT_PUBLIC_TURNSTILE_SITE_KEY` = clé de site, puis redéployer. Le captcha s'affiche alors sur les formulaires de connexion.
+7. **Supabase** > Authentication > Attack Protection : activer la protection captcha, fournisseur **Turnstile**, coller la **clé secrète**. ⚠️ Seulement **après** l'étape 6, sinon plus personne ne peut se connecter.
+8. **`CRON_SECRET`** sur Vercel + son empreinte dans la base (même réglage que pour WhatsApp, `docs/architecture.md`, mise en service des messages, étape 3) : **obligatoire**, sans lui l'envoi de code est refusé (« La connexion par téléphone n'est pas encore configurée. »). Aujourd'hui l'empreinte n'est pas encore dans la base.
+9. **Essai** : sur le PC, `CONNEXION_CLIENT=telephone` dans `.env.local`, se connecter avec un numéro algérien (code par WhatsApp puis par SMS).
+10. **Mise en service** : `CONNEXION_CLIENT=telephone` sur Vercel, redéployer, **puis** dans l'éditeur SQL Supabase : `insert into prive.reglages (cle, valeur) values ('connexion_client', 'telephone') on conflict (cle) do update set valeur = excluded.valeur;` (à partir de là, la base refuse toute commande sans numéro vérifié). Retour au mode e-mail : `delete from prive.reglages where cle = 'connexion_client';`, puis retirer la variable.
+
+**Coûts** (prix publics consultés en octobre 2026, en dollars, à revérifier) :
+
+| Poste | Prix | Source |
+|---|---|---|
+| Twilio Verify | 0,05 $ par vérification réussie, + prix du canal | twilio.com/en-us/verify/pricing |
+| SMS vers l'Algérie (Twilio) | 0,273 $ par SMS | twilio.com/en-us/sms/pricing/dz |
+| WhatsApp, message d'authentification vers l'Algérie (frais Meta) | environ 0,004 $ par message remis | grille Meta d'octobre 2026, d'après whautomate.com et faslacloud.com (non vérifié sur le site de Meta) ; frais Twilio en plus sur WhatsApp hors Verify (0,005 $), **inconnu** s'ils s'ajoutent avec Verify |
+| Cloudflare Turnstile | gratuit | developers.cloudflare.com/turnstile/plans |
+| Supabase (connexion par téléphone) | **inconnu** : pas de frais propre trouvé | — |
+| Numéro Twilio pour l'expéditeur WhatsApp | **inconnu** (dépend du pays du numéro) | — |
+
+Ordre de grandeur : 1 000 connexions par WhatsApp ≈ 54 $ ; par SMS ≈ 323 $. D'où WhatsApp par défaut et le SMS en secours.
 
 ## Reprendre le travail (sur le PC)
 
@@ -91,7 +126,8 @@ Reste à faire côté propriétaire : plafond de dépenses dans la console Anthr
   - Limites : 500 Mo de base, 1 Go de photos, 5 Go de trafic par mois.
   - Le projet se met en pause après une semaine sans activité.
 - **Connexion** :
-  - par lien e-mail (le SMS demande Twilio, prévu en V2) ;
+  - par lien e-mail (commerçants, admin, et clients en mode `email`) ;
+  - clients en mode `telephone` : code par WhatsApp ou SMS (Twilio Verify, US-21), à configurer (voir plus haut) ;
   - les URL de redirection autorisées sont `http://127.0.0.1:3000/**` et `http://localhost:3000/**` ;
   - il faudra ajouter le vrai domaine à la mise en ligne.
 - **GitHub** : `benattiahakim-maker/oranpromo` (privé).
@@ -103,8 +139,9 @@ Reste à faire côté propriétaire : plafond de dépenses dans la console Anthr
 2. **Commandes** : tester en vrai (panier, commande, confirmation, prête, expiration), puis configurer WhatsApp Business.
 3. **IA** : le propriétaire crée la clé API Claude, la colle dans `.env.local` et fixe un plafond de dépenses.
 4. **Catégories** : faire valider la nouvelle liste par 2 ou 3 commerçants.
+5. **Connexion par téléphone (US-21)** : suivre la checklist « US-21 : à configurer par le propriétaire », puis tester en vrai.
 
-Backlog : mise en ligne (Vercel, domaine, envoi d'e-mails), environnements prod et dev (Vercel + second projet Supabase), suppression des données de test, SMS (V2), univers Beauté, conditions d'utilisation, marketing.
+Backlog : mise en ligne (Vercel, domaine, envoi d'e-mails), environnements prod et dev (Vercel + second projet Supabase), suppression des données de test, univers Beauté, conditions d'utilisation, marketing.
 
 ## Documents de référence
 
