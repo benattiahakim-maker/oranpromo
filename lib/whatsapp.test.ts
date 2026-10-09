@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lienRelanceBoutique, lienAvertissementBoutique, lienReservation, messageReservation, numeroWhatsApp } from "./whatsapp";
+import { lienContactClient, lienQuestionArticle, lienRelanceBoutique, lienAvertissementBoutique, lienReservation, messageReservation, numeroWhatsApp } from "./whatsapp";
 
 const demande = {
   telephoneBoutique: "+213 555 12 34 56",
@@ -48,5 +48,16 @@ describe("lienReservation", () => {
     const lien = lienReservation(demande);
     expect(lien.startsWith("https://wa.me/213555123456?text=")).toBe(true);
     expect(decodeURIComponent(lien.split("?text=")[1])).toBe(messageReservation(demande));
+  });
+});
+
+describe("liens WhatsApp des commandes (US-20)", () => {
+  it("prépare une question sur un article sans réservation", () => {
+    const lien = lienQuestionArticle("+213 555 12 34 56", "Polo", "https://oranpromo.com/a/1");
+    expect(lien.startsWith("https://wa.me/213555123456?text=")).toBe(true);
+    expect(new URL(lien).searchParams.get("text")).toBe("Bonjour, j’ai une question sur « Polo » : https://oranpromo.com/a/1 (vu sur OranPromo)");
+  });
+  it("contacte un client au sujet de sa commande", () => {
+    expect(new URL(lienContactClient("+213555111222", 14, "Boutique Amine")).searchParams.get("text")).toBe("Bonjour, ici Boutique Amine au sujet de votre commande n° 14 sur OranPromo.");
   });
 });

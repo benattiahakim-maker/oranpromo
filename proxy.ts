@@ -24,8 +24,11 @@ export async function proxy(request: NextRequest) {
   const { data: { user }, error } = await supabase.auth.getUser();
   const chemin = request.nextUrl.pathname;
   const protege = ((chemin === "/espace" || chemin.startsWith("/espace/")) && chemin !== "/espace/connexion" && chemin !== "/espace/connexion/") || chemin === "/admin" || chemin.startsWith("/admin/");
-  if (protege && (error || !user)) {
-    const url = new URL("/espace/connexion", origineRequete(request));
+  // US-20.2 : le compte client (/compte) a sa propre page de connexion, qui ramène à la page demandée.
+  const compte = (chemin === "/compte" || chemin.startsWith("/compte/")) && chemin !== "/compte/connexion" && chemin !== "/compte/connexion/";
+  if ((protege || compte) && (error || !user)) {
+    const url = new URL(compte ? "/compte/connexion" : "/espace/connexion", origineRequete(request));
+    if (compte) url.searchParams.set("suite", chemin);
     const redirection = NextResponse.redirect(url);
     reponse.cookies.getAll().forEach(cookie => redirection.cookies.set(cookie));
     entetesCache.forEach((valeur, nom) => redirection.headers.set(nom, valeur));
@@ -36,4 +39,4 @@ export async function proxy(request: NextRequest) {
   return reponse;
 }
 
-export const config = { matcher: ["/espace/:path*", "/admin/:path*", "/auth/callback"] };
+export const config = { matcher: ["/espace/:path*", "/admin/:path*", "/compte/:path*", "/auth/callback"] };

@@ -3,7 +3,7 @@ import Link from "next/link";
 import EntetePublic from "@/components/EntetePublic";
 import GalerieArticle from "@/components/GalerieArticle";
 import PartagerArticle from "@/components/PartagerArticle";
-import ReservationArticle from "@/components/ReservationArticle";
+import CommandeArticle from "@/components/CommandeArticle";
 import SignalerArticle from "@/components/SignalerArticle";
 import EnregistrerVue from "@/components/EnregistrerVue";
 import { creerClientServeur } from "@/lib/supabase/server";
@@ -99,7 +99,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       boutiques (nom, quartier, slug, whatsapp),
       promos (prix_promo, date_fin, badge),
       photos(adresse, adresse_vignette, ordre),
-      tailles(libelle, disponible)
+      tailles(libelle, disponible, quantite)
     `)
     .eq("id", id)
     .single();
@@ -265,7 +265,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         {article.description_ar && <p dir="rtl" lang="ar" className="whitespace-pre-line break-words text-base font-light leading-relaxed text-noir">{article.description_ar}</p>}
       </main>
 
-      {boutiques?.whatsapp && <ReservationArticle articleId={article.id} boutiqueId={article.boutique_id} titre={article.titre} prix={prixAfficheValue} telephone={boutiques.whatsapp} tailles={tailles} />}
+      {boutiques?.whatsapp && <CommandeArticle articleId={article.id} boutique={{ id: article.boutique_id, nom: boutiques.nom, whatsapp: boutiques.whatsapp }} titre={article.titre} prix={prixAfficheValue} photo={photos[0]?.adresse_vignette ?? photos[0]?.adresse ?? null} tailles={tailles} />}
       <SignalerArticle articleId={article.id} />
     </div>
   );

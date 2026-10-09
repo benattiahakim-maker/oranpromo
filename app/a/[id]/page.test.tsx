@@ -5,7 +5,7 @@ const { single } = vi.hoisted(() => ({ single: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ from: () => ({ select: () => ({ eq: () => ({ single }) }) }) }) }));
 vi.mock("@/components/GalerieArticle", () => ({ default: () => null }));
 vi.mock("@/components/PartagerArticle", () => ({ default: () => null }));
-vi.mock("@/components/ReservationArticle", () => ({ default: () => null }));
+vi.mock("@/components/CommandeArticle", () => ({ default: () => null }));
 vi.mock("@/components/SignalerArticle", () => ({ default: () => null }));
 vi.mock("@/components/EnregistrerVue", () => ({ default: () => null }));
 describe("US-15 : affichage public", () => {

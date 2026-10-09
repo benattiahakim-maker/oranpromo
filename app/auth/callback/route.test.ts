@@ -23,4 +23,9 @@ describe("US-09 : callback", () => {
     expect(exchangeCodeForSession).not.toHaveBeenCalled();
     expect(reponse.headers.get("location")).toBe("http://localhost:3000/espace/connexion?erreur=lien");
   });
+  it("renvoie un client vers sa propre page de connexion quand le lien échoue", async () => {
+    exchangeCodeForSession.mockResolvedValue({ error: { message: "Expired" } });
+    const reponse = await GET(new Request("http://localhost:3000/auth/callback?code=expire&suite=/panier"));
+    expect(reponse.headers.get("location")).toBe("http://localhost:3000/compte/connexion?erreur=lien");
+  });
 });

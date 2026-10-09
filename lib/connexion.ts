@@ -28,11 +28,23 @@ export function cheminSuite(suite: string | null | undefined): string | null {
   } catch { return null; }
 }
 
-export async function envoyerLienConnexion(email: string, origine: string) {
+/** US-20.2 : après la connexion d’un client, retour au panier ou à une page de son compte uniquement. */
+export function cheminSuiteClient(suite: string | null | undefined): string {
+  const chemin = suite ? cheminSuite(suite) : null;
+  return chemin && /^\/(panier|compte)(\/[a-zA-Z0-9_-]+)*\/?$/.test(chemin) ? chemin : "/compte/commandes";
+}
+
+/** Page de connexion à utiliser quand un lien échoue, selon la destination (client ou commerçant). */
+export function pageConnexion(suite: string | null | undefined): string {
+  return suite && /^\/(panier|compte)(\/|$)/.test(suite) ? "/compte/connexion" : "/espace/connexion";
+}
+
+export async function envoyerLienConnexion(email: string, origine: string, suite = "/espace") {
   if (!emailValide(email)) throw new Error("Saisissez une adresse e-mail valide.");
+  const destination = /^\/[a-zA-Z0-9/_-]*$/.test(suite) && !suite.startsWith("//") ? suite : "/espace";
   const { error } = await creerClientNavigateur().auth.signInWithOtp({
     email: email.trim(),
-    options: { emailRedirectTo: `${origine}/auth/callback?suite=/espace` },
+    options: { emailRedirectTo: `${origine}/auth/callback?suite=${destination}` },
   });
   if (error?.code === "over_email_send_rate_limit" || error?.code === "over_request_rate_limit" || error?.status === 429) {
     throw new ErreurConnexion("La limite d’envoi des e-mails de connexion est atteinte. Attendez avant de demander un nouveau lien.");

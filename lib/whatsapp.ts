@@ -32,3 +32,15 @@ export function lienAvertissementBoutique(telephone: string, titre: string, lien
   const message = `Bonjour, votre article « ${titre} » a fait l’objet de signalements sur OranPromo. Merci de vérifier son contenu et de le corriger si nécessaire. ${lienArticle}`;
   return `https://wa.me/${numeroWhatsApp(telephone)}?text=${encodeURIComponent(message)}`;
 }
+
+/** US-20.2 : poser une question à la boutique sur un article, sans passer commande. */
+export function lienQuestionArticle(telephone: string, titre: string, lienArticle: string): string {
+  const message = `Bonjour, j’ai une question sur « ${titre} » : ${lienArticle} (vu sur OranPromo)`;
+  return `https://wa.me/${numeroWhatsApp(telephone)}?text=${encodeURIComponent(message)}`;
+}
+
+/** Contacter un client à propos de sa commande (espace boutique). */
+export function lienContactClient(telephone: string, numeroCommande: number, boutique: string): string {
+  const message = `Bonjour, ici ${boutique} au sujet de votre commande n° ${numeroCommande} sur OranPromo.`;
+  return `https://wa.me/${numeroWhatsApp(telephone)}?text=${encodeURIComponent(message)}`;
+}
