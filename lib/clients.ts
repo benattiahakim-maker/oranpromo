@@ -95,14 +95,15 @@ export async function enregistrerNomClient(client: SupabaseClient<Database>, sai
 }
 
 // --- US-20.4 : clients à surveiller (admin) ----------------------------------
-// Les no-shows sont déclarés par la boutique (« Client pas venu ») et comptés par compte (migration 20261009233000 :
-// le numéro n’est pas vérifié, compter par numéro permettait de faire bloquer quelqu’un d’autre). Un numéro avec
-// des no-shows utilisé par plusieurs comptes est signalé à l’admin, qui décide. L’admin peut annuler une déclaration.
-export type ClientSurveille = Pick<Tables<"profils">, "id" | "nom" | "telephone" | "no_shows" | "bloque" | "bloque_le">;
+// Les no-shows sont déclarés par la boutique (« Client pas venu ») et comptés pour le compte de la commande, plus
+// (US-21.3) ceux des commandes passées avec son numéro quand ce numéro est vérifié par code (un numéro vérifié =
+// un compte). Un numéro saisi à la main ne fait jamais compter les no-shows d’un autre compte.
+// L’admin peut annuler une déclaration, bloquer ou débloquer un compte.
+export type ClientSurveille = Pick<Tables<"profils">, "id" | "nom" | "telephone" | "telephone_verifie_le" | "no_shows" | "bloque" | "bloque_le">;
 
 /** Clients bloqués puis clients avec des no-shows (lecture réservée à l’admin par la base). */
 export async function listerClientsSurveilles(client: SupabaseClient<Database>): Promise<{ bloques: ClientSurveille[]; avecNoShows: ClientSurveille[] }> {
-  const { data, error } = await client.from("profils").select("id, nom, telephone, no_shows, bloque, bloque_le").or("bloque.eq.true,no_shows.gt.0").order("bloque", { ascending: false }).order("no_shows", { ascending: false }).limit(500);
+  const { data, error } = await client.from("profils").select("id, nom, telephone, telephone_verifie_le, no_shows, bloque, bloque_le").or("bloque.eq.true,no_shows.gt.0").order("bloque", { ascending: false }).order("no_shows", { ascending: false }).limit(500);
   if (error) throw new Error("Impossible de charger les clients. Réessayez.");
   const lignes = data ?? [];
   return { bloques: lignes.filter(c => c.bloque), avecNoShows: lignes.filter(c => !c.bloque && c.no_shows > 0) };
@@ -113,18 +114,19 @@ export async function debloquerClient(client: SupabaseClient<Database>, id: stri
   if (error) throw new Error(error.code === "42501" || error.code === "P0002" ? error.message : "Impossible de débloquer ce client. Réessayez.");
 }
 
-export type NoShowDeclare = Pick<Tables<"commandes">, "id" | "numero" | "client_id" | "client_telephone" | "no_show_le"> & { boutiques: { nom: string } | null };
+export type NoShowDeclare = Pick<Tables<"commandes">, "id" | "numero" | "client_id" | "client_telephone" | "telephone_verifie" | "no_show_le"> & { boutiques: { nom: string } | null };
 
 /** No-shows déclarés et non annulés (lecture des commandes réservée à l’admin pour toutes les boutiques). */
 export async function listerNoShowsDeclares(client: SupabaseClient<Database>): Promise<NoShowDeclare[]> {
-  const { data, error } = await client.from("commandes").select("id, numero, client_id, client_telephone, no_show_le, boutiques(nom)").not("no_show_le", "is", null).is("no_show_annule_le", null).order("no_show_le", { ascending: false }).limit(500);
+  const { data, error } = await client.from("commandes").select("id, numero, client_id, client_telephone, telephone_verifie, no_show_le, boutiques(nom)").not("no_show_le", "is", null).is("no_show_annule_le", null).order("no_show_le", { ascending: false }).limit(500);
   if (error) throw new Error("Impossible de charger les no-shows. Réessayez.");
   return (data ?? []) as unknown as NoShowDeclare[];
 }
 
-/** No-shows comptés pour ce client : ceux de ses propres commandes (pas ceux d’un autre compte avec le même numéro). */
-export function noShowsDuClient(client: Pick<ClientSurveille, "id">, noShows: NoShowDeclare[]): NoShowDeclare[] {
-  return noShows.filter(n => n.client_id === client.id);
+/** No-shows comptés pour ce client : ses commandes, plus celles passées avec son numéro vérifié (US-21.3). */
+export function noShowsDuClient(client: Pick<ClientSurveille, "id"> & Partial<Pick<ClientSurveille, "telephone" | "telephone_verifie_le">>, noShows: NoShowDeclare[]): NoShowDeclare[] {
+  return noShows.filter(n => n.client_id === client.id
+    || Boolean(client.telephone_verifie_le && client.telephone && n.telephone_verifie && n.client_telephone === client.telephone));
 }
 
 export async function annulerNoShow(client: SupabaseClient<Database>, commandeId: string) {
@@ -135,30 +137,6 @@ export async function annulerNoShow(client: SupabaseClient<Database>, commandeId
 export async function bloquerClient(client: SupabaseClient<Database>, id: string) {
   const { error } = await client.rpc("bloquer_client", { client: id });
   if (error) throw new Error(error.code === "42501" || error.code === "P0002" ? error.message : "Impossible de bloquer ce client. Réessayez.");
-}
-
-// --- Relecture n°2 : numéros partagés par plusieurs comptes (admin) ---------------
-// Tant que le numéro n’est pas vérifié par SMS, ses no-shows ne bloquent pas les autres comptes : l’admin voit
-// le numéro et décide (Bloquer / Débloquer). Le blocage par numéro reviendra avec la V2 SMS (prive.blocage_par_numero).
-export type LigneNumeroPartage = Database["public"]["Functions"]["numeros_partages"]["Returns"][number];
-export type CompteNumeroPartage = { id: string; nom: string | null; telephoneActuel: string | null; noShows: number; bloque: boolean };
-export type NumeroPartage = { telephone: string; noShowsNumero: number; comptes: CompteNumeroPartage[] };
-
-/** Regroupe les lignes de numeros_partages() par numéro (ordre de la base conservé). */
-export function grouperNumerosPartages(lignes: LigneNumeroPartage[]): NumeroPartage[] {
-  const parNumero = new Map<string, NumeroPartage>();
-  for (const l of lignes) {
-    let numero = parNumero.get(l.telephone);
-    if (!numero) { numero = { telephone: l.telephone, noShowsNumero: l.no_shows_numero, comptes: [] }; parNumero.set(l.telephone, numero); }
-    if (!numero.comptes.some(c => c.id === l.client_id)) numero.comptes.push({ id: l.client_id, nom: l.nom ?? null, telephoneActuel: l.telephone_actuel ?? null, noShows: l.no_shows, bloque: l.bloque });
-  }
-  return [...parNumero.values()].filter(n => n.comptes.length >= 2);
-}
-
-export async function listerNumerosPartages(client: SupabaseClient<Database>): Promise<NumeroPartage[]> {
-  const { data, error } = await client.rpc("numeros_partages");
-  if (error) throw new Error("Impossible de charger les numéros partagés. Réessayez.");
-  return grouperNumerosPartages(data ?? []);
 }
 
 // --- Contestation d’un no-show (décision du propriétaire, migration 20261009234500) --------

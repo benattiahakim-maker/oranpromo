@@ -104,16 +104,10 @@ select pg_temp.ok((select no_shows = 0 and not bloque from profils where id = au
   'point 1 : changer pour un numéro avec des no-shows ne bloque pas');
 
 -- ---------------------------------------------------------------------------
--- Point 1 : l'admin voit le « numéro partagé par plusieurs comptes » et décide.
+-- Point 1 : l'admin bloque à la main (la section « numéro partagé » a disparu avec US-21.3).
 -- ---------------------------------------------------------------------------
-select pg_temp.erreur('select * from numeros_partages()', '42501', 'administrateurs', 'point 1 : numéros partagés réservés à l''admin');
 select pg_temp.erreur('select bloquer_client(''c1000000-0000-0000-0000-000000000002'')', '42501', 'administrateurs', 'point 1 : seul l''admin bloque un compte');
 select pg_temp.compte('a1000000-0000-0000-0000-000000000001') \g /dev/null
-select pg_temp.ok((select count(*) = 3 and bool_and(telephone = '+213555200002' and no_shows_numero = 5) from numeros_partages()),
-  'point 1 : le numéro partagé apparaît avec ses 3 comptes et 5 no-shows');
-select pg_temp.ok((select no_shows from numeros_partages() where client_id = 'c1000000-0000-0000-0000-000000000002') = 0
-  and (select no_shows from numeros_partages() where client_id = 'c1000000-0000-0000-0000-000000000001') = 5,
-  'point 1 : chaque compte garde son propre compteur');
 select bloquer_client('c1000000-0000-0000-0000-000000000003') \g /dev/null
 reset role;
 select pg_temp.ok((select bloque and bloque_le is not null and no_shows = 0 from profils where id = 'c1000000-0000-0000-0000-000000000003'),
@@ -141,19 +135,12 @@ select pg_temp.ok((select not bloque and no_shows = 0 from profils where id = 'c
   'point 1 : débloquer un compte ne touche pas aux no-shows d''un autre compte du même numéro');
 
 -- ---------------------------------------------------------------------------
--- Point 1 : blocage par numéro gardé pour la V2 (numéro vérifié par SMS), désactivé par défaut.
+-- Point 1 : blocage par numéro (US-21.3) seulement sur des numéros vérifiés : ici, numéros saisis à la main.
 -- ---------------------------------------------------------------------------
 insert into prive.reglages (cle, valeur) values ('blocage_par_numero', 'on');
-select pg_temp.ok(prive.no_shows_actifs('c1000000-0000-0000-0000-000000000002', '+213555200002') = 4,
-  'point 1 (V2) : réglage activé → les no-shows du numéro comptent pour tous ses comptes');
-update commandes set no_show_annule_le = null where id = :'n5';
-set local role authenticated;
-select pg_temp.compte('c1000000-0000-0000-0000-000000000002') \g /dev/null
-select pg_temp.erreur('select passer_commande(''d1000000-0000-0000-0000-000000000001'', ''[{"article_id":"e1000000-0000-0000-0000-000000000001","taille":"L","quantite":1}]'')',
-  '42501', 'bloqué', 'point 1 (V2) : réglage activé → 5 no-shows sur le numéro bloquent les autres comptes');
-reset role;
+select pg_temp.ok(prive.no_shows_actifs('c1000000-0000-0000-0000-000000000002', '+213555200002') = 0,
+  'point 1 (US-21.3) : réglage activé, numéro non vérifié → les no-shows d''un autre compte ne comptent pas');
 delete from prive.reglages where cle = 'blocage_par_numero';
-update commandes set no_show_annule_le = now() where id = :'n5';
 set local role authenticated;
 
 -- ---------------------------------------------------------------------------
