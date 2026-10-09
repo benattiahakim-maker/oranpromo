@@ -5,6 +5,8 @@ import MesArticles from "@/components/MesArticles";
 import PartagerBoutique from "@/components/PartagerBoutique";
 import PositionEspace, { type ProprietesPositionEspace } from "@/components/PositionEspace";
 import { preparerPartageBoutique, type PartageBoutique } from "@/lib/lien-boutique";
+import BonsBoutique from "@/components/BonsBoutique";
+import { lireRelevesBoutique, type ReleveBoutique } from "@/lib/parrainage-admin";
 
 export default async function Espace({ searchParams }: { searchParams: Promise<{ erreur?: string }> }) {
   const supabase = await creerClientServeur();
@@ -16,6 +18,7 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
   let erreurListe = Boolean(erreurProfil);
   let partage: PartageBoutique | null = null;
   let position: ProprietesPositionEspace | null = null;
+  let releves: ReleveBoutique[] = [];
   if (profil?.boutique_id) {
     const [resultat, boutique] = await Promise.all([
       supabase.from("articles").select("*, photos(*), tailles(*), promos(*)").eq("boutique_id", profil.boutique_id).order("cree_le", { ascending: false }),
@@ -27,6 +30,8 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
     if (boutique.data) partage = await preparerPartageBoutique(boutique.data);
     // US-24.2 : bloc « Position sur la carte ».
     if (boutique.data) position = { statut: boutique.data.statut, latitude: boutique.data.latitude ?? null, longitude: boutique.data.longitude ?? null };
+    // US-27.5 : bloc « Bons parrainage à rembourser » (seulement si la boutique a des relevés ; une erreur masque le bloc).
+    try { releves = await lireRelevesBoutique(supabase, profil.boutique_id); } catch { releves = []; }
   }
 
   return <main className="mx-auto w-full max-w-[390px] bg-blanc text-noir">
@@ -36,6 +41,7 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
       {profil?.boutique_id && <Link href="/espace/articles/nouveau" className="etiquette mt-6 flex min-h-[54px] items-center justify-center bg-noir px-4 text-blanc">+ Ajouter un article</Link>}
       {erreur === "deconnexion" && <p role="alert" className="mt-4">Impossible de vous déconnecter. Réessayez.</p>}
       {profil?.boutique_id && <Link href="/espace/statistiques" className="etiquette my-6 flex min-h-[44px] items-center justify-center border border-noir px-4">Mes statistiques</Link>}
+      <BonsBoutique releves={releves} />
       {position && <PositionEspace {...position} />}
       {partage && <div className="pb-10"><PartagerBoutique partage={partage} /></div>}
     </div>
