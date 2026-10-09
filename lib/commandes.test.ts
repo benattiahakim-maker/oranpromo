@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { ACTION_BOUTIQUE, compterCommandesAConfirmer, listerCommandesBoutique, motifBoutiqueValide, verifierActionBoutique, annulableParClient, annulerCommandeClient, commandeEnCours, etapesFrise, formaterDateHeure, libelleMotif, lireCommande, listerMesCommandes, messageErreurCommande, passerCommande, quantiteTotale } from "./commandes";
+import { declarerNoShow, estStockInsuffisant, peutDeclarerNoShow, ACTION_BOUTIQUE, compterCommandesAConfirmer, listerCommandesBoutique, motifBoutiqueValide, verifierActionBoutique, annulableParClient, annulerCommandeClient, commandeEnCours, etapesFrise, formaterDateHeure, libelleMotif, lireCommande, listerMesCommandes, messageErreurCommande, passerCommande, quantiteTotale } from "./commandes";
 
 function client({ rpc = { data: "commande" as unknown, error: null as unknown }, lecture = { data: [] as unknown, error: null as unknown }, user = { id: "moi" } as { id: string } | null } = {}) {
   const appels: unknown[][] = [];
@@ -101,5 +101,29 @@ describe("commandes reçues par la boutique (US-20.3)", () => {
     const chaine = (resultat: unknown) => { const c: Record<string, unknown> = { select: () => c, eq: () => c, then: (ok: (v: unknown) => void) => ok(resultat) }; return c; };
     expect(await compterCommandesAConfirmer({ from: () => chaine({ count: 3, error: null }) } as unknown as SupabaseClient<Database>, "b1")).toBe(3);
     expect(await compterCommandesAConfirmer({ from: () => chaine({ count: null, error: { message: "x" } }) } as unknown as SupabaseClient<Database>, "b1")).toBe(0);
+  });
+});
+
+describe("relecture US-20", () => {
+  it("point 1 : reconnaît le refus « Stock insuffisant » de la base et l’affiche tel quel", () => {
+    const erreur = { code: "23514", message: "Stock insuffisant pour « Polo » en taille M : il reste 0 pièce(s), la commande en demande 1." };
+    expect(messageErreurCommande(erreur, "défaut")).toBe(erreur.message);
+    expect(estStockInsuffisant(erreur.message)).toBe(true);
+    expect(estStockInsuffisant("Commande introuvable.")).toBe(false);
+  });
+  it("point 11 : « Client pas venu » seulement sur une commande expirée ou prête depuis plus de 24 h, une fois", () => {
+    const maintenant = Date.parse("2026-10-10T12:00:00Z");
+    expect(peutDeclarerNoShow({ statut: "expiree", expire_le: null, no_show_le: null }, maintenant)).toBe(true);
+    expect(peutDeclarerNoShow({ statut: "expiree", expire_le: null, no_show_le: "2026-10-10T11:00:00Z" }, maintenant)).toBe(false);
+    expect(peutDeclarerNoShow({ statut: "prete", expire_le: "2026-10-10T11:59:00Z", no_show_le: null }, maintenant)).toBe(true);
+    expect(peutDeclarerNoShow({ statut: "prete", expire_le: "2026-10-10T12:01:00Z", no_show_le: null }, maintenant)).toBe(false);
+    expect(peutDeclarerNoShow({ statut: "recuperee", expire_le: "2026-10-09T12:00:00Z", no_show_le: null }, maintenant)).toBe(false);
+  });
+  it("point 11 : déclare par la fonction de la base et affiche son refus", async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    await declarerNoShow({ rpc } as unknown as SupabaseClient<Database>, "c1");
+    expect(rpc).toHaveBeenCalledWith("declarer_no_show", { commande: "c1" });
+    rpc.mockResolvedValue({ error: { code: "23514", message: "Vous avez déjà signalé que ce client n'est pas venu." } });
+    await expect(declarerNoShow({ rpc } as unknown as SupabaseClient<Database>, "c1")).rejects.toThrow("déjà signalé");
   });
 });

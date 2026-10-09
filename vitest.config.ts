@@ -4,7 +4,8 @@ import path from "node:path";
 
 export default defineConfig({
   plugins: [react()],
-  resolve: { alias: { "@": path.resolve(__dirname, ".") } },
+  // server-only : le vrai module lève une erreur hors des composants serveur ; dans les tests, module vide.
+  resolve: { alias: { "@": path.resolve(__dirname, "."), "server-only": path.resolve(__dirname, "node_modules/server-only/empty.js") } },
   test: {
     environment: "jsdom",
     include: ["**/*.test.{ts,tsx}"],

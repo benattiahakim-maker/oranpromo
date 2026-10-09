@@ -2,7 +2,7 @@
 import { after } from "next/server";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { envoyerMessagesCommande } from "@/lib/notifications";
-import { changerStatutCommande, lireCommande, verifierActionBoutique, type MotifBoutique, type StatutCommande } from "@/lib/commandes";
+import { changerStatutCommande, declarerNoShow, lireCommande, peutDeclarerNoShow, verifierActionBoutique, type MotifBoutique, type StatutCommande } from "@/lib/commandes";
 import { boutiqueDuCompte } from "@/lib/gestion-articles";
 
 export type ResultatAction = { succes: boolean; message: string };
@@ -21,4 +21,19 @@ export async function changerStatutCommandeBoutique(id: string, statut: StatutCo
     if (statut === "prete") after(() => envoyerMessagesCommande(client, id));
     return { succes: true, message: "Commande mise à jour." };
   } catch (error) { return { succes: false, message: error instanceof Error ? error.message : "Impossible de modifier la commande. Réessayez." }; }
+}
+
+/** « Client pas venu » (relecture point 11, option C) : compte un no-show et avertit le client par WhatsApp. */
+export async function declarerClientPasVenu(id: string): Promise<ResultatAction> {
+  try {
+    if (typeof id !== "string") throw new Error("Demande invalide.");
+    const client = await creerClientServeur();
+    const boutiqueId = await boutiqueDuCompte(client);
+    const commande = await lireCommande(client, id);
+    if (!commande || commande.boutique_id !== boutiqueId) throw new Error("Commande introuvable.");
+    if (!peutDeclarerNoShow(commande, Date.now())) throw new Error("« Client pas venu » est possible seulement quand la commande prête n’a pas été récupérée dans les 24 heures.");
+    await declarerNoShow(client, id);
+    after(() => envoyerMessagesCommande(client, id));
+    return { succes: true, message: "C’est noté : le client est averti." };
+  } catch (error) { return { succes: false, message: error instanceof Error ? error.message : "Impossible de signaler ce client. Réessayez." }; }
 }

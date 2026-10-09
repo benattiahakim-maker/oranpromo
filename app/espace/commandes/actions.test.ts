@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { changerStatutCommandeBoutique } from "./actions";
+import { changerStatutCommandeBoutique, declarerClientPasVenu } from "./actions";
 
 const { rpc, commande, boutique } = vi.hoisted(() => ({ rpc: vi.fn(), commande: { valeur: null as unknown }, boutique: { valeur: "b1" } }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ rpc, from: () => { const c: Record<string, unknown> = { select: () => c, eq: () => c, maybeSingle: async () => ({ data: commande.valeur, error: null }) }; return c; } }) }));
@@ -36,5 +36,24 @@ describe("action serveur de la boutique (US-20.3)", () => {
     await changerStatutCommandeBoutique(id, "prete", null, "");
     expect(after).toHaveBeenCalledTimes(1);
     expect(envoyer).toHaveBeenCalledWith(expect.anything(), id);
+  });
+});
+
+describe("« Client pas venu » (relecture point 11)", () => {
+  it("déclare le no-show d’une commande expirée de sa boutique et envoie le WhatsApp", async () => {
+    commande.valeur = { id, boutique_id: "b1", statut: "expiree", expire_le: null, no_show_le: null };
+    expect(await declarerClientPasVenu(id)).toEqual({ succes: true, message: "C’est noté : le client est averti." });
+    expect(rpc).toHaveBeenCalledWith("declarer_no_show", { commande: id });
+    expect(envoyer).toHaveBeenCalledWith(expect.anything(), id);
+  });
+  it("refuse avant 24 h, une autre boutique, ou une commande déjà signalée, sans appeler la base", async () => {
+    commande.valeur = { id, boutique_id: "b1", statut: "prete", expire_le: "2999-01-01T00:00:00Z", no_show_le: null };
+    expect((await declarerClientPasVenu(id)).succes).toBe(false);
+    commande.valeur = { id, boutique_id: "b1", statut: "expiree", expire_le: null, no_show_le: "2026-10-09T10:00:00Z" };
+    expect((await declarerClientPasVenu(id)).succes).toBe(false);
+    boutique.valeur = "b2";
+    commande.valeur = { id, boutique_id: "b1", statut: "expiree", expire_le: null, no_show_le: null };
+    expect(await declarerClientPasVenu(id)).toEqual({ succes: false, message: "Commande introuvable." });
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

@@ -40,6 +40,7 @@ lib/
   supabase/server.ts            client serveur (pages, routes, actions)
   supabase/types.ts             types générés depuis la base (ne pas modifier à la main)
 supabase/migrations/            schéma SQL et règles de sécurité (déjà appliqués)
+supabase/tests/                 tests SQL des règles de la base (transaction annulée, psql)
 docs/                           user stories, architecture, maquettes
 ```
 
@@ -66,7 +67,7 @@ Colonnes en `snake_case` français sans accents. Prix = entiers en dinars.
 | `evenements` | statistiques | `type` : `vue_article`, `vue_boutique`, `clic_reserver`, `partage` ; `date` fixée par la base ; 120 par minute et par boutique au plus |
 | `signalements` | signalements clients | `statut` : `ouvert`, `traite`, `rejete` ; `cree_le` fixée par la base ; 10 par heure et par article, 200 par heure au total |
 | `decisions` | décisions de modération | `action`, `auteur_id`, `date` |
-| `commandes` | commandes client (US-20) | `numero` (affiché « n° 12 »), `client_id`, `boutique_id`, `statut` : `demandee`, `confirmee`, `prete`, `recuperee`, `annulee`, `expiree` ; `client_nom`, `client_telephone` (copiés du profil à la commande) ; `note` (client, 300 car.), `motif_annulation` : `plus_en_stock`, `boutique_indisponible`, `client_a_annule`, `autre` ; `total` (DA) ; dates `cree_le`, `confirmee_le`, `prete_le`, `expire_le` (= `prete_le` + 24 h), `terminee_le` |
+| `commandes` | commandes client (US-20) ; `no_show_le` (« Client pas venu » déclaré par la boutique), `no_show_annule_le` (annulé par l'admin) | `numero` (affiché « n° 12 »), `client_id`, `boutique_id`, `statut` : `demandee`, `confirmee`, `prete`, `recuperee`, `annulee`, `expiree` ; `client_nom`, `client_telephone` (copiés du profil à la commande) ; `note` (client, 300 car.), `motif_annulation` : `plus_en_stock`, `boutique_indisponible`, `client_a_annule`, `autre` ; `total` (DA) ; dates `cree_le`, `confirmee_le`, `prete_le`, `expire_le` (= `prete_le` + 24 h), `terminee_le` |
 | `lignes_commande` | articles d'une commande | `commande_id`, `article_id` (vide si l'article est supprimé), `titre`, `taille`, `quantite` (1 à 10), `prix_unitaire` (prix affiché au moment de la commande, promo active comprise) |
 | `suivi_commandes` | frise d'une commande | `commande_id`, `statut`, `date`, `auteur_id` (vide = automatique), `auteur` : `client`, `boutique`, `admin`, `systeme` ; `note` (300 car.) |
 | `messages_whatsapp` | file d'attente des messages WhatsApp (US-20.5) | `destinataire` (`+213…`), `modele` (nom du modèle Meta), `parametres` (liste de textes), `texte` (version lisible), `commande_id`, `statut` : `a_envoyer`, `envoye`, `echec` ; `tentatives` (5 au plus), `reserve_jusqu_a`, `erreur`, `identifiant_fournisseur`, `cree_le`, `envoye_le` ; lisible par l'admin seulement, écrit par la base |
@@ -105,32 +106,41 @@ Le stockage `photos` (public, 5 Mo max, jpeg/png/webp) impose le chemin `<boutiq
 
 Décisions du propriétaire : compte client lié au numéro de téléphone (connexion par lien e-mail en attendant le SMS) ; le client suit, la boutique met à jour ; une commande = plusieurs articles d'**une** boutique ; stock par taille, indicatif ; WhatsApp automatique.
 
-- **Stock** (`lib/stock.ts`, migration `…_stock_par_taille.sql`) : `tailles.quantite` ; `disponible` est recalculé par la base (`quantite > 0`). Une écriture de `disponible` seule (ancien code, formulaire de modification) met la quantité à 0 ou à au moins 1. Quand la somme des quantités d'un article disponible ou réservé tombe à 0, la base le passe « Vendu » ; quand elle repasse au-dessus de 0 alors qu'il était « Vendu », il redevient « Disponible ». Le commerçant modifie la quantité directement (`tailles`, droits existants).
+- **Stock** (`lib/stock.ts`, migration `…_stock_par_taille.sql`) : `tailles.quantite` ; `disponible` est recalculé par la base (`quantite > 0`). Une écriture de `disponible` seule (ancien code, formulaire de modification) met la quantité à 0 ou à au moins 1. Quand la somme des quantités d'un article disponible ou réservé tombe à 0, la base le passe « Vendu » ; quand elle repasse au-dessus de 0 alors qu'il était « Vendu », il redevient « Disponible ». Ce calcul se fait **par instruction** (déclencheurs `articles_statut_stock_*` avec tables de transition, migration `20261009230000`) : une remise en stock de plusieurs tailles d'un coup est bien vue. Le commerçant modifie la quantité directement (`tailles`, droits existants).
 - **Panier** (`lib/panier.ts`) : gardé dans le navigateur (`localStorage`, clé `oranpromo:panier`), une seule boutique, 10 lignes au plus, quantité 1 à 10 par ligne. Les prix du panier sont indicatifs : la base recalcule à la commande.
-- **Passer commande** : `passer_commande(boutique, lignes, note)` (fonction de la base, `security definer`) : compte connecté, non bloqué, avec nom et téléphone, pas sa propre boutique ; boutique validée ; articles visibles de cette boutique ; taille existante avec `quantite >= quantite demandée` ; 1 à 10 lignes ; au plus 5 commandes en cours (`demandee`, `confirmee`, `prete`) et 10 commandes par heure par client. Le stock ne bouge pas.
+- **Passer commande** : `passer_commande(boutique, lignes, note)` (fonction de la base, `security definer`) : compte connecté, non bloqué (ni ce compte, ni un autre compte avec le même numéro, ni 5 no-shows sur ce compte ou ce numéro), avec nom valide et téléphone, pas sa propre boutique ; boutique validée ; articles visibles de cette boutique ; taille existante avec `quantite >= quantite demandée` ; 1 à 10 lignes, chacune avec `article_id`, `taille` et `quantite` (clé manquante = refus clair) ; au plus 5 commandes en cours (`demandee`, `confirmee`, `prete`) et 10 commandes par heure par client. Le stock ne bouge pas.
 - **Transitions** : `changer_statut_commande(commande, statut, motif, note)` :
-  - boutique (ou admin) : `demandee → confirmee` (stock − quantité, jamais sous 0), `confirmee → prete` (`prete_le` = maintenant, `expire_le` = + 24 h), `prete → recuperee`, et `demandee|confirmee|prete → annulee` avec un motif `plus_en_stock`, `boutique_indisponible` ou `autre` ;
+  - boutique (ou admin) : `demandee → confirmee` (stock − quantité ; **refusée** avec « Stock insuffisant pour … » si une ligne dépasse le stock — la boutique corrige son stock ou annule « Plus en stock »), `confirmee → prete` (`prete_le` = maintenant, `expire_le` = + 24 h), `prete → recuperee`, et `demandee|confirmee|prete → annulee` avec un motif `plus_en_stock`, `boutique_indisponible` ou `autre` ;
   - client : `demandee|confirmee → annulee` (motif `client_a_annule`) ;
-  - annuler une commande `confirmee` ou `prete` remet le stock (ligne dont l'article ou la taille a disparu : ignorée).
+  - annuler une commande `confirmee` ou `prete` remet le stock (ligne dont l'article ou la taille a disparu : ignorée) ;
+  - `prive.retirer_stock` / `prive.remettre_stock` verrouillent les tailles dans l'ordre de leur `id` (pas d'interblocage entre deux commandes).
   - Toute autre transition est refusée. Chaque transition ajoute une ligne à `suivi_commandes`.
-- **Expiration** : `prive.expirer_commandes()` passe `expiree` les commandes `prete` dont `expire_le` est passé, remet le stock, ajoute 1 à `profils.no_shows` du client et bloque le compte au 5e (`bloque`, `bloque_le`). Lancée toutes les 15 minutes par `pg_cron` (job `expirer-commandes`, créé par la migration si l'extension est disponible).
-- **Déblocage** : `debloquer_client(client)` (admin seulement) : `bloque = false`, `no_shows = 0`.
+- **Expiration** : `prive.expirer_commandes()` passe `expiree` les commandes `prete` dont `expire_le` est passé et remet le stock. **Aucun no-show automatique** (décision du propriétaire, option C). Lancée toutes les 15 minutes par `pg_cron` (job `expirer-commandes`).
+- **No-shows** (migration `20261009230000_corrections_relecture.sql`) :
+  - la boutique déclare « Client pas venu » : `declarer_no_show(commande)` — boutique de la commande seulement, une fois par commande (`commandes.no_show_le`), sur une commande `expiree` ou `prete` depuis plus de 24 h (elle est alors expirée tout de suite) ; le client reçoit `oranpromo_no_show` avec les essais restants ;
+  - nombre de no-shows = commandes avec un no-show déclaré et non annulé, passées par ce compte **ou** avec ce numéro (`commandes.client_telephone`) : un nouveau compte avec le même numéro hérite des no-shows. `profils.no_shows`, `bloque`, `bloque_le` en sont la copie, recalculée par la base (`prive.recalculer_no_shows`) ; bloqué au 5e ; un compte bloqué ne change pas de numéro ;
+  - l'admin annule un no-show : `annuler_no_show(commande)` (`commandes.no_show_annule_le`) ; le compte est débloqué s'il repasse sous 5.
+- **Déblocage** : `debloquer_client(client)` (admin seulement) : annule tous les no-shows comptés pour ce compte et son numéro, `bloque = false`, `no_shows = 0`.
+- **Nom du client** : lettres latines (accents compris) ou arabes, espaces, apostrophe, tiret ; 2 à 60 caractères ; ni chiffres, ni lien, ni retour à la ligne (`prive.nom_valide`, contrainte `profils_nom_valide`, et `nomValide()` dans `lib/clients.ts`). Il part dans les messages WhatsApp : un nom non conforme y est remplacé par « cher client ».
 - **Droits (RLS)** : le client lit ses commandes, leurs lignes et leur suivi ; la boutique lit ceux de sa boutique ; l'admin lit tout. Aucune politique d'écriture : uniquement les fonctions ci-dessus. Le client ne peut changer ni son rôle, ni `no_shows`, ni `bloque`.
 - **Messages WhatsApp** (`lib/notifications/`) :
-  - la base crée les messages dans `messages_whatsapp` (déclencheurs sur `suivi_commandes` et `profils`) : `oranpromo_nouvelle_commande` (boutique), `oranpromo_commande_prete`, `oranpromo_commande_expiree` (avec les essais restants), `oranpromo_compte_bloque` (client) ;
+  - la base crée les messages dans `messages_whatsapp` (déclencheurs sur `suivi_commandes` et `profils`) : `oranpromo_nouvelle_commande` (boutique), `oranpromo_commande_prete`, `oranpromo_commande_expiree` (simple rappel), `oranpromo_no_show` (client pas venu, avec les essais restants), `oranpromo_compte_bloque` (client) ;
   - envoi côté serveur seulement, par le fournisseur choisi (`WHATSAPP_FOURNISSEUR`, `meta` par défaut : WhatsApp Cloud API, messages modèles en français) ; sans `WHATSAPP_TOKEN` et `WHATSAPP_PHONE_NUMBER_ID`, aucun envoi ;
-  - juste après une action (commande, changement de statut), l'action serveur envoie les messages de cette commande (`messages_whatsapp_commande()`, réservé aux participants) ;
+  - juste après une action (commande, « prête », « client pas venu »), l'action serveur envoie les messages de cette commande (`messages_whatsapp_commande()`, réservé aux participants) ;
+  - le résultat d'un envoi n'est accepté qu'avec le jeton du serveur (`resultat_message_whatsapp(jeton, …)`, empreinte de `CRON_SECRET`) : sans `CRON_SECRET`, rien ne part juste après une action, la tâche planifiée s'en charge ; `lib/notifications/index.ts` est `server-only` ;
   - les autres (expiration, blocage, échecs) sont envoyés par `GET /api/notifications/whatsapp`, protégé par `Authorization: Bearer <CRON_SECRET>`, appelé par une tâche planifiée (Vercel Cron ou autre) ; la base vérifie l'empreinte du secret (`messages_whatsapp_en_attente()`, `prive.reglages`) ;
-  - chaque envoi réserve le message 2 minutes (pas de double envoi), 5 tentatives au plus, puis `echec`.
+  - chaque envoi réserve le message 2 minutes (pas de double envoi), 5 tentatives au plus, puis `echec` ;
+  - la tâche traite 5 messages au plus par appel (10 s maximum chacun) et ne commence plus d'envoi à moins de 17 s de la limite de 60 s de la fonction : un message n'est jamais coupé en plein envoi (sinon doublon).
   - mise en service :
     1. compte WhatsApp Business (Meta Business Manager) avec un numéro dédié, puis `WHATSAPP_TOKEN` (jeton d'utilisateur système permanent) et `WHATSAPP_PHONE_NUMBER_ID` sur l'hébergeur ;
-    2. faire approuver par Meta les 4 modèles (catégorie « Utilitaire », langue `fr`) avec exactement ces textes (variables `{{1}}`…) :
+    2. faire approuver par Meta les 5 modèles (catégorie « Utilitaire », langue `fr`) avec exactement ces textes (variables `{{1}}`…) :
        - `oranpromo_nouvelle_commande` : « Nouvelle commande n° {{1}} sur OranPromo : {{2}}, {{3}} article(s), {{4}}. Confirmez-la dans votre espace OranPromo, rubrique Commandes. »
        - `oranpromo_commande_prete` : « Bonjour {{1}}, votre commande n° {{2}} est prête chez {{3}}. Vous pouvez la récupérer jusqu'au {{4}}. »
-       - `oranpromo_commande_expiree` : « Bonjour {{1}}, votre commande n° {{2}} chez {{3}} n'a pas été récupérée dans les 24 heures : elle est annulée et les articles sont remis en vente. Merci de ne commander que ce que vous viendrez chercher. Attention : encore {{4}} commande(s) non récupérée(s) et votre compte sera bloqué. »
+       - `oranpromo_commande_expiree` : « Bonjour {{1}}, votre commande n° {{2}} chez {{3}} n'a pas été récupérée dans les 24 heures : elle est annulée et les articles sont remis en vente. Merci de ne commander que ce que vous viendrez chercher. »
+       - `oranpromo_no_show` : « Bonjour {{1}}, {{2}} nous signale que vous n'êtes pas venu(e) chercher votre commande n° {{3}}. C'est votre {{4}}e commande non récupérée : encore {{5}} et votre compte OranPromo sera bloqué. Merci de ne commander que ce que vous viendrez chercher. »
        - `oranpromo_compte_bloque` : « Bonjour {{1}}, votre compte OranPromo est bloqué après 5 commandes non récupérées. Pour le débloquer, contactez OranPromo. »
     3. choisir `CRON_SECRET` (32 caractères aléatoires au moins), le mettre sur l'hébergeur et ranger son empreinte dans la base (éditeur SQL Supabase) : `insert into prive.reglages (cle, valeur) values ('jeton_notifications', encode(sha256(convert_to('<CRON_SECRET>', 'UTF8')), 'hex')) on conflict (cle) do update set valeur = excluded.valeur;`
-    4. appeler `GET /api/notifications/whatsapp` toutes les 5 minutes environ (Vercel Cron, cron-job.org…) avec `Authorization: Bearer <CRON_SECRET>` ;
+    4. appeler `GET /api/notifications/whatsapp` avec `Authorization: Bearer <CRON_SECRET>` : `vercel.json` déclare un Vercel Cron (`0 9 * * *`, une fois par jour à 10 h, heure d'Oran : c'est le maximum du plan Hobby ; Vercel ajoute l'en-tête tout seul quand `CRON_SECRET` est défini). Sur le plan Pro, passer à `*/5 * * * *` ; sinon ajouter un appel toutes les 5 minutes par un service externe (cron-job.org…). Les messages « nouvelle commande », « prête » et « client pas venu » partent tout de suite après l'action ; la tâche sert aux rappels d'expiration, aux blocages et aux nouvelles tentatives ;
     5. suivre la file dans la table `messages_whatsapp` (colonnes `statut`, `erreur`).
 
 ## Variables d'environnement
@@ -155,6 +165,7 @@ Décisions du propriétaire : compte client lié au numéro de téléphone (conn
 | Niveau | Outil | Exemples |
 | --- | --- | --- |
 | Règles métier | Vitest (`npm test`) | promo active/expirée, lien WhatsApp, format des prix |
+| Règles de la base | `psql -v ON_ERROR_STOP=1 -f supabase/tests/<fichier>.test.sql` sur une base locale avec toutes les migrations (rôles `anon` / `authenticated`, `auth.uid()` lu dans `request.jwt.claim.sub`) ; tout est annulé à la fin | stock à la confirmation, statut « Vendu », no-shows, blocage par numéro, nom, jeton WhatsApp |
 | Composants | Testing Library | bouton « Réserver » désactivé sans taille, prix barré en promo |
 | Parcours complets | Playwright (après le MVP) | recherche → fiche → réservation |
 
