@@ -5,14 +5,29 @@
 
 ## Où on en est
 
-- Les **19 user stories du MVP sont codées** (US-01 à US-19) et relues. Elles sont dans la colonne Trello « À vérifier » : codées, mais pas encore toutes testées en vrai.
-- 444 tests passent, `npm run lint` et `npm run build` passent.
-- Dernier commit : `c0e12ba Formulaire article : couleurs, tailles par catégorie, photos, erreurs, brouillon`.
-- Déjà testé en vrai :
-  - la page d'accueil ;
-  - la fiche article ;
-  - la réservation WhatsApp.
-- Pas encore re-testé : la connexion par lien e-mail (corrigée le 9/10) et le nouveau formulaire d'article.
+- Les **19 user stories du MVP sont codées** (US-01 à US-19). Elles sont dans la colonne Trello « À vérifier » : codées, mais pas encore toutes testées en vrai.
+- **538 tests** passent, `npm run lint` et `npm run build` passent.
+- Déjà testé en vrai : la page d'accueil (ancienne version), la fiche article, la réservation WhatsApp.
+- Pas encore re-testé : la connexion par lien e-mail (corrigée le 9/10), le nouveau formulaire d'article, et tout ce qui a été fait le 9/10 après-midi (voir ci-dessous).
+
+## Journal des modifications
+
+### 9 octobre 2026 (après-midi, Grok Bot « BOLOSS »)
+
+Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fusionnée dans `main` après tests, lint et build. Migrations appliquées sur Supabase avec l'accord du propriétaire.
+
+1. **Revue de sécurité** du code, puis corrections :
+   - **PR #1** (4 points importants) : un article masqué par la modération ne peut être réaffiché que par un admin (colonne `masque_par_moderation`) ; dates `cree_le` / `derniere_confirmation` fixées par la base (règle des 21 jours infalsifiable) ; seuls admin et ambassadeur créent une boutique ; IA réservée aux boutiques validées avec quota de 30 appels/heure/compte (table `appels_ia`, fonction `consommer_quota_ia()`) ; nom, WhatsApp, slug et liens d'une boutique validée modifiables seulement par l'admin. Migration `securite_corrections_revue` appliquée.
+   - **PR #2** (points mineurs) : accueil et catalogue filtrés comme pour le public et paginés ; prix promo < prix normal vérifié en base ; adresses de photos limitées au stockage du projet ; contenu des photos vérifié côté serveur ; taille des envois bornée (routes IA comprises) ; dates et débit des statistiques et signalements contrôlés par la base ; redirections limitées à `NEXT_PUBLIC_SITE_URL`. Migration `securite_points_mineurs` appliquée.
+2. **PR #3** Design : barre de défilement grise de la galerie masquée.
+3. **PR #4** Tech : miniatures 400 px (`photos.adresse_vignette`) sur les cartes, grandes photos à 1200 px, envoi limité à 4 Mo (limite Vercel 4,5 Mo).
+4. **PR #5** Catégories : nouvelle liste en 4 univers (14 catégories mode, 5 beauté avec contenance en ml), filtre « Univers » dans le catalogue, IA à jour. Migration `categories_univers` appliquée (anciennes catégories renommées).
+5. **PR #6** Design : nouvelle page d'accueil (univers, grande photo, tuiles par univers et catégorie, images tirées des articles). Maquette `docs/maquettes/Accueil.dc.html`.
+6. **En cours** : objet **commande** avec statut et suivi client (carte Trello « Commandes · Objet commande avec statut et suivi client », story US-20). Décisions : compte client lié au téléphone, plusieurs articles d'une même boutique, stock par taille qui baisse à la confirmation, WhatsApp automatique (API WhatsApp Business), expiration 24 h après « prête », blocage au 5e no-show.
+
+Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
+
+Reste à faire côté propriétaire : plafond de dépenses dans la console Anthropic ; tester en vrai tout ce qui précède ; régler `NEXT_PUBLIC_SITE_URL` à la mise en ligne.
 
 ## Reprendre le travail (sur le PC)
 
@@ -28,6 +43,7 @@
 - **Une story (ou une carte) par prompt** donné à ChatGPT. Il doit lire `CLAUDE.md`, la story dans `docs/user-stories.md`, `docs/architecture.md` et la maquette.
 - ChatGPT doit **commiter et pousser** avant de dire « fini ». Le message de commit commence par l'identifiant, par exemple `US-07 …`.
 - Claude relit le code sur GitHub, corrige la base Supabase et la configuration, puis teste dans Chrome.
+- Grok Bot peut aussi coder par pull request sur GitHub, appliquer les migrations Supabase (avec accord) et tenir Trello à jour.
 - Le schéma de la base ne change que par un **nouveau** fichier dans `supabase/migrations/`. Ensuite, lancer `npm run db:types`.
 - Jamais de clé secrète dans le code, un commit ou le chat. Les clés vont uniquement dans `.env.local` sur le PC.
 
@@ -66,12 +82,12 @@
 
 ## Prochaines étapes (Trello « À faire »)
 
-1. **Test** : tester tout le parcours en vrai sur le PC (checklist dans la carte).
-2. **Tech** : miniatures et photos redimensionnées à 1200 px, pour réduire le trafic et respecter la limite Vercel de 4,5 Mo.
-3. **Design** : barre de défilement grise sous la galerie photo.
-4. **IA** : le propriétaire crée la clé API Claude et la colle dans `.env.local` (US-19).
+1. **Test** : tester tout le parcours en vrai sur le PC (checklist dans la carte), puis les cartes « À vérifier » du 9/10.
+2. **Commandes** : fin du développement en cours, puis migrations à appliquer et compte WhatsApp Business à créer.
+3. **IA** : le propriétaire crée la clé API Claude, la colle dans `.env.local` et fixe un plafond de dépenses.
+4. **Catégories** : faire valider la nouvelle liste par 2 ou 3 commerçants.
 
-Backlog : mise en ligne (Vercel, domaine, envoi d'e-mails), limitation des envois en masse, suppression des données de test, SMS (V2), idées de vidéos marketing.
+Backlog : mise en ligne (Vercel, domaine, envoi d'e-mails), environnements prod et dev (Vercel + second projet Supabase), suppression des données de test, SMS (V2), univers Beauté, conditions d'utilisation, marketing.
 
 ## Documents de référence
 
