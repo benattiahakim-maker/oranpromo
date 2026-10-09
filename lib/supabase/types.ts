@@ -239,7 +239,12 @@ export type Database = {
       };
     };
     Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Functions: {
+      rattacher_commercant: {
+        Args: { boutique: string; email_commercant: string };
+        Returns: undefined;
+      };
+    };
     Enums: {
       genre_article: "homme" | "femme" | "enfant" | "mixte";
       role_utilisateur: "commercant" | "ambassadeur" | "admin";
