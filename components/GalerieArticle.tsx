@@ -8,7 +8,7 @@ export default function GalerieArticle({ photos, titre }: { photos: { adresse: s
   const [active, setActive] = useState(0);
   const aller = (index: number) => galerie.current?.scrollTo({ left: index * galerie.current.clientWidth, behavior: "smooth" });
   return <section aria-label={`Photos de ${titre}`}>
-    <div ref={galerie} tabIndex={0} aria-label="Galerie défilable" className="flex snap-x snap-mandatory overflow-x-auto"
+    <div ref={galerie} tabIndex={0} aria-label="Galerie défilable" className="sans-barre-defilement flex snap-x snap-mandatory overflow-x-auto"
       onScroll={(event) => { const element = event.currentTarget; if (element.clientWidth) setActive(Math.round(element.scrollLeft / element.clientWidth)); }}
       onKeyDown={(event) => {
         if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
