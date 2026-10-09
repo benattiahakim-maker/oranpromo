@@ -43,8 +43,8 @@ En tant que client, je veux voir sur la page d'accueil les promos en cours à Or
 - Étant donné une promo dont la date de fin est passée, alors elle n'apparaît plus et l'article revient à son prix normal.
 - Les articles s'affichent par pages de 20, avec chargement de la suite au défilement.
 - En haut : les univers Femme · Homme · Enfant · Beauté, chacun vers le catalogue filtré (`/catalogue?univers=…`).
-- Une grande photo d'accueil avec la phrase « Les promos d'Oran » et un bouton « Voir les promos » (`/catalogue?promo=1`) ; sans article, un bloc noir uni.
-- Des tuiles carrées (image + mot) pour les univers et les pièces phares ; image = miniature du dernier article visible, sinon tuile noire unie avec le mot. Aucune image externe (maquette `docs/maquettes/Accueil.dc.html`).
+- Une grande photo d'accueil avec la phrase « Les promos d'Oran » et un bouton « Voir les promos » (`/catalogue?promo=1`) : photo réelle d'Oran (fort de Santa Cruz au-dessus du port) sous licence libre, avec voile sombre et crédit visible (auteur, licence, source, avec liens).
+- Des tuiles carrées (image + mot) pour les univers et les pièces phares ; image = visuel couleur de la marque (images générées par IA pour OranPromo), mot en dessous sur fond blanc. Images servies par le site (`public/images/accueil/`), jamais chargées depuis un autre site (maquette `docs/maquettes/Accueil.dc.html` pour la mise en page ; décision du propriétaire du 9 octobre 2026 : des images couleur inspirées d'Oran plutôt que les photos d'articles).
 
 ### US-05 — Filtrer le catalogue (page `/catalogue`)
 En tant que client, je veux filtrer les articles de toutes les boutiques, afin de trouver ce qui me correspond.
