@@ -65,7 +65,8 @@ begin
   perform changer_statut_commande(c, 'confirmee');
   perform changer_statut_commande(c, 'prete');
   reset role;
-  update commandes set expire_le = now() - interval '1 minute' where id = c;
+  -- Commande vieillie de 2 h : la limite de 3 commandes par heure et par boutique (relecture n°4) ne gêne pas.
+  update commandes set expire_le = now() - interval '1 minute', cree_le = now() - interval '2 hours' where id = c;
   set local role authenticated;
   perform pg_temp.compte('b1000000-0000-0000-0000-000000000001');
   perform declarer_no_show(c);
@@ -147,11 +148,14 @@ set local role authenticated;
 -- Point 2 : au plus 20 nouvelles commandes par boutique et par heure, tous clients confondus.
 -- ---------------------------------------------------------------------------
 reset role;
--- 19 commandes dans l'heure pour la boutique 2 (clients variés), et 5 plus anciennes qui ne comptent pas.
+-- 19 commandes dans l'heure pour la boutique 2 (19 clients différents : relecture n°4, 3 par client et par
+-- boutique au plus), et 5 plus anciennes qui ne comptent pas.
+insert into auth.users (id, email)
+select ('c9000000-0000-0000-0000-' || lpad(i::text, 12, '0'))::uuid, 'masse' || i || '@test.dz' from generate_series(1, 24) i;
 insert into commandes (client_id, boutique_id, client_nom, client_telephone)
-select 'c1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000002', 'Fraudeur', '+213555200002' from generate_series(1, 19);
+select ('c9000000-0000-0000-0000-' || lpad(i::text, 12, '0'))::uuid, 'd1000000-0000-0000-0000-000000000002', 'Client masse', '+213555200002' from generate_series(1, 19) i;
 insert into commandes (client_id, boutique_id, client_nom, client_telephone, cree_le)
-select 'c1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000002', 'Fraudeur', '+213555200002', now() - interval '61 minutes' from generate_series(1, 5);
+select ('c9000000-0000-0000-0000-' || lpad(i::text, 12, '0'))::uuid, 'd1000000-0000-0000-0000-000000000002', 'Client masse', '+213555200002', now() - interval '61 minutes' from generate_series(20, 24) i;
 set local role authenticated;
 select pg_temp.compte('c1000000-0000-0000-0000-000000000002') \g /dev/null
 select pg_temp.ok(passer_commande('d1000000-0000-0000-0000-000000000002', '[{"article_id":"e1000000-0000-0000-0000-000000000002","taille":"M","quantite":1}]') is not null,

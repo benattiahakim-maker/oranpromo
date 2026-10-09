@@ -74,7 +74,8 @@ begin
   perform changer_statut_commande(c, 'confirmee');
   perform changer_statut_commande(c, 'prete');
   reset role;
-  update commandes set expire_le = now() - interval '1 minute' where id = c;
+  -- Commande vieillie de 2 h : la limite de 3 commandes par heure et par boutique (relecture n°4) ne gêne pas.
+  update commandes set expire_le = now() - interval '1 minute', cree_le = now() - interval '2 hours' where id = c;
   set local role authenticated;
   return c;
 end $$;

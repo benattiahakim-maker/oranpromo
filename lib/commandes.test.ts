@@ -36,6 +36,9 @@ describe("commandes (US-20)", () => {
   it("garde les messages métier de la base et masque les autres", () => {
     expect(messageErreurCommande({ code: "23514", message: "Il ne reste que 1 pièce(s)." }, "défaut")).toBe("Il ne reste que 1 pièce(s).");
     expect(messageErreurCommande({ code: "XX000", message: "détail interne" }, "défaut")).toBe("défaut");
+    // Relecture n°4 : limite de 3 commandes par heure et par boutique pour un client (déclencheur de la base).
+    expect(messageErreurCommande({ code: "54000", message: "Vous avez déjà passé 3 commandes dans cette boutique en une heure : réessayez plus tard." }, "défaut"))
+      .toBe("Vous avez déjà passé 3 commandes dans cette boutique en une heure : réessayez plus tard.");
     expect(messageErreurCommande(null, "défaut")).toBe("défaut");
   });
   it("passe la commande par la fonction de la base", async () => {

@@ -61,7 +61,8 @@ begin
   perform changer_statut_commande(c, 'confirmee');
   perform changer_statut_commande(c, 'prete');
   reset role;
-  update commandes set expire_le = now() - interval '1 minute' where id = c;
+  -- Commande vieillie de 2 h : la limite de 3 commandes par heure et par boutique (relecture n°4) ne gêne pas.
+  update commandes set expire_le = now() - interval '1 minute', cree_le = now() - interval '2 hours' where id = c;
   set local role authenticated;
   perform pg_temp.compte('b3000000-0000-0000-0000-000000000001');
   perform declarer_no_show(c);
@@ -127,14 +128,15 @@ select pg_temp.ok((select no_shows = 0 and not bloque from profils where id = 'c
   'E vérifie le numéro de D : les no-shows de D (numéro saisi à la main) ne le suivent pas');
 
 -- ---------------------------------------------------------------------------
--- Contestation en attente : le no-show du numéro ne compte plus.
+-- Contestation en attente : le no-show du numéro ne compte plus dans le compteur, mais un compte déjà bloqué
+-- le reste (relecture n°4 : 5 no-shows en comptant la contestation en attente).
 -- ---------------------------------------------------------------------------
 set local role authenticated;
 select pg_temp.compte('c3000000-0000-0000-0000-00000000000a') \g /dev/null
 select contester_no_show(:'n5', 'La boutique était fermée ce jour-là.') \g /dev/null
 reset role;
-select pg_temp.ok((select no_shows = 4 and not bloque from profils where id = 'c3000000-0000-0000-0000-00000000000b'),
-  'contestation par A en attente : B (numéro X) repasse à 4 et est débloqué');
+select pg_temp.ok((select no_shows = 4 and bloque from profils where id = 'c3000000-0000-0000-0000-00000000000b'),
+  'contestation par A en attente : B (numéro X) affiche 4 mais reste bloqué');
 set local role authenticated;
 select pg_temp.compte('a3000000-0000-0000-0000-000000000001') \g /dev/null
 select valider_no_show(:'n5') \g /dev/null
