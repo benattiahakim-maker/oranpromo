@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lienAvertissementBoutique, lienReservation, messageReservation, numeroWhatsApp } from "./whatsapp";
+import { lienRelanceBoutique, lienAvertissementBoutique, lienReservation, messageReservation, numeroWhatsApp } from "./whatsapp";
 
 const demande = {
   telephoneBoutique: "+213 555 12 34 56",
@@ -8,6 +8,12 @@ const demande = {
   prix: 3500,
   lien: "https://oranpromo.com/a/1234",
 };
+
+it("prépare le message exact de relance de boutique", () => {
+  const lien = new URL(lienRelanceBoutique("+213 555 12 34 56"));
+  expect(lien.pathname).toBe("/213555123456");
+  expect(lien.searchParams.get("text")).toBe("Bonjour, pensez à mettre à jour vos articles sur OranPromo");
+});
 
 it("prépare l’avertissement WhatsApp avec le titre et le lien de l’article", () => {
   const url = new URL(lienAvertissementBoutique("+213 555 12 34 56", "Polo bleu", "https://oranpromo.com/a/123"));

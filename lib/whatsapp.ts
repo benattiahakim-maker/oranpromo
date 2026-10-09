@@ -13,6 +13,10 @@ export function numeroWhatsApp(telephone: string): string {
   return telephone.replace(/\D/g, "");
 }
 
+export function lienRelanceBoutique(telephone: string): string {
+  return `https://wa.me/${numeroWhatsApp(telephone)}?text=${encodeURIComponent("Bonjour, pensez à mettre à jour vos articles sur OranPromo")}`;
+}
+
 /** Message pré-rempli de la réservation (US-07). */
 export function messageReservation(d: DemandeReservation): string {
   const taille = d.taille ? `, taille ${d.taille}` : "";
