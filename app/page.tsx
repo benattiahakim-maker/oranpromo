@@ -22,7 +22,7 @@ export default async function Accueil() {
       <h1 className="relative font-titre text-4xl">Les promos d’Oran</h1>
       <p className="etiquette relative text-[10px] leading-relaxed">Réservez sur WhatsApp · Payez en boutique</p>
       <Link href="/catalogue?promo=1" className="etiquette relative inline-flex min-h-12 items-center bg-blanc px-7 text-noir">Voir les promos</Link>
-      <p className="absolute bottom-1.5 right-2 text-[10px] text-blanc/85">Photo : <a href={CREDIT_GRANDE_PHOTO.lienSource} target="_blank" rel="noopener noreferrer" className="underline">{CREDIT_GRANDE_PHOTO.auteur}</a>, <a href={CREDIT_GRANDE_PHOTO.lienLicence} target="_blank" rel="noopener noreferrer license" className="underline">{CREDIT_GRANDE_PHOTO.licence}</a>, {CREDIT_GRANDE_PHOTO.source}</p>
+      <p className="absolute bottom-1.5 end-2 text-[10px] text-blanc/85">Photo : <a href={CREDIT_GRANDE_PHOTO.lienSource} target="_blank" rel="noopener noreferrer" className="underline">{CREDIT_GRANDE_PHOTO.auteur}</a>, <a href={CREDIT_GRANDE_PHOTO.lienLicence} target="_blank" rel="noopener noreferrer license" className="underline">{CREDIT_GRANDE_PHOTO.licence}</a>, {CREDIT_GRANDE_PHOTO.source}</p>
     </section>
     <TuilesAccueil titre="Les univers" tuiles={TUILES_UNIVERS} />
     <TuilesAccueil titre="Pièces phares" tuiles={TUILES_PIECES_PHARES} />

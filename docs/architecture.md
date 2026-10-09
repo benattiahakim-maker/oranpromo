@@ -217,9 +217,14 @@ Stories : `docs/user-stories.md`, module 9.
 - **Bloc « Partager ma boutique »** (`components/PartagerBoutique.tsx`, sur `/espace`) : lien, « Copier le lien » (`navigator.clipboard`), « Partager sur WhatsApp » (`lienPartageWhatsApp()` → `https://wa.me/?text=…`, sans numéro : le commerçant choisit le contact ou son statut), QR code, « Télécharger le QR code » (SVG), « Imprimer l'affiche » (`/espace/affiche`). Boutique non validée : message, ni lien de partage ni QR code.
 - **QR code** : dépendance `qrcode` (MIT, génération locale, aucun service externe), appelée côté serveur seulement (`qrCodeSvg()` dans `lib/lien-boutique.ts`) ; SVG noir sur blanc, correction d'erreur `M`, marge de 4 modules (lisible imprimé en petit).
 
-## Arabe et darja (US-23) — conception, **pas encore codé**
+## Arabe et darja (US-23)
 
-À valider par le propriétaire (les 10 textes de la story US-23) avant d'écrire du code. Rien de ce qui suit n'existe encore.
+Textes **validés par le propriétaire le 9/10/2026** (version darja, masculin générique). Mise en œuvre par étapes ; ce qui est fait est indiqué « (fait) ».
+
+**Fait (étape 1, socle)** : `lib/langue.ts` (`Langue`, `COOKIE_LANGUE`, `langueDepuisCookie`, `direction`, `remplir`, `isolerGaucheDroite`), `lib/langue-serveur.ts` (`getLangue()`, `getTextes()`, serveur seulement), `lib/textes/fr.ts`, `ar.ts`, `index.ts` (`textesDe`), `components/FournisseurTextes.tsx` (`useTextes()`, `useLangue()` pour les composants client), `components/ChoixLangue.tsx` + `app/langue/actions.ts` (`choisirLangue`), `app/layout.tsx` (`lang`, `dir`, polices), `.etiquette` en arabe dans `app/globals.css`, `formaterPrix(montant, langue)`. Écarts par rapport à la conception :
+- les textes sont des chaînes avec des `{variables}` remplies par `remplir()` (pas de fonctions) : le layout serveur peut ainsi passer au fournisseur client **les textes de la seule langue choisie** ; le dictionnaire français est aussi inclus dans le JavaScript client comme valeur par défaut (tests, composants hors fournisseur) ;
+- le sélecteur est **un seul bouton** qui montre l'autre langue (« عربي » ou « FR ») et non deux boutons « FR | عربي » : à 375 px, l'en-tête n'a pas la place pour le logo, la recherche, le panier et deux boutons de 44 px ; pour la même raison, « Rechercher » devient une icône loupe (nom accessible « Rechercher » / « ابحث ») ;
+- la galerie photo de la fiche reste en `dir="ltr"` (le défilement horizontal en RTL inverse `scrollLeft`).
 
 **Lu avant de choisir** : le guide `node_modules/next/dist/docs/01-app/02-guides/internationalization.md` (Next.js 16). Il propose des dictionnaires chargés côté serveur (`getDictionary`) et un segment `app/[lang]` avec redirection dans le proxy. On garde les **dictionnaires** du guide, mais **pas** le segment `[lang]` :
 - les adresses restent les mêmes (`/a/…`, `/b/<slug>`…) : les liens et QR codes déjà imprimés (US-22) restent valables, aucun déplacement de toutes les pages sous `app/[lang]`, aucune redirection à ajouter dans `proxy.ts` ;

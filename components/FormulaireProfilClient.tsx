@@ -25,7 +25,7 @@ export default function FormulaireProfilClient({ nom = "", telephone = "", bouto
     } finally { verrou.current = false; setEnCours(false); }
   }
   const champ = "box-border min-h-[50px] w-full rounded-none border bg-blanc p-3 font-[inherit] text-base text-noir";
-  return <form noValidate onSubmit={envoyer} className="flex flex-col gap-2 text-left">
+  return <form noValidate onSubmit={envoyer} className="flex flex-col gap-2 text-start">
     <label htmlFor="profil-nom" className="etiquette text-xs">Nom et prénom</label>
     <input id="profil-nom" autoComplete="name" value={champs.nom} disabled={enCours} aria-invalid={Boolean(erreurs.nom)} onChange={e => setChamps({ ...champs, nom: e.target.value })} className={`${champ} ${erreurs.nom ? "border-noir" : "border-trait"}`} />
     {erreurs.nom && <p role="alert" className="m-0 text-sm">{erreurs.nom}</p>}

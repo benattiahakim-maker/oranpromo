@@ -14,5 +14,5 @@ export default function PartagerArticle({ titre, boutiqueId, articleId, libelle 
       if (!(error instanceof DOMException && error.name === "AbortError")) setMessage("Impossible de partager le lien.");
     }
   }
-  return <div className="absolute top-3 right-2"><button aria-label={libelle} onClick={partager} className="flex h-11 w-11 items-center justify-center bg-blanc">↑</button><p role="status" className="text-xs">{message}</p></div>;
+  return <div className="absolute top-3 end-2"><button aria-label={libelle} onClick={partager} className="flex h-11 w-11 items-center justify-center bg-blanc">↑</button><p role="status" className="text-xs">{message}</p></div>;
 }

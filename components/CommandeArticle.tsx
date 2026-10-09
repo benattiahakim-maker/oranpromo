@@ -41,7 +41,7 @@ export default function CommandeArticle({ articleId, boutique, titre, prix, phot
   return <div className="px-6 py-6 text-center">
     <fieldset className="border-none p-0">
       <legend className="etiquette mx-auto mb-3">Taille</legend>
-      <div className="grid grid-cols-4 border-t border-l border-trait">{tailles.map(t => <button type="button" key={t.libelle} disabled={t.quantite <= 0} aria-label={`Taille ${t.libelle}${t.quantite > 0 ? "" : ", épuisée"}`} aria-pressed={selection === t.libelle} onClick={() => choisir(t.libelle)} className={`h-12 border-r border-b border-trait text-sm ${t.quantite <= 0 ? "text-gris line-through" : selection === t.libelle ? "bg-noir text-blanc" : "bg-blanc"}`}>{t.libelle}</button>)}</div>
+      <div className="grid grid-cols-4 border-t border-s border-trait">{tailles.map(t => <button type="button" key={t.libelle} disabled={t.quantite <= 0} aria-label={`Taille ${t.libelle}${t.quantite > 0 ? "" : ", épuisée"}`} aria-pressed={selection === t.libelle} onClick={() => choisir(t.libelle)} className={`h-12 border-e border-b border-trait text-sm ${t.quantite <= 0 ? "text-gris line-through" : selection === t.libelle ? "bg-noir text-blanc" : "bg-blanc"}`}>{t.libelle}</button>)}</div>
     </fieldset>
     {!selection && <p className="mt-3 text-sm text-gris">{disponibles.length ? "Choisissez une taille pour commander." : "Aucune taille disponible."}</p>}
     {selection && <div className="mt-4 flex items-center justify-center gap-3">
