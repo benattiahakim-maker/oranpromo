@@ -4,8 +4,8 @@ import "@testing-library/jest-dom/vitest";
 import TableauCommandes from "./TableauCommandes";
 import type { CommandeRecue } from "@/lib/commandes";
 
-const { changerStatutCommandeBoutique, declarerClientPasVenu, refresh } = vi.hoisted(() => ({ changerStatutCommandeBoutique: vi.fn(), declarerClientPasVenu: vi.fn(), refresh: vi.fn() }));
-vi.mock("@/app/espace/commandes/actions", () => ({ changerStatutCommandeBoutique, declarerClientPasVenu }));
+const { changerStatutCommandeBoutique, changerStatutCommandesBoutique, declarerClientPasVenu, refresh } = vi.hoisted(() => ({ changerStatutCommandeBoutique: vi.fn(), changerStatutCommandesBoutique: vi.fn(), declarerClientPasVenu: vi.fn(), refresh: vi.fn() }));
+vi.mock("@/app/espace/commandes/actions", () => ({ changerStatutCommandeBoutique, changerStatutCommandesBoutique, declarerClientPasVenu }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
 afterEach(cleanup);
 beforeEach(() => { vi.clearAllMocks(); changerStatutCommandeBoutique.mockResolvedValue({ succes: true, message: "Commande mise à jour." }); });
@@ -100,5 +100,58 @@ describe("US-28.1 : détail déplié avec les boutons d’aujourd’hui", () => 
     fin({ succes: true, message: "ok" });
     await waitFor(() => expect(refresh).toHaveBeenCalled());
     expect(changerStatutCommandeBoutique).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("US-28.2 : actions groupées", () => {
+  const trois = () => [commande("demandee", { id: "a", numero: 127 }), commande("demandee", { id: "b", numero: 129 }), commande("demandee", { id: "c", numero: 131 })];
+  it("cases sur « À confirmer » et « À préparer » seulement (pas sur Prêtes, Terminées ni la recherche)", () => {
+    afficher(trois());
+    expect(screen.getAllByRole("checkbox")).toHaveLength(4); // Tout cocher + 3
+    for (const etape of ["pretes", "terminees", null] as const) { cleanup(); afficher([commande("prete")], etape); expect(screen.queryAllByRole("checkbox")).toHaveLength(0); }
+  });
+  it("barre d’action : « Confirmer les 2 », puis compte rendu ; les échouées restent cochées", async () => {
+    changerStatutCommandesBoutique.mockResolvedValue({ succes: true, message: "", reussies: [{ id: "a", numero: 127 }], echecs: [{ id: "c", numero: 131, message: "Stock insuffisant pour « Polo » en taille M : il reste 1 pièce(s), la commande en demande 2.", deja: false }] });
+    afficher(trois());
+    expect(screen.queryByRole("button", { name: /Confirmer les/ })).toBeNull();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Cocher la commande n° 127" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Cocher la commande n° 131" }));
+    expect(screen.getByText(/2 commandes cochées/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmer les 2" }));
+    await waitFor(() => expect(changerStatutCommandesBoutique).toHaveBeenCalledWith(["a", "c"], "confirmee"));
+    const rapport = await screen.findByRole("status");
+    expect(rapport).toHaveTextContent("1 commande confirmée.");
+    expect(rapport).toHaveTextContent("N° 131 non confirmée : Stock insuffisant pour « Polo »");
+    expect(screen.getByRole("checkbox", { name: "Cocher la commande n° 131" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Cocher la commande n° 127" })).not.toBeChecked();
+    expect(refresh).toHaveBeenCalled();
+    fireEvent.click(within(rapport).getByRole("button", { name: "Voir" }));
+    expect(screen.getByRole("button", { name: /131/ })).toHaveAttribute("aria-expanded", "true");
+  });
+  it("« Tout cocher » puis « Décocher » ; « Marquer prêtes (3) » sur « À préparer »", () => {
+    afficher(trois().map(c => ({ ...c, statut: "confirmee" as const })), "a_preparer");
+    fireEvent.click(screen.getByRole("checkbox", { name: /Tout cocher \(3\)/ }));
+    expect(screen.getByRole("button", { name: "Marquer prêtes (3)" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Décocher" }));
+    expect(screen.queryByRole("button", { name: /Marquer prêtes/ })).toBeNull();
+  });
+  it("plus de 20 cochées : « 20 au plus à la fois », rien n’est envoyé", () => {
+    afficher(Array.from({ length: 21 }, (_, i) => commande("demandee", { id: `x${i}`, numero: 200 + i })));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Tout cocher/ }));
+    const bouton = screen.getByRole("button", { name: "20 au plus à la fois" });
+    expect(bouton).toBeDisabled();
+    fireEvent.click(bouton);
+    expect(changerStatutCommandesBoutique).not.toHaveBeenCalled();
+  });
+  it("double touche = un seul envoi", async () => {
+    let fin: (v: unknown) => void = () => {};
+    changerStatutCommandesBoutique.mockReturnValueOnce(new Promise(r => { fin = r; }));
+    afficher(trois());
+    fireEvent.click(screen.getByRole("checkbox", { name: "Cocher la commande n° 127" }));
+    const bouton = screen.getByRole("button", { name: "Confirmer la commande" });
+    fireEvent.click(bouton); fireEvent.click(bouton);
+    fin({ succes: true, message: "", reussies: [{ id: "a", numero: 127 }], echecs: [] });
+    expect(await screen.findByRole("status")).toHaveTextContent("1 commande confirmée.");
+    expect(changerStatutCommandesBoutique).toHaveBeenCalledTimes(1);
   });
 });
