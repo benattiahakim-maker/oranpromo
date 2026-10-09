@@ -22,11 +22,12 @@ export function libelleMotif(motif: string | null | undefined): string | null {
 }
 
 const FUSEAU = "Africa/Algiers";
-/** « jeu. 9 oct. · 14:05 » à l’heure d’Oran. */
-export function formaterDateHeure(iso: string): string {
+/** « jeu. 9 oct. · 14:05 » à l’heure d’Oran ; en arabe (US-23) « الجمعة، 9 أكتوبر · 14:05 », chiffres 0-9. */
+export function formaterDateHeure(iso: string, langue: "fr" | "ar" = "fr"): string {
   const date = new Date(iso);
-  const jour = new Intl.DateTimeFormat("fr-FR", { timeZone: FUSEAU, weekday: "short", day: "numeric", month: "short" }).format(date);
-  const heure = new Intl.DateTimeFormat("fr-FR", { timeZone: FUSEAU, hour: "2-digit", minute: "2-digit" }).format(date);
+  const locale = langue === "ar" ? "ar-DZ-u-nu-latn" : "fr-FR";
+  const jour = new Intl.DateTimeFormat(locale, { timeZone: FUSEAU, weekday: "short", day: "numeric", month: "short" }).format(date);
+  const heure = new Intl.DateTimeFormat(locale, { timeZone: FUSEAU, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(date);
   return `${jour} · ${heure}`;
 }
 

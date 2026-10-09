@@ -45,3 +45,17 @@ describe("ajouter au panier depuis la fiche (US-20.2)", () => {
     expect(new URL(lien).searchParams.get("text")).toContain("/a/1234 (vu sur OranPromo)");
   });
 });
+
+describe("US-23 : fiche en arabe", () => {
+  it("« زيد للسلة » et « الخلاص في الحانوت » (textes validés), tailles et quantité en arabe", async () => {
+    const { default: FournisseurTextes } = await import("./FournisseurTextes");
+    const { textesDe } = await import("@/lib/textes");
+    render(<FournisseurTextes langue="ar" textes={textesDe("ar")}><CommandeArticle {...article} tailles={[{ libelle: "S", quantite: 0 }, { libelle: "M", quantite: 2 }]} /></FournisseurTextes>);
+    expect(screen.getByRole("button", { name: "زيد للسلة" })).toBeDisabled();
+    expect(screen.getByLabelText("مقاس S، ما بقاش")).toBeDisabled();
+    fireEvent.click(screen.getByLabelText("مقاس M"));
+    fireEvent.click(screen.getByRole("button", { name: "زيد للسلة" }));
+    expect(screen.getByText(/تزادت للسلة/)).toBeInTheDocument();
+    expect(screen.getByText(/الخلاص في الحانوت/)).toBeInTheDocument();
+  });
+});

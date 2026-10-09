@@ -7,6 +7,9 @@ import CommandeArticle from "@/components/CommandeArticle";
 import SignalerArticle from "@/components/SignalerArticle";
 import EnregistrerVue from "@/components/EnregistrerVue";
 import { creerClientServeur } from "@/lib/supabase/server";
+import { getLangue } from "@/lib/langue-serveur";
+import { remplir, type Langue } from "@/lib/langue";
+import { textesDe } from "@/lib/textes";
 import { 
   formaterPrix, 
   prixAffiche, 
@@ -21,14 +24,15 @@ interface ArticlePageProps {
 }
 export const dynamic = "force-dynamic";
 
-// Helper function to format date
-function formatDate(dateString: string): string {
+// Date de fin de promo : « 18 OCTOBRE 2026 » ; en arabe (US-23) « 18 أكتوبر 2026 », chiffres 0-9.
+function formatDate(dateString: string, langue: Langue = "fr"): string {
   const date = new Date(dateString);
-  return date.toLocaleDateString("fr-DZ", {
+  const texte = date.toLocaleDateString(langue === "ar" ? "ar-DZ-u-nu-latn" : "fr-DZ", {
     day: "numeric",
     month: "long",
     year: "numeric"
-  }).toUpperCase();
+  });
+  return langue === "ar" ? texte : texte.toUpperCase();
 }
 
 export async function generateMetadata({ params }: ArticlePageProps) {
@@ -79,6 +83,8 @@ export async function generateMetadata({ params }: ArticlePageProps) {
 export default async function ArticlePage({ params }: ArticlePageProps) {
   const { id } = await params;
   const supabase = await creerClientServeur();
+  const langue = await getLangue();
+  const t = textesDe(langue);
 
   // Fetch article with related data
   const { data: article, error } = await supabase
@@ -136,21 +142,21 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         <EntetePublic />
         <div className="relative h-96 bg-fond-photo flex items-center justify-center">
           <div className="text-center">
-            <div className="text-2xl font-bold text-noir mb-4">Article plus disponible</div>
-            <p className="text-gris">Cet article a été vendu</p>
+            <div className="text-2xl font-bold text-noir mb-4">{t.fiche.plusDisponible}</div>
+            <p className="text-gris">{t.fiche.vendu}</p>
           </div>
         </div>
 
         <main className="px-6 py-8">
           <div className="mb-8">
-            <h1 className="font-titre text-2xl text-center mb-2">{article.titre}</h1>
+            <h1 dir="auto" className="font-titre text-2xl text-center mb-2">{article.titre}</h1>
             <p className="text-center etiquette text-gris uppercase">
               {boutiques?.nom} · {boutiques?.quartier}
             </p>
           </div>
 
           <div className="mb-8">
-            <h2 className="etiquette text-gris mb-4 text-center">AUTRES ARTICLES DE LA BOUTIQUE</h2>
+            <h2 className="etiquette text-gris mb-4 text-center">{t.fiche.autresArticles}</h2>
             <div className="space-y-4">
               {autresArticles && autresArticles.length > 0 ? (
                 autresArticles.map((autreArticle) => {
@@ -170,13 +176,13 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                     >
                       <h3 className="font-medium">{autreArticle.titre}</h3>
                       <p className="text-sm text-gris mt-1">
-                        {formaterPrix(autrePrixAffiche)}
+                        {formaterPrix(autrePrixAffiche, langue)}
                       </p>
                     </Link>
                   );
                 })
               ) : (
-                <p className="text-center text-gris">Aucun autre article disponible</p>
+                <p className="text-center text-gris">{t.fiche.aucunAutre}</p>
               )}
             </div>
           </div>
@@ -191,9 +197,9 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     dateFin: promo.date_fin 
   } : null;
 
-  const prixNormalAffiche = formaterPrix(article.prix);
+  const prixNormalAffiche = formaterPrix(article.prix, langue);
   const prixAfficheValue = prixAffiche(article.prix, promoData);
-  const prixAfficheFormate = formaterPrix(prixAfficheValue);
+  const prixAfficheFormate = formaterPrix(prixAfficheValue, langue);
   const isPromoActive = promoActive(promoData);
 
   return (
@@ -207,18 +213,19 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         ) : (
           <div className="flex h-96 items-center justify-center text-center">
             <div className="w-32 h-32 bg-gris/10 flex items-center justify-center mx-auto mb-4">
-              <span className="text-gris text-sm">AUCUNE PHOTO</span>
+              <span className="etiquette text-gris text-sm">{t.fiche.aucunePhoto}</span>
             </div>
           </div>
         )}
         
         <Link 
           href="/"
-          aria-label="Retour"
+          aria-label={t.fiche.retour}
           className="absolute top-3 start-2 w-11 h-11 flex items-center justify-center bg-blanc/80 backdrop-blur-sm"
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" strokeWidth="1.2" className="rtl:-scale-x-100">
-            <path d="M15 18l-6-6 6-6"></path>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" strokeWidth="1.2">
+            {/* US-23 : en arabe, la flèche retour pointe vers la droite. */}
+            <path d={langue === "ar" ? "M9 18l6-6-6-6" : "M15 18l-6-6 6-6"}></path>
           </svg>
         </Link>
         
@@ -234,7 +241,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           >
             {boutiques?.nom} · {boutiques?.quartier}
           </a>
-          <h1 className="font-titre text-2xl leading-tight">{article.titre}</h1>
+          <h1 dir="auto" className="font-titre text-2xl leading-tight">{article.titre}</h1>
           
           {/* Price display */}
           <div className="text-lg">
@@ -249,20 +256,22 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           
           {isPromoActive && promo?.date_fin && (
             <div className="etiquette text-gris tracking-wider">
-              {promo?.badge || `- ${pourcentageReduction(article.prix, promo.prix_promo)} %`}
-              {" "}JUSQU&apos;AU {formatDate(promo.date_fin)}
+              {promo?.badge || remplir(t.carte.reduction, { n: pourcentageReduction(article.prix, promo.prix_promo) })}
+              {" "}{remplir(t.fiche.jusquAu, { date: formatDate(promo.date_fin, langue) })}
             </div>
           )}
         </div>
 
 
         {/* Description */}
+        {/* US-23 : en arabe, la description arabe du commerçant (US-15) passe en premier ; la française reste en dessous. */}
+        {langue === "ar" && article.description_ar && <p dir="rtl" lang="ar" className="whitespace-pre-line break-words text-base font-light leading-relaxed text-noir">{article.description_ar}</p>}
         {article.description && (
-          <p className="text-base font-light leading-relaxed text-noir/80">
+          <p dir="auto" lang="fr" className="text-base font-light leading-relaxed text-noir/80">
             {article.description}
           </p>
         )}
-        {article.description_ar && <p dir="rtl" lang="ar" className="whitespace-pre-line break-words text-base font-light leading-relaxed text-noir">{article.description_ar}</p>}
+        {langue !== "ar" && article.description_ar && <p dir="rtl" lang="ar" className="whitespace-pre-line break-words text-base font-light leading-relaxed text-noir">{article.description_ar}</p>}
       </main>
 
       {boutiques?.whatsapp && <CommandeArticle articleId={article.id} boutique={{ id: article.boutique_id, nom: boutiques.nom, whatsapp: boutiques.whatsapp }} titre={article.titre} prix={prixAfficheValue} photo={photos[0]?.adresse_vignette ?? photos[0]?.adresse ?? null} tailles={tailles} />}
