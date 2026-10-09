@@ -21,7 +21,9 @@ export default async function PageCommandesRecues({ searchParams }: { searchPara
   const onglet = (valeur: VueCommandes, texte: string) => <Link href={valeur === "en_cours" ? "/espace/commandes" : "/espace/commandes?vue=terminees"} aria-current={vue === valeur ? "page" : undefined} className={`etiquette flex min-h-11 items-center justify-center ${vue === valeur ? "border-b border-noir" : "text-gris"}`}>{texte}</Link>;
   return <main className="mx-auto w-full max-w-[390px] bg-blanc text-noir">
     <header className="border-b border-trait px-6 pb-5 pt-6 text-center"><p className="etiquette text-gris">Mon espace</p><h1 className="font-titre text-[28px] font-normal">Commandes reçues</h1></header>
-    <nav aria-label="Filtrer les commandes" className="grid grid-cols-2 border-b border-trait">{onglet("en_cours", "En cours")}{onglet("terminees", "Terminées")}</nav>
+    {/* US-26.3 : remise par QR code ou code à 4 chiffres. */}
+    <div className="px-6 pt-4"><Link href="/espace/scanner" className="etiquette flex min-h-12 items-center justify-center gap-2 bg-noir text-blanc"><span aria-hidden="true">▣</span>Scanner un QR code client</Link></div>
+    <nav aria-label="Filtrer les commandes" className="mt-4 grid grid-cols-2 border-b border-trait">{onglet("en_cours", "En cours")}{onglet("terminees", "Terminées")}</nav>
     <div className="px-6">
       {erreur ? <p role="alert" className="py-6">Impossible de charger les commandes. Réessayez.</p>
         : !profil?.boutique_id ? <p className="py-6">Votre compte n&apos;est rattaché à aucune boutique</p>

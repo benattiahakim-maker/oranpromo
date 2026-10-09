@@ -4,6 +4,7 @@ import { creerClientServeur } from "@/lib/supabase/server";
 import { envoyerMessagesCommande } from "@/lib/notifications";
 import { changerStatutCommande, declarerNoShow, lireCommande, peutDeclarerNoShow, verifierActionBoutique, type MotifBoutique, type StatutCommande } from "@/lib/commandes";
 import { boutiqueDuCompte } from "@/lib/gestion-articles";
+import { NOTE_REMISE_SANS_QR } from "@/lib/retrait";
 
 export type ResultatAction = { succes: boolean; message: string };
 
@@ -16,7 +17,8 @@ export async function changerStatutCommandeBoutique(id: string, statut: StatutCo
     if (!commande || commande.boutique_id !== boutiqueId) throw new Error("Commande introuvable.");
     const refus = verifierActionBoutique(commande.statut, statut, motif);
     if (refus) throw new Error(refus);
-    await changerStatutCommande(client, id, statut, { motif: statut === "annulee" ? motif : null, note });
+    // US-26.3 : le bouton manuel devient « Remis sans QR code » ; le suivi le dit (la base pose mode_remise = 'manuel').
+    await changerStatutCommande(client, id, statut, { motif: statut === "annulee" ? motif : null, note: statut === "recuperee" ? NOTE_REMISE_SANS_QR : note });
     // « Commande prête » : WhatsApp au client après la réponse (US-20.5).
     if (statut === "prete") after(() => envoyerMessagesCommande(client, id));
     return { succes: true, message: "Commande mise à jour." };

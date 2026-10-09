@@ -22,11 +22,34 @@ describe("commandes reçues (US-20.3)", () => {
     expect(screen.getByText(/Total 8\s700 DA · 2 pièces/)).toBeInTheDocument();
     expect(screen.getByText("Note du client : « Samedi »")).toBeInTheDocument();
   });
-  it.each([["demandee", "Confirmer", "confirmee"], ["confirmee", "Prête", "prete"], ["prete", "Récupérée", "recuperee"]] as const)("statut %s : le bouton %s passe à %s", async (statut, bouton, suivant) => {
+  it.each([["demandee", "Confirmer", "confirmee"], ["confirmee", "Prête", "prete"]] as const)("statut %s : le bouton %s passe à %s", async (statut, bouton, suivant) => {
     render(<CommandesRecues commandes={[commande(statut)]} boutique="Boutique Amine" />);
     fireEvent.click(screen.getByRole("button", { name: bouton }));
     await waitFor(() => expect(changerStatutCommandeBoutique).toHaveBeenCalledWith(`c-${statut}`, suivant, null, ""));
     expect(refresh).toHaveBeenCalled();
+  });
+  it("US-26.3 : commande prête, guide vers le scan, sans bouton « Récupérée » direct", () => {
+    render(<CommandesRecues commandes={[commande("prete")]} boutique="Boutique Amine" />);
+    expect(screen.getByText(/Remise : scannez le QR code du client/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Scanner" })).toHaveAttribute("href", "/espace/scanner");
+    expect(screen.queryByRole("button", { name: "Récupérée" })).toBeNull();
+  });
+  it("US-26.3 : « Remis sans QR code » demande une confirmation avant de remettre", async () => {
+    render(<CommandesRecues commandes={[commande("prete")]} boutique="Boutique Amine" />);
+    fireEvent.click(screen.getByRole("button", { name: "Remis sans QR code" }));
+    expect(changerStatutCommandeBoutique).not.toHaveBeenCalled();
+    expect(screen.getByText("Le client n’a ni QR code ni code ? Remettez la commande seulement si vous le reconnaissez.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Retour" }));
+    expect(screen.queryByText(/ni QR code ni code/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Remis sans QR code" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmer la remise" }));
+    await waitFor(() => expect(changerStatutCommandeBoutique).toHaveBeenCalledWith("c-prete", "recuperee", null, ""));
+    expect(refresh).toHaveBeenCalled();
+  });
+  it("US-26.3 : pas de lien de scan ni de remise manuelle hors « prête »", () => {
+    render(<CommandesRecues commandes={[commande("confirmee")]} boutique="Boutique Amine" />);
+    expect(screen.queryByText(/scannez le QR code/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Remis sans QR code" })).toBeNull();
   });
   it("annule avec un motif obligatoire et propose de corriger le stock", async () => {
     render(<CommandesRecues commandes={[commande("confirmee")]} boutique="Boutique Amine" />);
