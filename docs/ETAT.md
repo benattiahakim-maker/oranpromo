@@ -6,7 +6,7 @@
 ## Où on en est
 
 - Les **19 user stories du MVP sont codées** (US-01 à US-19). Elles sont dans la colonne Trello « À vérifier » : codées, mais pas encore toutes testées en vrai.
-- **753 tests** passent (+ 158 tests SQL), `npm run lint` et `npm run build` passent.
+- **803 tests** passent (+ 172 tests SQL), `npm run lint` et `npm run build` passent.
 - Déjà testé en vrai : la page d'accueil (ancienne version), la fiche article, la réservation WhatsApp.
 - Pas encore re-testé : la connexion par lien e-mail (corrigée le 9/10), le nouveau formulaire d'article, et tout ce qui a été fait le 9/10 après-midi (voir ci-dessous).
 - **Connexion des clients par téléphone (US-21)** : codée, **pas encore en service**. Le site reste en mode e-mail tant que le propriétaire n'a pas fait la checklist ci-dessous (« US-21 : à configurer par le propriétaire »).
@@ -48,10 +48,17 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
    - **PR #26** (US-21.2, écrans) : `/compte/connexion` en mode téléphone = numéro + code reçu par **WhatsApp**, bouton « Recevoir par SMS » en secours ; lien « Se connecter par e-mail » gardé ; `/compte` : vérification ou changement du numéro par code ; `/panier` : vérification demandée avant « Commander » pour les comptes existants. Captcha **Cloudflare Turnstile** avant chaque envoi de code (et sur le lien e-mail dès que la clé de site est définie, car Supabase l'exige alors pour toutes les connexions). Commerçants et admin : toujours le lien e-mail. Aucune migration.
    - **PR #28** (US-21.3, blocage) : blocage par numéro **activé**, seulement pour les numéros vérifiés (index unique sur les numéros vérifiés ; les anciens numéros saisis à la main ne comptent jamais pour un autre compte) ; section admin « Numéro partagé » supprimée, remplacée par un bouton Bloquer / Débloquer sur chaque client de `/admin/clients` ; contestations inchangées. Migration `20261010100000_blocage_numero_verifie` **appliquée** le 9/10, types à jour. Tests SQL : `blocage_numero_verifie.test.sql` (23), `numero_non_verifie.test.sql` adapté (19).
    - Deux interrupteurs, **e-mail par défaut** : variable `CONNEXION_CLIENT` (Vercel) et réglage `connexion_client` de la base. Aucune clé Twilio ni Turnstile secrète dans le code ou un commit : elles vont uniquement dans le tableau de bord Supabase.
+12. **Lien de boutique à partager (US-22)**, partie « lien boutique » de la carte Trello « Parcours · Connexion par code WhatsApp, arabe/darja, lien boutique ». Détails : `docs/user-stories.md` (module 9) et `docs/architecture.md` (« Lien de boutique à partager »).
+   - **PR #27** : story et conception. **PR #30** : code et tests.
+   - **Slug lisible** : une nouvelle boutique a l'adresse `/b/nom-de-la-boutique` (puis `-2`, `-3`… si le nom est pris) au lieu de `nom-<identifiant de 36 caractères>` ; cela corrige aussi un bug : un nom de plus d'une vingtaine de caractères faisait échouer la création (slug trop long pour la base). Les 2 boutiques existantes gardent leur adresse (`boutique-nour`, `maison-ilyes`). Le slug d'une boutique publiée ne change qu'avec l'admin : le lien imprimé reste valable.
+   - **Aperçu du lien** (WhatsApp, Facebook, Instagram, X) : nom, quartier, nombre d'articles disponibles, grande photo du dernier article ; sans article, image générée noir et blanc avec le nom de la boutique (`/b/<slug>/apercu`). Boutique non validée : « Boutique indisponible », pas d'aperçu.
+   - **Dans `/espace`**, bloc « Partager ma boutique » : le lien, « Copier le lien », « Partager sur WhatsApp », le **QR code** (généré sur le serveur, sans service externe), « Télécharger le QR code » et « Imprimer l'affiche » (`/espace/affiche`, A4 à poser en boutique). Boutique en attente ou suspendue : message seulement.
+   - Migration `20261010120000_slug_lisible` (format du slug vérifié par la base) **appliquée** sur Supabase le 9/10 vers 15 h 40 ; types inchangés (une contrainte de format n'apparaît pas dans les types). Tests SQL : `slug_lisible.test.sql` (14). Nouvelle dépendance : `qrcode` (MIT).
+   - **À tester en vrai** : ouvrir `/espace` avec un compte commerçant d'une boutique validée, copier le lien, le coller dans WhatsApp (l'aperçu ne s'affiche qu'une fois le site en ligne avec une adresse publique), scanner le QR code avec un téléphone, imprimer l'affiche.
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
 
-Reste à faire côté propriétaire : plafond de dépenses dans la console Anthropic ; tester en vrai tout ce qui précède ; régler `NEXT_PUBLIC_SITE_URL` à la mise en ligne ; configurer la connexion par téléphone (ci-dessous).
+Reste à faire côté propriétaire : plafond de dépenses dans la console Anthropic ; tester en vrai tout ce qui précède ; régler `NEXT_PUBLIC_SITE_URL` à la mise en ligne (**avant d'imprimer des affiches** : le lien et le QR code des boutiques en dépendent) ; configurer la connexion par téléphone (ci-dessous).
 
 ## US-21 : à configurer par le propriétaire
 
@@ -140,6 +147,7 @@ Ordre de grandeur : 1 000 connexions par WhatsApp ≈ 54 $ ; par SMS ≈ 323 $. 
 3. **IA** : le propriétaire crée la clé API Claude, la colle dans `.env.local` et fixe un plafond de dépenses.
 4. **Catégories** : faire valider la nouvelle liste par 2 ou 3 commerçants.
 5. **Connexion par téléphone (US-21)** : suivre la checklist « US-21 : à configurer par le propriétaire », puis tester en vrai.
+6. **Lien de boutique (US-22)** : tester le bloc « Partager ma boutique » et l'affiche ; après la mise en ligne, vérifier l'aperçu dans WhatsApp et Facebook.
 
 Backlog : mise en ligne (Vercel, domaine, envoi d'e-mails), environnements prod et dev (Vercel + second projet Supabase), suppression des données de test, univers Beauté, conditions d'utilisation, marketing.
 
