@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Enums, Tables } from "./supabase/types";
 import { emailValide } from "./connexion";
 import { baseSlug, candidatSlug } from "./lien-boutique";
+import { arrondirCoordonnee, dansOran, lireCoordonnee, MESSAGE_HORS_ORAN, MESSAGE_POSITION_INCOMPLETE, MESSAGE_POSITION_PUBLIEE, validerPosition } from "./position";
 
 // Nom de boutique : 2 à 80 caractères (même limite à l’écran, sur le serveur et dans la base, contrainte boutiques.nom).
 export const NOM_BOUTIQUE_MIN = 2;
@@ -37,9 +38,8 @@ export function normaliserWhatsAppAlgerien(valeur: string): string | null {
   return /^[1-9]\d{8}$/.test(national) ? `+213${national}` : null;
 }
 function coordonnee(valeur: string): number | null {
-  if (!valeur.trim()) return null;
-  if (!/^[+-]?\d+(?:[.,]\d+)?$/.test(valeur.trim())) return NaN;
-  return Number(valeur.trim().replace(",", "."));
+  const lue = lireCoordonnee(valeur);
+  return lue === null || Number.isNaN(lue) ? lue : arrondirCoordonnee(lue);
 }
 function lienSocial(valeur: string, reseau: "instagram" | "facebook"): string | null {
   if (!valeur.trim()) return null;
@@ -57,10 +57,12 @@ export function validerBoutique(saisie: SaisieBoutique): ErreursBoutique {
   if (!saisie.adresse.trim()) erreurs.adresse = "Saisissez l’adresse.";
   if (!normaliserWhatsAppAlgerien(saisie.whatsapp)) erreurs.whatsapp = "Saisissez un numéro algérien valide, par exemple 0555 12 34 56.";
   const latitude = coordonnee(saisie.latitude), longitude = coordonnee(saisie.longitude);
-  if (latitude !== null && (!Number.isFinite(latitude) || Math.abs(latitude) > 90)) erreurs.latitude = "La latitude doit être comprise entre −90 et 90.";
-  if (longitude !== null && (!Number.isFinite(longitude) || Math.abs(longitude) > 180)) erreurs.longitude = "La longitude doit être comprise entre −180 et 180.";
+  if (latitude !== null && !Number.isFinite(latitude)) erreurs.latitude = "Saisissez la latitude en degrés décimaux, par exemple 35,697120.";
+  if (longitude !== null && !Number.isFinite(longitude)) erreurs.longitude = "Saisissez la longitude en degrés décimaux, par exemple −0,633750.";
   if (latitude !== null && longitude === null) erreurs.longitude = "Saisissez aussi la longitude.";
   if (longitude !== null && latitude === null) erreurs.latitude = "Saisissez aussi la latitude.";
+  // US-24 : position dans la wilaya d'Oran (même rectangle que la base).
+  if (!erreurs.latitude && !erreurs.longitude && latitude !== null && longitude !== null && !dansOran(latitude, longitude)) erreurs.latitude = MESSAGE_HORS_ORAN;
   if (saisie.instagram.trim() && !lienSocial(saisie.instagram, "instagram")) erreurs.instagram = "Saisissez un lien Instagram en https://.";
   if (saisie.facebook.trim() && !lienSocial(saisie.facebook, "facebook")) erreurs.facebook = "Saisissez un lien Facebook en https://.";
   return erreurs;
@@ -85,6 +87,7 @@ export async function creerBoutique(client: SupabaseClient<Database>, saisie: Sa
     const { data, error } = await client.from("boutiques").insert({ nom: saisie.nom.trim(), quartier: saisie.quartier.trim(), adresse: saisie.adresse.trim(), latitude: coordonnee(saisie.latitude), longitude: coordonnee(saisie.longitude), horaires: saisie.horaires.trim() || null, whatsapp: normaliserWhatsAppAlgerien(saisie.whatsapp)!, instagram: lienSocial(saisie.instagram, "instagram"), facebook: lienSocial(saisie.facebook, "facebook"), slug, statut: "en_attente" }).select("*").single();
     if (!error && data) return data;
     if (error?.code === "23514" && error.message.includes(MESSAGE_NOM_BOUTIQUE)) throw new ErreurValidationBoutique({ nom: MESSAGE_NOM_BOUTIQUE });
+    if (error?.code === "23514" && /wilaya d'Oran|boutiques_position/.test(error.message)) throw new ErreurValidationBoutique({ latitude: MESSAGE_HORS_ORAN });
     if (error?.code !== "23505") throw new Error("Impossible de créer la boutique. Réessayez.");
   }
   throw new Error("Impossible de générer une adresse unique pour la boutique. Réessayez.");
@@ -111,4 +114,36 @@ export async function listerBoutiques(client: SupabaseClient<Database>, statut: 
     boutiques.push(...data);
     if (data.length < 500) return boutiques;
   }
+}
+
+// US-24.2 : enregistrer (ou retirer, avec deux null) la position d'une boutique. Le serveur ne reçoit que deux nombres,
+// les valide (validerPosition) et la base revérifie : bornes d'Oran, et position d'une boutique publiée réservée à l'admin.
+export function messageErreurPosition(error: { code?: string; message?: string } | null): string {
+  if (error?.code === "23514") return error.message?.includes("aucune des deux") ? MESSAGE_POSITION_INCOMPLETE : MESSAGE_HORS_ORAN;
+  if (error?.code === "42501") return MESSAGE_POSITION_PUBLIEE;
+  return "Impossible d’enregistrer la position. Réessayez.";
+}
+async function ecrirePosition(client: SupabaseClient<Database>, id: string, latitude: unknown, longitude: unknown) {
+  const position = validerPosition(typeof latitude === "number" ? latitude : latitude == null ? null : Number.NaN, typeof longitude === "number" ? longitude : longitude == null ? null : Number.NaN);
+  if (!position.ok) throw new Error(position.message);
+  const { data, error } = await client.from("boutiques").update({ latitude: position.latitude, longitude: position.longitude }).eq("id", id).select("id").maybeSingle();
+  // Aucune ligne : la règle RLS a écarté la boutique (pas la sienne).
+  if (error || !data) throw new Error(messageErreurPosition(error));
+}
+// Admin : n'importe quelle boutique, même publiée.
+export async function modifierPositionBoutiqueAdmin(client: SupabaseClient<Database>, id: string, latitude: unknown, longitude: unknown) {
+  if (await lireRoleAdministration(client) !== "admin") throw new Error("Action réservée aux administrateurs.");
+  if (typeof id !== "string" || !id) throw new Error("Boutique introuvable.");
+  await ecrirePosition(client, id, latitude, longitude);
+}
+// Commerçant : sa boutique seulement (lue dans son profil, jamais envoyée par le navigateur), tant qu'elle est en attente.
+export async function modifierPositionMaBoutique(client: SupabaseClient<Database>, latitude: unknown, longitude: unknown) {
+  const { data: { user }, error } = await client.auth.getUser();
+  if (error || !user) throw new Error("Votre session a expiré. Reconnectez-vous.");
+  const { data: profil, error: erreurProfil } = await client.from("profils").select("boutique_id").eq("id", user.id).maybeSingle();
+  if (erreurProfil) throw new Error("Impossible de vérifier votre accès. Réessayez.");
+  if (!profil?.boutique_id) throw new Error("Votre compte n’est rattaché à aucune boutique.");
+  const { data: boutique } = await client.from("boutiques").select("statut").eq("id", profil.boutique_id).maybeSingle();
+  if (boutique && boutique.statut !== "en_attente") throw new Error(MESSAGE_POSITION_PUBLIEE);
+  await ecrirePosition(client, profil.boutique_id, latitude, longitude);
 }

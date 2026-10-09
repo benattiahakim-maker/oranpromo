@@ -50,3 +50,11 @@ body {
     display: none;
   }
 }
+
+/* US-24 : commandes de la carte Leaflet au style du site (angles droits, sans ombre). */
+.leaflet-container { font-family: inherit; }
+.leaflet-bar, .leaflet-bar a, .leaflet-bar a:first-child, .leaflet-bar a:last-child { border-radius: 0 !important; }
+.leaflet-touch .leaflet-bar, .leaflet-bar { box-shadow: none !important; border: 1px solid #0a0a0a !important; }
+.leaflet-container .leaflet-bar a { color: #0a0a0a; }
+.leaflet-control-attribution { font-size: 10px; }
+.leaflet-container .leaflet-control-attribution a { color: #0a0a0a; }
