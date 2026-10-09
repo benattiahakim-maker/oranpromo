@@ -1,6 +1,6 @@
 # Architecture technique — OranPromo
 
-Une seule application **Next.js 16 (App Router, TypeScript, Tailwind 4)** + **Supabase** (base PostgreSQL, connexion par lien e-mail ou par code WhatsApp / SMS, stockage des photos). L'IA (API Claude) est appelée **uniquement côté serveur**. Hébergement prévu : Vercel.
+Une seule application **Next.js 16 (App Router, TypeScript, Tailwind 4)** + **Supabase** (base PostgreSQL, connexion par lien e-mail ou par code WhatsApp, stockage des photos). L'IA (API Claude) est appelée **uniquement côté serveur**. Hébergement prévu : Vercel.
 
 > ⚠️ Next.js 16 diffère de ce que les modèles connaissent. Avant d'utiliser une API Next.js, lire le guide correspondant dans `node_modules/next/dist/docs/`. Exemple : `cookies()`, `headers()` et `params` sont asynchrones (`await`).
 
@@ -172,9 +172,10 @@ Remplace la carte Trello « V2 · Connexion par SMS ». Stories : `docs/user-sto
 Les deux réglages vont ensemble : d'abord `CONNEXION_CLIENT=telephone` sur Vercel, puis le réglage de la base (`insert into prive.reglages (cle, valeur) values ('connexion_client', 'telephone') on conflict (cle) do update set valeur = excluded.valeur;`). Retour au mode e-mail : supprimer la ligne, puis la variable. Commerçants et admin : toujours le lien e-mail (`/espace/connexion`).
 
 **Parcours** (actions serveur, client Supabase serveur avec la session en cookies ; `supabase-js` 2.117) :
-- connexion (`app/compte/connexion/actions.ts`) : `envoyerCodeConnexion(telephone, canal, jetonCaptcha)` → `auth.signInWithOtp({ phone, options: { channel: 'whatsapp' | 'sms', captchaToken } })` ; `verifierCodeConnexion(telephone, code)` → `auth.verifyOtp({ phone, token, type: 'sms' })` (même `type: 'sms'` quand le code est arrivé par WhatsApp) ;
-- compte existant connecté par e-mail, ou changement de numéro (`app/compte/actions.ts`) : `envoyerCodeVerification(telephone, canal)` → `auth.updateUser({ phone, channel })` (le serveur Supabase Auth accepte `channel` sur `PUT /user` ; `supabase-js` le transmet tel quel) ; `verifierCodeVerification(telephone, code)` → `auth.verifyOtp({ phone, token, type: 'phone_change' })`. Pas de captcha sur ce parcours (Supabase ne le demande pas : l'utilisateur est déjà connecté) ; les limites par numéro s'appliquent ;
-- WhatsApp par défaut ; bouton « Recevoir par SMS » en secours. Twilio Verify garde le même code sur les deux canaux.
+- connexion (`app/compte/connexion/actions.ts`) : `envoyerCodeConnexion(telephone, jetonCaptcha)` → `auth.signInWithOtp({ phone, options: { channel: 'whatsapp', captchaToken } })` ; `verifierCodeConnexion(telephone, code)` → `auth.verifyOtp({ phone, token, type: 'sms' })` (même `type: 'sms'` quand le code est arrivé par WhatsApp) ;
+- compte existant connecté par e-mail, ou changement de numéro (`app/compte/actions.ts`) : `envoyerCodeVerification(telephone)` → `auth.updateUser({ phone, channel: 'whatsapp' })` (le serveur Supabase Auth accepte `channel` sur `PUT /user` ; `supabase-js` le transmet tel quel) ; `verifierCodeVerification(telephone, code)` → `auth.verifyOtp({ phone, token, type: 'phone_change' })`. Pas de captcha sur ce parcours (Supabase ne le demande pas : l'utilisateur est déjà connecté) ; les limites par numéro s'appliquent ;
+- **WhatsApp uniquement** (US-21.5, SMS trop cher) : pas de bouton SMS, pas de paramètre « canal » dans les actions serveur ; le serveur impose `channel: 'whatsapp'` (`CANAL_CODE` dans `lib/telephone.ts`). Le type `'sms'` de `verifyOtp` est le nom donné par Supabase au code reçu sur un téléphone, quel que soit le canal.
+- **Connexion par lien e-mail toujours permise aux clients** (décision du propriétaire), dans les deux modes. Ce qui empêche les comptes multiples en mode téléphone : `passer_commande` exige un numéro vérifié, et l'index unique fait qu'un numéro vérifié = un seul compte. Un client connecté par e-mail vérifie son numéro depuis `/compte` ou `/panier`.
 
 **Format** (`lib/telephone.ts`, testé, et `prive.telephone_client_valide()` dans la base) : `+213` puis `5`, `6` ou `7`, puis 8 chiffres. Saisies acceptées : `05xx xx xx xx`, `5xxxxxxxx`, `+213…`, `00213…`, `0213…`, `+2130…` ; espaces, points, tirets et parenthèses ignorés. Supabase Auth range le numéro sans `+` dans `auth.users.phone`.
 
@@ -183,7 +184,7 @@ Les deux réglages vont ensemble : d'abord `CONNEXION_CLIENT=telephone` sur Verc
 - `commandes.telephone_verifie` (booléen copié à la commande : le numéro de la commande était-il vérifié ?) ;
 - `prive.envois_codes(telephone, envoye_le)` : un enregistrement par code envoyé ; lignes de plus de 24 h supprimées au fil de l'eau ;
 - déclencheurs sur `auth.users` :
-  - `numero_client_algerien` (avant création ou changement de `phone` / `phone_change`) : refuse un numéro qui n'est pas mobile algérien. À la création d'un compte par numéro, l'erreur arrive **avant** l'envoi du code (aucun SMS payé vers un numéro étranger) ;
+  - `numero_client_algerien` (avant création ou changement de `phone` / `phone_change`) : refuse un numéro qui n'est pas mobile algérien. À la création d'un compte par numéro, l'erreur arrive **avant** l'envoi du code (aucun message payé vers un numéro étranger) ;
   - `z_numero_verifie` (après création ou changement de `phone` / `phone_confirmed_at`, après `a_l_inscription`) : numéro confirmé → `profils.telephone = '+' || phone`, `telephone_verifie_le = now()` ; retire la vérification de tout autre profil qui portait ce numéro (l'index unique ne peut pas faire échouer la vérification Supabase) ; recalcule les no-shows ;
 - `prive.creer_profil()` ne recopie plus `auth.users.phone` (non vérifié, sans `+`) : le numéro arrive par `z_numero_verifie` ;
 - `prive.proteger_profil()` : `telephone_verifie_le` non modifiable par le client ; numéro vérifié non modifiable à la main (« Votre numéro est vérifié : pour en changer, vérifiez le nouveau numéro par code. ») ;
@@ -194,7 +195,7 @@ Les deux réglages vont ensemble : d'abord `CONNEXION_CLIENT=telephone` sur Verc
 **Anti-abus** :
 - captcha **Cloudflare Turnstile** avant l'envoi du code : le widget (script `https://challenges.cloudflare.com/turnstile/v0/api.js`, chargé avec `next/script`, sans nouvelle dépendance) affiche le contrôle ; le jeton part dans `captchaToken` ; Supabase le vérifie avec la clé secrète rangée dans Authentication > Attack Protection (Bot protection). Clé de site publique : `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. Une fois la protection activée dans Supabase, **toutes** les connexions la demandent : le formulaire de lien e-mail (clients et commerçants) affiche donc aussi le widget dès que `NEXT_PUBLIC_TURNSTILE_SITE_KEY` est défini ;
 - limites par numéro ci-dessus ; refus des numéros non algériens (écran, serveur, base) ;
-- risque restant : un robot qui appelle directement l'API Supabase Auth (sans passer par le site) contourne la limite par numéro, mais doit quand même réussir le captcha ; les limites de Supabase (Authentication > Rate Limits, SMS par heure) et de Twilio Verify (limites par numéro, Fraud Guard, pays autorisés = Algérie seulement) restent actives.
+- risque restant : un robot qui appelle directement l'API Supabase Auth (sans passer par le site) contourne la limite par numéro, mais doit quand même réussir le captcha ; il pourrait aussi demander `channel: 'sms'` directement à Supabase : c'est pourquoi le canal SMS doit être **désactivé dans le service Twilio Verify** (voir `docs/ETAT.md`). Les limites de Supabase (Authentication > Rate Limits) et de Twilio Verify (limites par numéro, Fraud Guard) restent actives.
 
 ## Lien de boutique à partager (US-22)
 
