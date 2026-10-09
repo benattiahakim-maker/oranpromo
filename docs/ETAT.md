@@ -73,6 +73,7 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
 16. **Lot du propriétaire du 9/10 (fin d'après-midi)** :
    - **Point 1, bug du nom de boutique** (PR « Nom de boutique 80 ») : le formulaire acceptait 120 caractères, la base 80 (erreur technique à la création). Une seule limite, **80 caractères** (celle de la base, choisie pour ne rien migrer et garder des noms lisibles sur les cartes et l'affiche) : champ limité à 80, message « Le nom de la boutique doit contenir entre 2 et 80 caractères. » à l'écran, sur le serveur et dans la base (déclencheur `boutique_nom_verifie`, espaces autour retirés). Migration `20261010170000_nom_boutique_80` **appliquée** le 9/10 vers 16 h 40 (noms existants : 13 caractères au plus). Tests SQL : `nom_boutique_80.test.sql` (10).
    - **Point 3, données de démonstration** (PR « Données de démo ») : script de retrait `supabase/scripts/retirer_donnees_demo.sql` prêt, **NON appliqué** (hors `supabase/migrations` : jamais appliqué automatiquement). Liste exacte de ce qu'il supprime et mode d'emploi : section « Retrait des données de démonstration (jour de la mise en ligne) » ci-dessous. Tests SQL : `retirer_donnees_demo.test.sql` (14). **C'est le propriétaire qui décide du jour** (le jour de la mise en ligne).
+   - **Point 4, arabe et darja** (PR « US-23 ») : **conception seulement, aucun code** : story US-23 (`docs/user-stories.md`, Module 10), maquette `docs/maquettes/FicheArabe.dc.html` (fiche article en arabe, de droite à gauche, avec le sélecteur « FR | عربي »), note de conception dans `docs/architecture.md` (« Arabe et darja (US-23) » : dictionnaires + cookie `langue` + `dir`, sans `next-intl` ni adresse `/ar`, polices Tajawal et Noto Naskh Arabic, modèles WhatsApp arabes à faire approuver par Meta). **En attente** : le propriétaire valide ou corrige les **10 textes** (tableau dans US-23) avant tout code.
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
 
@@ -228,6 +229,8 @@ Mode d'emploi (Supabase > SQL Editor) :
 5. **Connexion par téléphone (US-21)** : suivre la checklist « US-21 : à configurer par le propriétaire », puis tester en vrai.
 6. **Lien de boutique (US-22)** : tester le bloc « Partager ma boutique » et l'affiche ; après la mise en ligne, vérifier l'aperçu dans WhatsApp et Facebook.
 7. **Accueil** : valider les nouvelles images avec le propriétaire (photo de Santa Cruz, tuiles IA).
+8. **Arabe (US-23)** : le propriétaire valide les 10 textes français/arabe de la story US-23 et la maquette `FicheArabe.dc.html` ; ensuite seulement, on code.
+9. **Données de démonstration** : le jour de la mise en ligne, le propriétaire décide de lancer `supabase/scripts/retirer_donnees_demo.sql` (essai à blanc d'abord) et ce qu'il fait de « Maison Ilyes ».
 
 Backlog : mise en ligne (Vercel, domaine, envoi d'e-mails), environnements prod et dev (Vercel + second projet Supabase), suppression des données de test, univers Beauté, conditions d'utilisation, marketing.
 
