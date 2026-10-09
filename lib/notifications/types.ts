@@ -13,6 +13,8 @@ export type MessageWhatsApp = {
   parametres: string[];
   /** Version lisible du message (journal, fournisseurs sans modèle). */
   texte: string;
+  /** Paramètre du bouton lien du modèle (US-20.6 : lien signé de « Confirmer »), ajouté au moment de l'envoi. */
+  bouton?: string;
 };
 
 export type ResultatEnvoi =
