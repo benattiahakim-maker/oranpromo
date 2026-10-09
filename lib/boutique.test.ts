@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
+import { slugValide } from "./lien-boutique";
 import { changerStatutBoutique, creerBoutique, filtreBoutiques, listerBoutiques, normaliserWhatsAppAlgerien, rattacherCommercant, roleAdministration, slugBoutique, validerBoutique } from "./boutique";
 const saisie = { nom: "Boutique Étoile", quartier: "Akid Lotfi", adresse: "12 rue des Oliviers", latitude: "", longitude: "", horaires: "", whatsapp: "0555 12 34 56", instagram: "", facebook: "" };
 
@@ -30,9 +31,24 @@ function simulation(role = "admin") {
 }
 describe("US-16 : opérations soumises aux rôles", () => {
   it("crée une boutique en attente avec un slug unique et un numéro normalisé", async () => {
-    const test = simulation("ambassadeur"); await creerBoutique(test.client, saisie); expect(test.profil.eq).toHaveBeenCalledWith("id", "compte"); expect(test.insert).toHaveBeenCalledWith(expect.objectContaining({ slug: expect.stringMatching(/^boutique-etoile-[0-9a-f-]{36}$/), statut: "en_attente", whatsapp: "+213555123456", latitude: null }));
+    const test = simulation("ambassadeur"); await creerBoutique(test.client, saisie); expect(test.profil.eq).toHaveBeenCalledWith("id", "compte"); expect(test.insert).toHaveBeenCalledWith(expect.objectContaining({ slug: "boutique-etoile", statut: "en_attente", whatsapp: "+213555123456", latitude: null }));
   });
   it("réessaie un conflit de slug avec un nouveau suffixe", async () => { const test = simulation(); test.single.mockResolvedValueOnce({ data: null, error: { code: "23505" } }); await creerBoutique(test.client, saisie); expect(test.insert).toHaveBeenCalledTimes(2); expect(test.insert.mock.calls[0][0].slug).not.toBe(test.insert.mock.calls[1][0].slug); });
+  it("US-22 : essaie nom, nom-2 … nom-9 puis un suffixe aléatoire, toujours au format de la base", async () => {
+    const test = simulation(); for (let i = 0; i < 10; i++) test.single.mockResolvedValueOnce({ data: null, error: { code: "23505" } });
+    await creerBoutique(test.client, saisie);
+    const slugs = test.insert.mock.calls.map(appel => appel[0].slug as string);
+    expect(slugs.slice(0, 9)).toEqual(["boutique-etoile", ...[2, 3, 4, 5, 6, 7, 8, 9].map(n => `boutique-etoile-${n}`)]);
+    expect(slugs[9]).toMatch(/^boutique-etoile-[0-9a-f]{6}$/); expect(slugs[10]).toMatch(/^boutique-etoile-[0-9a-f]{6}$/);
+    expect(slugs.every(slugValide)).toBe(true);
+  });
+  it("US-22 : un nom très long donne un slug valide de 60 caractères au plus", async () => {
+    const test = simulation(); test.single.mockResolvedValueOnce({ data: null, error: { code: "23505" } });
+    await creerBoutique(test.client, { ...saisie, nom: "La Très Grande Maison de la Mode Oranaise du Front de Mer 2026" });
+    const slugs = test.insert.mock.calls.map(appel => appel[0].slug as string);
+    expect(slugs.every(slugValide)).toBe(true); expect(slugs[1]).toMatch(/-2$/);
+  });
+  it("US-22 : abandonne après 11 conflits avec un message clair", async () => { const test = simulation(); test.single.mockResolvedValue({ data: null, error: { code: "23505" } }); await expect(creerBoutique(test.client, saisie)).rejects.toThrow("adresse unique"); expect(test.insert).toHaveBeenCalledTimes(11); });
   it("refuse un commerçant avant toute création", async () => { const test = simulation("commercant"); await expect(creerBoutique(test.client, saisie)).rejects.toThrow("Accès réservé"); expect(test.insert).not.toHaveBeenCalled(); });
   it("refuse un formulaire invalide avant insertion", async () => { const test = simulation(); await expect(creerBoutique(test.client, { ...saisie, nom: "" })).rejects.toThrow("champs"); expect(test.insert).not.toHaveBeenCalled(); });
   it("refuse statut et RPC à un ambassadeur même hors interface", async () => { const test = simulation("ambassadeur"); await expect(changerStatutBoutique(test.client, "boutique", "validee")).rejects.toThrow("administrateurs"); await expect(rattacherCommercant(test.client, "boutique", "vendeur@example.com")).rejects.toThrow("administrateurs"); expect(test.update).not.toHaveBeenCalled(); expect(test.rpc).not.toHaveBeenCalled(); });

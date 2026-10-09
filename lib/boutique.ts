@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Enums, Tables } from "./supabase/types";
 import { emailValide } from "./connexion";
+import { baseSlug, candidatSlug } from "./lien-boutique";
 
 export const STATUTS_BOUTIQUE = { en_attente: "En attente", validee: "Validée", suspendue: "Suspendue" } as const;
 export type RoleAdministration = "admin" | "ambassadeur";
@@ -69,9 +70,10 @@ export async function creerBoutique(client: SupabaseClient<Database>, saisie: Sa
   await lireRoleAdministration(client);
   const erreurs = validerBoutique(saisie);
   if (Object.keys(erreurs).length) throw new ErreurValidationBoutique(erreurs);
-  for (let tentative = 0; tentative < 3; tentative++) {
-    // Le suffixe UUID évite les collisions, la contrainte unique en base reste l’arbitre.
-    const slug = `${slugBoutique(saisie.nom)}-${crypto.randomUUID()}`;
+  // US-22 : slug lisible (nom, nom-2 … nom-9, puis suffixe aléatoire) ; la contrainte unique en base reste l’arbitre.
+  const base = baseSlug(slugBoutique(saisie.nom));
+  for (let tentative = 0; tentative < 11; tentative++) {
+    const slug = candidatSlug(base, tentative);
     const { data, error } = await client.from("boutiques").insert({ nom: saisie.nom.trim(), quartier: saisie.quartier.trim(), adresse: saisie.adresse.trim(), latitude: coordonnee(saisie.latitude), longitude: coordonnee(saisie.longitude), horaires: saisie.horaires.trim() || null, whatsapp: normaliserWhatsAppAlgerien(saisie.whatsapp)!, instagram: lienSocial(saisie.instagram, "instagram"), facebook: lienSocial(saisie.facebook, "facebook"), slug, statut: "en_attente" }).select("*").single();
     if (!error && data) return data;
     if (error?.code !== "23505") throw new Error("Impossible de créer la boutique. Réessayez.");
