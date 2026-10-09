@@ -34,6 +34,19 @@ describe("commandes reçues (US-20.3)", () => {
     expect(screen.getByRole("link", { name: "Scanner" })).toHaveAttribute("href", "/espace/scanner");
     expect(screen.queryByRole("button", { name: "Récupérée" })).toBeNull();
   });
+  it("correctif US-26 : commande prête, l’étiquette reste « Prête » et l’échéance passe sur sa propre ligne (le nom n’est plus écrasé)", () => {
+    render(<CommandesRecues commandes={[commande("prete", { client_nom: "Samia Benkhaled-Bouziane B." })]} boutique="Boutique Amine" />);
+    const etiquette = screen.getByText("Prête", { selector: "span" });
+    expect(etiquette.textContent).toBe("Prête");
+    expect(etiquette.className).toContain("shrink-0");
+    const nom = screen.getByText(/N° 15 · Samia Benkhaled-Bouziane B\./);
+    expect(nom.className).toContain("min-w-0");
+    expect(screen.getByText(/^À récupérer jusqu’au /).tagName).toBe("P");
+  });
+  it("correctif US-26 : pas de ligne d’échéance pour une commande non prête", () => {
+    render(<CommandesRecues commandes={[commande("confirmee")]} boutique="Boutique Amine" />);
+    expect(screen.queryByText(/À récupérer jusqu’au/)).toBeNull();
+  });
   it("US-26.3 : « Remis sans QR code » demande une confirmation avant de remettre", async () => {
     render(<CommandesRecues commandes={[commande("prete")]} boutique="Boutique Amine" />);
     fireEvent.click(screen.getByRole("button", { name: "Remis sans QR code" }));

@@ -55,7 +55,8 @@ function CarteCommande({ commande, boutique }: { commande: CommandeRecue; boutiq
 
   const motifAffiche = libelleMotif(commande.motif_annulation);
   return <article aria-label={`Commande n° ${commande.numero}`} className="flex flex-col gap-1.5 border-b border-trait py-4">
-    <div className="flex items-start justify-between gap-3"><span className="text-sm">N° {commande.numero} · {commande.client_nom}</span><span className="etiquette whitespace-nowrap text-right">{STATUTS_COMMANDE[commande.statut]}{commande.statut === "prete" && commande.expire_le ? ` · jusqu’au ${formaterDateHeure(commande.expire_le)}` : ""}</span></div>
+    <div className="flex items-start justify-between gap-3"><span className="min-w-0 break-words text-sm">N° {commande.numero} · {commande.client_nom}</span><span className="etiquette shrink-0 whitespace-nowrap text-right">{STATUTS_COMMANDE[commande.statut]}</span></div>
+    {commande.statut === "prete" && commande.expire_le && <p className="text-xs text-gris">À récupérer jusqu’au {formaterDateHeure(commande.expire_le)}</p>}
     <p className="text-xs text-gris">{formaterDateHeure(commande.cree_le)} · <a href={lienContactClient(commande.client_telephone, commande.numero, boutique)} target="_blank" rel="noopener noreferrer" className="underline">{telephoneLisible(commande.client_telephone)} · WhatsApp</a></p>
     <ul className="text-[13px] font-light">{commande.lignes_commande.map(l => <li key={l.id}>{l.titre} · {l.taille} × {l.quantite} · {formaterPrix(l.prix_unitaire * l.quantite)}</li>)}</ul>
     <p className="text-sm">Total {formaterPrix(commande.total)} · {quantiteTotale(commande.lignes_commande)} pièce{quantiteTotale(commande.lignes_commande) > 1 ? "s" : ""}</p>
