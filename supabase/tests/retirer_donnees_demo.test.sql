@@ -91,6 +91,29 @@ insert into messages_whatsapp (destinataire, modele, texte, commande_id) values
   ('+213555940099', 'oranpromo_compte_bloque', 'au numéro du compte de démo, sans commande', null),
   ('+213555940001', 'oranpromo_compte_bloque', 'à la vraie cliente, sans commande : à garder', null),
   ('+213555940001', 'oranpromo_commande_prete', 'vraie commande : à garder', 'c7000000-0000-0000-0000-000000000003');
+-- US-25 : boutique de démonstration « Parfumerie Démo » (script de démo lancé deux fois : rien en double),
+-- avec une commande d'une vraie cliente (son numéro de test +213000000003 est refusé par la file WhatsApp :
+-- aucun message ne peut partir vers lui).
+\o /dev/null
+\ir ../scripts/demo_parfumerie.sql
+\ir ../scripts/demo_parfumerie.sql
+\o
+insert into commandes (id, client_id, boutique_id, client_nom, client_telephone, total) values
+  ('c7000000-0000-0000-0000-000000000004', 'c4000000-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', 'Vraie Cliente', '+213555940001', 4900);
+insert into lignes_commande (commande_id, article_id, titre, taille, quantite, prix_unitaire) values
+  ('c7000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000006', 'Eau de parfum oud boisé', '100 ml', 1, 4900);
+insert into evenements (type, boutique_id, article_id) values
+  ('vue_article', '33333333-3333-3333-3333-333333333333', 'a0000000-0000-0000-0000-000000000007');
+select pg_temp.ok((select count(*) from boutiques where id = '33333333-3333-3333-3333-333333333333' and statut = 'validee' and slug = 'parfumerie-demo') = 1
+  and (select count(*) from articles where boutique_id = '33333333-3333-3333-3333-333333333333' and categorie = 'Parfums') = 5
+  and (select count(*) from tailles where article_id in (select id from articles where boutique_id = '33333333-3333-3333-3333-333333333333')) = 6
+  and (select count(*) from promos where article_id in (select id from articles where boutique_id = '33333333-3333-3333-3333-333333333333')) = 4
+  and (select count(*) from photos where article_id in (select id from articles where boutique_id = '33333333-3333-3333-3333-333333333333') and adresse like 'https://placehold.co/%') = 5,
+  'démo Parfumerie : lancée deux fois, 1 boutique, 5 parfums, 6 contenances, 4 promos, 5 photos (rien en double)');
+select pg_temp.ok((select latitude between 35.33 and 35.92 and longitude between -1.15 and -0.10 from boutiques where id = '33333333-3333-3333-3333-333333333333')
+  and (select promos_en_cours from boutiques_carte() where slug = 'parfumerie-demo') = 4
+  and (select bool_and(p.prix_promo < a.prix) from promos p join articles a on a.id = p.article_id where a.boutique_id = '33333333-3333-3333-3333-333333333333'),
+  'démo Parfumerie : dans la wilaya d''Oran, 4 promos en cours sur la carte, prix promo < prix');
 insert into appels_ia (utilisateur_id) values ('da9f4aa4-9bfa-4312-9a8f-05c3eefffc99'), ('78b03d9d-299d-480b-b2b9-f6149523bb27');
 insert into prive.envois_codes (telephone) values ('+213555940099'), ('+213555940001');
 
@@ -122,20 +145,20 @@ create temp table attendu as select * from etat;
 -- Lignes de démonstration attendues (et seulement elles) :
 delete from attendu where tbl = 'auth.users' and cle = 'da9f4aa4-9bfa-4312-9a8f-05c3eefffc99';
 delete from attendu where tbl = 'profils' and cle like 'da9f4aa4-9bfa-4312-9a8f-05c3eefffc99|%';
-delete from attendu where tbl = 'boutiques' and cle = '22222222-2222-2222-2222-222222222222';
+delete from attendu where tbl = 'boutiques' and cle in ('22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 delete from attendu where tbl = 'articles' and cle like 'a0000000-0000-0000-0000-%';
 delete from attendu where tbl = 'photos' and cle in (select id::text from photos where adresse like 'https://placehold.co/%');
 delete from attendu where tbl = 'tailles' and cle in (select id::text from tailles where article_id::text like 'a0000000-%');
 delete from attendu where tbl = 'promos' and cle like 'a0000000-%';
-delete from attendu where tbl = 'evenements' and cle in (select id::text from evenements where article_id::text like 'a0000000-%' or boutique_id = '22222222-2222-2222-2222-222222222222');
+delete from attendu where tbl = 'evenements' and cle in (select id::text from evenements where article_id::text like 'a0000000-%' or boutique_id in ('22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333'));
 delete from attendu where tbl = 'signalements' and cle = 'c6000000-0000-0000-0000-000000000001';
 delete from attendu where tbl = 'decisions' and cle in (select id::text from decisions where signalement_id = 'c6000000-0000-0000-0000-000000000001' or auteur_id = 'da9f4aa4-9bfa-4312-9a8f-05c3eefffc99');
-delete from attendu where tbl = 'commandes' and cle in ('c7000000-0000-0000-0000-000000000001', 'c7000000-0000-0000-0000-000000000002');
-delete from attendu where tbl = 'lignes_commande' and cle in (select id::text || '|' || coalesce(article_id::text, '-') from lignes_commande where commande_id in ('c7000000-0000-0000-0000-000000000001', 'c7000000-0000-0000-0000-000000000002'));
+delete from attendu where tbl = 'commandes' and cle in ('c7000000-0000-0000-0000-000000000001', 'c7000000-0000-0000-0000-000000000002', 'c7000000-0000-0000-0000-000000000004');
+delete from attendu where tbl = 'lignes_commande' and cle in (select id::text || '|' || coalesce(article_id::text, '-') from lignes_commande where commande_id in ('c7000000-0000-0000-0000-000000000001', 'c7000000-0000-0000-0000-000000000002', 'c7000000-0000-0000-0000-000000000004'));
 -- La ligne de la vraie commande qui citait le polo de démo reste, sans lien vers l'article.
 update attendu set cle = split_part(cle, '|', 1) || '|-' where tbl = 'lignes_commande' and cle like '%|a0000000-%';
 delete from attendu where tbl = 'suivi_commandes' and cle in (select id::text from suivi_commandes where commande_id in ('c7000000-0000-0000-0000-000000000001', 'c7000000-0000-0000-0000-000000000002'));
-delete from attendu where tbl = 'messages_whatsapp' and cle in (select id::text from messages_whatsapp where destinataire in ('+213000000002', '+213555940099') or commande_id in ('c7000000-0000-0000-0000-000000000001', 'c7000000-0000-0000-0000-000000000002'));
+delete from attendu where tbl = 'messages_whatsapp' and cle in (select id::text from messages_whatsapp where destinataire in ('+213000000002', '+213555940099') or commande_id in ('c7000000-0000-0000-0000-000000000001', 'c7000000-0000-0000-0000-000000000002', 'c7000000-0000-0000-0000-000000000004'));
 delete from attendu where tbl = 'appels_ia' and cle like 'da9f4aa4-%';
 delete from attendu where tbl = 'prive.envois_codes' and cle like '+213555940099|%';
 
@@ -148,11 +171,11 @@ delete from attendu where tbl = 'prive.envois_codes' and cle like '+213555940099
 select pg_temp.ok(not exists (select * from pg_temp.photographier() except select * from etat)
   and not exists (select * from etat except select * from pg_temp.photographier()), 'essai à blanc : aucune ligne supprimée ni modifiée');
 select pg_temp.ok((select objet like 'ESSAI À BLANC%' from rapport_retrait_demo where ordre = 0), 'essai à blanc : le rapport le dit');
-select pg_temp.ok((select nombre from rapport_retrait_demo where objet = 'articles') = 5
-  and (select nombre from rapport_retrait_demo where objet = 'boutiques') = 1
+select pg_temp.ok((select nombre from rapport_retrait_demo where objet = 'articles') = 10
+  and (select nombre from rapport_retrait_demo where objet = 'boutiques') = 2
   and (select nombre from rapport_retrait_demo where objet = 'auth.users') = 1
-  and (select nombre from rapport_retrait_demo where objet = 'photos') = 4,
-  'essai à blanc : le rapport annonce 1 compte, 1 boutique, 5 articles, 4 photos placehold.co');
+  and (select nombre from rapport_retrait_demo where objet = 'photos') = 9,
+  'essai à blanc : le rapport annonce 1 compte, 2 boutiques (Nour, Parfumerie Démo), 10 articles, 9 photos placehold.co');
 select pg_temp.ok(not exists (
     select e.tbl from (select tbl, count(*) n from etat group by tbl) e
     left join (select tbl, count(*) n from attendu group by tbl) a using (tbl)
@@ -172,7 +195,7 @@ select pg_temp.ok(not exists (select * from pg_temp.photographier() except selec
 select pg_temp.ok(not exists (select * from attendu except select * from pg_temp.photographier()), 'suppression : toutes les autres lignes sont gardées (rien de plus n''est supprimé)');
 select pg_temp.ok((select role = 'admin' and boutique_id = '11111111-1111-1111-1111-111111111111' from profils where id = '78b03d9d-299d-480b-b2b9-f6149523bb27')
   and exists (select 1 from auth.users where email = 'benattia.hakim@gmail.com'), 'admin gardé, toujours rattaché à Maison Ilyes');
-select pg_temp.ok(exists (select 1 from boutiques where slug = 'maison-ilyes') and not exists (select 1 from boutiques where slug = 'boutique-nour'), 'Maison Ilyes gardée, Boutique Nour supprimée');
+select pg_temp.ok(exists (select 1 from boutiques where slug = 'maison-ilyes') and not exists (select 1 from boutiques where slug in ('boutique-nour', 'parfumerie-demo')), 'Maison Ilyes gardée, Boutique Nour et Parfumerie Démo supprimées');
 select pg_temp.ok((select article_id is null and titre = 'Polo piqué bleu marine' and prix_unitaire = 4500 from lignes_commande
   where commande_id = 'c7000000-0000-0000-0000-000000000003' and taille = 'M' and titre like 'Polo%'),
   'vraie commande : la ligne du polo de démo garde titre et prix, sans lien vers l''article');

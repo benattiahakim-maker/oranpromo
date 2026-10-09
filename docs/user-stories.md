@@ -450,3 +450,80 @@ En tant que cliente, je veux une carte des boutiques avec celles qui sont près 
 | 10 | Erreur | Localisation refusée : la liste reste triée par nom. | **ما عطيتش** الإذن بالموقع: القائمة تبقى مرتّبة بالاسم. | تم رفض تحديد الموقع: تبقى القائمة مرتبة حسب الاسم. |
 | 11 | Filtre | Tous · Femme · Homme · Enfant · Beauté | الكل · نسا · رجال · **ذراري** · تجميل | الكل · نساء · رجال · أطفال · تجميل |
 | 12 | Accueil, bloc | Les boutiques sur la carte · Voir la carte | **الحوانت** في الخريطة · **شوف** الخريطة | المحلات على الخريطة · اعرض الخريطة |
+
+## Module 12 — Univers Beauté (après le MVP)
+
+Source : élément « Beauté » du backlog (demande du propriétaire du 9 octobre 2026, avec une boutique de démonstration de parfums). À coder **seulement après validation de la maquette par le propriétaire**. Conception : `docs/architecture.md`, section « Univers Beauté (US-25) ». Maquette : `docs/maquettes/Beaute.dc.html`. Données de démonstration : `supabase/scripts/demo_parfumerie.sql` (préparé, **pas lancé**).
+
+**Déjà en place (audit du 9 octobre 2026)** : les 5 catégories beauté et leur contrôle dans la base (`prive.verifier_categorie_article`), l'univers « Beauté » (`critereUnivers`, `articleDansUnivers`), les contenances en ml côté commerçant (formulaire, aide à la saisie, stock par contenance), le genre facultatif (enregistré « mixte »), la tuile « Beauté » et la pièce phare « Parfums » de l'accueil, le choix « Beauté » dans le catalogue et dans le filtre de `/carte`, les noms arabes des catégories, la fiche IA qui sait décrire un produit de beauté. **Il manque** surtout le côté cliente : le mot « Contenance » à la place de « Taille », un filtre de contenance trié par volume, la place des parfums mixtes dans le filtre de genre, et la boutique de démonstration.
+
+### US-25 — Acheter des produits de beauté (parfums, maquillage, soins) — **à valider par le propriétaire avant tout code**
+En tant que cliente, je veux trouver les parfums, le maquillage et les soins des boutiques d'Oran, choisir la contenance (50 ml, 100 ml) et commander comme pour un vêtement, afin d'acheter ma beauté au même endroit.
+Livrée en 3 sous-stories, dans cet ordre (une PR chacune) :
+
+| Story | Contenu | Écrans |
+| --- | --- | --- |
+| US-25.1 | « Contenance » au lieu de « Taille » pour la beauté, partout où la cliente et le commerçant le lisent | fiche article, panier, commandes, message WhatsApp |
+| US-25.2 | Catalogue Beauté : filtre de contenance trié par volume, genre « Pour elle / Pour lui / Mixte » avec les mixtes inclus, raccourcis de catégories | `/catalogue?univers=beaute` |
+| US-25.3 | Boutique de démonstration « Parfumerie Démo » (5 parfums), lancée par le propriétaire dans Supabase | `/carte`, `/b/parfumerie-demo`, catalogue |
+
+**Catégories** (inchangées, déjà contrôlées par la base) : Parfums · Maquillage · Soins visage et corps · Cheveux · Hammam et traditionnel. Ajouts possibles selon la réponse du propriétaire (question 1) : « Bakhour et encens », « Ongles ». Un ajout de catégorie = une **nouvelle migration** (liste de la base) + `lib/article.ts` + les noms arabes.
+
+**Contenances et stock** (règle déjà en place, rappelée ici) : un produit de beauté n'a pas de S/M/L mais une **contenance en ml** (5, 10, 15, 30, 50, 75, 100, 150, 200, 250, 500, 1000 ml) ou « Unique » (rouge à lèvres, palette, savon). Chaque contenance a **son stock** (table `tailles`, colonne `libelle` = « 50 ml » : pas de nouvelle colonne) ; une contenance à 0 s'affiche « épuisée » ; l'article passe « vendu » quand toutes sont à 0, comme un vêtement. **Un seul prix par article** : un 50 ml et un 100 ml à des prix différents sont deux articles (question 2).
+
+### US-25.1 — « Contenance » pour les produits de beauté (aucune migration)
+- Sur la **fiche article** d'un produit de beauté : légende « Contenance » au lieu de « Taille », boutons « 50 ml », « 100 ml » ; « 100 ml, épuisée » ; « Choisissez une contenance pour commander. » ; « Aucune contenance disponible. ». Taille unique : rien ne s'affiche (comme aujourd'hui).
+- **Panier** : « 100 ml · 4 900 DA » (le nombre en ml dit déjà ce que c'est : pas de mot « Taille » devant) ; boutons accessibles « Eau de parfum oud boisé 100 ml : une pièce de moins ».
+- **Commandes** (`/mes-commandes`, `/espace/commandes`) et **message WhatsApp** de réservation : « Eau de parfum oud boisé, 100 ml, 4 900 DA » au lieu de « taille 100 ml ».
+- Règle : on choisit le mot avec `estCategorieBeaute(categorie)` (déjà utilisé côté commerçant par `libelleTaille`), jamais d'après le texte « ml ». Les commandes enregistrent déjà la catégorie via l'article ; une ligne dont l'article a été retiré garde « Taille ».
+- **Arabe** : « الحجم » (contenance) au lieu de « المقاس » ; « 100 مل » ; « 100 مل، ما بقاش ». Unités « ml » / « مل » écrites par l'application, le nombre reste en chiffres 0-9.
+- Tests Vitest : libellés fr / ar (mêmes clés et variables, `textes.test.ts`), fiche d'un parfum (« Contenance », « 100 ml, épuisée »), fiche d'un vêtement inchangée (« Taille »), panier, message WhatsApp avec et sans contenance.
+
+### US-25.2 — Catalogue Beauté (`/catalogue?univers=beaute`)
+- **Raccourcis de catégories** sous le titre quand l'univers Beauté est choisi : Tout · Parfums · Maquillage · Soins · Cheveux · Hammam (liens vers `?univers=beaute&categorie=…`, ligne qui défile horizontalement, catégorie choisie en noir plein). Une catégorie sans article visible n'est pas affichée.
+- **Filtre « Contenance »** (au lieu de « Taille ») quand l'univers est Beauté ou la catégorie est une catégorie beauté : options **triées par volume** (5 ml, 10 ml, 50 ml, 100 ml, Unique en dernier), sans S/M/L. Dans les autres cas, le filtre « Taille » ne montre que les tailles de vêtements, triées XS → XXL puis les pointures (aujourd'hui, ordre alphabétique et ml mélangés).
+- **Genre dans Beauté** : « Pour elle », « Pour lui », « Mixte » ; **« Pour elle » inclut les mixtes** (et « Pour lui » aussi), comme les univers Femme / Homme : un parfum mixte doit sortir pour une cliente qui cherche « pour elle ». « Enfant » n'est pas proposé dans Beauté. Hors Beauté, le filtre de genre ne change pas.
+- **Tuile de l'accueil** : la tuile « Beauté » existante est gardée (photo `univers-beaute.webp`, lien `/catalogue?univers=beaute`) ; la pièce phare « Parfums » aussi. Rien à ajouter tant qu'il y a peu d'articles beauté (question 6).
+- Rien ne change pour les univers Femme, Homme, Enfant, ni pour `/carte` (le filtre Beauté y est déjà).
+- Tests Vitest : tri des contenances (numérique, « Unique » à la fin, valeurs inconnues gardées), tri des tailles de vêtements, filtre de genre Beauté avec mixtes (requête Supabase espionnée : `in("genre", ["femme", "mixte"])`), raccourcis masqués pour une catégorie vide, `?univers=femme` inchangé.
+
+### US-25.3 — Boutique de démonstration « Parfumerie Démo » (après validation)
+- Le propriétaire lance `supabase/scripts/demo_parfumerie.sql` dans l'éditeur SQL de Supabase **après** avoir validé cette conception (si une catégorie est ajoutée ou un article change, le script est mis à jour d'abord). Grok Bot ne le lance pas sans son accord.
+- Boutique validée « Parfumerie Démo » (`/b/parfumerie-demo`), quartier Gambetta, position dans la wilaya d'Oran (apparaît sur `/carte` avec « 4 promos en cours »), WhatsApp de test volontairement invalide `+213000000003` (aucun message ne peut partir). Aucun compte commerçant.
+- 5 parfums génériques (aucune marque, aucun nom de parfum existant), photos d'exemple placehold.co comme la démo actuelle :
+
+| Article | Genre | Contenances (stock) | Prix | Prix promo |
+| --- | --- | --- | --- | --- |
+| Eau de parfum oud boisé | mixte | 100 ml (3) | 6 500 DA | 4 900 DA |
+| Eau de parfum rose et musc | femme | 50 ml (4), 100 ml (épuisée) | 4 800 DA | 3 900 DA (« Promo flash ») |
+| Eau de toilette agrumes frais | homme | 100 ml (5) | 3 900 DA | 2 900 DA |
+| Huile parfumée musc blanc | mixte | 10 ml (10) | 1 500 DA | 1 200 DA |
+| Eau de parfum ambre et vanille | femme | 75 ml (2) | 5 500 DA | — (sans promo) |
+
+- Promos valables 30 jours à partir du lancement. Retrait le jour de la mise en ligne : `supabase/scripts/retirer_donnees_demo.sql` (boutique et articles dans sa liste, testé).
+
+**Textes en français et en arabe** (simple, darja d'Oran en gras, masculin générique ; à valider) :
+
+| # | Où | Français | Arabe proposé | Variante en arabe standard |
+| --- | --- | --- | --- | --- |
+| 1 | Univers | Beauté | تجميل | تجميل |
+| 2 | Fiche, légende | Contenance | الحجم | الحجم |
+| 3 | Fiche, bouton | 100 ml | 100 مل | 100 مل |
+| 4 | Fiche, épuisée | 100 ml, épuisée | 100 مل، **ما بقاش** | 100 مل، نفد |
+| 5 | Fiche, consigne | Choisissez une contenance pour commander. | **ختار** الحجم باش **تطلب**. | اختر الحجم للطلب. |
+| 6 | Fiche, aucune | Aucune contenance disponible. | **ما كاين** حتى حجم. | لا يوجد حجم متوفر. |
+| 7 | Catalogue, filtre | Contenance · Toutes | الحجم · **كامل** | الحجم · الكل |
+| 8 | Catalogue, genre | Pour elle · Pour lui · Mixte | **ليها** · **ليه** · للجوج | للنساء · للرجال · للجنسين |
+| 9 | Catalogue, raccourcis | Tout · Parfums · Maquillage · Soins · Cheveux · Hammam | **كامل** · عطور · ماكياج · العناية · الشعر · حمّام | الكل · عطور · مكياج · العناية · الشعر · حمّام |
+| 10 | Panier | 100 ml · 4 900 DA | 100 مل · 4 900 دج | (identique) |
+| 11 | Catalogue Beauté, vide | Aucun produit de beauté pour le moment. | **ما كاين** حتى منتوج تجميل **دابا**. | لا توجد منتجات تجميل حاليًا. |
+
+**Questions au propriétaire** (avant le code) :
+1. Catégories : garder les 5 actuelles, ou ajouter « Bakhour et encens » et « Ongles » (vernis, faux ongles) ? Les accessoires (trousses, pinceaux) vont-ils dans « Maquillage » ?
+2. Prix par contenance : un seul prix par article (50 ml et 100 ml = deux articles, rien à changer dans la base), ou un prix par contenance (nouvelle migration, panier et commandes à revoir) ?
+3. Mot arabe pour « Contenance » : « الحجم » (proposé) ou « القد » / « السعة » ?
+4. Authenticité : faut-il une règle pour les commerçants (« pas de copie vendue comme original », signalement « contrefaçon ») et une mention sur les fiches parfum ?
+5. Décants (5 ml / 10 ml reconditionnés) et date de péremption : autorisés ? à afficher ?
+6. Accueil : la tuile « Beauté » actuelle suffit-elle, ou voulez-vous un bloc « Parfums en promo » quand il y aura assez d'articles ?
+7. Genre dans Beauté : « Pour elle / Pour lui / Mixte » avec les mixtes inclus partout (proposé), ou pas de filtre de genre dans Beauté ?
+8. Boutique de démonstration : noms, prix et quartier (Gambetta) des 5 parfums vous conviennent ? Je lance le script seulement après votre accord.

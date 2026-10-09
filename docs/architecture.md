@@ -356,6 +356,38 @@ OranPromo est un **usage commercial** (site d'entreprise, même gratuit pour les
 
 `NEXT_PUBLIC_CARTO_CLE` (navigateur) : clé CARTO Basemaps (publique, restreinte au domaine dans le tableau de bord CARTO) ; vide = tuiles OSMF (développement seulement).
 
+## Univers Beauté (US-25) — conception, à valider par le propriétaire
+
+Story : `docs/user-stories.md`, module 12. Maquette : `docs/maquettes/Beaute.dc.html`. **Aucune migration prévue** (sauf si le propriétaire ajoute des catégories ou un prix par contenance : questions 1 et 2 de US-25).
+
+### Déjà en place (audit du 9 octobre 2026)
+
+| Élément | Où | État |
+| --- | --- | --- |
+| 5 catégories beauté, contrôlées par la base | `lib/article.ts` (`CATEGORIES_BEAUTE`), migration `20261009170000_categories_univers.sql` (`prive.verifier_categorie_article`) | fait |
+| Univers « Beauté » = catégories beauté, tous genres | `lib/catalogue.ts` (`critereUnivers`, `articleDansUnivers`), réutilisé par `/carte` | fait |
+| Contenances en ml (5 → 1000 ml, « Unique »), saisie normalisée (« 50ML » → « 50 ml ») | `lib/article.ts` (`CONTENANCES_BEAUTE`, `taillesPourArticle`, `normaliserTailles`, `libelleTaille`) | fait |
+| Stock par contenance, article « vendu » quand tout est à 0 | table `tailles` (`libelle`, `quantite`, `disponible` calculé), migration `20261009180000_stock_par_taille.sql` | fait |
+| Formulaire commerçant : « Contenances disponibles », genre facultatif (enregistré « mixte ») | `components/FormulaireArticle.tsx`, `components/ChoixArticle.tsx` | fait |
+| Catalogue : univers Beauté, catégories groupées « Mode / Beauté » | `app/catalogue/page.tsx` | fait |
+| Accueil : tuile « Beauté » (`univers-beaute.webp`), pièce phare « Parfums » (`cat-parfums.webp`) | `lib/accueil.ts` | fait |
+| Arabe : univers « تجميل », noms des 5 catégories | `lib/textes/ar.ts` (`listes`) | fait |
+| Fiche IA : sait décrire un produit de beauté | `app/api/ia/fiche/route.ts` | fait |
+| `/carte` : filtre « Beauté » | `lib/carte.ts`, US-24.3 | fait |
+
+### Manque (US-25.1, US-25.2)
+
+- **Mot « Contenance »** côté cliente : fiche (`components/CommandeArticle.tsx`, textes `fiche.taille`, `tailleN`, `tailleEpuisee`, `choisirTaille`, `aucuneTaille`), panier (`panier.tailleEtPrix`, `moins`, `plus`, `retirer`), commandes et message WhatsApp (`lib/whatsapp.ts`). Nouvelles clés dans `lib/textes/fr.ts` **et** `ar.ts` (`contenance`, `contenanceEpuisee`, `choisirContenance`, `aucuneContenance`, …), choisies avec `estCategorieBeaute(categorie)` ; jamais d'après le texte « ml ».
+- **Filtre de contenance** : `chargerOptions` (`lib/catalogue.ts`) trie aujourd'hui les tailles par ordre alphabétique et mélange S/M/L et ml. Prévu : deux listes (`tailles` de vêtements triées XS → XXL puis pointures ; `contenances` triées par volume, « Unique » à la fin), une fonction pure `trierContenances` testée ; le filtre de la page s'appelle « Contenance » quand l'univers ou la catégorie est beauté. Le paramètre d'adresse reste `taille` (liens existants inchangés).
+- **Genre dans Beauté** : aujourd'hui `genre=femme` est une égalité stricte, donc un parfum mixte n'apparaît pas pour « femme ». Prévu, seulement quand l'univers est Beauté : `femme` → `in("genre", ["femme", "mixte"])`, idem `homme` ; « Enfant » non proposé. Hors Beauté, rien ne change.
+- **Raccourcis de catégories** (liens) quand l'univers Beauté est choisi, à partir des catégories déjà renvoyées par `chargerOptions`.
+
+### Boutique de démonstration (US-25.3)
+
+- Script `supabase/scripts/demo_parfumerie.sql` : **hors migrations**, jamais appliqué automatiquement, rejouable (identifiants fixes, `on conflict do nothing` / `not exists`), à lancer par le propriétaire dans l'éditeur SQL **après** validation de US-25. Il passe les contrôles de la base (catégorie, position dans la wilaya, adresse des photos : les contrôles réservés aux sessions utilisateur ne s'appliquent pas à l'éditeur SQL, comme pour la démo actuelle).
+- Identifiants : boutique `33333333-3333-3333-3333-333333333333` (`parfumerie-demo`, Gambetta, 35,69975 / −0,61720), articles `a0000000-0000-0000-0000-000000000006` à `…010`, WhatsApp `+213000000003` (format refusé par la file `messages_whatsapp` : aucun envoi possible).
+- `supabase/scripts/retirer_donnees_demo.sql` connaît cette boutique (`boutiques_demo`) ; ses articles sont déjà couverts par le motif `a0000000-0000-0000-0000-%`. Le test `supabase/tests/retirer_donnees_demo.test.sql` lance le script de démo deux fois puis vérifie qu'il est entièrement retiré, sans rien toucher d'autre.
+
 ## Limites par visiteur (vues, clics, partages, signalements)
 
 Carte Trello « Sécurité · Limiter les envois en masse ». Migration `20261010180000_limites_visiteurs.sql`.
