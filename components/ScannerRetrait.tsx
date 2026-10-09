@@ -150,7 +150,7 @@ export default function ScannerRetrait() {
       <video ref={video} autoPlay muted playsInline aria-label="Caméra" className="size-full object-cover" />
       {camera === "active" && <span aria-hidden="true" className="pointer-events-none absolute inset-[18%] border-2 border-blanc/80" />}
       {camera === "demarrage" && <p className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-blanc">Ouverture de la caméra…</p>}
-      {camera === "bloquee" && <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-blanc p-5 text-center">
+      {camera === "bloquee" && <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 border border-trait bg-blanc p-5 text-center">
         <p role="alert" className="text-sm">{MESSAGE_CAMERA_BLOQUEE}</p>
         <p className="text-xs text-gris">Dans WhatsApp ou Instagram, ouvrez votre espace dans Chrome ou Safari.</p>
         <button type="button" onClick={() => { setCamera("demarrage"); setAvis(""); void demarrer(); }} className="etiquette min-h-11 border border-noir px-4">Réessayer la caméra</button>
