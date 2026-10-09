@@ -20,11 +20,11 @@ describe("US-26.2 : page du retrait (proche, sans connexion)", () => {
     const html = await afficher();
     expect(rpc).toHaveBeenCalledWith("retrait_par_lien", { jeton: JETON });
     expect(html).toContain("Commande n° 128 à récupérer chez Parfumerie Démo");
-    expect(html).toContain("Avant le"); expect(html).toContain("12 rue de Mostaganem · Gambetta");
+    expect(html).toContain("Avant le"); expect(html).toContain("<bdi>12 rue de Mostaganem</bdi></span><span> · <bdi>Gambetta</bdi>");
     expect(html).toContain('href="/b/parfumerie-demo"');
     expect(html).toContain("Montrez ce QR code au vendeur, ou donnez-lui le code :");
     expect(html).toContain("data:image/svg+xml"); expect(html).toMatch(/>0<\/span><span[^>]*>4<\/span><span[^>]*>8<\/span><span[^>]*>1</);
-    expect(html).toContain("Eau de parfum rose et musc · 50 ml × 1"); expect(html).toContain("Huile parfumée musc blanc · 10 ml × 2");
+    expect(html).toContain("<bdi>Eau de parfum rose et musc</bdi> · <bdi>50 ml</bdi> × 1"); expect(html).toContain("<bdi>Huile parfumée musc blanc</bdi> · <bdi>10 ml</bdi> × 2");
     expect(html).toContain("À payer en espèces");
     expect(html).not.toContain("+213"); expect(html).not.toContain("Envoyer à un proche");
   });
