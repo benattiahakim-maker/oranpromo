@@ -67,7 +67,7 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
    - **PR #37** (point 1) : un compte **déjà bloqué** reste bloqué pendant une contestation tant qu'il a 5 no-shows ou plus en comptant la contestation en attente ; seule une décision de l'admin le débloque ; plus de message « compte bloqué » en double. Une contestation en attente empêche toujours un nouveau blocage. Boutique saturée : **3 commandes par heure au plus pour un même client dans une même boutique**, et la limite de 20 par heure de la boutique ne compte plus les commandes annulées par le client dans les 2 minutes. Migration `20261010130000_relecture4_blocage_limites` **appliquée** le 9/10 vers 16 h. Tests SQL : `relecture4_blocage_limites.test.sql` (14), anciens tests adaptés.
    - **PR #38** (point 3) : les comptes commerçant, ambassadeur et admin ne peuvent pas ajouter de numéro de connexion (base + serveur ; `/compte` ne leur propose plus la vérification). Migration `20261010140000_numero_reserve_clients` **appliquée** (aucun compte non client n'avait de numéro). Tests SQL : `numero_reserve_clients.test.sql` (11).
    - **PR #39** (point 4) : nouveau secret **`CODES_TELEPHONE_SECRET`** pour les limites d'envoi des codes, distinct de `CRON_SECRET`. Migration `20261010150000_secret_codes_telephone` **appliquée**. Tests SQL : `secret_codes_telephone.test.sql` (8).
-   - Point 2 (limite par numéro appliquée dans Supabase Auth par un hook) : **étudié, pas codé**, voir « Relecture n°4 : limite par numéro dans Supabase Auth » ci-dessous. **Décision du propriétaire attendue.**
+   - Point 2 (limite par numéro appliquée dans Supabase Auth par un hook) : **étudié, pas codé**, voir « Relecture n°4 : limite par numéro dans Supabase Auth » ci-dessous. **Décision du propriétaire (9/10) : option A** — on garde Twilio Verify, pas de hook « Send SMS » ; protection par les réglages (checklist 8 bis).
    - Types inchangés (fonctions du schéma `prive` ou mêmes signatures). 806 tests Vitest, lint et build OK.
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
@@ -88,7 +88,7 @@ Rien n'est à mettre dans le code, dans `.env.local` ni dans un commit, sauf la 
 6. **Vercel** (et `.env.local` sur le PC pour les essais) : `NEXT_PUBLIC_TURNSTILE_SITE_KEY` = clé de site, puis redéployer. Le captcha s'affiche alors sur les formulaires de connexion.
 7. **Supabase** > Authentication > Attack Protection : activer la protection captcha, fournisseur **Turnstile**, coller la **clé secrète**. ⚠️ Seulement **après** l'étape 6, sinon plus personne ne peut se connecter.
 8. **`CODES_TELEPHONE_SECRET`** (relecture n°4 : secret à part, **pas** `CRON_SECRET`) : choisir 32 caractères aléatoires au moins, le mettre sur Vercel, puis ranger son empreinte dans la base (éditeur SQL Supabase) : `insert into prive.reglages (cle, valeur) values ('jeton_codes_telephone', encode(sha256(convert_to('<CODES_TELEPHONE_SECRET>', 'UTF8')), 'hex')) on conflict (cle) do update set valeur = excluded.valeur;` **Obligatoire** : sans lui, l'envoi de code est refusé (« La connexion par téléphone n'est pas encore configurée. »). Aujourd'hui l'empreinte n'est pas encore dans la base.
-8 bis. **Protections contre les envois abusifs** (relecture n°4 ; elles agissent même si quelqu'un appelle Supabase sans passer par le site) :
+8 bis. **Protections contre les envois abusifs** (relecture n°4, option A retenue par le propriétaire ; elles agissent même si quelqu'un appelle Supabase sans passer par le site) :
    - Supabase > Authentication > **Attack Protection** : protection captcha **activée** (étape 7) ;
    - Supabase > Authentication > **Rate Limits** : « SMS messages sent » (messages par heure pour tout le projet, WhatsApp compris) **bas**, par exemple 20 à 30 par heure au lancement (c'est le plafond de dépense : 30 par heure ≈ 0,12 $ de frais Meta par heure au pire) ; garder 60 s pour « Send OTPs » (1 code par minute et par compte) ; garder 30 demandes par 5 minutes et par IP. Si de vrais clients sont bloqués par le plafond, le remonter petit à petit ;
    - Twilio Verify : **Geo permissions** sur l'Algérie seulement et **Fraud Guard** activé (ils protègent le SMS et la voix, désactivés de toute façon) ; WhatsApp n'a pas de blocage par pays chez Twilio, mais la base refuse déjà tout numéro non algérien ;
@@ -108,7 +108,7 @@ Rien n'est à mettre dans le code, dans `.env.local` ni dans un commit, sauf la 
 
 Ordre de grandeur : 1 000 vérifications par WhatsApp ≈ 54 $. Pas de SMS (décision du propriétaire, US-21.5) : un client connecté par e-mail ne paie aucun code, seul l'envoi du code WhatsApp coûte.
 
-## Relecture n°4 : limite par numéro dans Supabase Auth (décision du propriétaire attendue)
+## Relecture n°4 : limite par numéro dans Supabase Auth (décision du propriétaire : option A)
 
 Demande de Claude : appliquer la limite « 1 code par minute, 5 par heure et par numéro » et le refus des numéros étrangers **dans Supabase Auth** (un robot peut appeler `POST /auth/v1/otp` ou `PUT /auth/v1/user` directement avec la clé publique, sans passer par le site), avec un hook « Send SMS ».
 
@@ -120,16 +120,23 @@ Demande de Claude : appliquer la limite « 1 code par minute, 5 par heure et par
 - limites intégrées de Supabase (supabase.com/docs/guides/auth/rate-limits) : messages envoyés par heure **pour tout le projet** (30 par défaut, réglable), 1 code par minute **par compte** (« Send OTPs »), 30 demandes par 5 minutes **par IP** ; pas de limite « par numéro et par heure » ;
 - Twilio Verify : 5 envois au plus vers un même numéro en 10 minutes (erreur 60203, twilio.com/docs/api/errors/60203) ; Fraud Guard et Geo permissions ne protègent que le SMS et la voix, pas WhatsApp (twilio.com/docs/verify/preventing-toll-fraud/sms-fraud-guard, …/verify-geo-permissions, twilio.com/docs/verify/whatsapp) ; WhatsApp ne facture pas les messages non remis.
 
-**Donc le point 2 n'a pas été codé** (il change l'architecture du fournisseur). Options pour le propriétaire :
+**Donc le point 2 n'a pas été codé** (il change l'architecture du fournisseur).
+
+**Décision du propriétaire (9 octobre 2026) : option A.** On garde **Twilio Verify**, **pas de hook « Send SMS »**. La protection passe par les réglages (checklist, étape 8 bis) :
+- captcha activé dans Supabase > Authentication > **Attack Protection** ;
+- plafond **bas** de codes envoyés par heure pour tout le projet (**20 à 30**) dans Supabase > Authentication > **Rate Limits** ; garder 1 code par minute et par compte ;
+- Twilio : **crédit prépayé sans recharge automatique**, envois limités à l'**Algérie**, **Fraud Guard** activé, **alertes de consommation** (Usage Triggers).
+
+Coût : 0,05 $ par vérification réussie + frais Meta ≈ 0,004 $ par message remis. Limite acceptée : pas de vraie limite « 5 par heure et par numéro » dans Supabase Auth face à un robot qui résout le captcha ; un robot peut épuiser le plafond horaire du projet et gêner les vrais clients pendant l'heure, mais la dépense reste plafonnée.
+
+**Évolutions possibles plus tard** (non retenues pour l'instant, à reprendre si des abus apparaissent ou pour se passer de Twilio) :
 
 | Option | Comment | Pour | Contre | Coût par code (Algérie) |
 |---|---|---|---|---|
-| A. Garder Twilio Verify (actuel) + réglages | captcha, plafond de messages par heure du projet, 1 code/min/compte, 5 envois/10 min/numéro (Twilio), refus des numéros étrangers et des comptes non clients par la base | rien à coder ; Twilio garde la vérification du code ; checklist 8 bis | pas de vraie limite « 5 par heure et par numéro » face à un robot qui résout le captcha ; un robot peut épuiser le plafond horaire du projet et empêcher les vrais clients de se connecter pendant l'heure | 0,05 $ par vérification réussie + frais Meta ≈ 0,004 $ par message remis |
 | B. Hook HTTP (Edge Function Supabase) qui envoie le code par l'**API WhatsApp Cloud de Meta** (modèle « Authentification », bouton « copier le code ») | le hook contrôle `prive.envois_codes` (1/min, 5/h par numéro, numéro algérien), puis appelle Meta avec le même compte WhatsApp Business que les messages de commande | limite par numéro appliquée **dans Supabase Auth** ; plus de Twilio du tout (un fournisseur de moins) ; moins cher | nouvelle Edge Function à écrire, déployer et surveiller ; secrets `SEND_SMS_HOOK_SECRETS` et jeton Meta dans les secrets Supabase ; modèle d'authentification à faire approuver par Meta ; Supabase vérifie le code (plus Twilio) ; délai de 5 s maximum pour le hook | frais Meta seuls ≈ 0,004 $ par message remis (grille Meta, non vérifiée sur le site de Meta) |
 | C. Hook HTTP qui envoie par **Twilio Messaging** (WhatsApp ou SMS via l'API Messages) | même contrôle que B, envoi par Twilio Messaging au lieu de Verify | limite par numéro dans Supabase Auth ; reste chez Twilio | même travail que B ; perd les protections de Verify ; frais Twilio par message en plus | WhatsApp : frais Meta + 0,005 $ Twilio par message ; SMS : 0,273 $ |
-| D. Hook en fonction Postgres + `pg_net` | refuser en SQL puis appeler Meta en HTTP depuis la base | pas d'Edge Function | `pg_net` est asynchrone : le hook ne sait pas si le message est parti ; déconseillé | comme B |
 
-Recommandation : **A** au lancement (aucun code, plafond de dépense bas), puis **B** si des abus apparaissent ou pour supprimer Twilio. B réutilise le fournisseur WhatsApp déjà prévu pour les commandes (`WHATSAPP_TOKEN`).
+Option D (hook en fonction Postgres + `pg_net`) écartée : `pg_net` est asynchrone, le hook ne saurait pas si le message est parti.
 
 ## Reprendre le travail (sur le PC)
 
