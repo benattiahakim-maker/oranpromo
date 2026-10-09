@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import EntetePublic from "@/components/EntetePublic";
 import Image from "next/image";
@@ -7,17 +8,15 @@ import { numeroWhatsApp } from "@/lib/whatsapp";
 import { positionBoutique, trierArticlesVitrine } from "@/lib/vitrine";
 import PartagerArticle from "@/components/PartagerArticle";
 import EnregistrerVue from "@/components/EnregistrerVue";
+import { chargerApercuBoutique, METADONNEES_BOUTIQUE_INDISPONIBLE, metadonneesBoutique } from "@/lib/lien-boutique";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+// US-03, US-22 : aperçu du lien dans WhatsApp, Facebook, Instagram, X (boutique validée seulement).
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await creerClientServeur();
-  const { data: boutique } = await supabase.from("boutiques").select("id, nom, quartier, adresse").eq("slug", slug).eq("statut", "validee").maybeSingle();
-  if (!boutique) return { title: "Boutique indisponible", robots: { index: false, follow: false } };
-  const { data: articles } = await supabase.from("articles").select("photos(adresse, ordre)").eq("boutique_id", boutique.id).eq("statut", "disponible").order("cree_le", { ascending: false }).limit(1);
-  const photo = [...(articles?.[0]?.photos ?? [])].sort((a, b) => a.ordre - b.ordre)[0];
-  return { title: boutique.nom, description: `${boutique.nom} · ${boutique.quartier} · Les articles disponibles à Oran.`, openGraph: { title: boutique.nom, description: `${boutique.quartier} · ${boutique.adresse ?? "Oran"}`, url: `/b/${slug}`, type: "website", images: photo ? [{ url: photo.adresse, alt: boutique.nom }] : [] } };
+  const apercu = await chargerApercuBoutique(await creerClientServeur(), slug);
+  return apercu ? metadonneesBoutique(apercu) : METADONNEES_BOUTIQUE_INDISPONIBLE;
 }
 
 export default async function Vitrine({ params }: { params: Promise<{ slug: string }> }) {
