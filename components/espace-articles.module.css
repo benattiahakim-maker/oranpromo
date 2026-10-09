@@ -1,0 +1,76 @@
+/* Utilitaires limités à ces écrans : le dépôt ne compile actuellement pas Tailwind.
+   Les classes du projet restent utilisées sans modifier la configuration globale. */
+.espace { box-sizing: border-box; width: 100%; max-width: 390px; margin-inline: auto; background: #fff; color: #0a0a0a; font-family: var(--font-jost), system-ui, sans-serif; }
+.espace *, .espace *::before, .espace *::after { box-sizing: border-box; }
+.espace a { color: inherit; text-decoration: none; }
+.espace ul { list-style: none; margin: 0; padding: 0; }
+.espace ol, .espace dl, .espace dd { list-style: none; margin: 0; padding: 0; }
+.espace fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.espace h1, .espace p { margin: 0; }
+.espace button, .espace input, .espace textarea, .espace select { font-family: inherit; }
+.espace button { cursor: pointer; background: transparent; }
+.espace button:disabled { cursor: wait; }
+.espace :global(.flex) { display: flex; }
+.espace :global(.inline-flex) { display: inline-flex; }
+.espace :global(.block) { display: block; }
+.espace :global(.grid) { display: grid; }
+.espace :global(.grid-cols-3) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.espace :global(.flex-col) { flex-direction: column; }
+.espace :global(.flex-1) { flex: 1 1 0%; }
+.espace :global(.shrink-0) { flex-shrink: 0; }
+.espace :global(.items-start) { align-items: flex-start; }
+.espace :global(.items-center) { align-items: center; }
+.espace :global(.justify-center) { justify-content: center; }
+.espace :global(.min-w-0) { min-width: 0; }
+.espace :global(.w-full) { width: 100%; }
+.espace :global(.w-16) { width: 64px; }
+.espace :global(.h-20) { height: 80px; }
+.espace :global(.min-h-\[44px\]) { min-height: 44px; }
+.espace :global(.min-h-\[54px\]) { min-height: 54px; }
+.espace :global(.gap-2) { gap: 8px; }
+.espace :global(.gap-3) { gap: 12px; }
+.espace :global(.gap-5) { gap: 20px; }
+.espace :global(.p-6), .espace:global(.p-6) { padding: 24px; }
+.espace :global(.px-2) { padding-inline: 8px; }
+.espace :global(.px-3) { padding-inline: 12px; }
+.espace :global(.px-4) { padding-inline: 16px; }
+.espace :global(.px-6) { padding-inline: 24px; }
+.espace :global(.py-2) { padding-block: 8px; }
+.espace :global(.py-4) { padding-block: 16px; }
+.espace :global(.py-6) { padding-block: 24px; }
+.espace :global(.pt-6) { padding-top: 24px; }
+.espace :global(.pb-5) { padding-bottom: 20px; }
+.espace :global(.mt-1) { margin-top: 4px; }
+.espace :global(.mt-2) { margin-top: 8px; }
+.espace :global(.mt-3) { margin-top: 12px; }
+.espace :global(.mt-4) { margin-top: 16px; }
+.espace :global(.mt-6) { margin-top: 24px; }
+.espace :global(.mt-8) { margin-top: 32px; }
+.espace :global(.my-2) { margin-block: 8px; }
+.espace :global(.my-3) { margin-block: 12px; }
+.espace :global(.my-6) { margin-block: 24px; }
+.espace :global(.border) { border: 1px solid #0a0a0a; }
+.espace :global(.border-b) { border-bottom: 1px solid #e6e6e6; }
+.espace :global(.border-t) { border-top: 1px solid #e6e6e6; }
+.espace :global(.border-trait) { border-color: #e6e6e6; }
+.espace :global(.bg-blanc) { background: #fff; }
+.espace :global(.bg-noir) { background: #0a0a0a; }
+.espace :global(.bg-fond-photo) { background: #f3f2ef; }
+.espace :global(.text-noir) { color: #0a0a0a; }
+.espace :global(.text-blanc) { color: #fff; }
+.espace :global(.text-gris) { color: #6f6f6f; }
+.espace :global(.text-center) { text-align: center; }
+.espace :global(.text-xs) { font-size: 12px; }
+.espace :global(.text-sm) { font-size: 14px; }
+.espace :global(.text-base) { font-size: 16px; }
+.espace :global(.text-\[28px\]) { font-size: 28px; }
+.espace :global(.font-titre) { font-family: var(--font-bodoni), serif; }
+.espace :global(.font-normal) { font-weight: 400; }
+.espace :global(.font-light) { font-weight: 300; }
+.espace :global(.normal-case) { text-transform: none; }
+.espace :global(.tracking-normal) { letter-spacing: normal; }
+.espace :global(.break-words) { overflow-wrap: anywhere; }
+.espace :global(.object-cover) { object-fit: cover; }
+.espace button, .espace input, .espace textarea, .espace select { border-radius: 0; box-shadow: none; }
+.espace button:disabled, .espace select:disabled { opacity: .5; }
+.espace input[type="checkbox"] { accent-color: #0a0a0a; }
