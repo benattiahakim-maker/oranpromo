@@ -5,7 +5,7 @@ import { compresserPhoto } from "./compression-photo";
 
 export class ErreurPublicationArticle extends Error {}
 
-export async function publierArticle(client: SupabaseClient<Database>, boutiqueId: string, saisie: SaisieArticle, fichiers: File[], compression = compresserPhoto): Promise<string> {
+export async function publierArticle(client: SupabaseClient<Database>, boutiqueId: string, saisie: SaisieArticle, fichiers: File[], compression = compresserPhoto, proposeParIA = false): Promise<string> {
   const erreurs = validerArticle({ ...saisie, photos: fichiers });
   if (Object.keys(erreurs).length) throw new ErreurPublicationArticle("Vérifiez les champs du formulaire avant de publier.");
   const articleId = crypto.randomUUID();
@@ -30,7 +30,7 @@ export async function publierArticle(client: SupabaseClient<Database>, boutiqueI
     }
     etape = "enregistrer l’article";
     insertionTentee = true;
-    const article: TablesInsert<"articles"> = { ...donneesArticle(saisie), id: articleId, boutique_id: boutiqueId, statut: "disponible", propose_par_ia: false };
+    const article: TablesInsert<"articles"> = { ...donneesArticle(saisie), id: articleId, boutique_id: boutiqueId, statut: "disponible", propose_par_ia: proposeParIA };
     const { error: erreurArticle } = await client.from("articles").insert(article);
     if (erreurArticle) throw erreurArticle;
     etape = "enregistrer les photos";
