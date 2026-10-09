@@ -6,7 +6,7 @@
 ## Où on en est
 
 - Les **19 user stories du MVP sont codées** (US-01 à US-19). Elles sont dans la colonne Trello « À vérifier » : codées, mais pas encore toutes testées en vrai.
-- **895 tests** passent (+ 316 tests SQL), `npm run lint` et `npm run build` passent.
+- **921 tests** passent (+ 383 tests SQL), `npm run lint` et `npm run build` passent.
 - Déjà testé en vrai : la page d'accueil (ancienne version), la fiche article, la réservation WhatsApp.
 - Pas encore re-testé : la connexion par lien e-mail (corrigée le 9/10), le nouveau formulaire d'article, et tout ce qui a été fait le 9/10 après-midi (voir ci-dessous).
 - **Connexion des clients par téléphone (US-21)** : codée, **pas encore en service**. Le site reste en mode e-mail tant que le propriétaire n'a pas fait la checklist ci-dessous (« US-21 : à configurer par le propriétaire ») ; code par WhatsApp uniquement (pas de SMS), donc rien avant l'approbation de l'expéditeur WhatsApp par Meta.
@@ -87,6 +87,9 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
    - **Données** : pas de nouvelle colonne (`boutiques.latitude` / `longitude` existent déjà), pas de PostGIS ; la base refusera une position hors de la wilaya d'Oran (rectangle **35,33 à 35,92 N, −1,15 à −0,10 E**, d'après la limite OpenStreetMap de la wilaya, relation 1259187) et réservera la position d'une boutique publiée à l'admin (comme le nom et le WhatsApp) ; une fonction `boutiques_carte()` (sans photo, 500 boutiques au plus) donnera les épingles. Les 2 boutiques actuelles ont déjà une position dans ces bornes (lecture seule du 9/10).
    - **Position de la cliente** (« Autour de moi ») : demandée seulement au toucher du bouton, distances calculées dans le téléphone, **jamais envoyée au serveur ni enregistrée**.
    - **En attente** : le propriétaire valide les maquettes, les 12 textes français / arabe de la carte (tableau dans US-24) et les questions ouvertes (voir la PR). Ensuite seulement, code en 3 PR (US-24.1, 24.2, 24.3). Il faudra alors la clé CARTO (`NEXT_PUBLIC_CARTO_CLE`, publique, restreinte au domaine du site dans le tableau de bord CARTO).
+
+18. **Carte des boutiques (US-24), le code** — conception **validée par le propriétaire le 9/10** (fond CARTO Positron avec la clé `NEXT_PUBLIC_CARTO_CLE`, tuiles OpenStreetMap seulement en développement ; position réglable par le commerçant tant que la boutique est en attente, ensuite par l'admin seul, par l'ambassadeur à la création ; univers déduits des articles ; nombre de promos sur l'épingle ; « Panier (2) » devient une icône de sac avec le nombre ; rectangle de la wilaya d'Oran ; textes arabes de la carte gardés tels que proposés). Une PR par étape :
+   - **US-24.1, base** (PR « US-24.1 ») : migration `20261010210000_carte_boutiques` **appliquée** le 9/10 vers 18 h, types régénérés (fonction `boutiques_carte`). La base refuse une position incomplète ou hors de la wilaya d'Oran (35,33 à 35,92 N, −1,15 à −0,10 E ; NaN et infini refusés, même avec la clé de service) ; latitude et longitude rejoignent le nom, le WhatsApp, le slug et les liens : **réservées à l'admin dès que la boutique est publiée** (validée ou suspendue), modifiables par le commerçant rattaché tant qu'elle est en attente ; `boutiques_carte()` donne les épingles (boutiques validées, sans photo ni WhatsApp ni adresse, nombre de promos en cours, couples catégorie / genre des articles visibles, 500 au plus). Mêmes bornes dans `lib/position.ts` (test qui compare avec la migration). Tests SQL : `carte_boutiques.test.sql` (45). Aucune règle de blocage, no-show ou vérification du numéro changée.
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
 
@@ -251,7 +254,7 @@ Mode d'emploi (Supabase > SQL Editor) :
 7. **Accueil** : valider les nouvelles images avec le propriétaire (photo de Santa Cruz, tuiles IA).
 8. **Arabe (US-23)** : code terminé (4 étapes). À tester en vrai : le bouton « عربي » de l'en-tête sur téléphone, puis une visite suivante (le choix doit rester), et une commande complète en arabe ; faire approuver les 4 modèles WhatsApp arabes par Meta puis activer `modeles_arabes` (checklist plus haut) ; relire les textes arabes marqués « à confirmer » dans la PR finale.
 9. **Données de démonstration** : le jour de la mise en ligne, le propriétaire décide de lancer `supabase/scripts/retirer_donnees_demo.sql` (essai à blanc d'abord) et ce qu'il fait de « Maison Ilyes ».
-10. **Carte des boutiques (US-24)** : après l'arabe ; le propriétaire valide d'abord les maquettes `Carte.dc.html` et `PositionBoutique.dc.html`, les textes arabes de la carte et le fond de carte (CARTO, clé gratuite à demander).
+10. **Carte des boutiques (US-24)** : conception validée, base codée (US-24.1) ; restent la saisie de la position (US-24.2) et la page `/carte` (US-24.3). Le propriétaire demande la clé CARTO gratuite (usage commercial) et la met dans `NEXT_PUBLIC_CARTO_CLE`.
 
 Backlog : mise en ligne (Vercel, domaine, envoi d'e-mails), environnements prod et dev (Vercel + second projet Supabase), suppression des données de test, univers Beauté, conditions d'utilisation, marketing.
 

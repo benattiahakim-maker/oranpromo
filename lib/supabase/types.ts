@@ -680,6 +680,19 @@ export type Database = {
     Functions: {
       annuler_no_show: { Args: { commande: string }; Returns: undefined }
       bloquer_client: { Args: { client: string }; Returns: undefined }
+      boutiques_carte: {
+        Args: { limite?: number }
+        Returns: {
+          id: string
+          latitude: number
+          longitude: number
+          nom: string
+          promos_en_cours: number
+          quartier: string
+          rayons: Json
+          slug: string
+        }[]
+      }
       changer_statut_commande: {
         Args: {
           commande: string
