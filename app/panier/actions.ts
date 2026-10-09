@@ -1,9 +1,9 @@
 "use server";
-import { enLangue } from "@/lib/langue-serveur";
+import { enLangue, getLangue } from "@/lib/langue-serveur";
 import { after } from "next/server";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { envoyerMessagesCommande } from "@/lib/notifications";
-import { passerCommande, type LigneEnvoyee } from "@/lib/commandes";
+import { definirLangueCommande, passerCommande, type LigneEnvoyee } from "@/lib/commandes";
 import { LIGNES_PANIER_MAX, NOTE_COMMANDE_MAX, QUANTITE_LIGNE_MAX } from "@/lib/panier";
 
 export type ResultatCommande = { id?: string; erreur?: string; connexion?: boolean };
@@ -22,6 +22,12 @@ async function commanderPanierEnFrancais(boutiqueId: string, lignes: LigneEnvoye
     const { data: { user }, error } = await client.auth.getUser();
     if (error || !user) return { connexion: true, erreur: "Connectez-vous pour commander." };
     const id = await passerCommande(client, boutiqueId, lignes.map(l => ({ article_id: l.article_id, taille: l.taille, quantite: l.quantite })), note);
+    // US-23 : commande passée en arabe → messages au client en arabe (si les modèles arabes sont approuvés).
+    // Un échec ne bloque pas la commande : les messages partiront en français.
+    if (await getLangue() === "ar") {
+      try { await definirLangueCommande(client, id, "ar"); }
+      catch (erreurLangue) { console.error("Langue de la commande non enregistrée", id, erreurLangue instanceof Error ? erreurLangue.message : erreurLangue); }
+    }
     // WhatsApp à la boutique après la réponse (US-20.5) ; sans configuration, le message reste en file d'attente.
     after(() => envoyerMessagesCommande(client, id));
     return { id };

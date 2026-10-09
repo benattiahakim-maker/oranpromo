@@ -4,7 +4,7 @@ import type { Database } from "@/lib/supabase/types";
 import { DUREE_ENVOI_MAX_MS, envoyerMessages, envoyerMessagesCommande, envoyerMessagesEnAttente, fournisseurWhatsApp, jetonNotifications, lireMessages, type FournisseurWhatsApp, type MessageWhatsApp } from ".";
 
 const JETON = "jeton-serveur-0123456789";
-import { corpsMessageMeta, creerFournisseurMeta } from "./meta";
+import { corpsMessageMeta, creerFournisseurMeta, langueModeleMeta } from "./meta";
 
 const message: MessageWhatsApp = { id: "m1", reservation: "r1", destinataire: "+213555111222", modele: "oranpromo_commande_prete", parametres: ["Samia", "12", "Boutique Un", "10/10 à 12h00"], texte: "Bonjour Samia…" };
 const base = (rpc: ReturnType<typeof vi.fn>) => ({ rpc }) as unknown as SupabaseClient<Database>;
@@ -123,5 +123,16 @@ describe("US-20.6 : bouton « Confirmer » (lien signé)", () => {
       { type: "body", parameters: ["15", "Samia", "2", "8 700 DA"].map(text => ({ type: "text", text })) },
       { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: "lien-signe" }] },
     ]);
+  });
+});
+
+describe("US-23 : modèles arabes chez Meta", () => {
+  it("modèle « _ar » : langue « ar » ; les autres gardent la langue configurée (repli français)", () => {
+    expect(langueModeleMeta("oranpromo_commande_prete_ar", "fr")).toBe("ar");
+    expect(langueModeleMeta("oranpromo_commande_prete", "fr")).toBe("fr");
+    expect(langueModeleMeta("oranpromo_nouvelle_commande", "fr")).toBe("fr");
+    const corps = corpsMessageMeta({ id: "m", reservation: "r", destinataire: "+213555123456", modele: "oranpromo_commande_prete_ar", parametres: ["Samir", "12", "Boutique Nour", "10/10 على 16:10"], texte: "" }, "fr");
+    expect(corps.template).toMatchObject({ name: "oranpromo_commande_prete_ar", language: { code: "ar" } });
+    expect(corps.template.components[0]).toEqual({ type: "body", parameters: ["Samir", "12", "Boutique Nour", "10/10 على 16:10"].map(text => ({ type: "text", text })) });
   });
 });

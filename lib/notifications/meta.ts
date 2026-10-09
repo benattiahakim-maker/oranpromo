@@ -6,6 +6,15 @@ export type ReglagesMeta = { token: string; phoneNumberId: string; langue: strin
 
 const DELAI_MS = 10_000;
 
+/**
+ * US-23 : langue du modèle chez Meta. Les modèles arabes (approuvés à part) portent le suffixe « _ar »
+ * et partent en langue « ar » ; tous les autres dans la langue configurée (WHATSAPP_LANGUE, « fr » par défaut).
+ * La base n'écrit un modèle « _ar » que si l'interrupteur « modeles_arabes » est activé : sinon, repli en français.
+ */
+export function langueModeleMeta(modele: string, langueParDefaut: string): string {
+  return modele.endsWith("_ar") ? "ar" : langueParDefaut;
+}
+
 export function corpsMessageMeta(message: MessageWhatsApp, langue: string) {
   return {
     messaging_product: "whatsapp",
@@ -13,7 +22,7 @@ export function corpsMessageMeta(message: MessageWhatsApp, langue: string) {
     type: "template",
     template: {
       name: message.modele,
-      language: { code: langue },
+      language: { code: langueModeleMeta(message.modele, langue) },
       components: [
         ...(message.parametres.length ? [{ type: "body", parameters: message.parametres.map(text => ({ type: "text", text })) }] : []),
         // Bouton lien : la valeur est ajoutée à la fin de l'adresse enregistrée dans le modèle Meta (US-20.6).

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { declarerNoShow, estStockInsuffisant, peutDeclarerNoShow, ACTION_BOUTIQUE, compterCommandesAConfirmer, listerCommandesBoutique, motifBoutiqueValide, verifierActionBoutique, annulableParClient, annulerCommandeClient, commandeEnCours, etapesFrise, formaterDateHeure, libelleMotif, lireCommande, listerMesCommandes, messageErreurCommande, passerCommande, quantiteTotale } from "./commandes";
+import { declarerNoShow, definirLangueCommande, estStockInsuffisant, peutDeclarerNoShow, ACTION_BOUTIQUE, compterCommandesAConfirmer, listerCommandesBoutique, motifBoutiqueValide, verifierActionBoutique, annulableParClient, annulerCommandeClient, commandeEnCours, etapesFrise, formaterDateHeure, libelleMotif, lireCommande, listerMesCommandes, messageErreurCommande, passerCommande, quantiteTotale } from "./commandes";
 
 function client({ rpc = { data: "commande" as unknown, error: null as unknown }, lecture = { data: [] as unknown, error: null as unknown }, user = { id: "moi" } as { id: string } | null } = {}) {
   const appels: unknown[][] = [];
@@ -136,5 +136,15 @@ describe("relecture US-20", () => {
     expect(rpc).toHaveBeenCalledWith("declarer_no_show", { commande: "c1" });
     rpc.mockResolvedValue({ error: { code: "23514", message: "Vous avez déjà signalé que ce client n'est pas venu." } });
     await expect(declarerNoShow({ rpc } as unknown as SupabaseClient<Database>, "c1")).rejects.toThrow("déjà signalé");
+  });
+});
+
+describe("US-23 : langue de la commande", () => {
+  it("appelle definir_langue_commande ; refus de la base relayé", async () => {
+    const { client: c, rpc } = client({ rpc: { data: null, error: null } });
+    await definirLangueCommande(c, "c1", "ar");
+    expect(rpc).toHaveBeenCalledWith("definir_langue_commande", { commande: "c1", langue: "ar" });
+    const { client: refus } = client({ rpc: { data: null, error: { code: "P0002", message: "Commande introuvable." } } });
+    await expect(definirLangueCommande(refus, "c1", "ar")).rejects.toThrow("Commande introuvable.");
   });
 });
