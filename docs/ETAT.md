@@ -6,7 +6,7 @@
 ## Où on en est
 
 - Les **19 user stories du MVP sont codées** (US-01 à US-19). Elles sont dans la colonne Trello « À vérifier » : codées, mais pas encore toutes testées en vrai.
-- **667 tests** passent (+ 94 tests SQL), `npm run lint` et `npm run build` passent.
+- **672 tests** passent (+ 108 tests SQL), `npm run lint` et `npm run build` passent.
 - Déjà testé en vrai : la page d'accueil (ancienne version), la fiche article, la réservation WhatsApp.
 - Pas encore re-testé : la connexion par lien e-mail (corrigée le 9/10), le nouveau formulaire d'article, et tout ce qui a été fait le 9/10 après-midi (voir ci-dessous).
 
@@ -36,7 +36,11 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
    - **À discuter avec le propriétaire** : une boutique peut passer une commande « prête » tout de suite puis déclarer « Client pas venu » 24 h plus tard, sans que le client ait vraiment eu le temps de venir. → Décision : le client peut contester (point 9).
 9. **Contestation d'un no-show** (PR #20, décision du propriétaire) : dans `/compte`, rubrique « Commandes non récupérées », le client conteste un no-show avec un motif court (5 à 300 caractères), une seule fois, seulement pour ses propres commandes. Tant que la contestation est en attente, le no-show ne compte pas (compteur recalculé, compte débloqué s'il repasse sous 5) ; un blocage décidé par l'admin reste en place (nouvelle colonne `profils.bloque_par_admin`). Dans `/admin/clients`, « Contestations en attente » : **Valider le no-show** (il compte de nouveau, blocage possible au 5e) ou **Annuler le no-show**. Aucun nouveau message WhatsApp.
    - Migration `20261009234500_contestation_no_show` **appliquée** sur Supabase le 9/10 vers 15 h, types régénérés. Tests SQL : `supabase/tests/contestation_no_show.test.sql` (28).
-   - À noter : le motif est aussi lisible par la boutique (elle lit ses commandes en entier) ; il n'y a pas de délai limite pour contester.
+10. **Règles de la contestation** (PR #22, décisions du propriétaire sur les points restés ouverts) :
+   - contestation possible seulement dans les **7 jours** après la déclaration du no-show (après : refus, et plus de bouton « Contester » dans `/compte`) ;
+   - **une seule contestation en attente à la fois** par compte ;
+   - le **motif n'est plus lisible par la boutique** : il est dans la nouvelle table `contestations`, lue seulement par le client qui l'a écrit et par l'admin (la boutique voit seulement qu'une commande est contestée).
+   - Migration `20261009235500_contestation_regles` **appliquée** sur Supabase le 9/10 vers 15 h (aucun motif existant à déplacer), types régénérés. Tests SQL : `supabase/tests/contestation_regles.test.sql` (14).
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
 
