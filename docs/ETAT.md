@@ -9,7 +9,7 @@
 - **803 tests** passent (+ 172 tests SQL), `npm run lint` et `npm run build` passent.
 - Déjà testé en vrai : la page d'accueil (ancienne version), la fiche article, la réservation WhatsApp.
 - Pas encore re-testé : la connexion par lien e-mail (corrigée le 9/10), le nouveau formulaire d'article, et tout ce qui a été fait le 9/10 après-midi (voir ci-dessous).
-- **Connexion des clients par téléphone (US-21)** : codée, **pas encore en service**. Le site reste en mode e-mail tant que le propriétaire n'a pas fait la checklist ci-dessous (« US-21 : à configurer par le propriétaire »).
+- **Connexion des clients par téléphone (US-21)** : codée, **pas encore en service**. Le site reste en mode e-mail tant que le propriétaire n'a pas fait la checklist ci-dessous (« US-21 : à configurer par le propriétaire ») ; code par WhatsApp uniquement (pas de SMS), donc rien avant l'approbation de l'expéditeur WhatsApp par Meta.
 
 ## Journal des modifications
 
@@ -47,6 +47,7 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
    - **PR #25** (US-21.1, base) : numéro vérifié par code (`profils.telephone_verifie_le`, recopié depuis Supabase Auth, non modifiable à la main) ; numéros mobiles algériens seulement (`+213` puis 5, 6 ou 7, puis 8 chiffres), refusés par la base avant tout envoi de code ; en mode téléphone, commande refusée sans numéro vérifié (« Vérifiez votre numéro de téléphone par code avant de commander. ») ; limites d'envoi par numéro (1 code par minute, 5 par heure) contrôlées par la base avec le jeton du serveur. Migration `20261010090000_numero_verifie` **appliquée** le 9/10, types régénérés. Tests SQL : `numero_verifie.test.sql` (31).
    - **PR #26** (US-21.2, écrans) : `/compte/connexion` en mode téléphone = numéro + code reçu par **WhatsApp**, bouton « Recevoir par SMS » en secours ; lien « Se connecter par e-mail » gardé ; `/compte` : vérification ou changement du numéro par code ; `/panier` : vérification demandée avant « Commander » pour les comptes existants. Captcha **Cloudflare Turnstile** avant chaque envoi de code (et sur le lien e-mail dès que la clé de site est définie, car Supabase l'exige alors pour toutes les connexions). Commerçants et admin : toujours le lien e-mail. Aucune migration.
    - **PR #28** (US-21.3, blocage) : blocage par numéro **activé**, seulement pour les numéros vérifiés (index unique sur les numéros vérifiés ; les anciens numéros saisis à la main ne comptent jamais pour un autre compte) ; section admin « Numéro partagé » supprimée, remplacée par un bouton Bloquer / Débloquer sur chaque client de `/admin/clients` ; contestations inchangées. Migration `20261010100000_blocage_numero_verifie` **appliquée** le 9/10, types à jour. Tests SQL : `blocage_numero_verifie.test.sql` (23), `numero_non_verifie.test.sql` adapté (19).
+   - **PR #33** (US-21.5, décision du propriétaire : SMS trop cher) : code **uniquement sur WhatsApp**, bouton « Recevoir par SMS » supprimé, le serveur impose le canal WhatsApp. La connexion par lien e-mail reste permise aux clients (en mode téléphone, ils doivent quand même vérifier leur numéro par WhatsApp pour commander). Aucune migration. 803 tests Vitest (avec US-22).
    - Deux interrupteurs, **e-mail par défaut** : variable `CONNEXION_CLIENT` (Vercel) et réglage `connexion_client` de la base. Aucune clé Twilio ni Turnstile secrète dans le code ou un commit : elles vont uniquement dans le tableau de bord Supabase.
 12. **Lien de boutique à partager (US-22)**, partie « lien boutique » de la carte Trello « Parcours · Connexion par code WhatsApp, arabe/darja, lien boutique ». Détails : `docs/user-stories.md` (module 9) et `docs/architecture.md` (« Lien de boutique à partager »).
    - **PR #27** : story et conception. **PR #30** : code et tests.
@@ -62,31 +63,32 @@ Reste à faire côté propriétaire : plafond de dépenses dans la console Anthr
 
 ## US-21 : à configurer par le propriétaire
 
+⚠️ **Tant que Meta n'a pas approuvé l'expéditeur WhatsApp, aucun code ne part** (il n'y a pas de SMS de secours) : les clients peuvent se connecter par e-mail, mais en mode téléphone **aucun ne peut commander**. Garder `CONNEXION_CLIENT=email` (et ne pas créer le réglage `connexion_client`) jusqu'à l'approbation de Meta et un essai réussi (étape 9).
+
 Rien n'est à mettre dans le code, dans `.env.local` ni dans un commit, sauf la clé de site Turnstile (publique). **Respecter l'ordre** : sinon les connexions (e-mail compris) peuvent être bloquées.
 
 1. **Twilio** (twilio.com) : créer le compte et le passer en compte payant (un compte d'essai n'envoie qu'aux numéros vérifiés à la main). Mettre une alerte de dépenses (Console > Billing).
-2. **Service Twilio Verify** (Console > Verify > Services > Create) : nom « OranPromo », code à 6 chiffres, canaux **SMS** et **WhatsApp** activés. Dans Verify > Settings > **Geo permissions** : n'autoriser que l'**Algérie**. Laisser **Fraud Guard** activé. Noter le *Service SID* (`VA…`).
-3. **Expéditeur WhatsApp** : Console Twilio > Messaging > Senders > WhatsApp senders : enregistrer un numéro dédié (pas un numéro déjà utilisé dans l'application WhatsApp) et le relier au compte Meta Business. **Meta doit approuver** l'expéditeur (vérification de l'entreprise et nom affiché, de quelques heures à plusieurs jours). Puis, dans le service Verify, canal WhatsApp : choisir cet expéditeur. Tant que ce n'est pas fait, seul le bouton « Recevoir par SMS » fonctionne.
-4. **Supabase** > Authentication > Sign In / Providers > **Phone** : activer, fournisseur **Twilio Verify**, coller *Account SID*, *Auth Token* et *Verify Service SID* (dans le tableau de bord uniquement). Laisser « Enable phone signup » activé. Vérifier aussi Authentication > Rate Limits (SMS par heure).
+2. **Service Twilio Verify** (Console > Verify > Services > Create) : nom « OranPromo », code à 6 chiffres, canal **WhatsApp seulement** : **désactiver le canal SMS** (et la voix) dans la configuration des canaux du service, pour qu'aucun SMS ne puisse être payé même si quelqu'un appelle Supabase directement. Les *Geo permissions* SMS ne sont donc pas nécessaires (si la console ne permet pas de désactiver le SMS, n'y autoriser aucun pays pour le SMS). Laisser **Fraud Guard** activé. Noter le *Service SID* (`VA…`).
+3. **Expéditeur WhatsApp** : Console Twilio > Messaging > Senders > WhatsApp senders : enregistrer un numéro dédié (pas un numéro déjà utilisé dans l'application WhatsApp) et le relier au compte Meta Business. **Meta doit approuver** l'expéditeur (vérification de l'entreprise et nom affiché, de quelques heures à plusieurs jours). Puis, dans le service Verify, canal WhatsApp : choisir cet expéditeur. Tant que ce n'est pas fait, **aucun client ne peut recevoir de code** : rester en mode e-mail.
+4. **Supabase** > Authentication > Sign In / Providers > **Phone** : activer, fournisseur **Twilio Verify**, coller *Account SID*, *Auth Token* et *Verify Service SID* (dans le tableau de bord uniquement). Laisser « Enable phone signup » activé. Vérifier aussi Authentication > Rate Limits (messages par heure).
 5. **Cloudflare Turnstile** (dash.cloudflare.com > Turnstile > Add widget) : mode « Managed », domaines `127.0.0.1`, `localhost` et le futur domaine du site. Noter la clé de site et la clé secrète.
 6. **Vercel** (et `.env.local` sur le PC pour les essais) : `NEXT_PUBLIC_TURNSTILE_SITE_KEY` = clé de site, puis redéployer. Le captcha s'affiche alors sur les formulaires de connexion.
 7. **Supabase** > Authentication > Attack Protection : activer la protection captcha, fournisseur **Turnstile**, coller la **clé secrète**. ⚠️ Seulement **après** l'étape 6, sinon plus personne ne peut se connecter.
 8. **`CRON_SECRET`** sur Vercel + son empreinte dans la base (même réglage que pour WhatsApp, `docs/architecture.md`, mise en service des messages, étape 3) : **obligatoire**, sans lui l'envoi de code est refusé (« La connexion par téléphone n'est pas encore configurée. »). Aujourd'hui l'empreinte n'est pas encore dans la base.
-9. **Essai** : sur le PC, `CONNEXION_CLIENT=telephone` dans `.env.local`, se connecter avec un numéro algérien (code par WhatsApp puis par SMS).
-10. **Mise en service** : `CONNEXION_CLIENT=telephone` sur Vercel, redéployer, **puis** dans l'éditeur SQL Supabase : `insert into prive.reglages (cle, valeur) values ('connexion_client', 'telephone') on conflict (cle) do update set valeur = excluded.valeur;` (à partir de là, la base refuse toute commande sans numéro vérifié). Retour au mode e-mail : `delete from prive.reglages where cle = 'connexion_client';`, puis retirer la variable.
+9. **Essai** : sur le PC, `CONNEXION_CLIENT=telephone` dans `.env.local`, se connecter avec un numéro algérien (code reçu sur WhatsApp), puis vérifier le numéro d'un compte créé par e-mail depuis `/compte`.
+10. **Mise en service**, seulement après l'approbation de Meta et l'essai réussi : `CONNEXION_CLIENT=telephone` sur Vercel, redéployer, **puis** dans l'éditeur SQL Supabase : `insert into prive.reglages (cle, valeur) values ('connexion_client', 'telephone') on conflict (cle) do update set valeur = excluded.valeur;` (à partir de là, la base refuse toute commande sans numéro vérifié). Retour au mode e-mail : `delete from prive.reglages where cle = 'connexion_client';`, puis retirer la variable.
 
 **Coûts** (prix publics consultés en octobre 2026, en dollars, à revérifier) :
 
 | Poste | Prix | Source |
 |---|---|---|
 | Twilio Verify | 0,05 $ par vérification réussie, + prix du canal | twilio.com/en-us/verify/pricing |
-| SMS vers l'Algérie (Twilio) | 0,273 $ par SMS | twilio.com/en-us/sms/pricing/dz |
 | WhatsApp, message d'authentification vers l'Algérie (frais Meta) | environ 0,004 $ par message remis | grille Meta d'octobre 2026, d'après whautomate.com et faslacloud.com (non vérifié sur le site de Meta) ; frais Twilio en plus sur WhatsApp hors Verify (0,005 $), **inconnu** s'ils s'ajoutent avec Verify |
 | Cloudflare Turnstile | gratuit | developers.cloudflare.com/turnstile/plans |
 | Supabase (connexion par téléphone) | **inconnu** : pas de frais propre trouvé | — |
 | Numéro Twilio pour l'expéditeur WhatsApp | **inconnu** (dépend du pays du numéro) | — |
 
-Ordre de grandeur : 1 000 connexions par WhatsApp ≈ 54 $ ; par SMS ≈ 323 $. D'où WhatsApp par défaut et le SMS en secours.
+Ordre de grandeur : 1 000 vérifications par WhatsApp ≈ 54 $. Pas de SMS (décision du propriétaire, US-21.5) : un client connecté par e-mail ne paie aucun code, seul l'envoi du code WhatsApp coûte.
 
 ## Reprendre le travail (sur le PC)
 
@@ -134,7 +136,7 @@ Ordre de grandeur : 1 000 connexions par WhatsApp ≈ 54 $ ; par SMS ≈ 323 $. 
   - Le projet se met en pause après une semaine sans activité.
 - **Connexion** :
   - par lien e-mail (commerçants, admin, et clients en mode `email`) ;
-  - clients en mode `telephone` : code par WhatsApp ou SMS (Twilio Verify, US-21), à configurer (voir plus haut) ;
+  - clients en mode `telephone` : code par WhatsApp uniquement (Twilio Verify, US-21) ou lien e-mail ; à configurer (voir plus haut) ;
   - les URL de redirection autorisées sont `http://127.0.0.1:3000/**` et `http://localhost:3000/**` ;
   - il faudra ajouter le vrai domaine à la mise en ligne.
 - **GitHub** : `benattiahakim-maker/oranpromo` (privé).

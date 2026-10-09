@@ -84,7 +84,7 @@ Le site ne voit pas la conversation WhatsApp : la confirmation, la mise de côt�
 ### US-09 — Se connecter (page `/espace/connexion`)
 En tant que commerçant, je veux me connecter sans mot de passe, afin de n'avoir rien à retenir.
 
-> **Provisoire (MVP) : connexion par lien envoyé par e-mail.** La connexion par SMS demande un fournisseur SMS payant (Twilio…) ; elle sera branchée avant la mise en ligne. Le code doit isoler l'envoi dans une fonction pour pouvoir passer au SMS sans tout réécrire.
+> **Provisoire (MVP) : connexion par lien envoyé par e-mail.** La connexion par SMS demande un fournisseur SMS payant (Twilio…) ; elle sera branchée avant la mise en ligne. Le code doit isoler l'envoi dans une fonction pour pouvoir passer au SMS sans tout réécrire. *(Remplacé par US-21 : code reçu sur WhatsApp, sans SMS.)*
 
 - Je saisis mon adresse e-mail ; un e-mail invalide affiche un message en français sous le champ.
 - Étant donné une adresse valide, quand je valide, alors je vois « Un lien de connexion vous a été envoyé par e-mail » et je reçois un lien. → `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: <origine>/auth/callback?suite=/espace } })`.
@@ -213,7 +213,7 @@ En tant que client, je veux mettre des articles d'une même boutique dans un pan
 - Sur la fiche, je choisis une taille (sauf taille unique) et une quantité (1 à 10, au plus le stock), puis « Ajouter au panier ». Le clic est compté comme un `clic_reserver` (statistiques US-08 / US-13 inchangées).
 - Le panier (`/panier`, gardé dans le téléphone) ne contient que des articles d'**une seule boutique** ; ajouter un article d'une autre boutique demande de remplacer le panier.
 - Dans le panier, je modifie les quantités, retire une ligne, ajoute une note pour la boutique (300 caractères au plus) et vois le total en DA (prix promo actif compris).
-- « Commander » demande d'être connecté : connexion par lien e-mail (`/compte/connexion`, en attendant le SMS), puis retour au panier. Un nouveau compte a le rôle `client`.
+- « Commander » demande d'être connecté : connexion par lien e-mail (`/compte/connexion` ; en mode téléphone, aussi par code WhatsApp, US-21), puis retour au panier. Un nouveau compte a le rôle `client`.
 - À la première commande, je saisis mon nom et mon numéro de téléphone (format algérien, WhatsApp), gardés dans mon profil (`/compte`). Le nom : lettres (latines avec accents, ou arabes), espaces, apostrophe, tiret, 2 à 60 caractères ; ni chiffres ni lien (il est repris dans les messages WhatsApp).
 - La base recalcule les prix et refuse : un article non visible, une taille épuisée, une quantité au-delà du stock, plus de 10 lignes, un client bloqué, plus de 5 commandes en cours ou plus de 10 commandes par heure. Le message d'erreur est en français.
 - Après la commande, le panier est vidé et j'arrive sur le suivi de ma commande.
@@ -259,18 +259,19 @@ Source : carte Trello « V2 · Connexion par SMS » (remplacée par cette story,
 
 ### US-21 — Vérifier le numéro de téléphone du client (vue d'ensemble)
 En tant que propriétaire de la plateforme, je veux que chaque client prouve que son numéro de téléphone est bien le sien, afin que les boutiques le joignent à coup sûr et que les no-shows suivent vraiment la personne.
-Livrée en 4 sous-stories, dans cet ordre :
+Livrée en 5 sous-stories, dans cet ordre :
 
 | Story | Contenu | Écrans |
 | --- | --- | --- |
 | US-21.1 | Base : numéro vérifié, règles anti-abus, commande refusée sans numéro vérifié (mode téléphone) | aucun écran |
-| US-21.2 | Connexion du client par numéro et code à 6 chiffres (WhatsApp, puis SMS en secours) ; vérification du numéro d'un compte existant | `/compte/connexion`, `/compte`, `/panier` |
+| US-21.2 | Connexion du client par numéro et code à 6 chiffres reçu sur WhatsApp (pas de SMS, US-21.5) ; vérification du numéro d'un compte existant | `/compte/connexion`, `/compte`, `/panier` |
 | US-21.3 | Blocage par numéro vérifié ; un numéro vérifié = un seul compte ; fin de la section « numéro partagé » | `/admin/clients` |
 | US-21.4 | Mise en service : liste de ce que le propriétaire configure (Twilio, Supabase, Cloudflare, Vercel, Meta) | aucun écran |
+| US-21.5 | Code par WhatsApp uniquement : le secours « Recevoir par SMS » est supprimé (SMS trop cher, décision du propriétaire) | `/compte/connexion`, `/compte`, `/panier` |
 
 **Deux modes**, choisis par la variable serveur `CONNEXION_CLIENT` :
 - `email` (par défaut, tant que Twilio n'est pas configuré) : tout reste comme aujourd'hui pour le client (lien e-mail, numéro saisi à la main, pas de vérification forcée, pas de blocage par numéro sauf numéro déjà vérifié) ;
-- `telephone` : le client se connecte par son numéro et ne commande qu'avec un numéro vérifié.
+- `telephone` : le client se connecte par son numéro (code WhatsApp) **ou** toujours par lien e-mail, mais ne commande qu'avec un numéro vérifié par code WhatsApp. Ce qui empêche les comptes multiples : la commande exige un numéro vérifié, et un numéro vérifié n'appartient qu'à un seul compte.
 Les commerçants et l'admin se connectent toujours par lien e-mail (`/espace/connexion`), dans les deux modes.
 
 ### US-21.1 — Numéro vérifié dans la base (aucun écran)
@@ -287,11 +288,11 @@ En tant que propriétaire, je veux que la base sache quel numéro est vérifié 
 En tant que client, je veux me connecter avec mon numéro et un code reçu sur WhatsApp, afin de ne pas avoir besoin d'e-mail.
 - En mode téléphone, `/compte/connexion` demande le numéro. J'accepte `0555 12 34 56`, `0555123456`, `+213 555 12 34 56`, `00213…`, `0213…` (espaces, points, tirets ignorés) ; un numéro non algérien ou fixe est refusé tout de suite (« Saisissez un numéro de mobile algérien : 05, 06 ou 07 suivi de 8 chiffres. »).
 - Avant l'envoi, je passe le contrôle anti-robot Cloudflare Turnstile ; sans contrôle réussi, le bouton d'envoi reste désactivé.
-- « Recevoir le code sur WhatsApp » envoie un code à 6 chiffres sur WhatsApp ; « Recevoir par SMS » l'envoie par SMS (secours).
+- « Recevoir le code sur WhatsApp » envoie un code à 6 chiffres sur WhatsApp. Il n'y a pas d'envoi par SMS (US-21.5) : un numéro sans WhatsApp ne peut pas être vérifié.
 - Je saisis le code (6 chiffres) : s'il est bon, je suis connecté et je reviens au panier ou à mon compte ; sinon « Code incorrect ou expiré. ». Je peux redemander un code (limites ci-dessus).
 - Un lien « Se connecter avec un e-mail » reste disponible (comptes déjà créés par e-mail, commerçants).
 - Un nouveau compte créé par numéro a le rôle `client` et son numéro déjà vérifié ; il ne saisit que son nom avant la première commande.
-- Compte existant (créé par e-mail) en mode téléphone : `/compte` et `/panier` affichent « Vérifiez votre numéro pour commander » avec le même parcours (numéro, WhatsApp ou SMS, code). Tant que le numéro n'est pas vérifié, « Commander » est remplacé par ce parcours, et la base refuse la commande de toute façon.
+- Compte existant (créé par e-mail) en mode téléphone : `/compte` et `/panier` affichent « Vérifiez votre numéro pour commander » avec le même parcours (numéro, code WhatsApp). Tant que le numéro n'est pas vérifié, « Commander » est remplacé par ce parcours, et la base refuse la commande de toute façon.
 - Un numéro déjà vérifié s'affiche sans champ modifiable, avec « Changer de numéro » qui relance la vérification du nouveau numéro.
 - Un numéro déjà utilisé par un autre compte est refusé : « Ce numéro est déjà utilisé par un autre compte : connectez-vous avec ce numéro. »
 - En mode e-mail : écrans inchangés.
@@ -307,8 +308,16 @@ En tant que propriétaire, je veux qu'un client bloqué ne puisse pas recommence
 
 ### US-21.4 — Mise en service (aucun écran)
 En tant que propriétaire, je veux une liste claire de ce que je dois configurer, afin d'activer la connexion par téléphone sans aide.
-- `docs/ETAT.md` liste les étapes : Twilio (compte, service Verify, expéditeur WhatsApp approuvé par Meta, SMS), Supabase (fournisseur Phone = Twilio Verify, protection anti-robot Turnstile), Cloudflare Turnstile (site et clé secrète), Vercel (`NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `CONNEXION_CLIENT`), réglage de la base, et les coûts connus avec leur source.
+- `docs/ETAT.md` liste les étapes : Twilio (compte, service Verify, expéditeur WhatsApp approuvé par Meta ; canal WhatsApp seulement), Supabase (fournisseur Phone = Twilio Verify, protection anti-robot Turnstile), Cloudflare Turnstile (site et clé secrète), Vercel (`NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `CONNEXION_CLIENT`), réglage de la base, et les coûts connus avec leur source.
 - **Aucune clé** Twilio, Turnstile (secrète) ou Supabase (service) dans le code, `.env.example` ou un commit : elles se saisissent dans le tableau de bord Supabase.
+
+### US-21.5 — Code par WhatsApp uniquement (pages `/compte/connexion`, `/compte`, `/panier`)
+En tant que propriétaire, je veux que le code parte uniquement sur WhatsApp, afin de ne pas payer de SMS (0,273 $ par SMS vers l'Algérie, contre environ 0,004 $ pour WhatsApp).
+- Le bouton « Recevoir par SMS » disparaît partout ; les textes ne parlent plus de SMS.
+- Le serveur envoie toujours le code avec le canal WhatsApp, quoi qu'envoie le navigateur (les actions serveur n'ont plus de paramètre « canal »).
+- La connexion par lien e-mail reste possible pour les clients, dans les deux modes. En mode téléphone, un client connecté par e-mail doit vérifier son numéro par code WhatsApp avant de commander (règle de la base, inchangée).
+- Tant que Meta n'a pas approuvé l'expéditeur WhatsApp, aucun code ne part : les clients peuvent se connecter par e-mail mais pas commander en mode téléphone. Il faut donc garder `CONNEXION_CLIENT=email` jusqu'à l'approbation.
+- Aucune migration. Tests Vitest : canal toujours WhatsApp (connexion et vérification), pas de bouton SMS.
 
 ## Module 9 — Faire connaître sa boutique (après le MVP)
 
