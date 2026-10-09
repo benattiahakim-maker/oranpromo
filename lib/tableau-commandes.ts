@@ -183,3 +183,65 @@ export function compteRendu(resultat: ResultatGroupe, statut: StatutGroupe): { t
   const lignes = resultat.echecs.map(e => ({ id: e.id, texte: e.numero === null ? e.message : e.deja ? `N° ${e.numero} : ${deja}.` : `N° ${e.numero} ${non} : ${e.message}` }));
   return { titre, lignes };
 }
+
+// --- US-28.3 : liste de préparation ----------------------------------------------
+export type LignePreparee = Pick<CommandeRecue["lignes_commande"][number], "article_id" | "titre" | "taille" | "quantite"> & { articles?: { categorie: string } | null };
+export type CommandeAPreparer = Pick<CommandeRecue, "id" | "numero" | "client_nom" | "total" | "remise_bon"> & { lignes_commande: LignePreparee[] };
+export type TaillePreparee = { taille: string; quantite: number; commandes: { numero: number; prenom: string; quantite: number }[] };
+export type ArticlePrepare = { cle: string; titre: string; categorie: string | null; total: number; tailles: TaillePreparee[] };
+export type Preparation = { articles: ArticlePrepare[]; commandes: { numero: number; prenom: string; pieces: number; montant: number }[]; pieces: number };
+
+const ORDRE_TAILLES = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "2XL", "3XL", "4XL"];
+/** S < M < L… ; 38 < 40 ; « 50 ml » < « 100 ml » ; « 4 ans » < « 10 ans » ; « Unique » et le reste à la fin, par ordre alphabétique. */
+function rangTaille(taille: string): [number, number, string] {
+  const i = ORDRE_TAILLES.indexOf(taille.trim().toUpperCase());
+  if (i >= 0) return [0, i, ""];
+  const nombre = /^(\d+)/.exec(taille.trim());
+  if (nombre) return [1, Number(nombre[1]), taille];
+  return [2, 0, taille];
+}
+function comparerTailles(a: string, b: string): number {
+  const [x, y] = [rangTaille(a), rangTaille(b)];
+  return x[0] - y[0] || x[1] - y[1] || x[2].localeCompare(y[2], "fr");
+}
+
+/**
+ * Regroupe les articles à sortir pour les commandes confirmées : par article (son identifiant ; le titre si l'article
+ * a été supprimé depuis la commande), puis par taille / contenance. Articles triés par catégorie (ordre des rayons) puis par nom.
+ */
+export function grouperPreparation(commandes: CommandeAPreparer[], categories: readonly string[]): Preparation {
+  const articles = new Map<string, ArticlePrepare>();
+  for (const commande of commandes) {
+    for (const ligne of commande.lignes_commande) {
+      const cle = ligne.article_id ?? `titre:${ligne.titre.trim().toLowerCase()}`;
+      const article = articles.get(cle) ?? { cle, titre: ligne.titre, categorie: ligne.articles?.categorie ?? null, total: 0, tailles: [] };
+      articles.set(cle, article);
+      article.total += ligne.quantite;
+      let taille = article.tailles.find(t => t.taille === ligne.taille);
+      if (!taille) { taille = { taille: ligne.taille, quantite: 0, commandes: [] }; article.tailles.push(taille); }
+      taille.quantite += ligne.quantite;
+      const deja = taille.commandes.find(c => c.numero === commande.numero);
+      if (deja) deja.quantite += ligne.quantite; else taille.commandes.push({ numero: commande.numero, prenom: prenom(commande.client_nom), quantite: ligne.quantite });
+    }
+  }
+  const rang = (c: string | null) => { const i = c ? categories.indexOf(c) : -1; return i < 0 ? categories.length : i; };
+  const liste = [...articles.values()].sort((a, b) => rang(a.categorie) - rang(b.categorie) || a.titre.localeCompare(b.titre, "fr"));
+  for (const a of liste) a.tailles.sort((x, y) => comparerTailles(x.taille, y.taille));
+  const resume = commandes.map(c => ({ numero: c.numero, prenom: prenom(c.client_nom), pieces: c.lignes_commande.reduce((s, l) => s + l.quantite, 0), montant: Math.max(0, c.total - Math.max(0, c.remise_bon ?? 0)) }));
+  return { articles: liste, commandes: resume, pieces: resume.reduce((s, c) => s + c.pieces, 0) };
+}
+
+/** Commandes confirmées de la boutique, avec la catégorie de chaque article (client de la session). */
+export async function listerAPreparer(client: Client, boutiqueId: string): Promise<CommandeAPreparer[]> {
+  const { data, error } = await client.from("commandes").select("id, numero, client_nom, total, remise_bon, lignes_commande(article_id, titre, taille, quantite, articles(categorie))")
+    .eq("boutique_id", boutiqueId).eq("statut", "confirmee").order("confirmee_le", { ascending: true }).limit(LIGNES_PAR_ETAPE);
+  if (error) throw new Error("Impossible de charger les commandes. Réessayez.");
+  return (data ?? []) as unknown as CommandeAPreparer[];
+}
+
+/** « vendredi 09/10 à 14 h 05 » (heure d’Oran). */
+export function dateLongue(maintenant: number): string {
+  const parts = new Intl.DateTimeFormat("fr-FR", { timeZone: FUSEAU, weekday: "long", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(maintenant));
+  const p = (t: string) => parts.find(x => x.type === t)?.value ?? "";
+  return `${p("weekday")} ${p("day")}/${p("month")} à ${Number(p("hour"))} h ${p("minute")}`;
+}
