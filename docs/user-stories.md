@@ -615,3 +615,104 @@ L'espace commerçant est aujourd'hui en français seulement (US-23) : les textes
 7. **Lien du proche** : la page `/retrait/<jeton>` montre les articles et le montant (proposé, pour que le proche sache quoi prendre et combien apporter). D'accord ?
 
 **Ce qui ne change pas** : statuts et transitions des commandes, expiration à 24 h, no-shows, contestation, blocage, vérification du numéro, stock (déjà retiré à la confirmation).
+
+## Module 14 — Parrainage (après le MVP)
+
+Source : demande du propriétaire du 9 octobre 2026 (« une section ou une page pour promouvoir le parrainage ; à l'inscription, un client peut donner le numéro WhatsApp de son parrain pour gagner des promos »). **Conception seulement : aucun code, aucune migration, à valider par le propriétaire.** Conception : `docs/architecture.md`, section « Parrainage (US-27) ». Maquette : `docs/maquettes/Parrainage.dc.html`. (Le module 13 est le retrait par QR code, US-26.)
+
+### US-27 — Parrainer un ami et être parrainé (vue d'ensemble) — **à valider par le propriétaire avant tout code**
+En tant que client, je veux inviter mes amis sur OranPromo avec mon lien ou mon numéro WhatsApp, et qu'on gagne tous les deux un avantage quand ils viennent chercher leur première commande, afin de faire connaître le site autour de moi.
+En tant que propriétaire, je veux que le parrainage fasse venir de **vrais clients qui viennent en boutique**, sans coût caché ni triche facile, et sans révéler qui est inscrit.
+
+Livrée en 4 sous-stories, dans cet ordre (une PR chacune, après validation) :
+
+| Story | Contenu | Écrans |
+| --- | --- | --- |
+| US-27.1 | Base : code de parrainage, table `parrainages`, choix du parrain sans révéler si un numéro existe, validation au premier retrait, plafonds, interrupteur `parrainage` | aucun écran |
+| US-27.2 | Saisie du parrain (numéro WhatsApp ou code) à l'inscription, au premier achat ou dans `/compte` ; lien d'invitation `/p/<code>` | `/compte`, `/panier`, `/p/[code]` |
+| US-27.3 | Page `/parrainage`, bloc « Mon parrainage » dans `/compte`, bloc d'accueil, invitation après un retrait, récompense (option retenue) | `/parrainage`, `/compte`, `/`, `/compte/commandes/[id]` |
+| US-27.4 | Suivi admin : liste, signaux de triche, annuler une récompense, exclure un compte ; message WhatsApp au parrain (si retenu) | `/admin/parrainages` |
+
+**Ce qui ne change pas** : les règles de blocage, de no-show, de contestation et de vérification du numéro (US-20.4, US-21) restent **exactement** les mêmes. Le parrainage ne fait que **lire** le numéro vérifié et le statut « récupérée » ; il ne débloque personne, ne retire aucun no-show et ne donne aucune commande en plus.
+
+**Règles proposées** (chiffres à valider, questions en fin de module) :
+- **Qui peut parrainer** : un compte `client` avec un **numéro vérifié par code** (US-21), non bloqué, non exclu du parrainage. Commerçants, ambassadeurs et admin : jamais (ils n'ont pas de numéro de connexion, US-21 relecture n°4).
+- **Qui peut être parrainé** : un **nouveau** compte client avec un numéro vérifié, inscrit depuis **7 jours au plus**, qui **n'a encore passé aucune commande**, et dont le numéro vérifié n'a **jamais** servi à un autre filleul (même après suppression ou changement de compte).
+- **Un seul parrain par compte**. On peut corriger sa saisie **2 fois** (3 saisies au plus) tant qu'aucune commande n'est passée ; ensuite c'est figé (l'admin peut corriger).
+- **Refusés** : son propre numéro ou son propre code (« C'est ton propre numéro : choisis le numéro d'un ami. ») ; un parrain qui est son propre filleul (boucle A ↔ B) : refus **silencieux**.
+- **Pas d'énumération** : la réponse est **la même** que le numéro soit celui d'un client OranPromo ou non, qu'il soit bloqué, commerçant ou inconnu : « C'est noté. Si ce numéro est celui d'un client OranPromo, il deviendra ton parrain après ton premier retrait en boutique. ». Aucun écran, aucun message, aucun délai différent ne dit si un numéro est inscrit. Un numéro qui ne correspond à aucun parrain possible **n'est pas enregistré** (on ne garde pas le numéro d'un tiers).
+- **Récompense seulement après un vrai retrait** : le parrainage est **validé** quand la **première commande** du filleul passe au statut `recuperee` (donnée par la boutique, US-20.3 ; avec le scan du QR code quand US-26 sera en place), au plus tard **60 jours** après son inscription (sinon : expiré). Une inscription seule, une commande annulée, expirée ou non récupérée ne rapportent rien.
+- **Plafond** : **5 parrainages récompensés par parrain et par mois civil** ; au-delà, ils sont comptés (« validé, plafond atteint ») mais ne rapportent rien de plus.
+- **Interrupteur** : réglage `parrainage` dans `prive.reglages`, **désactivé par défaut**. Comme il exige des numéros vérifiés, il ne sert qu'en mode téléphone (US-21) : on l'active après la mise en service de la connexion par code.
+
+### US-27.1 — Parrainage dans la base (aucun écran)
+En tant que propriétaire, je veux que les règles du parrainage soient dans la base, afin qu'un bug d'écran ou un appel direct ne puisse pas les contourner.
+- Chaque client a un **code de parrainage** de 6 caractères (lettres majuscules et chiffres sans 0/O, 1/I/L), unique, créé par la base à la première demande ; il ne contient ni le numéro ni le nom.
+- `choisir_parrain(saisie)` (fonction de la base, le filleul connecté seulement) : accepte un numéro mobile algérien (mêmes formats que US-21) **ou** un code ; applique toutes les règles ci-dessus ; renvoie seulement `enregistre` (même réponse pour un parrain trouvé ou non), ou une erreur qui ne concerne **que le filleul lui-même** (numéro mal écrit, son propre numéro, délai de 7 jours passé, commande déjà passée, numéro non vérifié, 3 saisies atteintes).
+- Validation automatique (déclencheur au passage `recuperee`) : première commande récupérée du filleul, parrainage `en_attente` avec un parrain → `valide` (ou `plafond`), date, commande et boutique notées ; avantage donné au parrain **et** au filleul (option retenue, voir « Récompense »). Parrain bloqué ou exclu à ce moment : `refuse` (rien n'est donné).
+- Lecture : le filleul voit seulement « parrain enregistré : oui / non » et l'état de **son** parrainage ; le parrain voit le nombre de filleuls en attente et, pour les parrainages validés, le **prénom et l'initiale** du filleul avec la date ; jamais de numéro. L'admin voit tout.
+- Tests SQL : énumération (même résultat pour numéro inconnu, numéro de commerçant, compte bloqué, client valide), propre numéro, boucle, un seul parrain, 3 saisies, délai de 7 jours, commande déjà passée, numéro déjà utilisé par un ancien filleul, validation seulement au `recuperee` de la **première** commande (pas à `prete`, `annulee`, `expiree`), plafond mensuel, parrain bloqué, interrupteur désactivé, aucune règle de blocage / no-show / vérification modifiée (tests existants inchangés).
+
+### US-27.2 — Donner le numéro de mon parrain (pages `/compte`, `/panier`, `/p/[code]`)
+En tant que nouveau client, je veux indiquer le numéro WhatsApp (ou le code) de l'ami qui m'a fait connaître OranPromo, afin qu'on gagne tous les deux un avantage.
+- Champ **« Ton parrain (facultatif) : son numéro WhatsApp ou son code »** :
+  - sur le formulaire « Nom » demandé avant la première commande (`/panier`, après la connexion par code) ;
+  - dans `/compte`, bloc « Ton parrain », tant que les règles le permettent (7 jours, aucune commande) ; ensuite le bloc disparaît.
+- Lien d'invitation **`/p/<code>`** (envoyé par le parrain) : garde le code dans un cookie `parrain` (30 jours, seulement le code), puis ouvre `/parrainage` avec « Un ami t'invite sur OranPromo ». Le champ est alors **pré-rempli** avec le code ; le client doit quand même toucher « Valider » (pas d'ajout automatique). Un code inconnu ou mal formé donne la même page (pas d'énumération des codes).
+- Après « Valider » : toujours le même message (« C'est noté… ») ; le bloc affiche « Parrain enregistré » et « Modifier » (2 corrections au plus, tant qu'aucune commande n'est passée).
+- Numéro non algérien ou mal écrit : message de US-21 (« Saisissez un numéro de mobile algérien : 05, 06 ou 07 suivi de 8 chiffres. ») ; son propre numéro : « C'est ton propre numéro : choisis le numéro d'un ami. ».
+- Tests Vitest : normalisation numéro / code, cookie posé par `/p/<code>` (code seulement, httpOnly, 30 jours), champ pré-rempli, même message pour tout numéro valide (action serveur espionnée), bloc masqué après une commande.
+
+### US-27.3 — Page « Parrainage » et mes filleuls (pages `/parrainage`, `/compte`, `/`, `/compte/commandes/[id]`)
+En tant que client, je veux comprendre le parrainage en 10 secondes et partager mon lien sur WhatsApp, afin d'inviter mes amis sans effort.
+- **`/parrainage`** (publique) : titre « Parraine tes amis », les 3 étapes (1. Partage ton lien ; 2. Ton ami s'inscrit avec son numéro WhatsApp et te choisit comme parrain ; 3. Quand il récupère sa première commande en boutique, vous gagnez tous les deux), la récompense (option retenue), les règles courtes (numéro vérifié, pas soi-même, 5 par mois, avantage après un vrai retrait).
+  - Connecté avec un numéro vérifié : **mon code**, **mon lien** `https://<site>/p/<code>`, « Copier le lien », **« Partager sur WhatsApp »** (`https://wa.me/?text=…` sans numéro : le client choisit le contact ou son statut ; OranPromo n'écrit jamais à ses amis), QR code du lien (optionnel, même outil que US-22).
+  - Non connecté : « Connecte-toi pour avoir ton lien » ; numéro non vérifié : « Vérifie ton numéro pour parrainer » (parcours US-21).
+- **`/compte`, bloc « Mon parrainage »** : code, boutons Copier / Partager, compteurs (« 2 amis ont fait leur premier retrait », « 1 ami inscrit, en attente de son premier retrait »), liste des parrainages validés (« Samir B. · 12 oct. · +30 jours Club ») et l'avantage en cours (« Club jusqu'au 14 novembre »).
+- **Accueil** : un bloc texte « Parraine tes amis » sous le bloc « Les boutiques sur la carte », lien vers `/parrainage` (aucune image ni script en plus).
+- **Après un retrait** : sur le suivi d'une commande `recuperee`, encadré « Merci ! Fais découvrir OranPromo à un ami » avec « Partager mon lien ». **Pas** dans les messages WhatsApp de commande (modèles « Utilitaire » : y ajouter de la promotion les ferait passer en « Marketing », plus cher, et risquerait des sanctions de Meta sur tout le compte).
+- En arabe (US-23) : même page de droite à gauche, textes du tableau ci-dessous.
+- Tests Vitest : lien et message de partage, code affiché seulement pour un numéro vérifié, compteurs, liste sans numéro, bloc d'accueil, encadré seulement sur une commande récupérée, textes fr / ar (mêmes clés).
+
+### US-27.4 — Suivi par l'admin (page `/admin/parrainages`)
+En tant qu'admin, je veux voir les parrainages et repérer la triche, afin de garder le parrainage honnête.
+- Liste des parrainages (les plus récents d'abord) : parrain et filleul (nom, numéro masqué « 0555 •• •• 56 »), dates d'inscription et de validation, boutique et montant de la première commande, statut (`en_attente`, `valide`, `plafond`, `expire`, `refuse`, `annule`).
+- **Signaux** (affichés, jamais bloquants automatiquement) : plusieurs filleuls d'un même parrain récupérés dans **la même boutique** ce mois-ci (3 ou plus) ; commande récupérée moins de 30 minutes après avoir été passée ; filleul qui ne commande plus jamais après son premier retrait ; petit montant (< 1 000 DA) ; parrain qui atteint le plafond chaque mois.
+- Actions : **Annuler la récompense** (motif obligatoire) ; **Exclure du parrainage** un compte (il ne peut plus parrainer ni être récompensé ; ses commandes et son compte ne changent pas). Aucune action ne touche au blocage ou aux no-shows.
+- Message WhatsApp au parrain quand un parrainage est validé : seulement si le propriétaire le retient (voir architecture : catégorie **Marketing**, environ 0,0225 $ par message remis, accord préalable du client nécessaire).
+
+**Récompense : options** (détail, coûts et risques dans `docs/architecture.md`, « Parrainage (US-27) ») — le paiement se fait en boutique, il n'y a pas de paiement en ligne :
+- **A. Bon OranPromo en dinars** (ex. 300 DA au parrain et 300 DA au filleul), déduit en boutique sur une commande suivante, **remboursé à la boutique par OranPromo** chaque mois.
+- **B. Bon offert par la boutique** : chaque boutique qui le veut propose sa propre « offre parrainage » (ex. −10 % sur la première commande du filleul), à ses frais.
+- **C. Club Parrainage (recommandé pour démarrer)** : chaque parrainage validé donne **30 jours de Club** au parrain et au filleul ; le Club voit les **« Promos Club »** (promos réservées que les boutiques choisissent d'ouvrir) et un **badge « Parrain »** dans `/compte`. Aucun argent ne circule.
+
+**Textes en français et en arabe** (arabe simple avec des mots de darja d'Oran en gras, masculin générique ; à valider) :
+
+| # | Où | Français | Arabe proposé | Variante en arabe standard |
+| --- | --- | --- | --- | --- |
+| 1 | Page, titre | Parraine tes amis | **عرّض** صحابك | ادعُ أصدقاءك |
+| 2 | Étape 1 | Partage ton lien sur WhatsApp. | **ابعث** الرابط **نتاعك** لصحابك على واتساب. | أرسل رابطك إلى أصدقائك عبر واتساب. |
+| 3 | Étape 2 | Ton ami s'inscrit avec son numéro et te choisit comme parrain. | صاحبك يتسجّل **بنمرتو** ويكتب **نمرتك** ولا الكود **نتاعك**. | يسجّل صديقك برقمه ويختارك عرّابًا. |
+| 4 | Étape 3 | Quand il récupère sa première commande en boutique, vous gagnez tous les deux. | **كي يدّي** أول طلب من **الحانوت**، **تربحو بجوج**. | عندما يستلم أول طلب من المحل، تربحان معًا. |
+| 5 | Récompense (option C) | 30 jours de Club : les promos réservées aux membres. | 30 يوم في **النادي**: تخفيضات غير للأعضاء. | 30 يومًا في النادي: تخفيضات خاصة بالأعضاء. |
+| 6 | Bouton | Partager sur WhatsApp | **ابعث** على واتساب | شارك عبر واتساب |
+| 7 | Bouton | Copier le lien | انسخ الرابط | انسخ الرابط |
+| 8 | Champ | Ton parrain (facultatif) : son numéro WhatsApp ou son code | **اللي عرضك** (**إلا حبيت**): **النمرة** نتاع الواتساب **ولا** الكود | العرّاب (اختياري): رقم واتساب أو الرمز |
+| 9 | Après « Valider » | C'est noté. Si ce numéro est celui d'un client OranPromo, il deviendra ton parrain après ton premier retrait en boutique. | **تسجّلت**. **إلا** كانت هاد **النمرة** نتاع زبون في OranPromo، **يولّي** هو **اللي عرضك** من بعد أول طلب **تدّيه** من **الحانوت**. | تم التسجيل. إذا كان هذا الرقم لزبون في OranPromo، فسيصبح عرّابك بعد أول استلام من المحل. |
+| 10 | Erreur | C'est ton propre numéro : choisis le numéro d'un ami. | هادي **نمرتك** أنت: **ختار** **نمرة** صاحبك. | هذا رقمك أنت: اختر رقم صديقك. |
+| 11 | `/compte` | 2 amis ont fait leur premier retrait · 1 en attente | 2 صحاب **دّاو** أول طلب · 1 **مازال** | صديقان استلما أول طلب · 1 في الانتظار |
+| 12 | Invitation | Un ami t'invite sur OranPromo | صاحبك **عرضك** لـ OranPromo | صديقك يدعوك إلى OranPromo |
+| 13 | Accueil, bloc | Parraine tes amis · Gagne l'accès au Club | **عرّض** صحابك · **اربح** الدخول **للنادي** | ادعُ أصدقاءك · اربح دخول النادي |
+| 14 | Après un retrait | Merci ! Fais découvrir OranPromo à un ami. | **يعطيك الصحة**! **عرّف** صاحبك بـ OranPromo. | شكرًا! عرّف صديقك على OranPromo. |
+
+**Questions au propriétaire** (à trancher avant le code) :
+1. **Récompense** : A, B ou C ? (recommandation : **C** pour démarrer, sans argent ; A plus tard avec un budget mensuel fixe).
+2. **Délai pour donner son parrain** : 7 jours après l'inscription et avant la première commande ? (proposé)
+3. **Délai pour le premier retrait** : 60 jours après l'inscription ? (proposé)
+4. **Plafond** : 5 parrainages récompensés par parrain et par mois ? (proposé)
+5. **Option C** : 30 jours de Club par parrainage validé, pour le parrain **et** le filleul, cumulables jusqu'à 6 mois ? Le filleul a-t-il le Club **dès l'inscription** (plus attirant) ou seulement après son premier retrait (proposé, plus sûr) ?
+6. **Montant minimum** de la première commande pour valider (ex. 1 000 DA) ? (proposé : aucun avec C ; 2 000 DA avec A)
+7. **Message WhatsApp au parrain** quand un ami valide : oui (Marketing, ≈ 0,0225 $ par message, case « J'accepte les messages de OranPromo » à cocher) ou non, seulement dans `/compte` (proposé au début) ?
+8. **US-26 (QR code de retrait)** : exiger que la première commande du filleul ait été récupérée **par scan du QR code ou code à 4 chiffres** pour valider le parrainage (proposé dès que US-26 est en place) ?
+9. **Nom affiché au parrain** : prénom + initiale du filleul validé (proposé) ou rien du tout ?
+10. **Ton en français** : le parrainage tutoie (« Parraine tes amis », ton entre amis, proposé) alors que le reste du site vouvoie (« Vérifiez votre numéro ») : garder le tutoiement ici, ou tout vouvoyer ?
