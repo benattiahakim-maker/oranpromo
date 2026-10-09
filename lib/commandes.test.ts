@@ -104,6 +104,14 @@ describe("commandes reçues par la boutique (US-20.3)", () => {
   });
 });
 
+describe("relecture n°2 US-20 : 20 commandes par heure et par boutique", () => {
+  it("affiche tel quel le refus de la base quand la boutique a reçu trop de commandes", async () => {
+    const erreur = { code: "54000", message: "Cette boutique a reçu trop de commandes dans la dernière heure : réessayez un peu plus tard." };
+    expect(messageErreurCommande(erreur, "défaut")).toBe(erreur.message);
+    await expect(passerCommande(client({ rpc: { data: null, error: erreur } }).client, "b1", [{ article_id: "a", taille: "M", quantite: 1 }], "")).rejects.toThrow("Cette boutique a reçu trop de commandes dans la dernière heure");
+  });
+});
+
 describe("relecture US-20", () => {
   it("point 1 : reconnaît le refus « Stock insuffisant » de la base et l’affiche tel quel", () => {
     const erreur = { code: "23514", message: "Stock insuffisant pour « Polo » en taille M : il reste 0 pièce(s), la commande en demande 1." };

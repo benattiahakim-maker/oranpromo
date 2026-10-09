@@ -43,6 +43,9 @@ export function etapesFrise(statut: StatutCommande, suivi: EvenementSuivi[]): Et
 
 type ErreurBase = { code?: string; message?: string } | null | undefined;
 // Codes des erreurs levées volontairement par les fonctions de la base (messages déjà en français).
+// 54000 = limites : 5 commandes en cours et 10 par heure par client ; 20 nouvelles commandes par heure et par
+// boutique, tous clients confondus (« Cette boutique a reçu trop de commandes dans la dernière heure… »,
+// déclencheur commandes_limite_boutique, migration 20261009233000).
 const CODES_METIER = new Set(["42501", "23514", "P0002", "54000", "22023"]);
 export function messageErreurCommande(error: ErreurBase, defaut: string): string {
   return error?.code && CODES_METIER.has(error.code) && error.message ? error.message : defaut;
