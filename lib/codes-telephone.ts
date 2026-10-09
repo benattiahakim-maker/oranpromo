@@ -5,7 +5,7 @@ import { CANAL_CODE, MESSAGE_TELEPHONE_INVALIDE, modeConnexionClient, nettoyerCo
 
 // US-21.2 : envoi et vérification des codes par Supabase Auth (fournisseur Twilio Verify, configuré dans le
 // tableau de bord Supabase : aucune clé ici). Limites par numéro dans la base (controler_envoi_code /
-// enregistrer_envoi_code, jeton = CRON_SECRET). Voir docs/architecture.md, « Connexion des clients par téléphone ».
+// enregistrer_envoi_code, jeton = CODES_TELEPHONE_SECRET, secret à part depuis la relecture n°4). Voir docs/architecture.md, « Connexion des clients par téléphone ».
 
 type Client = SupabaseClient<Database>;
 type ErreurAuth = { code?: string; status?: number; message?: string } | null | undefined;
@@ -42,7 +42,7 @@ function lireNumero(saisie: unknown): string {
 }
 
 function jetonServeur(): string {
-  const jeton = process.env.CRON_SECRET;
+  const jeton = process.env.CODES_TELEPHONE_SECRET;
   if (!jeton || jeton.length < 16) throw new ErreurCode(MESSAGE_NON_CONFIGUREE);
   return jeton;
 }
