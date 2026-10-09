@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
 import { slugValide } from "./lien-boutique";
-import { changerStatutBoutique, creerBoutique, filtreBoutiques, listerBoutiques, normaliserWhatsAppAlgerien, rattacherCommercant, roleAdministration, slugBoutique, validerBoutique } from "./boutique";
+import { changerStatutBoutique, creerBoutique, MESSAGE_NOM_BOUTIQUE, NOM_BOUTIQUE_MAX, nomBoutiqueValide, filtreBoutiques, listerBoutiques, normaliserWhatsAppAlgerien, rattacherCommercant, roleAdministration, slugBoutique, validerBoutique } from "./boutique";
 const saisie = { nom: "Boutique Étoile", quartier: "Akid Lotfi", adresse: "12 rue des Oliviers", latitude: "", longitude: "", horaires: "", whatsapp: "0555 12 34 56", instagram: "", facebook: "" };
 
 describe("US-16 : validation boutique", () => {
@@ -29,6 +29,12 @@ function simulation(role = "admin") {
   const client = { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "compte" } }, error: null }) }, from: vi.fn((table: string) => table === "profils" ? { select: () => profil } : { insert, update, select: () => requete }), rpc } as unknown as SupabaseClient<Database>;
   return { client, profil, requete, single, insert, update, rpc };
 }
+describe("Nom de boutique : une seule limite, 80 caractères (écran, serveur, base)", () => {
+  it("la limite est 80, comme la contrainte de la base", () => { expect(NOM_BOUTIQUE_MAX).toBe(80); expect(MESSAGE_NOM_BOUTIQUE).toBe("Le nom de la boutique doit contenir entre 2 et 80 caractères."); });
+  it.each(["AB", "A".repeat(80), `  ${"A".repeat(80)}  `, "é".repeat(80)])("accepte un nom de 2 à 80 caractères (espaces autour ignorés)", nom => { expect(nomBoutiqueValide(nom)).toBe(true); expect(validerBoutique({ ...saisie, nom }).nom).toBeUndefined(); });
+  it.each(["", "A", "  A  ", "A".repeat(81), "A".repeat(120)])("refuse « %s » avec un message clair", nom => { expect(validerBoutique({ ...saisie, nom }).nom).toBe(MESSAGE_NOM_BOUTIQUE); });
+  it("compte les caractères comme la base (un émoji = 1 caractère)", () => { expect(nomBoutiqueValide("👗".repeat(80))).toBe(true); expect(nomBoutiqueValide("👗".repeat(81))).toBe(false); });
+});
 describe("US-16 : opérations soumises aux rôles", () => {
   it("crée une boutique en attente avec un slug unique et un numéro normalisé", async () => {
     const test = simulation("ambassadeur"); await creerBoutique(test.client, saisie); expect(test.profil.eq).toHaveBeenCalledWith("id", "compte"); expect(test.insert).toHaveBeenCalledWith(expect.objectContaining({ slug: "boutique-etoile", statut: "en_attente", whatsapp: "+213555123456", latitude: null }));
@@ -50,6 +56,11 @@ describe("US-16 : opérations soumises aux rôles", () => {
   });
   it("US-22 : abandonne après 11 conflits avec un message clair", async () => { const test = simulation(); test.single.mockResolvedValue({ data: null, error: { code: "23505" } }); await expect(creerBoutique(test.client, saisie)).rejects.toThrow("adresse unique"); expect(test.insert).toHaveBeenCalledTimes(11); });
   it("refuse un commerçant avant toute création", async () => { const test = simulation("commercant"); await expect(creerBoutique(test.client, saisie)).rejects.toThrow("Accès réservé"); expect(test.insert).not.toHaveBeenCalled(); });
+  it("refuse un nom de 81 caractères avant insertion (serveur)", async () => { const test = simulation(); await expect(creerBoutique(test.client, { ...saisie, nom: "A".repeat(81) })).rejects.toMatchObject({ champs: { nom: MESSAGE_NOM_BOUTIQUE } }); expect(test.insert).not.toHaveBeenCalled(); });
+  it("traduit le refus de la base sur le nom en message du champ", async () => {
+    const test = simulation(); test.single.mockResolvedValueOnce({ data: null, error: { code: "23514", message: MESSAGE_NOM_BOUTIQUE } });
+    await expect(creerBoutique(test.client, saisie)).rejects.toMatchObject({ champs: { nom: MESSAGE_NOM_BOUTIQUE } });
+  });
   it("refuse un formulaire invalide avant insertion", async () => { const test = simulation(); await expect(creerBoutique(test.client, { ...saisie, nom: "" })).rejects.toThrow("champs"); expect(test.insert).not.toHaveBeenCalled(); });
   it("refuse statut et RPC à un ambassadeur même hors interface", async () => { const test = simulation("ambassadeur"); await expect(changerStatutBoutique(test.client, "boutique", "validee")).rejects.toThrow("administrateurs"); await expect(rattacherCommercant(test.client, "boutique", "vendeur@example.com")).rejects.toThrow("administrateurs"); expect(test.update).not.toHaveBeenCalled(); expect(test.rpc).not.toHaveBeenCalled(); });
   it.each(["validee", "suspendue"] as const)("permet à l’admin le statut %s", async statut => { const test = simulation(); await changerStatutBoutique(test.client, "boutique", statut); expect(test.update).toHaveBeenCalledWith({ statut }); expect(test.requete.eq).toHaveBeenCalledWith("id", "boutique"); });

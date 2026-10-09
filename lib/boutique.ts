@@ -3,6 +3,14 @@ import type { Database, Enums, Tables } from "./supabase/types";
 import { emailValide } from "./connexion";
 import { baseSlug, candidatSlug } from "./lien-boutique";
 
+// Nom de boutique : 2 à 80 caractères (même limite à l’écran, sur le serveur et dans la base, contrainte boutiques.nom).
+export const NOM_BOUTIQUE_MIN = 2;
+export const NOM_BOUTIQUE_MAX = 80;
+export const MESSAGE_NOM_BOUTIQUE = `Le nom de la boutique doit contenir entre ${NOM_BOUTIQUE_MIN} et ${NOM_BOUTIQUE_MAX} caractères.`;
+export function nomBoutiqueValide(nom: string): boolean {
+  const longueur = Array.from(nom.trim()).length; // caractères comme char_length de PostgreSQL (un émoji compte pour 1)
+  return longueur >= NOM_BOUTIQUE_MIN && longueur <= NOM_BOUTIQUE_MAX;
+}
 export const STATUTS_BOUTIQUE = { en_attente: "En attente", validee: "Validée", suspendue: "Suspendue" } as const;
 export type RoleAdministration = "admin" | "ambassadeur";
 export type SaisieBoutique = { nom: string; quartier: string; adresse: string; latitude: string; longitude: string; horaires: string; whatsapp: string; instagram: string; facebook: string };
@@ -44,7 +52,7 @@ function lienSocial(valeur: string, reseau: "instagram" | "facebook"): string | 
 }
 export function validerBoutique(saisie: SaisieBoutique): ErreursBoutique {
   const erreurs: ErreursBoutique = {};
-  if (saisie.nom.trim().length < 2 || saisie.nom.trim().length > 120) erreurs.nom = "Le nom doit contenir entre 2 et 120 caractères.";
+  if (!nomBoutiqueValide(saisie.nom)) erreurs.nom = MESSAGE_NOM_BOUTIQUE;
   if (!saisie.quartier.trim()) erreurs.quartier = "Saisissez le quartier.";
   if (!saisie.adresse.trim()) erreurs.adresse = "Saisissez l’adresse.";
   if (!normaliserWhatsAppAlgerien(saisie.whatsapp)) erreurs.whatsapp = "Saisissez un numéro algérien valide, par exemple 0555 12 34 56.";
@@ -76,6 +84,7 @@ export async function creerBoutique(client: SupabaseClient<Database>, saisie: Sa
     const slug = candidatSlug(base, tentative);
     const { data, error } = await client.from("boutiques").insert({ nom: saisie.nom.trim(), quartier: saisie.quartier.trim(), adresse: saisie.adresse.trim(), latitude: coordonnee(saisie.latitude), longitude: coordonnee(saisie.longitude), horaires: saisie.horaires.trim() || null, whatsapp: normaliserWhatsAppAlgerien(saisie.whatsapp)!, instagram: lienSocial(saisie.instagram, "instagram"), facebook: lienSocial(saisie.facebook, "facebook"), slug, statut: "en_attente" }).select("*").single();
     if (!error && data) return data;
+    if (error?.code === "23514" && error.message.includes(MESSAGE_NOM_BOUTIQUE)) throw new ErreurValidationBoutique({ nom: MESSAGE_NOM_BOUTIQUE });
     if (error?.code !== "23505") throw new Error("Impossible de créer la boutique. Réessayez.");
   }
   throw new Error("Impossible de générer une adresse unique pour la boutique. Réessayez.");
