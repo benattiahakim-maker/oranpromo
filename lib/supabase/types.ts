@@ -278,6 +278,20 @@ export type Database = {
           },
         ];
       };
+      messages_whatsapp: {
+        Row: { commande_id: string | null; cree_le: string; destinataire: string; envoye_le: string | null; erreur: string | null; id: string; identifiant_fournisseur: string | null; modele: string; parametres: Json; reservation: string | null; reserve_jusqu_a: string | null; statut: Database["public"]["Enums"]["statut_message_whatsapp"]; tentatives: number; texte: string };
+        Insert: { commande_id?: string | null; cree_le?: string; destinataire: string; envoye_le?: string | null; erreur?: string | null; id?: string; identifiant_fournisseur?: string | null; modele: string; parametres?: Json; reservation?: string | null; reserve_jusqu_a?: string | null; statut?: Database["public"]["Enums"]["statut_message_whatsapp"]; tentatives?: number; texte: string };
+        Update: Partial<Database["public"]["Tables"]["messages_whatsapp"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "messages_whatsapp_commande_id_fkey";
+            columns: ["commande_id"];
+            isOneToOne: false;
+            referencedRelation: "commandes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       signalements: {
         Row: {
           article_id: string;
@@ -349,6 +363,18 @@ export type Database = {
         Args: { client: string };
         Returns: undefined;
       };
+      messages_whatsapp_commande: {
+        Args: { commande: string };
+        Returns: { destinataire: string; id: string; modele: string; parametres: Json; reservation: string; texte: string }[];
+      };
+      messages_whatsapp_en_attente: {
+        Args: { jeton: string; limite?: number };
+        Returns: { destinataire: string; id: string; modele: string; parametres: Json; reservation: string; texte: string }[];
+      };
+      resultat_message_whatsapp: {
+        Args: { definitif?: boolean; erreur?: string; identifiant?: string; message: string; reservation: string; succes: boolean };
+        Returns: undefined;
+      };
       passer_commande: {
         Args: { boutique: string; lignes: Json; note?: string | null };
         Returns: string;
@@ -359,6 +385,7 @@ export type Database = {
       };
     };
     Enums: {
+      statut_message_whatsapp: "a_envoyer" | "envoye" | "echec";
       genre_article: "homme" | "femme" | "enfant" | "mixte";
       role_utilisateur: "commercant" | "ambassadeur" | "admin" | "client";
       statut_article: "disponible" | "reserve" | "vendu" | "masque";

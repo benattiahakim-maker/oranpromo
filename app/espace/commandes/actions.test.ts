@@ -3,9 +3,12 @@ import { changerStatutCommandeBoutique } from "./actions";
 
 const { rpc, commande, boutique } = vi.hoisted(() => ({ rpc: vi.fn(), commande: { valeur: null as unknown }, boutique: { valeur: "b1" } }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ rpc, from: () => { const c: Record<string, unknown> = { select: () => c, eq: () => c, maybeSingle: async () => ({ data: commande.valeur, error: null }) }; return c; } }) }));
+const { after, envoyer } = vi.hoisted(() => ({ after: vi.fn((tache: () => unknown) => { void tache(); }), envoyer: vi.fn() }));
+vi.mock("next/server", () => ({ after }));
+vi.mock("@/lib/notifications", () => ({ envoyerMessagesCommande: envoyer }));
 vi.mock("@/lib/gestion-articles", () => ({ boutiqueDuCompte: async () => boutique.valeur }));
 const id = "11111111-1111-1111-1111-111111111111";
-beforeEach(() => { rpc.mockReset(); rpc.mockResolvedValue({ error: null }); commande.valeur = { id, boutique_id: "b1", statut: "demandee" }; boutique.valeur = "b1"; });
+beforeEach(() => { after.mockClear(); envoyer.mockReset(); rpc.mockReset(); rpc.mockResolvedValue({ error: null }); commande.valeur = { id, boutique_id: "b1", statut: "demandee" }; boutique.valeur = "b1"; });
 
 describe("action serveur de la boutique (US-20.3)", () => {
   it("confirme une commande de sa boutique", async () => {
@@ -25,5 +28,13 @@ describe("action serveur de la boutique (US-20.3)", () => {
   it("transmet le motif et la note d’une annulation", async () => {
     await changerStatutCommandeBoutique(id, "annulee", "plus_en_stock", " Désolé ");
     expect(rpc).toHaveBeenCalledWith("changer_statut_commande", { commande: id, statut: "annulee", motif: "plus_en_stock", note: "Désolé" });
+  });
+  it("envoie le WhatsApp « commande prête » après la réponse, pas pour une confirmation (US-20.5)", async () => {
+    await changerStatutCommandeBoutique(id, "confirmee", null, "");
+    expect(after).not.toHaveBeenCalled();
+    commande.valeur = { id, boutique_id: "b1", statut: "confirmee" };
+    await changerStatutCommandeBoutique(id, "prete", null, "");
+    expect(after).toHaveBeenCalledTimes(1);
+    expect(envoyer).toHaveBeenCalledWith(expect.anything(), id);
   });
 });

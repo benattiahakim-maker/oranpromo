@@ -1,5 +1,7 @@
 "use server";
+import { after } from "next/server";
 import { creerClientServeur } from "@/lib/supabase/server";
+import { envoyerMessagesCommande } from "@/lib/notifications";
 import { passerCommande, type LigneEnvoyee } from "@/lib/commandes";
 import { LIGNES_PANIER_MAX, NOTE_COMMANDE_MAX, QUANTITE_LIGNE_MAX } from "@/lib/panier";
 
@@ -19,6 +21,8 @@ export async function commanderPanier(boutiqueId: string, lignes: LigneEnvoyee[]
     const { data: { user }, error } = await client.auth.getUser();
     if (error || !user) return { connexion: true, erreur: "Connectez-vous pour commander." };
     const id = await passerCommande(client, boutiqueId, lignes.map(l => ({ article_id: l.article_id, taille: l.taille, quantite: l.quantite })), note);
+    // WhatsApp à la boutique après la réponse (US-20.5) ; sans configuration, le message reste en file d'attente.
+    after(() => envoyerMessagesCommande(client, id));
     return { id };
   } catch (error) { return { erreur: error instanceof Error ? error.message : "Impossible d’envoyer la commande. Réessayez." }; }
 }

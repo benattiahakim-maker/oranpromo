@@ -122,6 +122,16 @@ Décisions du propriétaire : compte client lié au numéro de téléphone (conn
   - juste après une action (commande, changement de statut), l'action serveur envoie les messages de cette commande (`messages_whatsapp_commande()`, réservé aux participants) ;
   - les autres (expiration, blocage, échecs) sont envoyés par `GET /api/notifications/whatsapp`, protégé par `Authorization: Bearer <CRON_SECRET>`, appelé par une tâche planifiée (Vercel Cron ou autre) ; la base vérifie l'empreinte du secret (`messages_whatsapp_en_attente()`, `prive.reglages`) ;
   - chaque envoi réserve le message 2 minutes (pas de double envoi), 5 tentatives au plus, puis `echec`.
+  - mise en service :
+    1. compte WhatsApp Business (Meta Business Manager) avec un numéro dédié, puis `WHATSAPP_TOKEN` (jeton d'utilisateur système permanent) et `WHATSAPP_PHONE_NUMBER_ID` sur l'hébergeur ;
+    2. faire approuver par Meta les 4 modèles (catégorie « Utilitaire », langue `fr`) avec exactement ces textes (variables `{{1}}`…) :
+       - `oranpromo_nouvelle_commande` : « Nouvelle commande n° {{1}} sur OranPromo : {{2}}, {{3}} article(s), {{4}}. Confirmez-la dans votre espace OranPromo, rubrique Commandes. »
+       - `oranpromo_commande_prete` : « Bonjour {{1}}, votre commande n° {{2}} est prête chez {{3}}. Vous pouvez la récupérer jusqu'au {{4}}. »
+       - `oranpromo_commande_expiree` : « Bonjour {{1}}, votre commande n° {{2}} chez {{3}} n'a pas été récupérée dans les 24 heures : elle est annulée et les articles sont remis en vente. Merci de ne commander que ce que vous viendrez chercher. Attention : encore {{4}} commande(s) non récupérée(s) et votre compte sera bloqué. »
+       - `oranpromo_compte_bloque` : « Bonjour {{1}}, votre compte OranPromo est bloqué après 5 commandes non récupérées. Pour le débloquer, contactez OranPromo. »
+    3. choisir `CRON_SECRET` (32 caractères aléatoires au moins), le mettre sur l'hébergeur et ranger son empreinte dans la base (éditeur SQL Supabase) : `insert into prive.reglages (cle, valeur) values ('jeton_notifications', encode(sha256(convert_to('<CRON_SECRET>', 'UTF8')), 'hex')) on conflict (cle) do update set valeur = excluded.valeur;`
+    4. appeler `GET /api/notifications/whatsapp` toutes les 5 minutes environ (Vercel Cron, cron-job.org…) avec `Authorization: Bearer <CRON_SECRET>` ;
+    5. suivre la file dans la table `messages_whatsapp` (colonnes `statut`, `erreur`).
 
 ## Variables d'environnement
 
@@ -133,6 +143,7 @@ Décisions du propriétaire : compte client lié au numéro de téléphone (conn
 | `WHATSAPP_FOURNISSEUR` | serveur | `meta` (par défaut) ; prévu pour `twilio` |
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` | serveur | WhatsApp Cloud API (Meta) ; vides = aucun envoi |
 | `WHATSAPP_LANGUE` | serveur | langue des modèles Meta (`fr` par défaut) |
+| `WHATSAPP_API_VERSION` | serveur | version de l'API Graph de Meta (`v23.0` par défaut) |
 | `CRON_SECRET` | serveur | secret de la tâche d'envoi des messages en attente |
 
 ## IA (US-14, US-15)
