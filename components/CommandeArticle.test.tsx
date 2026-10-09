@@ -5,9 +5,9 @@ import CommandeArticle from "./CommandeArticle";
 import { CLE_PANIER } from "@/lib/panier";
 
 afterEach(cleanup);
-const { insert } = vi.hoisted(() => ({ insert: vi.fn().mockResolvedValue({ error: null }) }));
-vi.mock("@/lib/supabase/client", () => ({ creerClientNavigateur: () => ({ from: () => ({ insert }) }) }));
-beforeEach(() => { localStorage.clear(); insert.mockClear(); });
+const { enregistrerEvenement } = vi.hoisted(() => ({ enregistrerEvenement: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/evenements", () => ({ enregistrerEvenement }));
+beforeEach(() => { localStorage.clear(); enregistrerEvenement.mockClear(); });
 const article = { articleId: "1234", boutique: { id: "boutique", nom: "Boutique Amine", whatsapp: "+213555123456" }, titre: "Polo bleu", prix: 3500, photo: null };
 const panier = () => JSON.parse(localStorage.getItem(CLE_PANIER) ?? "null");
 
@@ -27,7 +27,7 @@ describe("ajouter au panier depuis la fiche (US-20.2)", () => {
   it("compte le clic comme une demande de réservation, sans donnée personnelle (US-08)", () => {
     render(<CommandeArticle {...article} tailles={[{ libelle: "Unique", quantite: 3 }]} />);
     fireEvent.click(screen.getByRole("button", { name: "Ajouter au panier" }));
-    expect(insert).toHaveBeenCalledWith({ type: "clic_reserver", article_id: "1234", boutique_id: "boutique", taille: "Unique" });
+    expect(enregistrerEvenement).toHaveBeenCalledWith("clic_reserver", "boutique", "1234", "Unique");
   });
   it("propose de remplacer un panier d’une autre boutique", () => {
     localStorage.setItem(CLE_PANIER, JSON.stringify({ boutiqueId: "autre", boutiqueNom: "Maison Ilyes", lignes: [{ articleId: "x", titre: "Robe", taille: "38", quantite: 1, prix: 5000, photo: null }] }));
