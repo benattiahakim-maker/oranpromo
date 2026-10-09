@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { commanderPanier } from "@/app/panier/actions";
 import FormulaireProfilClient from "./FormulaireProfilClient";
+import CodeTelephone from "./CodeTelephone";
 import { formaterPrix } from "@/lib/prix";
 import { abonnerPanier, changerQuantitePanier, lignesCommande, lirePanier, NOTE_COMMANDE_MAX, panierBrut, QUANTITE_LIGNE_MAX, retirerDuPanier, sauverPanierLocal, totalPanier } from "@/lib/panier";
 import { messageNoShows } from "@/lib/clients";
 
-export type ProfilPanier = { nom: string | null; telephone: string | null; complet: boolean; bloque: boolean; noShows: number } | null;
+// US-21.2 : verificationRequise = mode téléphone (CONNEXION_CLIENT=telephone) ; telephoneVerifie = numéro vérifié par code.
+export type ProfilPanier = { nom: string | null; telephone: string | null; complet: boolean; bloque: boolean; noShows: number; telephoneVerifie?: boolean; verificationRequise?: boolean } | null;
 
 // US-20.2 : panier d’une boutique → « Commander ».
 export default function PanierCommande({ profil }: { profil: ProfilPanier }) {
@@ -60,7 +62,8 @@ export default function PanierCommande({ profil }: { profil: ProfilPanier }) {
     <p className="flex justify-between py-4"><span className="etiquette self-center">Total</span><span>{formaterPrix(totalPanier(panier))}</span></p>
     {avertissement && <p role="alert" className="mb-4 border border-trait p-3 text-sm leading-[1.6]">{avertissement}</p>}
     {!profil ? <Link href="/compte/connexion?suite=/panier" className="etiquette flex min-h-[54px] items-center justify-center bg-noir text-blanc">Se connecter pour commander</Link>
-      : !profil.complet ? <div className="border border-trait p-4"><p className="mb-3 text-sm">Avant votre première commande, indiquez votre nom et votre numéro WhatsApp.</p><FormulaireProfilClient nom={profil.nom} telephone={profil.telephone} bouton="Enregistrer et continuer" onEnregistre={() => router.refresh()} /></div>
+      : profil.verificationRequise && !profil.telephoneVerifie ? <div className="border border-noir p-4"><p className="etiquette mb-2 text-xs">Vérifiez votre numéro pour commander</p><p className="mb-3 text-sm leading-[1.6]">Vous recevez un code à 6 chiffres sur WhatsApp (ou par SMS). La boutique vous contactera sur ce numéro.</p><CodeTelephone usage="verification" numeroInitial={profil.telephone} onVerifie={() => router.refresh()} /></div>
+      : !profil.complet ? <div className="border border-trait p-4"><p className="mb-3 text-sm">{profil.telephoneVerifie ? "Avant votre première commande, indiquez votre nom." : "Avant votre première commande, indiquez votre nom et votre numéro WhatsApp."}</p><FormulaireProfilClient nom={profil.nom} telephone={profil.telephone} telephoneModifiable={!profil.telephoneVerifie && !profil.verificationRequise} bouton="Enregistrer et continuer" onEnregistre={() => router.refresh()} /></div>
       : <button type="button" disabled={enCours || profil.bloque} onClick={() => void commander()} className="etiquette min-h-[54px] w-full bg-noir text-blanc">{enCours ? "Envoi en cours…" : "Commander"}</button>}
     {erreur && <p role="alert" className="mt-3 text-sm">{erreur}</p>}
     <p className="mt-3 pb-8 text-center text-xs text-gris">La boutique confirme votre commande · Paiement en boutique · Un seul panier par boutique</p>

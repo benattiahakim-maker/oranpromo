@@ -6,7 +6,7 @@ import { normaliserWhatsAppAlgerien } from "./boutique";
 // no_shows et bloque ne sont modifiables que par la base et l’admin (règle dans la base).
 export const NO_SHOWS_MAX = 5;
 
-export type ProfilClient = Pick<Tables<"profils">, "id" | "nom" | "telephone" | "no_shows" | "bloque" | "role" | "boutique_id">;
+export type ProfilClient = Pick<Tables<"profils">, "id" | "nom" | "telephone" | "telephone_verifie_le" | "no_shows" | "bloque" | "role" | "boutique_id">;
 export type SaisieProfilClient = { nom: string; telephone: string };
 export type ErreursProfilClient = Partial<Record<keyof SaisieProfilClient, string>>;
 export class ErreurValidationProfil extends Error { constructor(public champs: ErreursProfilClient) { super("Vérifiez votre nom et votre numéro."); } }
@@ -26,7 +26,9 @@ export function messageNoShows(noShows: number, bloque: boolean): string | null 
   return `Attention : ${noShows} commande${noShows > 1 ? "s" : ""} non récupérée${noShows > 1 ? "s" : ""}. Il vous reste ${restants} essai${restants > 1 ? "s" : ""} avant le blocage de votre compte.`;
 }
 
-export function profilComplet(profil: Pick<ProfilClient, "nom" | "telephone"> | null | undefined): boolean {
+/** Prêt à commander : nom et numéro ; en mode téléphone (US-21), le numéro doit être vérifié par code. */
+export function profilComplet(profil: (Pick<ProfilClient, "nom" | "telephone"> & { telephone_verifie_le?: string | null }) | null | undefined, numeroVerifieRequis = false): boolean {
+  if (numeroVerifieRequis && !profil?.telephone_verifie_le) return false;
   return Boolean(profil?.nom && profil.telephone && /^\+213[1-9]\d{8}$/.test(profil.telephone));
 }
 
@@ -64,7 +66,7 @@ export function telephoneLisible(telephone: string): string {
 export async function lireProfilClient(client: SupabaseClient<Database>): Promise<ProfilClient | null> {
   const { data: { user }, error } = await client.auth.getUser();
   if (error || !user) return null;
-  const { data, error: erreurProfil } = await client.from("profils").select("id, nom, telephone, no_shows, bloque, role, boutique_id").eq("id", user.id).maybeSingle();
+  const { data, error: erreurProfil } = await client.from("profils").select("id, nom, telephone, telephone_verifie_le, no_shows, bloque, role, boutique_id").eq("id", user.id).maybeSingle();
   if (erreurProfil) throw new Error("Impossible de charger votre profil. Réessayez.");
   return data;
 }
@@ -76,6 +78,18 @@ export async function enregistrerProfilClient(client: SupabaseClient<Database>, 
   if (error || !user) throw new Error("Votre session a expiré. Reconnectez-vous.");
   const { data, error: erreurMaj } = await client.from("profils").update({ nom: nettoyerNom(saisie.nom), telephone: normaliserWhatsAppAlgerien(saisie.telephone)! }).eq("id", user.id).select("id").maybeSingle();
   // 23514 / 42501 : refus de la base avec un message en français (nom invalide, compte bloqué…).
+  if (erreurMaj && (erreurMaj.code === "23514" || erreurMaj.code === "42501") && erreurMaj.message) throw new Error(erreurMaj.message);
+  if (erreurMaj || !data) throw new Error("Impossible d’enregistrer votre profil. Réessayez.");
+}
+
+/** US-21 : le nom seul (numéro vérifié par code, ou mode téléphone). */
+export async function enregistrerNomClient(client: SupabaseClient<Database>, saisieNom: string) {
+  const nom = nettoyerNom(saisieNom);
+  const erreurs = validerProfilClient({ nom, telephone: "0555000000" });
+  if (erreurs.nom) throw new ErreurValidationProfil({ nom: erreurs.nom });
+  const { data: { user }, error } = await client.auth.getUser();
+  if (error || !user) throw new Error("Votre session a expiré. Reconnectez-vous.");
+  const { data, error: erreurMaj } = await client.from("profils").update({ nom }).eq("id", user.id).select("id").maybeSingle();
   if (erreurMaj && (erreurMaj.code === "23514" || erreurMaj.code === "42501") && erreurMaj.message) throw new Error(erreurMaj.message);
   if (erreurMaj || !data) throw new Error("Impossible d’enregistrer votre profil. Réessayez.");
 }

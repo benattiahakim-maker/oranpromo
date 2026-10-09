@@ -1,8 +1,9 @@
 "use server";
 import { redirect } from "next/navigation";
 import { creerClientServeur } from "@/lib/supabase/server";
-import { contesterNoShow, enregistrerProfilClient, ErreurValidationProfil, type ErreursProfilClient, type SaisieProfilClient } from "@/lib/clients";
+import { contesterNoShow, enregistrerNomClient, enregistrerProfilClient, ErreurValidationProfil, type ErreursProfilClient, type SaisieProfilClient } from "@/lib/clients";
 import { annulerCommandeClient } from "@/lib/commandes";
+import { envoyerCodeVerificationClient, ErreurCode, verifierCodeVerificationClient } from "@/lib/codes-telephone";
 
 export type ResultatCompte = { succes: boolean; message: string; erreurs?: ErreursProfilClient };
 
@@ -13,6 +14,36 @@ export async function enregistrerProfil(saisie: SaisieProfilClient): Promise<Res
     return { succes: true, message: "Profil enregistré." };
   } catch (error) {
     return { succes: false, message: error instanceof Error ? error.message : "Impossible d’enregistrer votre profil. Réessayez.", ...(error instanceof ErreurValidationProfil ? { erreurs: error.champs } : {}) };
+  }
+}
+
+/** Mode téléphone ou numéro déjà vérifié : seul le nom se modifie ici (le numéro change par code). */
+export async function enregistrerNom(nom: string): Promise<ResultatCompte> {
+  try {
+    if (typeof nom !== "string") throw new Error("Vérifiez votre nom.");
+    await enregistrerNomClient(await creerClientServeur(), nom);
+    return { succes: true, message: "Profil enregistré." };
+  } catch (error) {
+    return { succes: false, message: error instanceof Error ? error.message : "Impossible d’enregistrer votre profil. Réessayez.", ...(error instanceof ErreurValidationProfil ? { erreurs: error.champs } : {}) };
+  }
+}
+
+/** US-21.2 : vérifier le numéro d'un compte déjà connecté (compte e-mail, ou changement de numéro). */
+export async function envoyerCodeVerification(telephone: string, canal: string): Promise<ResultatCompte & { numero?: string }> {
+  try {
+    const envoi = await envoyerCodeVerificationClient(await creerClientServeur(), telephone, canal);
+    return { succes: true, message: envoi.canal === "sms" ? "Code envoyé par SMS." : "Code envoyé sur WhatsApp. Pas reçu ? Demandez-le par SMS.", numero: envoi.numero };
+  } catch (error) {
+    return { succes: false, message: error instanceof ErreurCode ? error.message : "Impossible d’envoyer le code. Réessayez dans quelques instants." };
+  }
+}
+
+export async function verifierCodeVerification(telephone: string, code: string): Promise<ResultatCompte> {
+  try {
+    await verifierCodeVerificationClient(await creerClientServeur(), telephone, code);
+    return { succes: true, message: "Numéro vérifié." };
+  } catch (error) {
+    return { succes: false, message: error instanceof ErreurCode ? error.message : "Impossible de vérifier le code. Réessayez dans quelques instants." };
   }
 }
 

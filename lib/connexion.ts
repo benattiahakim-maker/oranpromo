@@ -39,15 +39,17 @@ export function pageConnexion(suite: string | null | undefined): string {
   return suite && /^\/(panier|compte)(\/|$)/.test(suite) ? "/compte/connexion" : "/espace/connexion";
 }
 
-export async function envoyerLienConnexion(email: string, origine: string, suite = "/espace") {
+/** captchaToken : jeton Cloudflare Turnstile, exigé par Supabase quand la protection anti-robot est activée (US-21). */
+export async function envoyerLienConnexion(email: string, origine: string, suite = "/espace", captchaToken?: string | null) {
   if (!emailValide(email)) throw new Error("Saisissez une adresse e-mail valide.");
   const destination = /^\/[a-zA-Z0-9/_-]*$/.test(suite) && !suite.startsWith("//") ? suite : "/espace";
   const { error } = await creerClientNavigateur().auth.signInWithOtp({
     email: email.trim(),
-    options: { emailRedirectTo: `${origine}/auth/callback?suite=${destination}` },
+    options: { emailRedirectTo: `${origine}/auth/callback?suite=${destination}`, ...(captchaToken ? { captchaToken } : {}) },
   });
   if (error?.code === "over_email_send_rate_limit" || error?.code === "over_request_rate_limit" || error?.status === 429) {
     throw new ErreurConnexion("La limite d’envoi des e-mails de connexion est atteinte. Attendez avant de demander un nouveau lien.");
   }
+  if (error?.code === "captcha_failed") throw new ErreurConnexion("Le contrôle anti-robot a échoué ou a expiré : recommencez-le.");
   if (error) throw new ErreurConnexion("Impossible d’envoyer le lien de connexion. Réessayez dans quelques instants.");
 }
