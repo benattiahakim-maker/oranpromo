@@ -382,6 +382,10 @@ Story : `docs/user-stories.md`, module 12. Maquette : `docs/maquettes/Beaute.dc.
 - **Genre dans Beauté** : aujourd'hui `genre=femme` est une égalité stricte, donc un parfum mixte n'apparaît pas pour « femme ». Prévu, seulement quand l'univers est Beauté : `femme` → `in("genre", ["femme", "mixte"])`, idem `homme` ; « Enfant » non proposé. Hors Beauté, rien ne change.
 - **Raccourcis de catégories** (liens) quand l'univers Beauté est choisi, à partir des catégories déjà renvoyées par `chargerOptions`.
 
+### Messages de la base (US-25.4)
+
+Migration `20261011090000_messages_contenance.sql` : `public.passer_commande` et `prive.retirer_stock` redéfinies (`create or replace`, propriétaire et droits gardés) avec le **même code** qu'en production, sauf le mot des messages : « contenance » si `articles.categorie` est l'une des 5 catégories beauté, « taille » sinon. Traductions arabes dans `lib/textes/messages.ts` (« الحجم »). Tests : `supabase/tests/messages_contenance.test.sql`.
+
 ### Boutique de démonstration (US-25.3)
 
 - Script `supabase/scripts/demo_parfumerie.sql` : **hors migrations**, jamais appliqué automatiquement, rejouable (identifiants fixes, `on conflict do nothing` / `not exists`), lancé en production après la validation du propriétaire (requête SQL par le connecteur Supabase, pas une migration). Il passe les contrôles de la base (catégorie, position dans la wilaya, adresse des photos : les contrôles réservés aux sessions utilisateur ne s'appliquent pas à l'éditeur SQL, comme pour la démo actuelle).

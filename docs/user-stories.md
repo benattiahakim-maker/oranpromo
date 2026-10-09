@@ -502,6 +502,12 @@ Livrée en 3 sous-stories, dans cet ordre (une PR chacune) :
 
 - Promos valables 30 jours à partir du lancement. Retrait le jour de la mise en ligne : `supabase/scripts/retirer_donnees_demo.sql` (boutique et articles dans sa liste, testé).
 
+### US-25.4 — Messages de la base avec « contenance » pour la beauté (accord du propriétaire du 9/10)
+En tant que cliente ou commerçant, je veux que les refus de la base parlent de « contenance » pour un parfum, afin que le message soit juste.
+- `passer_commande` : « Il ne reste que 1 pièce(s) en contenance 100 ml pour « … ». », « La contenance 30 ml de « … » n'existe plus : retirez-la du panier. », « Le même article et la même contenance apparaissent deux fois dans le panier. » ; confirmation (`prive.retirer_stock`) : « Stock insuffisant pour « … » en contenance 100 ml : … ». La mode garde « taille ». Le mot est choisi d'après la **catégorie** de l'article (5 catégories beauté).
+- Migration `20261011090000_messages_contenance.sql` : les deux fonctions reprises à l'identique de la production, seuls ces 4 messages changent (aucune règle de connexion, de numéro vérifié, de blocage ni de no-show touchée).
+- Arabe (`lib/textes/messages.ts`) : « بقاو غير 1 في الحجم 100 ml لـ « … ». », « الحجم 30 ml تاع « … » ما بقاش: نحّيه من السلة. », « نفس السلعة بنفس الحجم كاينة جوج مرات في السلة. ».
+
 **Textes en français et en arabe** (simple, darja d'Oran en gras, masculin générique ; à valider) :
 
 | # | Où | Français | Arabe proposé | Variante en arabe standard |
