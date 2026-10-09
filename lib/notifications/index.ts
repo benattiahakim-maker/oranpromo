@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { creerFournisseurMeta } from "./meta";
+import { preparerBoutonConfirmer, secretConfirmation } from "@/lib/confirmation";
 import type { FournisseurWhatsApp, MessageWhatsApp } from "./types";
 
 export type { FournisseurWhatsApp, MessageWhatsApp, ResultatEnvoi } from "./types";
@@ -22,11 +23,12 @@ export function fournisseurWhatsApp(env: Env = process.env): FournisseurWhatsApp
 
 type LigneFile = { id: string; reservation: string | null; destinataire: string; modele: string; parametres: unknown; texte: string };
 
-export function lireMessages(lignes: LigneFile[] | null | undefined): MessageWhatsApp[] {
-  return (lignes ?? []).filter(l => l.reservation).map(l => ({
+/** Messages réservés, prêts à partir. « Nouvelle commande » avec bouton : le lien signé est fabriqué ici (US-20.6). */
+export function lireMessages(lignes: LigneFile[] | null | undefined, secret: string | null = secretConfirmation(), maintenant: number = Date.now()): MessageWhatsApp[] {
+  return (lignes ?? []).filter(l => l.reservation).map(l => preparerBoutonConfirmer({
     id: l.id, reservation: l.reservation as string, destinataire: l.destinataire, modele: l.modele, texte: l.texte,
     parametres: Array.isArray(l.parametres) ? l.parametres.map(p => String(p ?? "")) : [],
-  }));
+  }, secret, maintenant));
 }
 
 /** Jeton de la tâche d’envoi (CRON_SECRET) : la base l’exige pour enregistrer un résultat (point 5 de la relecture). */

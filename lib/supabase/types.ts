@@ -683,6 +683,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      commande_a_confirmer: {
+        Args: { commande: string; jeton: string }
+        Returns: Json
+      }
+      confirmer_commande_par_lien: {
+        Args: { commande: string; jeton: string }
+        Returns: string
+      }
       consommer_quota_ia: { Args: never; Returns: boolean }
       contester_no_show: {
         Args: { commande: string; motif: string }

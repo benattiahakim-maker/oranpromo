@@ -104,3 +104,24 @@ describe("file d'attente", () => {
     await expect(envoyerMessagesEnAttente(base(vi.fn().mockResolvedValue({ data: null, error: { code: "42501" } })), "x", fournisseur)).rejects.toThrow("Accès refusé.");
   });
 });
+
+describe("US-20.6 : bouton « Confirmer » (lien signé)", () => {
+  const ID = "0b9f2c1e-5a4d-4c3b-9e8f-112233445566";
+  const ligne = { id: "m2", reservation: "r2", destinataire: "+213555111222", modele: "oranpromo_nouvelle_commande_confirmer", parametres: ["15", "Samia", "2", "8 700 DA", ID], texte: "Nouvelle commande…" };
+  it("lireMessages fabrique le lien du bouton avec CONFIRMATION_SECRET", () => {
+    const [m] = lireMessages([ligne], "secret-confirmation-de-test", Date.UTC(2026, 9, 9));
+    expect(m.parametres).toEqual(["15", "Samia", "2", "8 700 DA"]);
+    expect(m.bouton?.startsWith(`${ID}.`)).toBe(true);
+  });
+  it("sans secret : ancien modèle sans bouton", () => {
+    const [m] = lireMessages([ligne], null);
+    expect(m.modele).toBe("oranpromo_nouvelle_commande"); expect(m.bouton).toBeUndefined(); expect(m.parametres).toHaveLength(4);
+  });
+  it("Meta : composant bouton lien (index 0) avec le lien en paramètre", () => {
+    const corps = corpsMessageMeta({ ...message, modele: "oranpromo_nouvelle_commande_confirmer", parametres: ["15", "Samia", "2", "8 700 DA"], bouton: "lien-signe" }, "fr");
+    expect(corps.template.components).toEqual([
+      { type: "body", parameters: ["15", "Samia", "2", "8 700 DA"].map(text => ({ type: "text", text })) },
+      { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: "lien-signe" }] },
+    ]);
+  });
+});

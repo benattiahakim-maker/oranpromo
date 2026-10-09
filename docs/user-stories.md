@@ -267,7 +267,7 @@ En tant que boutique, je veux confirmer une nouvelle commande directement depuis
   - lien de plus de 24 heures : « Ce lien a expiré. Confirmez la commande dans votre espace OranPromo, rubrique Commandes. » ;
   - lien abîmé, modifié ou inconnu : « Ce lien n'est pas valide. » (même message, qu'il s'agisse d'une commande qui n'existe pas ou d'une signature fausse).
 - Si la boutique est connectée à son espace sur ce téléphone, rien ne change (le lien suffit).
-- **Avant le code** : le propriétaire valide ce choix « sans connexion » (voir l'analyse dans `docs/architecture.md`, « Confirmer depuis WhatsApp (US-20.6) »).
+- Choix « sans connexion » proposé et codé ; le propriétaire peut le remettre en cause à la relecture (analyse dans `docs/architecture.md`, « Confirmer depuis WhatsApp (US-20.6) »).
 - **Mise en service** : nouveau modèle WhatsApp `oranpromo_nouvelle_commande_confirmer` à **faire approuver par Meta** (bouton lien avec l'adresse définitive du site) ; tant qu'il n'est pas approuvé et activé, l'ancien message sans bouton continue de partir (aucun message perdu).
 - Maquettes : `docs/maquettes/WhatsAppConfirmer.dc.html` (message reçu) et `docs/maquettes/ConfirmerCommande.dc.html` (page du lien, avec les autres états).
 - Tests prévus : lien signé et vérifié (modifié, expiré, autre commande : refus), page sans effet à l'ouverture, confirmation qui baisse le stock comme dans l'espace, une seule confirmation (deuxième touche : « déjà confirmée »), commandes annulée, expirée, stock insuffisant, appel direct à la base sans le secret du serveur refusé, bouton ajouté au message seulement quand le nouveau modèle est activé.

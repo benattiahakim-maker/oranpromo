@@ -30,6 +30,8 @@ app/
   api/ia/fiche/route.ts         photo → fiche (US-14)
   api/ia/traduire/route.ts      traduction arabe (US-15)
   api/notifications/whatsapp/route.ts  envoi des messages WhatsApp en attente, appelé par une tâche planifiée (US-20.5)
+  confirmer/[jeton]/page.tsx    page du lien « Confirmer » du message WhatsApp, sans connexion, lecture seule (US-20.6)
+  confirmer/actions.ts          action serveur « Confirmer la commande » du lien (US-20.6)
   visiteurs/actions.ts          actions serveur des visiteurs : mesures (vues, clics, partages) et signalements, limités par visiteur
 components/                     composants d'affichage réutilisables
 lib/
@@ -42,6 +44,7 @@ lib/
   clients.ts                    profil client, no-shows, déblocage (US-20.2, 20.4, testé)
   telephone.ts                  numéro mobile algérien, mode de connexion client (US-21, testé)
   codes-telephone.ts            envoi et vérification des codes, limites d'envoi (US-21, serveur seulement, testé)
+  confirmation.ts               lien signé « Confirmer » (US-20.6) : fabrication, vérification, confirmation (serveur seulement, testé)
   visiteurs.ts                  clé de visiteur (empreinte d'IP), mesures et signalements par les fonctions de la base (serveur seulement, testé)
   notifications/                messages WhatsApp : fournisseur (Meta Cloud API), envoi de la file d'attente (US-20.5, testé)
   supabase/client.ts            client navigateur ("use client")
@@ -81,7 +84,7 @@ Colonnes en `snake_case` français sans accents. Prix = entiers en dinars.
 | `lignes_commande` | articles d'une commande | `commande_id`, `article_id` (vide si l'article est supprimé), `titre`, `taille`, `quantite` (1 à 10), `prix_unitaire` (prix affiché au moment de la commande, promo active comprise) |
 | `suivi_commandes` | frise d'une commande | `commande_id`, `statut`, `date`, `auteur_id` (vide = automatique), `auteur` : `client`, `boutique`, `admin`, `systeme` ; `note` (300 car.) |
 | `messages_whatsapp` | file d'attente des messages WhatsApp (US-20.5) | `destinataire` (`+213…`), `modele` (nom du modèle Meta), `parametres` (liste de textes), `texte` (version lisible), `commande_id`, `statut` : `a_envoyer`, `envoye`, `echec` ; `tentatives` (5 au plus), `reserve_jusqu_a`, `erreur`, `identifiant_fournisseur`, `cree_le`, `envoye_le` ; lisible par l'admin seulement, écrit par la base |
-| `prive.reglages` | réglages internes (schéma non exposé) | `cle`, `valeur` ; ex. `jeton_notifications` = empreinte SHA-256 du secret de la tâche d'envoi WhatsApp ; `connexion_client`, `blocage_par_numero` (US-21) |
+| `prive.reglages` | réglages internes (schéma non exposé) | `cle`, `valeur` ; ex. `jeton_notifications` = empreinte SHA-256 du secret de la tâche d'envoi WhatsApp ; `connexion_client`, `blocage_par_numero` (US-21) ; `jeton_confirmation` (empreinte de `CONFIRMATION_SECRET`) et `bouton_confirmer` (`on` = modèle avec bouton « Confirmer », US-20.6) |
 | `prive.actions_visiteurs` | limites par visiteur (schéma non exposé) | `visiteur` (`u:<compte>` ou `ip:<empreinte HMAC de l'IP>`), `action` (`evenement`, `signalement`), `cible`, `date` ; lignes de plus de 24 h supprimées au fil de l'eau |
 | `prive.envois_codes` | codes de connexion envoyés (US-21, schéma non exposé) | `telephone`, `envoye_le` ; limite 1 par minute et 5 par heure et par numéro |
 | `appels_ia` | quota des routes IA | `utilisateur_id`, `date` ; aucune lecture directe, uniquement via `consommer_quota_ia()` (30 appels par heure et par compte) |
@@ -241,28 +244,28 @@ Conception proposée :
 - Dates : `Intl.DateTimeFormat("ar-DZ", { numberingSystem: "latn" })` pour garder les chiffres 0-9 ; prix : `formaterPrix` gagne une langue (`DA` → `دج`).
 - Maquette : `docs/maquettes/FicheArabe.dc.html`.
 
-## Confirmer depuis WhatsApp (US-20.6) — conception, **pas encore codé**
+## Confirmer depuis WhatsApp (US-20.6)
 
-Story : `docs/user-stories.md`, US-20.6. Maquettes : `WhatsAppConfirmer.dc.html`, `ConfirmerCommande.dc.html`.
+Story : `docs/user-stories.md`, US-20.6. Maquettes : `WhatsAppConfirmer.dc.html`, `ConfirmerCommande.dc.html`. Migration `20261010190000_confirmer_whatsapp.sql`. Code : `lib/confirmation.ts`, `app/confirmer/[jeton]/page.tsx`, `app/confirmer/actions.ts`, `components/ConfirmerCommande.tsx`, `lib/notifications/` (bouton).
 
 **Bouton lien ou bouton de réponse rapide ?** (modèles « Utilitaire » de Meta : jusqu'à 10 boutons, dont « URL » et « Quick reply » ; developers.facebook.com/documentation/business-messaging/whatsapp/templates/utility-templates)
 - **Bouton lien (retenu)** : `https://<domaine>/confirmer/{{1}}` ; un seul paramètre, **à la fin** de l'adresse, envoyé à chaque message (`components: [{ type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: "<lien>" }] }]`, caractères spéciaux encodés) ; libellé 25 caractères au plus ; le lien s'ouvre dans le navigateur du téléphone (developers.facebook.com/documentation/business-messaging/whatsapp/templates/components). Rien à recevoir de Meta : pas de webhook.
 - Réponse rapide (écartée pour l'instant) : vraie confirmation en une touche, mais il faut une route webhook publique qui reçoit les messages de Meta, vérifie la signature (`X-Hub-Signature-256`, clé secrète de l'application Meta), retrouve la commande depuis le `payload` et répond ; une réponse ouvre aussi une conversation de service de 24 h. Plus de code, un secret Meta de plus, et un échec se voit mal (la boutique ne voit pas de page). À reconsidérer si les boutiques trouvent 2 touches de trop.
 - L'adresse du site est **fixée dans le modèle** : il faut le domaine définitif (`NEXT_PUBLIC_SITE_URL`) avant de soumettre le modèle à Meta.
 
-**Avec ou sans connexion ?** Proposition : **sans connexion**, le lien suffit.
+**Avec ou sans connexion ?** Choix retenu (proposé, à valider par le propriétaire à la relecture) : **sans connexion**, le lien suffit.
 - Avec connexion : plus sûr si le message est transféré, mais les commerçants se connectent par lien e-mail et le navigateur ouvert par WhatsApp n'a souvent pas leur session : il faudrait se reconnecter (e-mail, puis retour) à chaque fois, et la « confirmation en un clic » disparaît.
 - Sans connexion : le lien ne permet qu'**une** chose — passer **cette** commande de « demandée » à « confirmée » pour **sa** boutique — pendant 24 h, une seule fois. S'il fuit (message transféré, capture d'écran), le pire est une commande confirmée trop tôt : le stock baisse, la boutique peut encore l'annuler (« Plus en stock », « Autre ») dans son espace, et le client n'est pas prévenu par un message (la confirmation n'envoie rien). La page ne montre ni le numéro du client ni aucun lien d'action autre que « Confirmer ». Risque jugé acceptable pour le gain.
 
 **Lien** (aucune nouvelle table) :
-- `<commande>.<expiration>.<signature>` : identifiant de la commande, date d'expiration (secondes, base 36, envoi + 24 h), signature `HMAC-SHA256(CONFIRMATION_SECRET, "confirmer:" + commande + ":" + boutique + ":" + expiration)` en base64url. Calculé par le serveur **au moment de l'envoi** du message (`lib/notifications/`, la commande et la boutique sont connues par `messages_whatsapp.commande_id`) : il n'est stocké nulle part (ni dans `messages_whatsapp.parametres`, ni ailleurs).
+- `<commande>.<expiration>.<signature>` : identifiant de la commande, date d'expiration (secondes, base 36, envoi + 24 h), signature `HMAC-SHA256(CONFIRMATION_SECRET, "confirmer:" + commande + ":" + expiration)` en base64url (43 caractères). La commande appartient à une seule boutique : le lien ne vaut que pour elle. Calculé par le serveur **au moment de l'envoi** du message (`lireMessages` dans `lib/notifications/`, à partir du 5e paramètre du message, l'identifiant de la commande) : il n'est stocké nulle part. Vérification (`lireLienConfirmation`) : format, signature (comparaison à temps constant) **puis** expiration — une expiration modifiée donne « lien non valide ».
 - Usage unique : la base n'accepte que `demandee → confirmee` ; une fois confirmée, le lien ne fait plus rien (« déjà confirmée »).
 - Nouvelle variable serveur **`CONFIRMATION_SECRET`** (32 caractères aléatoires au moins), empreinte SHA-256 dans `prive.reglages`, clé `jeton_confirmation` (même principe que `CODES_TELEPHONE_SECRET` et `VISITEURS_SECRET`).
 
 **Page et base** :
-- `app/confirmer/[jeton]/page.tsx` (lecture seule : vérifie la signature et l'expiration côté serveur, puis lit la commande par une fonction de la base protégée par le secret, `commande_a_confirmer(jeton_serveur, commande, boutique)` : numéro, prénom, lignes, total, note, statut) et `app/confirmer/[jeton]/actions.ts` (action serveur « Confirmer la commande » : revérifie le lien puis appelle `confirmer_commande_par_lien(jeton_serveur, commande, boutique)`).
-- `confirmer_commande_par_lien` : `security definer`, secret obligatoire, commande de **cette** boutique, verrou de la commande, mêmes règles que `changer_statut_commande` pour `demandee → confirmee` (`prive.retirer_stock`, refus « Stock insuffisant pour … »), `confirmee_le`, ligne de suivi `auteur = 'boutique'`, `auteur_id` vide, note « Confirmée depuis WhatsApp ». Résultat : `confirmee`, `deja_confirmee` (confirmée, prête, récupérée), `annulee`, `expiree`. La partie commune avec `changer_statut_commande` est mise dans une fonction `prive.confirmer_commande(…)` pour que les deux boutons gardent toujours les mêmes règles.
-- Interrupteur : réglage `bouton_confirmer` (`prive.reglages`, `on` après l'approbation de Meta). Quand il est `on`, la base crée le message `oranpromo_nouvelle_commande_confirmer` (mêmes 4 paramètres) au lieu de `oranpromo_nouvelle_commande` ; le serveur y ajoute le bouton ; sans `CONFIRMATION_SECRET`, il envoie l'ancien modèle sans bouton (aucun message perdu).
+- `app/confirmer/[jeton]/page.tsx` (lecture seule, `noindex`, `Referrer-Policy: no-referrer` : vérifie la signature et l'expiration côté serveur, puis lit la commande par `commande_a_confirmer(jeton, commande)` — `jeton` = `CONFIRMATION_SECRET` — : numéro, boutique, prénom, lignes, total, note, statut ; jamais le téléphone) et `app/confirmer/actions.ts` (action serveur « Confirmer la commande » : revérifie le lien puis appelle `confirmer_commande_par_lien(jeton, commande)`). Une commande qui n'est plus « demandée » n'affiche pas de bouton, seulement son état.
+- `confirmer_commande_par_lien` : `security definer`, secret obligatoire (appel direct avec la clé publique : `42501`), verrou de la commande, mêmes règles que `changer_statut_commande` pour `demandee → confirmee` (`prive.retirer_stock`, refus « Stock insuffisant pour … »), `confirmee_le`, ligne de suivi `auteur = 'boutique'`, `auteur_id` vide, note « Confirmée depuis WhatsApp ». Résultat : `confirmee`, `deja_confirmee` (confirmée, prête, récupérée), `annulee`, `expiree`. La partie commune avec `changer_statut_commande` est mise dans une fonction `prive.confirmer_commande(…)` pour que les deux boutons gardent toujours les mêmes règles.
+- Interrupteur : réglage `bouton_confirmer` (`prive.reglages`, `on` après l'approbation de Meta). Quand il est `on`, la base crée le message `oranpromo_nouvelle_commande_confirmer` (les 4 paramètres du texte + un 5e, l'identifiant de la commande) au lieu de `oranpromo_nouvelle_commande` ; au moment de l'envoi, le serveur retire le 5e paramètre et en fait le lien signé du bouton ; sans `CONFIRMATION_SECRET`, il envoie l'ancien modèle sans bouton (aucun message perdu).
 - Modèle à faire approuver (catégorie « Utilitaire », langue `fr`) : `oranpromo_nouvelle_commande_confirmer` : « Nouvelle commande n° {{1}} sur OranPromo : {{2}}, {{3}} article(s), {{4}}. Touchez Confirmer, ou confirmez-la dans votre espace OranPromo, rubrique Commandes. » + bouton lien « Confirmer » → `https://<domaine>/confirmer/{{1}}`.
 
 ## Limites par visiteur (vues, clics, partages, signalements)
@@ -306,6 +309,7 @@ Règles :
 | `WHATSAPP_API_VERSION` | serveur | version de l'API Graph de Meta (`v23.0` par défaut) |
 | `CRON_SECRET` | serveur | secret de la tâche d'envoi des messages en attente (empreinte `jeton_notifications`) |
 | `VISITEURS_SECRET` | serveur | secret des mesures et signalements (limites par visiteur) ; sert aussi à l'empreinte HMAC des adresses IP ; empreinte SHA-256 dans `prive.reglages`, clé `jeton_visiteurs` ; vide = mesures ignorées, signalements refusés |
+| `CONFIRMATION_SECRET` | serveur | signature des liens « Confirmer » des messages WhatsApp (US-20.6) ; empreinte SHA-256 dans `prive.reglages`, clé `jeton_confirmation` ; vide = messages sans bouton, page du lien « pas disponible » |
 | `CODES_TELEPHONE_SECRET` | serveur | jeton serveur des limites d'envoi des codes (US-21, relecture n°4), distinct de `CRON_SECRET` ; empreinte SHA-256 dans `prive.reglages`, clé `jeton_codes_telephone` ; vide = aucun code envoyé |
 | `CONNEXION_CLIENT` | serveur | `email` (par défaut) ou `telephone` : connexion des clients (US-21) |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | navigateur | clé de site (publique) Cloudflare Turnstile ; vide = pas de widget (la clé secrète va seulement dans Supabase) |

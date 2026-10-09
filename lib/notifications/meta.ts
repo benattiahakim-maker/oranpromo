@@ -14,7 +14,11 @@ export function corpsMessageMeta(message: MessageWhatsApp, langue: string) {
     template: {
       name: message.modele,
       language: { code: langue },
-      components: message.parametres.length ? [{ type: "body", parameters: message.parametres.map(text => ({ type: "text", text })) }] : [],
+      components: [
+        ...(message.parametres.length ? [{ type: "body", parameters: message.parametres.map(text => ({ type: "text", text })) }] : []),
+        // Bouton lien : la valeur est ajoutée à la fin de l'adresse enregistrée dans le modèle Meta (US-20.6).
+        ...(message.bouton ? [{ type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: message.bouton }] }] : []),
+      ],
     },
   };
 }
