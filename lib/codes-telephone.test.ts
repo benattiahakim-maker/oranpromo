@@ -1,14 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { envoyerCodeConnexionClient, envoyerCodeVerificationClient, MESSAGE_CODE_INCORRECT, MESSAGE_NON_ACTIVEE, MESSAGE_NON_CONFIGUREE, messageErreurAuth, verifierCodeConnexionClient, verifierCodeVerificationClient } from "./codes-telephone";
+import { envoyerCodeConnexionClient, envoyerCodeVerificationClient, MESSAGE_CODE_INCORRECT, MESSAGE_RESERVE_CLIENTS, MESSAGE_NON_ACTIVEE, MESSAGE_NON_CONFIGUREE, messageErreurAuth, verifierCodeConnexionClient, verifierCodeVerificationClient } from "./codes-telephone";
 
 const rpc = vi.fn();
 const signInWithOtp = vi.fn();
 const verifyOtp = vi.fn();
 const updateUser = vi.fn();
 const getUser = vi.fn();
-const client = { rpc, auth: { signInWithOtp, verifyOtp, updateUser, getUser } } as unknown as SupabaseClient<Database>;
+const maybeSingle = vi.fn();
+const eq = vi.fn(() => ({ maybeSingle }));
+const select = vi.fn(() => ({ eq }));
+const from = vi.fn(() => ({ select }));
+const client = { rpc, from, auth: { signInWithOtp, verifyOtp, updateUser, getUser } } as unknown as SupabaseClient<Database>;
 const JETON = "secret-serveur-0123456789";
 
 beforeEach(() => {
@@ -20,6 +24,7 @@ beforeEach(() => {
   verifyOtp.mockResolvedValue({ data: { session: { access_token: "x" } }, error: null });
   updateUser.mockResolvedValue({ data: {}, error: null });
   getUser.mockResolvedValue({ data: { user: { id: "u1", phone: "", phone_confirmed_at: null } }, error: null });
+  maybeSingle.mockResolvedValue({ data: { role: "client" }, error: null });
 });
 afterEach(() => { vi.unstubAllEnvs(); });
 
@@ -102,6 +107,20 @@ describe("vérification du code de connexion", () => {
 });
 
 describe("vérification du numéro d’un compte connecté", () => {
+  it("relecture n°4 : un compte admin, commerçant ou ambassadeur ne peut pas ajouter de numéro (rien n’est envoyé)", async () => {
+    for (const role of ["admin", "commercant", "ambassadeur"]) {
+      maybeSingle.mockResolvedValueOnce({ data: { role }, error: null });
+      await expect(envoyerCodeVerificationClient(client, "0798765432")).rejects.toThrow(MESSAGE_RESERVE_CLIENTS);
+    }
+    maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    await expect(envoyerCodeVerificationClient(client, "0798765432")).rejects.toThrow(MESSAGE_RESERVE_CLIENTS);
+    maybeSingle.mockResolvedValueOnce({ data: null, error: { message: "réseau" } });
+    await expect(envoyerCodeVerificationClient(client, "0798765432")).rejects.toThrow("Impossible d’envoyer");
+    expect(from).toHaveBeenCalledWith("profils");
+    expect(eq).toHaveBeenCalledWith("id", "u1");
+    expect(updateUser).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+  });
   it("demande le changement de numéro sur WhatsApp, sans captcha, et compte l’envoi", async () => {
     await expect(envoyerCodeVerificationClient(client, "0798765432")).resolves.toEqual({ numero: "+213798765432" });
     expect(updateUser).toHaveBeenCalledWith({ phone: "+213798765432", channel: "whatsapp" });

@@ -24,7 +24,7 @@ export default async function MonCompte({ searchParams }: { searchParams: Promis
     {avertissement && <p role="alert" className="mt-5 border border-trait p-4 text-sm leading-[1.6]">{avertissement}</p>}
     {noShows.length > 0 && <MesNoShows noShows={noShows} />}
     {/* US-21.2 : en mode téléphone (ou numéro déjà vérifié), le numéro se vérifie par code et ne se saisit plus à la main. */}
-    <NumeroVerifie telephone={profil.telephone} verifie={Boolean(profil.telephone_verifie_le)} verificationActive={parTelephone} />
+    <NumeroVerifie telephone={profil.telephone} verifie={Boolean(profil.telephone_verifie_le)} verificationActive={parTelephone && profil.role === "client"} />
     <div className="mt-6"><FormulaireProfilClient nom={profil.nom} telephone={profil.telephone} telephoneModifiable={!parTelephone && !profil.telephone_verifie_le} /></div>
     <Link href="/compte/commandes" className="etiquette mt-8 flex min-h-[44px] items-center justify-center border border-noir">Mes commandes</Link>
     {profil.boutique_id && <Link href="/espace" className="etiquette mt-3 flex min-h-[44px] items-center justify-center border border-trait">Mon espace boutique</Link>}
