@@ -15,6 +15,7 @@ export class ErreurCode extends Error {}
 export const MESSAGE_NON_ACTIVEE = "La connexion par téléphone n’est pas encore activée. Connectez-vous avec votre e-mail.";
 export const MESSAGE_NON_CONFIGUREE = "La connexion par téléphone n’est pas encore configurée. Réessayez plus tard ou connectez-vous avec votre e-mail.";
 export const MESSAGE_CODE_ENVOYE = "Code envoyé sur WhatsApp. Pas reçu ? Vérifiez le numéro, puis demandez un nouveau code dans une minute.";
+export const MESSAGE_RESERVE_CLIENTS = "Les comptes commerçant, ambassadeur et administrateur se connectent par e-mail : pas de numéro de téléphone de connexion.";
 export const MESSAGE_CODE_INCORRECT = "Code incorrect ou expiré. Vérifiez les 6 chiffres ou demandez un nouveau code.";
 
 /** Erreur Supabase Auth → message en français pour le client. */
@@ -92,6 +93,10 @@ export async function envoyerCodeVerificationClient(client: Client, saisie: unkn
   const { data: { user }, error: erreurSession } = await client.auth.getUser();
   if (erreurSession || !user) throw new ErreurCode("Votre session a expiré. Reconnectez-vous.");
   if (user.phone && `+${user.phone}` === numero && user.phone_confirmed_at) throw new ErreurCode("Ce numéro est déjà vérifié sur votre compte.");
+  // Relecture n°4 : seuls les clients ont un numéro de connexion (règle aussi dans la base, numero_client_algerien).
+  const { data: profil, error: erreurProfil } = await client.from("profils").select("role").eq("id", user.id).maybeSingle();
+  if (erreurProfil) throw new ErreurCode("Impossible d’envoyer le code. Réessayez dans quelques instants.");
+  if (!profil || profil.role !== "client") throw new ErreurCode(MESSAGE_RESERVE_CLIENTS);
   const jeton = jetonServeur();
   await controlerEnvoi(client, numero, jeton);
   // Supabase Auth accepte « channel » sur PUT /user ; supabase-js transmet les attributs tels quels.
