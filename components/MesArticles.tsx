@@ -29,7 +29,7 @@ function LigneArticle({ article }: { article: ArticleGere }) {
   return <li className="border-b border-trait py-4">
     <div className="flex items-start gap-3">
       <Link href={`/espace/articles/${article.id}`} className="shrink-0" aria-label={`Modifier ${article.titre}`}>
-        {photo ? <Image src={photo.adresse} alt={article.titre} width={64} height={80} className="h-20 w-16 object-cover" /> : <span className="flex h-20 w-16 items-center justify-center bg-fond-photo text-xs text-gris">Sans photo</span>}
+        {photo ? <Image src={photo.adresse_vignette ?? photo.adresse} alt={article.titre} width={64} height={80} className="h-20 w-16 object-cover" unoptimized /> : <span className="flex h-20 w-16 items-center justify-center bg-fond-photo text-xs text-gris">Sans photo</span>}
       </Link>
       <div className="min-w-0 flex-1"><Link href={`/espace/articles/${article.id}`} className="block break-words text-sm font-light">{article.titre}</Link><p className="mt-1 text-sm">{formaterPrix(prixAffiche(article.prix, promo))}</p>
         {promoActive(promo) && <p className="etiquette mt-2 text-noir">PROMO</p>}

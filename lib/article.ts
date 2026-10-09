@@ -31,9 +31,15 @@ export function couleurDepuisIA(valeur: string): string {
 }
 export const TYPES_PHOTO = ["image/jpeg", "image/png", "image/webp"];
 export const TAILLE_PHOTO_MAX = 5 * 1024 * 1024;
-// Total des photos compressées envoyées en une fois à l'action serveur (bodySizeLimit = cette valeur + 1 Mo).
-// Une photo compressée en 1600 px pèse en général moins de 1 Mo : 12 Mo laisse une large marge pour 5 photos.
-export const TAILLE_ENVOI_PHOTOS_MAX = 12 * 1024 * 1024;
+// Grande photo (fiche article) : 1200 px au plus grand côté. Miniature (cartes) : 400 px.
+export const COTE_PHOTO_MAX = 1200;
+export const COTE_VIGNETTE = 400;
+// Poids visé par la compression du navigateur : la qualité JPEG baisse jusqu'à passer sous ces seuils.
+export const TAILLE_PHOTO_CIBLE = 700 * 1024;
+export const TAILLE_VIGNETTE_MAX = 150 * 1024;
+// Total des photos et miniatures envoyées en une fois à l'action serveur : 5 × (700 Ko + 100 Ko) ≈ 4 Mo,
+// sous la limite d'environ 4,5 Mo d'un envoi sur Vercel (bodySizeLimit = 4,5 Mo dans next.config.ts).
+export const TAILLE_ENVOI_PHOTOS_MAX = 4 * 1024 * 1024;
 
 // Vérifie la signature réelle du fichier (octets magiques) au lieu du type annoncé par le navigateur.
 export function typeImageReel(octets: Uint8Array): "image/jpeg" | "image/png" | "image/webp" | null {

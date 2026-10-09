@@ -36,9 +36,29 @@ describe("US-10 : publication et nettoyage", () => {
     expect(chemin).toMatch(new RegExp(`^boutique/${id}/[a-f0-9-]+\\.jpg$`));
     expect(test.upload.mock.calls[0][2]).toEqual({ contentType: "image/jpeg", upsert: false });
     expect(test.insertions.articles).toHaveBeenCalledWith(expect.objectContaining({ id, boutique_id: "boutique", statut: "disponible", prix: 3500, propose_par_ia: false }));
-    expect(test.insertions.photos).toHaveBeenCalledWith([{ article_id: id, adresse: expect.stringContaining(chemin), ordre: 0 }]);
+    expect(test.insertions.photos).toHaveBeenCalledWith([{ article_id: id, adresse: expect.stringContaining(chemin), adresse_vignette: null, ordre: 0 }]);
     expect(test.insertions.tailles).toHaveBeenCalledWith([{ article_id: id, libelle: "M", disponible: true }, { article_id: id, libelle: "L", disponible: true }]);
     expect(test.remove).not.toHaveBeenCalled();
+  });
+  it("envoie la miniature dans le même dossier et la range dans adresse_vignette", async () => {
+    const test = clientTest();
+    const vignette = new Blob(["mini"], { type: "image/jpeg" });
+    test.compression.mockImplementation(async () => ({ photo: new Blob(["jpeg"], { type: "image/jpeg" }), vignette }));
+    const id = await publierArticle(test.client, "boutique", saisie, fichiers, test.compression);
+    const [photo, mini] = test.upload.mock.calls.map(appel => appel[0] as string);
+    expect(mini).toMatch(new RegExp(`^boutique/${id}/[a-f0-9-]+-vignette\\.jpg$`));
+    expect(test.upload.mock.calls[1][1]).toBe(vignette);
+    // Même modèle que la règle de la base prive.verifier_adresse_photo().
+    const modele = new RegExp(`^https://iloyliuzsflzbkhpvxjt\\.supabase\\.co/storage/v1/object/public/photos/boutique/${id}/[A-Za-z0-9_-]+(\\.[A-Za-z0-9]+)?$`);
+    const ligne = test.insertions.photos.mock.calls[0][0][0];
+    expect(ligne).toEqual({ article_id: id, adresse: expect.stringContaining(photo), adresse_vignette: expect.stringContaining(mini), ordre: 0 });
+    expect(ligne.adresse).toMatch(modele); expect(ligne.adresse_vignette).toMatch(modele);
+  });
+  it("refuse une miniature trop lourde avant tout envoi", async () => {
+    const test = clientTest();
+    test.compression.mockImplementation(async () => ({ photo: new Blob(["jpeg"], { type: "image/jpeg" }), vignette: new Blob([new Uint8Array(151 * 1024)], { type: "image/jpeg" }) }));
+    await expect(publierArticle(test.client, "boutique", saisie, fichiers, test.compression)).rejects.toThrow("miniature");
+    expect(test.upload).not.toHaveBeenCalled();
   });
   it("annule les fichiers d’un envoi interrompu avant toute création d’article", async () => {
     const test = clientTest();

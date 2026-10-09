@@ -14,6 +14,12 @@ const article: ArticleGere = { id: "article", boutique_id: "boutique", titre: "P
 beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); changerStatut.mockResolvedValue(undefined); modifierArticle.mockResolvedValue(undefined); supprimerArticle.mockResolvedValue(undefined); });
 afterEach(cleanup);
 describe("US-11 : liste et modification", () => {
+  it("affiche la miniature dans la liste, ou la grande photo si l’article n’a pas de miniature", () => {
+    const photo = (id: string, ordre: number, vignette: string | null) => ({ id, article_id: "article", adresse: `https://exemple.fr/${id}.jpg`, adresse_vignette: vignette, ordre });
+    render(<MesArticles articles={[{ ...article, photos: [photo("b", 1, null), photo("a", 0, "https://exemple.fr/a-vignette.jpg")] }, { ...article, id: "ancien", titre: "Ancien", photos: [photo("c", 0, null)] }]} />);
+    expect(screen.getByRole("img", { name: "Polo" }).getAttribute("src")).toBe("https://exemple.fr/a-vignette.jpg");
+    expect(screen.getByRole("img", { name: "Ancien" }).getAttribute("src")).toBe("https://exemple.fr/c.jpg");
+  });
   it("change le statut directement dans la liste", async () => {
     render(<MesArticles articles={[article]} />); fireEvent.change(screen.getByRole("combobox", { name: "Statut de Polo" }), { target: { value: "vendu" } });
     await waitFor(() => expect(changerStatut).toHaveBeenCalledWith("client", "article", "vendu")); await waitFor(() => expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("vendu"));
