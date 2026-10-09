@@ -226,8 +226,8 @@ export type Database = {
         ];
       };
       tailles: {
-        Row: { article_id: string; disponible: boolean; id: string; libelle: string };
-        Insert: { article_id: string; disponible?: boolean; id?: string; libelle: string };
+        Row: { article_id: string; disponible: boolean; id: string; libelle: string; quantite: number };
+        Insert: { article_id: string; disponible?: boolean; id?: string; libelle: string; quantite?: number };
         Update: Partial<Database["public"]["Tables"]["tailles"]["Insert"]>;
         Relationships: [
           {

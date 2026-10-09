@@ -6,6 +6,8 @@ import Link from "next/link";
 import { creerClientNavigateur } from "@/lib/supabase/client";
 import { changerStatut, MASQUE_PAR_MODERATION, STATUTS_ARTICLE, type ArticleGere } from "@/lib/gestion-articles";
 import { formaterPrix, prixAffiche, promoActive } from "@/lib/prix";
+import { ajusterQuantite, libelleStock, modifierStock, QUANTITE_STOCK_MAX, tailleEpuisee, type TailleStock } from "@/lib/stock";
+import { normaliserTailles } from "@/lib/article";
 import type { Enums } from "@/lib/supabase/types";
 
 export default function MesArticles({ articles }: { articles: ArticleGere[] }) {
@@ -37,6 +39,41 @@ function LigneArticle({ article }: { article: ArticleGere }) {
         {article.masque_par_moderation && <p className="mt-2 text-xs text-gris">{MASQUE_PAR_MODERATION}</p>}
       </div>
     </div>
+    {article.tailles.length > 0 && <StockTailles articleId={article.id} titre={article.titre} tailles={article.tailles} onStatut={setStatut} />}
     {enCours && <p role="status" className="mt-2 text-sm">Enregistrement…</p>}{erreur && <p role="alert" className="mt-2 text-sm">{erreur}</p>}
   </li>;
+}
+
+// US-20.1 : stock par taille modifiable en un appui (− / +), enregistré tout de suite.
+function StockTailles({ articleId, titre, tailles, onStatut }: { articleId: string; titre: string; tailles: TailleStock[]; onStatut: (statut: Enums<"statut_article">) => void }) {
+  const ordre = normaliserTailles(tailles.map(t => t.libelle));
+  const [quantites, setQuantites] = useState(() => new Map(tailles.map(t => [t.id, t.quantite])));
+  const [enCours, setEnCours] = useState<string | null>(null);
+  const [erreur, setErreur] = useState("");
+  const verrou = useRef(false);
+  const triees = [...tailles].sort((a, b) => ordre.indexOf(normaliserTailles([a.libelle])[0]) - ordre.indexOf(normaliserTailles([b.libelle])[0]));
+  async function changer(taille: TailleStock, ecart: number) {
+    if (verrou.current) return;
+    const actuelle = quantites.get(taille.id) ?? 0, voulue = ajusterQuantite(actuelle, ecart);
+    if (voulue === actuelle) return;
+    verrou.current = true; setEnCours(taille.id); setErreur("");
+    try {
+      const resultat = await modifierStock(creerClientNavigateur(), articleId, taille.id, voulue);
+      setQuantites(precedentes => new Map(precedentes).set(taille.id, resultat.quantite)); onStatut(resultat.statut);
+    } catch (error) { setErreur(error instanceof Error ? error.message : "Impossible d’enregistrer le stock. Réessayez."); }
+    finally { verrou.current = false; setEnCours(null); }
+  }
+  return <div className="mt-3">
+    <p className="etiquette text-gris">Stock</p>
+    <ul aria-label={`Stock de ${titre}`} className="mt-1 flex flex-wrap gap-1.5">{triees.map(taille => {
+      const quantite = quantites.get(taille.id) ?? 0, epuisee = tailleEpuisee({ quantite });
+      return <li key={taille.id} className={`flex items-center border border-trait text-xs ${epuisee ? "text-gris" : ""}`}>
+        <span className={`min-w-6 px-1.5 ${epuisee ? "line-through" : ""}`}>{taille.libelle}</span>
+        <button type="button" aria-label={`Taille ${taille.libelle} : une pièce de moins`} disabled={enCours !== null || quantite <= 0} onClick={() => void changer(taille, -1)} className="h-11 w-11 text-base">−</button>
+        <span aria-live="polite" title={libelleStock(quantite)} className="w-6 text-center">{quantite}</span>
+        <button type="button" aria-label={`Taille ${taille.libelle} : une pièce de plus`} disabled={enCours !== null || quantite >= QUANTITE_STOCK_MAX} onClick={() => void changer(taille, 1)} className="h-11 w-11 text-base">+</button>
+      </li>;
+    })}</ul>
+    {erreur && <p role="alert" className="mt-2 text-sm">{erreur}</p>}
+  </div>;
 }

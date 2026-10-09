@@ -5,12 +5,13 @@ import "@testing-library/jest-dom/vitest";
 import MesArticles from "./MesArticles";
 import ModifierArticle from "./ModifierArticle";
 import type { ArticleGere } from "@/lib/gestion-articles";
-const { changerStatut, modifierArticle, supprimerArticle, refresh, replace } = vi.hoisted(() => ({ changerStatut: vi.fn(), modifierArticle: vi.fn(), supprimerArticle: vi.fn(), refresh: vi.fn(), replace: vi.fn() }));
+const { changerStatut, modifierArticle, supprimerArticle, refresh, replace, modifierStock } = vi.hoisted(() => ({ changerStatut: vi.fn(), modifierArticle: vi.fn(), supprimerArticle: vi.fn(), refresh: vi.fn(), replace: vi.fn(), modifierStock: vi.fn() }));
+vi.mock("@/lib/stock", async importOriginal => ({ ...await importOriginal<typeof import("@/lib/stock")>(), modifierStock }));
 vi.mock("@/lib/gestion-articles", async importOriginal => ({ ...await importOriginal<typeof import("@/lib/gestion-articles")>(), changerStatut, modifierArticle, supprimerArticle }));
 vi.mock("@/lib/supabase/client", () => ({ creerClientNavigateur: () => "client" }));
 vi.mock("@/lib/envoi-article", () => ({ modifierArticleNavigateur: (...args: unknown[]) => modifierArticle("client", ...args) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh, replace }) }));
-const article: ArticleGere = { id: "article", boutique_id: "boutique", titre: "Polo", categorie: "T-shirts et polos", genre: "homme", couleur: null, description: null, description_ar: null, cree_le: "2026-10-09T00:00:00Z", derniere_confirmation: "2026-10-09T00:00:00Z", propose_par_ia: false, masque_par_moderation: false, prix: 3500, statut: "disponible", photos: [], promos: null, tailles: [{ id: "s", article_id: "article", libelle: "S", disponible: true }, { id: "m", article_id: "article", libelle: "M", disponible: true }] };
+const article: ArticleGere = { id: "article", boutique_id: "boutique", titre: "Polo", categorie: "T-shirts et polos", genre: "homme", couleur: null, description: null, description_ar: null, cree_le: "2026-10-09T00:00:00Z", derniere_confirmation: "2026-10-09T00:00:00Z", propose_par_ia: false, masque_par_moderation: false, prix: 3500, statut: "disponible", photos: [], promos: null, tailles: [{ id: "s", article_id: "article", libelle: "S", disponible: true, quantite: 1 }, { id: "m", article_id: "article", libelle: "M", disponible: true, quantite: 1 }] };
 beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); changerStatut.mockResolvedValue(undefined); modifierArticle.mockResolvedValue(undefined); supprimerArticle.mockResolvedValue(undefined); });
 afterEach(cleanup);
 describe("US-11 : liste et modification", () => {
@@ -44,5 +45,26 @@ describe("US-11 : liste et modification", () => {
     render(<ModifierArticle article={article} />); fireEvent.click(screen.getByRole("button", { name: "Supprimer l’article" })); expect(supprimerArticle).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Annuler" })); expect(screen.queryByRole("button", { name: "Oui, supprimer l’article" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Supprimer l’article" })); fireEvent.click(screen.getByRole("button", { name: "Oui, supprimer l’article" })); await waitFor(() => expect(supprimerArticle).toHaveBeenCalledWith("client", "article")); expect(replace).toHaveBeenCalledWith("/espace");
+  });
+});
+
+describe("US-20.1 : stock par taille dans Mes articles", () => {
+  const avecStock: ArticleGere = { ...article, tailles: [{ id: "m", article_id: "article", libelle: "M", disponible: true, quantite: 1 }, { id: "s", article_id: "article", libelle: "S", disponible: false, quantite: 0 }] };
+  it("affiche la quantité par taille et enregistre un appui sur −", async () => {
+    modifierStock.mockResolvedValue({ quantite: 0, statut: "vendu" });
+    render(<MesArticles articles={[avecStock]} />);
+    expect(screen.getByRole("button", { name: "Taille S : une pièce de moins" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Taille M : une pièce de moins" }));
+    await waitFor(() => expect(modifierStock).toHaveBeenCalledWith("client", "article", "m", 0));
+    // Toutes les tailles à 0 : la base a passé l’article « Vendu », la liste le reflète.
+    await waitFor(() => expect((screen.getByRole("combobox", { name: "Statut de Polo" }) as HTMLSelectElement).value).toBe("vendu"));
+  });
+  it("ajoute une pièce et garde l’ancienne quantité en cas d’échec", async () => {
+    modifierStock.mockRejectedValue(new Error("Impossible d’enregistrer le stock. Réessayez."));
+    render(<MesArticles articles={[avecStock]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Taille S : une pièce de plus" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Impossible d’enregistrer le stock");
+    expect(modifierStock).toHaveBeenCalledWith("client", "article", "s", 1);
+    expect(screen.getByRole("button", { name: "Taille S : une pièce de moins" })).toBeDisabled();
   });
 });
