@@ -8,4 +8,5 @@ afterEach(cleanup);
 describe("navigation de l’espace", () => {
   it("propose les trois pages et la déconnexion sur toutes les pages protégées", () => { chemin.mockReturnValue("/espace/articles/nouveau"); render(<NavigationEspace />); expect(screen.getByRole("link", { name: "Mes articles" }).getAttribute("href")).toBe("/espace"); expect(screen.getByRole("link", { name: "Ajouter" }).getAttribute("href")).toBe("/espace/articles/nouveau"); expect(screen.getByRole("link", { name: "Statistiques" }).getAttribute("href")).toBe("/espace/statistiques"); expect(screen.getByRole("button", { name: "Se déconnecter" })).toBeTruthy(); });
   it("cache le menu sur la connexion", () => { chemin.mockReturnValue("/espace/connexion"); render(<NavigationEspace />); expect(screen.queryByRole("navigation")).toBeNull(); });
+  it("affiche les commandes reçues avec le nombre à confirmer (US-20.3)", () => { chemin.mockReturnValue("/espace"); render(<NavigationEspace aConfirmer={2} />); expect(screen.getByRole("link", { name: "Commandes (2)" }).getAttribute("href")).toBe("/espace/commandes"); });
 });
