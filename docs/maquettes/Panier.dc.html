@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>OranPromo — Panier</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&amp;family=Jost:wght@300;400;500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0A0A0A;text-decoration:none}a:hover{color:#555555}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FFFFFF; color: #0A0A0A; font-family: 'Jost', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+<header style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #E6E6E6">
+<a href="Accueil.dc.html" style="font-family: 'Bodoni Moda', serif; font-size: 20px; letter-spacing: 4px">ORANPROMO</a>
+<a href="Panier.dc.html" style="font-size: 10px; letter-spacing: 2.5px">PANIER (2)</a>
+</header>
+
+<div style="padding: 20px 24px 12px 24px; text-align: center; display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-family: 'Bodoni Moda', serif; font-weight: 400; font-size: 28px">Mon panier</h1>
+<a href="Vitrine.dc.html" style="font-size: 10px; letter-spacing: 2.5px; color: #6F6F6F">BOUTIQUE AMINE · AKID LOTFI</a>
+</div>
+<main style="flex-grow: 1; padding: 0 24px; display: flex; flex-direction: column; overflow: hidden">
+<div style="display: flex; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid #E6E6E6">
+<div style="width: 64px; height: 80px; flex-shrink: 0; background: #F3F2EF; display: flex; align-items: center; justify-content: center; color: #8A8A8A; font-size: 9px">[Photo]</div>
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0">
+<span style="font-size: 14px; font-weight: 300">Polo piqué bleu marine</span>
+<span style="font-size: 11px; color: #6F6F6F">Taille M · 3 500 DA</span>
+<div style="display: flex; justify-content: space-between; align-items: center"><div style="display: flex; align-items: center; border: 1px solid #E6E6E6"><button aria-label="Retirer une pièce" style="width: 44px; height: 44px; border: none; background: #FFFFFF; font-size: 18px">−</button><span style="width: 28px; text-align: center; font-size: 13px">1</span><button aria-label="Ajouter une pièce" style="width: 44px; height: 44px; border: none; background: #FFFFFF; font-size: 18px">+</button></div><span style="font-size: 13px">3 500 DA</span></div>
+</div>
+</div><div style="display: flex; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid #E6E6E6">
+<div style="width: 64px; height: 80px; flex-shrink: 0; background: #F3F2EF; display: flex; align-items: center; justify-content: center; color: #8A8A8A; font-size: 9px">[Photo]</div>
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0">
+<span style="font-size: 14px; font-weight: 300">Chemise lin beige</span>
+<span style="font-size: 11px; color: #6F6F6F">Taille L · 5 200 DA</span>
+<div style="display: flex; justify-content: space-between; align-items: center"><div style="display: flex; align-items: center; border: 1px solid #E6E6E6"><button aria-label="Retirer une pièce" style="width: 44px; height: 44px; border: none; background: #FFFFFF; font-size: 18px">−</button><span style="width: 28px; text-align: center; font-size: 13px">1</span><button aria-label="Ajouter une pièce" style="width: 44px; height: 44px; border: none; background: #FFFFFF; font-size: 18px">+</button></div><span style="font-size: 13px">5 200 DA</span></div>
+</div>
+</div>
+<label style="display: flex; flex-direction: column; gap: 6px; padding-top: 14px; font-size: 10px; letter-spacing: 2.5px">NOTE POUR LA BOUTIQUE (FACULTATIVE)
+<textarea rows="2" style="border: 1px solid #E6E6E6; font-family: 'Jost', sans-serif; font-size: 13px; padding: 10px; resize: none">Je passe samedi matin.</textarea></label>
+<div style="display: flex; justify-content: space-between; padding: 16px 0; font-size: 15px"><span style="font-size: 10px; letter-spacing: 2.5px; align-self: center">TOTAL</span><span>8 700 DA</span></div>
+</main>
+<footer style="padding: 14px 24px 24px 24px; display: flex; flex-direction: column; gap: 10px; text-align: center">
+<a href="SuiviCommande.dc.html" style="height: 54px; background: #0A0A0A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; letter-spacing: 2.5px; border: none; width: 100%; font-family: 'Jost', sans-serif">COMMANDER</a>
+<span style="font-size: 11px; color: #6F6F6F">La boutique confirme votre commande · Paiement en boutique</span>
+<span style="font-size: 11px; color: #6F6F6F">Un seul panier par boutique</span>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>OranPromo — Mes commandes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&amp;family=Jost:wght@300;400;500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0A0A0A;text-decoration:none}a:hover{color:#555555}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FFFFFF; color: #0A0A0A; font-family: 'Jost', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+<nav style="display: flex; gap: 16px; padding: 12px 24px; border-bottom: 1px solid #E6E6E6; font-size: 13px"><a href="MesCommandes.dc.html" style="padding: 12px 0">Mes commandes</a><a href="MesCommandes.dc.html" style="padding: 12px 0">Mon compte</a><a href="Panier.dc.html" style="padding: 12px 0">Panier</a></nav>
+<header style="padding: 24px 24px 18px 24px; display: flex; flex-direction: column; align-items: center; gap: 6px; border-bottom: 1px solid #E6E6E6">
+<span style="font-size: 10px; letter-spacing: 2.5px; color: #6F6F6F">MON COMPTE · SAMIA</span>
+<h1 style="margin: 0; font-family: 'Bodoni Moda', serif; font-weight: 400; font-size: 28px">Mes commandes</h1>
+</header>
+
+<p style="margin: 0; padding: 12px 24px; border-bottom: 1px solid #E6E6E6; font-size: 11px; font-weight: 300">Attention : 1 commande non récupérée. Il vous reste 4 essais avant le blocage de votre compte.</p>
+<main style="flex-grow: 1; padding: 0 24px; display: flex; flex-direction: column">
+<a href="SuiviCommande.dc.html" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid #E6E6E6">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 14px; font-weight: 300">Commande n° 14 · Boutique Amine</span><span style="font-size: 11px; color: #6F6F6F">9 oct. 14:05 · 8 700 DA</span></div>
+<span style="font-size: 9px; letter-spacing: 2px; white-space: nowrap">● PRÊTE</span></a><a href="SuiviCommande.dc.html" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid #E6E6E6">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 14px; font-weight: 300">Commande n° 12 · Maison Ilyes</span><span style="font-size: 11px; color: #6F6F6F">7 oct. 10:12 · 4 200 DA</span></div>
+<span style="font-size: 9px; letter-spacing: 2px; white-space: nowrap">◐ CONFIRMÉE</span></a><a href="SuiviCommande.dc.html" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid #E6E6E6">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 14px; font-weight: 300">Commande n° 9 · Boutique Nour</span><span style="font-size: 11px; color: #6F6F6F">2 oct. 18:40 · 2 900 DA</span></div>
+<span style="font-size: 9px; letter-spacing: 2px; white-space: nowrap">○ RÉCUPÉRÉE</span></a><a href="SuiviCommande.dc.html" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid #E6E6E6">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 14px; font-weight: 300">Commande n° 6 · Boutique Amine</span><span style="font-size: 11px; color: #6F6F6F">28 sept. 11:02 · 3 500 DA</span></div>
+<span style="font-size: 9px; letter-spacing: 2px; white-space: nowrap">○ ANNULÉE</span></a>
+</main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

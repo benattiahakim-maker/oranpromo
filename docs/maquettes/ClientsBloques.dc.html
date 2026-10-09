@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>OranPromo — Clients bloqués</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&amp;family=Jost:wght@300;400;500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0A0A0A;text-decoration:none}a:hover{color:#555555}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FFFFFF; color: #0A0A0A; font-family: 'Jost', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+<nav style="display: flex; gap: 12px; padding: 16px 24px; border-bottom: 1px solid #E6E6E6; font-size: 13px; flex-wrap: wrap"><a href="Main.dc.html">Tableau de bord</a><a href="Main.dc.html">Boutiques</a><a href="Main.dc.html">Modération</a><a href="ClientsBloques.dc.html" style="border-bottom: 1px solid #0A0A0A">Clients</a></nav>
+<header style="padding: 24px 24px 18px 24px; display: flex; flex-direction: column; align-items: center; gap: 6px; border-bottom: 1px solid #E6E6E6">
+<span style="font-size: 10px; letter-spacing: 2.5px; color: #6F6F6F">ADMINISTRATION</span>
+<h1 style="margin: 0; font-family: 'Bodoni Moda', serif; font-weight: 400; font-size: 28px">Clients</h1>
+</header>
+
+<main style="flex-grow: 1; padding: 0 24px; display: flex; flex-direction: column">
+<h2 style="margin: 18px 0 0 0; font-size: 10px; letter-spacing: 2.5px; font-weight: 400">BLOQUÉS (1)</h2>
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #E6E6E6">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 14px; font-weight: 300">Yacine M.</span><span style="font-size: 11px; color: #6F6F6F">0550 11 22 33 · 5 no-shows</span><span style="font-size: 9px; letter-spacing: 2px">● BLOQUÉ LE 8 OCT. 2026</span></div><button style="height: 44px; background: #FFFFFF; color: #0A0A0A; border: 1px solid #0A0A0A; display: flex; align-items: center; justify-content: center; font-size: 10px; letter-spacing: 2px; font-family: 'Jost', sans-serif; padding: 0 12px">DÉBLOQUER</button></div>
+<h2 style="margin: 18px 0 0 0; font-size: 10px; letter-spacing: 2.5px; font-weight: 400">AVEC DES NO-SHOWS (2)</h2>
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #E6E6E6">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 14px; font-weight: 300">Samia B.</span><span style="font-size: 11px; color: #6F6F6F">0555 12 34 56 · 1 no-shows</span><span style="font-size: 9px; letter-spacing: 2px">○ 4 ESSAIS RESTANTS</span></div></div><div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #E6E6E6">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 14px; font-weight: 300">Lina H.</span><span style="font-size: 11px; color: #6F6F6F">0662 00 11 22 · 3 no-shows</span><span style="font-size: 9px; letter-spacing: 2px">○ 2 ESSAIS RESTANTS</span></div></div>
+<p style="font-size: 11px; color: #6F6F6F; line-height: 1.6">Une commande prête non récupérée sous 24 h compte comme un no-show. Au 5e, le compte est bloqué. Débloquer remet le compteur à 0.</p>
+</main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
