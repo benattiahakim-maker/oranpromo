@@ -737,7 +737,7 @@ En tant que client, je veux que mon bon soit déduit sans rien avoir à dire en 
 - **Boutique, « Remis sans QR code »** sur une commande avec bon : confirmation propre : « Sans QR code ni code, le bon ne s'applique pas : encaissez 3 500 DA. Le bon reste au client. » ; après la remise, le bon est rendu au client.
 - Tests Vitest : case du panier (cochée, absente, sous 1 000 DA), montants, appel `utiliser_bon` après `passer_commande` (et commande gardée si le bon échoue), affichage client / proche / boutique / scan, confirmation « sans QR code ».
 
-### US-27.5 — Rembourser les boutiques et suivre le parrainage (pages `/admin/parrainages`, `/admin/remboursements`, `/espace`)
+### US-27.5 — Rembourser les boutiques et suivre le parrainage (pages `/admin/parrainages`, `/admin/remboursements`, `/espace`) — **codée**
 En tant qu'admin, je veux savoir chaque mois combien rembourser à chaque boutique, l'exporter, noter que c'est payé, et repérer la triche ; en tant que commerçant, je veux voir ce qu'OranPromo me doit.
 - **`/admin/remboursements`** : choix du mois ; une ligne par boutique : nombre de bons, montant (« 4 bons · 1 200 DA »), état (`en_cours` pour le mois courant, `a_payer` après clôture le 1er, `paye` avec date et référence), signaux. Détail d'un relevé : commandes (n°, date de remise, QR code ou code, client prénom + initiale, total, bon). Boutons :
   - **« Exporter CSV »** (un mois, toutes les boutiques ou une seule) ;

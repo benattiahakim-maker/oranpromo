@@ -2,14 +2,15 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Espace from "./page";
 import { deconnecter } from "./actions";
-const { getUser, signOut, redirect, from, eqProfil, eqArticles, eqBoutique } = vi.hoisted(() => ({ getUser: vi.fn(), signOut: vi.fn(), redirect: vi.fn((chemin: string): never => { throw new Error(`redirection:${chemin}`); }), from: vi.fn(), eqProfil: vi.fn(), eqArticles: vi.fn(), eqBoutique: vi.fn() }));
+const { getUser, signOut, redirect, from, eqProfil, eqArticles, eqBoutique, eqReleves } = vi.hoisted(() => ({ eqReleves: vi.fn(), getUser: vi.fn(), signOut: vi.fn(), redirect: vi.fn((chemin: string): never => { throw new Error(`redirection:${chemin}`); }), from: vi.fn(), eqProfil: vi.fn(), eqArticles: vi.fn(), eqBoutique: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ auth: { getUser, signOut }, from }) }));
 vi.mock("next/navigation", () => ({ redirect, useRouter: () => ({ refresh: vi.fn() }) }));
 beforeEach(() => {
   vi.clearAllMocks(); getUser.mockResolvedValue({ data: { user: { id: "compte", email: "vendeur@example.com" } }, error: null });
   eqProfil.mockReturnValue({ maybeSingle: async () => ({ data: { boutique_id: "boutique" }, error: null }) }); eqArticles.mockReturnValue({ order: async () => ({ data: [], error: null }) });
   eqBoutique.mockReturnValue({ maybeSingle: async () => ({ data: { nom: "Boutique Nour", slug: "boutique-nour", statut: "validee" }, error: null }) });
-  from.mockImplementation((table: string) => ({ select: () => ({ eq: table === "profils" ? eqProfil : table === "boutiques" ? eqBoutique : eqArticles }) }));
+  eqReleves.mockReturnValue({ order: () => ({ limit: async () => ({ data: [], error: null }) }) });
+  from.mockImplementation((table: string) => ({ select: () => ({ eq: table === "profils" ? eqProfil : table === "boutiques" ? eqBoutique : table === "releves_bons" ? eqReleves : eqArticles }) }));
 });
 const props = () => ({ searchParams: Promise.resolve({}) });
 describe("US-11 : espace commerçant", () => {
@@ -35,5 +36,18 @@ describe("US-11 : espace commerçant", () => {
     eqBoutique.mockReturnValue({ maybeSingle: async () => ({ data: null, error: { message: "Réseau" } }) });
     const html = renderToStaticMarkup(await Espace(props()));
     expect(html).not.toContain("Partager ma boutique");
+  });
+  it("US-27.5 : bloc « Bons parrainage à rembourser » limité à sa boutique, absent sans relevé", async () => {
+    let html = renderToStaticMarkup(await Espace(props()));
+    expect(eqReleves).toHaveBeenCalledWith("boutique_id", "boutique");
+    expect(html).not.toContain("Bons parrainage à rembourser");
+    eqReleves.mockReturnValue({ order: () => ({ limit: async () => ({ data: [{ id: "r", mois: "2026-09-01", nombre: 8, montant: 2400, statut: "paye", paye_le: "2026-10-05", reference_paiement: "CCP-1234", lignes: [] }], error: null }) }) });
+    html = renderToStaticMarkup(await Espace(props()));
+    expect(html).toContain("Bons parrainage à rembourser"); expect(html).toContain("Septembre : 2 400 DA · payé le 05/10, réf. CCP-1234");
+  });
+  it("US-27.5 : erreur de lecture des relevés : pas de bloc, la page reste", async () => {
+    eqReleves.mockReturnValue({ order: () => ({ limit: async () => ({ data: null, error: { message: "Réseau" } }) }) });
+    const html = renderToStaticMarkup(await Espace(props()));
+    expect(html).not.toContain("Bons parrainage"); expect(html).toContain("Mes articles");
   });
 });
