@@ -48,11 +48,11 @@ Colonnes en `snake_case` français sans accents. Prix = entiers en dinars.
 | `boutiques` | vitrines | `slug` unique ; `statut` : `en_attente`, `validee`, `suspendue` ; seul un admin change le statut |
 | `profils` | un par compte connecté | `role` : `commercant`, `ambassadeur`, `admin` ; `boutique_id` ; créé automatiquement à l'inscription |
 | `articles` | articles | `statut` : `disponible`, `reserve`, `vendu`, `masque` ; `genre` : `homme`, `femme`, `enfant`, `mixte` ; `derniere_confirmation` ; `propose_par_ia` ; `masque_par_moderation` (seul un admin le lève) |
-| `photos` | 1 à 5 par article | `adresse`, `adresse_vignette`, `ordre` |
+| `photos` | 1 à 5 par article | `adresse`, `adresse_vignette`, `ordre` ; adresse limitée au stockage `photos` du projet, dossier de l'article (règle dans la base) |
 | `tailles` | tailles d'un article | `libelle`, `disponible` ; unique par article |
-| `promos` | au plus une par article | `prix_promo`, `badge`, `date_fin` |
-| `evenements` | statistiques | `type` : `vue_article`, `vue_boutique`, `clic_reserver`, `partage` |
-| `signalements` | signalements clients | `statut` : `ouvert`, `traite`, `rejete` |
+| `promos` | au plus une par article | `prix_promo` (> 0 et < `articles.prix`, règle dans la base), `badge`, `date_fin` |
+| `evenements` | statistiques | `type` : `vue_article`, `vue_boutique`, `clic_reserver`, `partage` ; `date` fixée par la base ; 120 par minute et par boutique au plus |
+| `signalements` | signalements clients | `statut` : `ouvert`, `traite`, `rejete` ; `cree_le` fixée par la base ; 10 par heure et par article, 200 par heure au total |
 | `decisions` | décisions de modération | `action`, `auteur_id`, `date` |
 | `appels_ia` | quota des routes IA | `utilisateur_id`, `date` ; aucune lecture directe, uniquement via `consommer_quota_ia()` (30 appels par heure et par compte) |
 
@@ -68,7 +68,11 @@ Le stockage `photos` (public, 5 Mo max, jpeg/png/webp) impose le chemin `<boutiq
 - Seuls un admin ou un ambassadeur créent une boutique ; une fois publiée (validée ou suspendue), son nom, son WhatsApp, son slug et ses liens ne changent qu'avec un admin (règle dans la base).
 - Les dates `cree_le` et `derniere_confirmation` d'un article sont fixées par la base pour le commerçant (heure du serveur).
 - Un article masqué par la modération (`masque_par_moderation`) ne peut pas être démasqué par le commerçant (règle dans la base, rappelée dans `lib/gestion-articles.ts`).
-- Les routes IA sont réservées aux boutiques validées et limitées par compte (`lib/acces-ia.ts`).
+- Les routes IA sont réservées aux boutiques validées et limitées par compte (`lib/acces-ia.ts`) ; leur corps de requête est lu avec une taille bornée (`lib/corps-requete.ts`).
+- Le prix promo est un entier > 0 strictement inférieur au prix normal (`lib/promo.ts` et la base) ; le prix d'un article en promo ne peut pas descendre sous le prix promo.
+- Les listes publiques (accueil, catalogue) appliquent explicitement la visibilité publique (`lib/catalogue.ts`) : un admin ou un commerçant connecté y voit la même chose que le public. Le catalogue lit au plus 1 000 articles par requête.
+- Les photos envoyées sont vérifiées côté serveur sur leur contenu réel (JPEG), pas seulement sur le type annoncé par le navigateur ; 12 Mo de photos au total par envoi.
+- Les redirections n'utilisent que des hôtes connus (`lib/origine.ts` : hôte de `NEXT_PUBLIC_SITE_URL`, plus localhost en développement).
 - L'IA ne propose jamais prix, tailles, marque ni authenticité.
 - Affichage des prix : toujours `formaterPrix()` → « 3 500 DA ».
 

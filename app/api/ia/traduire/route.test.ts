@@ -31,4 +31,9 @@ describe("POST traduction : aucun appel API réel", () => {
   it("consomme le quota une fois par appel autorisé", async () => { expect((await POST(demande())).status).toBe(200); expect(quota).toHaveBeenCalledTimes(1); expect(quota).toHaveBeenCalledWith("consommer_quota_ia"); });
   it("répond 429 quand le quota est atteint, sans appeler l’IA", async () => { quota.mockResolvedValue({ data: false, error: null }); const r = await POST(demande()); expect(r.status).toBe(429); expect(await r.json()).toEqual({ message: QUOTA_IA_ATTEINT }); expect(construire).not.toHaveBeenCalled(); expect(creer).not.toHaveBeenCalled(); });
   it("répond 503 si le quota ne peut pas être vérifié", async () => { quota.mockResolvedValue({ data: null, error: { message: "erreur" } }); const r = await POST(demande()); expect(r.status).toBe(503); expect(await r.json()).toEqual({ message: TRADUCTION_INDISPONIBLE }); expect(creer).not.toHaveBeenCalled(); });
+  it("refuse un texte sans Content-Length qui dépasse 16 Ko, sans appeler l’IA", async () => {
+    const flux = new ReadableStream<Uint8Array>({ pull(c) { c.enqueue(new Uint8Array(8192).fill(32)); } });
+    const r = await POST(new Request("http://localhost/api/ia/traduire", { method: "POST", body: flux, duplex: "half" } as RequestInit));
+    expect(r.status).toBe(413); expect(creer).not.toHaveBeenCalled();
+  });
 });

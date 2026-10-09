@@ -31,6 +31,21 @@ export function couleurDepuisIA(valeur: string): string {
 }
 export const TYPES_PHOTO = ["image/jpeg", "image/png", "image/webp"];
 export const TAILLE_PHOTO_MAX = 5 * 1024 * 1024;
+// Total des photos compressées envoyées en une fois à l'action serveur (bodySizeLimit = cette valeur + 1 Mo).
+// Une photo compressée en 1600 px pèse en général moins de 1 Mo : 12 Mo laisse une large marge pour 5 photos.
+export const TAILLE_ENVOI_PHOTOS_MAX = 12 * 1024 * 1024;
+
+// Vérifie la signature réelle du fichier (octets magiques) au lieu du type annoncé par le navigateur.
+export function typeImageReel(octets: Uint8Array): "image/jpeg" | "image/png" | "image/webp" | null {
+  const debut = (signature: number[], decalage = 0) => signature.every((octet, i) => octets[decalage + i] === octet);
+  if (octets.length >= 3 && debut([0xff, 0xd8, 0xff])) return "image/jpeg";
+  if (octets.length >= 8 && debut([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "image/png";
+  if (octets.length >= 12 && debut([0x52, 0x49, 0x46, 0x46]) && debut([0x57, 0x45, 0x42, 0x50], 8)) return "image/webp";
+  return null;
+}
+export async function estJpegReel(fichier: Blob): Promise<boolean> {
+  return typeImageReel(new Uint8Array(await fichier.slice(0, 12).arrayBuffer())) === "image/jpeg";
+}
 
 export type SaisieArticle = { titre: string; categorie: string; genre: string; couleur: string; description: string; descriptionAr?: string; prix: string; tailles: string[]; photos: { type: string; size: number }[] };
 export type ErreursArticle = Partial<Record<"photos" | "titre" | "categorie" | "genre" | "couleur" | "prix" | "tailles" | "descriptionAr", string>>;

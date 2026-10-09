@@ -60,4 +60,10 @@ describe("POST fiche IA, API entièrement simulée", () => {
   it("consomme le quota une fois par appel autorisé", async () => { expect((await POST(demande())).status).toBe(200); expect(quota).toHaveBeenCalledTimes(1); expect(quota).toHaveBeenCalledWith("consommer_quota_ia"); });
   it("répond 429 quand le quota est atteint, sans appeler l’IA", async () => { quota.mockResolvedValue({ data: false, error: null }); const r = await POST(demande()); expect(r.status).toBe(429); expect(await r.json()).toEqual({ message: QUOTA_IA_ATTEINT }); expect(construire).not.toHaveBeenCalled(); expect(creer).not.toHaveBeenCalled(); });
   it("répond 503 si le quota ne peut pas être vérifié", async () => { quota.mockResolvedValue({ data: null, error: { message: "erreur" } }); const r = await POST(demande()); expect(r.status).toBe(503); expect(await r.json()).toEqual({ message: IA_INDISPONIBLE }); expect(creer).not.toHaveBeenCalled(); });
+  it("refuse un envoi sans Content-Length qui dépasse 5 Mo, avant l’analyse et l’appel IA", async () => {
+    const morceau = new Uint8Array(1024 * 1024);
+    const flux = new ReadableStream<Uint8Array>({ pull(c) { c.enqueue(morceau); } });
+    const r = await POST(new Request("http://localhost/api/ia/fiche", { method: "POST", body: flux, headers: { "content-type": "multipart/form-data; boundary=x" }, duplex: "half" } as RequestInit));
+    expect(r.status).toBe(413); expect(quota).not.toHaveBeenCalled(); expect(creer).not.toHaveBeenCalled();
+  });
 });

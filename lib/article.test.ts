@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COULEURS_ARTICLE, CATEGORIES_ARTICLE, couleurDepuisIA, filtrerTailles, taillesPourArticle, donneesArticle, normaliserTailles, validerArticle, type SaisieArticle } from "./article";
+import { estJpegReel, typeImageReel, COULEURS_ARTICLE, CATEGORIES_ARTICLE, couleurDepuisIA, filtrerTailles, taillesPourArticle, donneesArticle, normaliserTailles, validerArticle, type SaisieArticle } from "./article";
 
 const valide: SaisieArticle = { titre: "Polo bleu", categorie: "Polos", genre: "homme", couleur: "", description: "", prix: "3500", tailles: ["M"], photos: [{ type: "image/jpeg", size: 8000000 }] };
 describe("US-10 : validation article", () => {
@@ -46,4 +46,19 @@ describe("couleurs et tailles du formulaire", () => {
   it("propose les pointures adultes, enfant et la taille unique", () => { expect(taillesPourArticle("Chaussures", "mixte")).toEqual(Array.from({ length: 12 }, (_, i) => String(i + 35))); expect(taillesPourArticle("Chaussures", "enfant")).toEqual(Array.from({ length: 11 }, (_, i) => String(i + 24))); expect(taillesPourArticle("Accessoires", "enfant")).toEqual(["Unique"]); expect(taillesPourArticle("Polos", "enfant")).toEqual(["2 ans", "4 ans", "6 ans", "8 ans", "10 ans", "12 ans", "14 ans"]); expect(taillesPourArticle("inconnue", "homme")).toEqual([]); });
   it.each(CATEGORIES_ARTICLE)("accepte uniquement les tailles autorisées pour %s et chaque genre", categorie => { for (const genre of ["homme", "femme", "mixte", "enfant"]) { for (const taille of taillesPourArticle(categorie, genre)) expect(validerArticle({ ...valide, categorie, genre, tailles: [taille] }).tailles).toBeUndefined(); expect(validerArticle({ ...valide, categorie, genre, tailles: ["999"] }).tailles).toBeDefined(); } });
   it("retire seulement les tailles devenues incompatibles", () => { expect(filtrerTailles(["M", "40"], "Jeans", "homme")).toEqual(["M", "40"]); expect(filtrerTailles(["M", "40"], "Chaussures", "homme")).toEqual(["40"]); expect(filtrerTailles(["M", "4 ans"], "Polos", "enfant")).toEqual(["4 ans"]); });
+});
+
+describe("signature réelle des photos", () => {
+  it("reconnaît JPEG, PNG et WebP par leurs octets magiques", () => {
+    expect(typeImageReel(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]))).toBe("image/jpeg");
+    expect(typeImageReel(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))).toBe("image/png");
+    expect(typeImageReel(new Uint8Array([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50]))).toBe("image/webp");
+    expect(typeImageReel(new TextEncoder().encode("<svg onload=alert(1)>"))).toBeNull();
+    expect(typeImageReel(new Uint8Array([0xff, 0xd8]))).toBeNull();
+  });
+  it("refuse un fichier annoncé JPEG dont le contenu n'en est pas un", async () => {
+    expect(await estJpegReel(new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xdb])], { type: "image/jpeg" }))).toBe(true);
+    expect(await estJpegReel(new Blob(["<html>"], { type: "image/jpeg" }))).toBe(false);
+    expect(await estJpegReel(new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], { type: "image/jpeg" }))).toBe(false);
+  });
 });

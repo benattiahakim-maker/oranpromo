@@ -1,7 +1,7 @@
 import Link from "next/link";
 import EntetePublic from "@/components/EntetePublic";
 import { creerClientServeur } from "@/lib/supabase/server";
-import { chargerCatalogue, filtrerCatalogue } from "@/lib/catalogue";
+import { ARTICLES_PAR_PAGE, chargerCatalogue, chargerOptionsCatalogue, type FiltresCatalogue } from "@/lib/catalogue";
 import CarteArticle from "@/components/CarteArticle";
 
 export const dynamic = "force-dynamic";
@@ -10,11 +10,9 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
   const params = await searchParams;
   const valeur = (nom: string) => typeof params[nom] === "string" ? params[nom] as string : "";
   const nombre = (nom: string) => valeur(nom) && Number.isFinite(Number(valeur(nom))) && Number(valeur(nom)) >= 0 ? Number(valeur(nom)) : undefined;
-  const articles = await chargerCatalogue(await creerClientServeur());
-  const resultats = filtrerCatalogue(articles, { q: valeur("q"), categorie: valeur("categorie"), taille: valeur("taille"), genre: valeur("genre"), min: nombre("min"), max: nombre("max"), quartier: valeur("quartier"), promo: valeur("promo") === "1" });
-  const categories = [...new Set(articles.map(a => a.categorie))].sort();
-  const tailles = [...new Set(articles.flatMap(a => a.tailles))].sort();
-  const quartiers = [...new Set(articles.map(a => a.boutique.quartier))].sort();
+  const filtres: FiltresCatalogue = { q: valeur("q"), categorie: valeur("categorie"), taille: valeur("taille"), genre: valeur("genre"), min: nombre("min"), max: nombre("max"), quartier: valeur("quartier"), promo: valeur("promo") === "1" };
+  const client = await creerClientServeur();
+  const [resultats, { categories, tailles, quartiers }] = await Promise.all([chargerCatalogue(client, filtres), chargerOptionsCatalogue(client)]);
   const page = Math.max(1, Math.floor(nombre("page") ?? 1));
   const lienPage = (numero: number) => {
     const query = new URLSearchParams();
@@ -37,8 +35,8 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
         <button className="etiquette min-h-12 bg-noir text-blanc">Rechercher</button><Link href="/catalogue" className="text-center text-sm underline">Effacer les filtres</Link>
       </form>
       <p role="status" className="px-5 pb-5 text-sm text-gris">{resultats.length} résultat{resultats.length > 1 ? "s" : ""}</p>
-      {resultats.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-6 px-5">{resultats.slice((page - 1) * 20, page * 20).map(article => <CarteArticle key={article.id} article={article} />)}</div> : <p className="px-5 py-8 text-center">Aucun article ne correspond à votre recherche. Essayez d’autres critères ou effacez les filtres.</p>}
-      <nav aria-label="Pagination du catalogue" className="flex justify-between px-5 pt-8">{page > 1 && <Link href={lienPage(page - 1)} className="border border-noir px-4 py-3">Précédent</Link>}{page * 20 < resultats.length && <Link href={lienPage(page + 1)} className="ml-auto border border-noir px-4 py-3">Suivant</Link>}</nav>
+      {resultats.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-6 px-5">{resultats.slice((page - 1) * ARTICLES_PAR_PAGE, page * ARTICLES_PAR_PAGE).map(article => <CarteArticle key={article.id} article={article} />)}</div> : <p className="px-5 py-8 text-center">Aucun article ne correspond à votre recherche. Essayez d’autres critères ou effacez les filtres.</p>}
+      <nav aria-label="Pagination du catalogue" className="flex justify-between px-5 pt-8">{page > 1 && <Link href={lienPage(page - 1)} className="border border-noir px-4 py-3">Précédent</Link>}{page * ARTICLES_PAR_PAGE < resultats.length && <Link href={lienPage(page + 1)} className="ml-auto border border-noir px-4 py-3">Suivant</Link>}</nav>
     </main>
   </div>;
 }
