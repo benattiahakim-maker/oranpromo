@@ -465,7 +465,7 @@ Livrée en 3 sous-stories, dans cet ordre (une PR chacune) :
 | --- | --- | --- |
 | US-25.1 | « Contenance » au lieu de « Taille » pour la beauté, partout où la cliente et le commerçant le lisent | fiche article, panier, commandes, message WhatsApp |
 | US-25.2 | Catalogue Beauté : filtre de contenance trié par volume, genre « Pour elle / Pour lui / Mixte » avec les mixtes inclus, raccourcis de catégories | `/catalogue?univers=beaute` |
-| US-25.3 | Boutique de démonstration « Parfumerie Démo » (5 parfums), lancée par le propriétaire dans Supabase | `/carte`, `/b/parfumerie-demo`, catalogue |
+| US-25.3 | Boutique de démonstration « Parfumerie Démo » (5 parfums), lancée en production le 9/10 après validation | `/carte`, `/b/parfumerie-demo`, catalogue |
 
 **Catégories** (inchangées, déjà contrôlées par la base) : Parfums · Maquillage · Soins visage et corps · Cheveux · Hammam et traditionnel. Décision du propriétaire : pas d'autre catégorie ; les accessoires de beauté vont dans « Maquillage ».
 

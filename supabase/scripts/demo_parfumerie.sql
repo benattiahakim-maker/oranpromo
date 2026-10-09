@@ -2,9 +2,8 @@
 -- OranPromo : boutique de démonstration « Parfumerie Démo » (US-25, univers Beauté)
 -- =============================================================================
 -- CE N'EST PAS UNE MIGRATION : ce fichier est hors de supabase/migrations et n'est jamais
--- appliqué automatiquement. ⚠ NE PAS LANCER avant que le propriétaire ait validé la
--- conception de l'univers Beauté (US-25, maquette docs/maquettes/Beaute.dc.html) : si une
--- catégorie ou une règle change, ce fichier sera mis à jour d'abord.
+-- appliqué automatiquement. Validé par le propriétaire le 9/10 (US-25) et **lancé en production le
+-- 9/10 vers 18 h 53** (heure de Paris) ; le relancer ne crée rien de plus.
 --
 -- Mode d'emploi (Supabase > SQL Editor, coller tout le fichier, lancer une fois ; chaque instruction
 -- est rejouable : en cas d'erreur, corriger et relancer tout le fichier) :
@@ -50,7 +49,7 @@ insert into articles (id, boutique_id, titre, categorie, genre, prix, couleur, d
    'سلعة للتجربة. العنبر والفانيلا. قرعة 75 مل.', 'disponible')
 on conflict (id) do nothing;
 
--- Contenances (« tailles » en ml) et stock par contenance. Un seul prix par article (voir US-25, question 2).
+-- Contenances (« tailles » en ml) et stock par contenance. Un seul prix par article (décision n° 2 du propriétaire, US-25).
 insert into tailles (article_id, libelle, quantite)
 select v.article_id::uuid, v.libelle, v.quantite from (values
   ('a0000000-0000-0000-0000-000000000006', '100 ml', 3),
