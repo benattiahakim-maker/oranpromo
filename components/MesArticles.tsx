@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { creerClientNavigateur } from "@/lib/supabase/client";
 import { changerStatut, STATUTS_ARTICLE, type ArticleGere } from "@/lib/gestion-articles";
-import { formaterPrix, prixAffiche } from "@/lib/prix";
+import { formaterPrix, prixAffiche, promoActive } from "@/lib/prix";
 import type { Enums } from "@/lib/supabase/types";
 
 export default function MesArticles({ articles }: { articles: ArticleGere[] }) {
@@ -32,6 +32,7 @@ function LigneArticle({ article }: { article: ArticleGere }) {
         {photo ? <Image src={photo.adresse} alt={article.titre} width={64} height={80} className="h-20 w-16 object-cover" /> : <span className="flex h-20 w-16 items-center justify-center bg-fond-photo text-xs text-gris">Sans photo</span>}
       </Link>
       <div className="min-w-0 flex-1"><Link href={`/espace/articles/${article.id}`} className="block break-words text-sm font-light">{article.titre}</Link><p className="mt-1 text-sm">{formaterPrix(prixAffiche(article.prix, promo))}</p>
+        {promoActive(promo) && <p className="etiquette mt-2 text-noir">PROMO</p>}
         <label className="mt-2 block text-xs">Statut de {article.titre}<select aria-label={`Statut de ${article.titre}`} value={statut} disabled={enCours} onChange={event => void changer(event.target.value as Enums<"statut_article">)} className="mt-1 min-h-[44px] w-full border border-trait bg-blanc px-2 text-noir">{Object.entries(STATUTS_ARTICLE).map(([valeur, texte]) => <option key={valeur} value={valeur}>{texte}</option>)}</select></label>
       </div>
     </div>

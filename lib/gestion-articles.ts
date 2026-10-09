@@ -37,7 +37,7 @@ export async function boutiqueDuCompte(client: SupabaseClient<Database>) {
   return profil.boutique_id;
 }
 
-async function articleDeMaBoutique(client: SupabaseClient<Database>, id: string) {
+export async function articleDeMaBoutique(client: SupabaseClient<Database>, id: string) {
   const boutiqueId = await boutiqueDuCompte(client);
   const { data, error } = await client.from("articles").select("*, photos(*), tailles(*), promos(*)").eq("boutique_id", boutiqueId).eq("id", id).maybeSingle();
   if (error || !data) throw new Error("Cet article est introuvable dans votre boutique.");

@@ -7,6 +7,7 @@ import { CATEGORIES_ARTICLE, GENRES_ARTICLE, normaliserTailles, TAILLES_ARTICLE,
 import { modifierArticle, supprimerArticle, type ArticleGere, type TailleModifiee } from "@/lib/gestion-articles";
 import { creerClientNavigateur } from "@/lib/supabase/client";
 import styles from "./espace-articles.module.css";
+import PromoArticle from "./PromoArticle";
 
 const champ = "mt-2 min-h-[44px] w-full border border-trait bg-blanc px-3 py-2 text-base text-noir";
 const bouton = "min-h-[44px] border border-noir px-3 py-2 text-sm disabled:opacity-50";
@@ -19,6 +20,7 @@ export default function ModifierArticle({ article }: { article: ArticleGere }) {
   const [couleur, setCouleur] = useState(article.couleur ?? "");
   const [description, setDescription] = useState(article.description ?? "");
   const [prix, setPrix] = useState(String(article.prix));
+  const [prixEnregistre, setPrixEnregistre] = useState(article.prix);
   const [tailles, setTailles] = useState<TailleModifiee[]>(article.tailles.map(t => ({ libelle: t.libelle, disponible: t.disponible })));
   const [pointures, setPointures] = useState("");
   const [erreurs, setErreurs] = useState<ErreursArticle>({});
@@ -40,7 +42,7 @@ export default function ModifierArticle({ article }: { article: ArticleGere }) {
     setErreurs(validation); setErreur(""); setMessage("");
     if (Object.keys(validation).length) return;
     verrou.current = true; setEnCours(true);
-    try { await modifierArticle(creerClientNavigateur(), article.id, saisie, choisies); setTailles(choisies); setPointures(""); setMessage("Article enregistré."); router.refresh(); }
+    try { await modifierArticle(creerClientNavigateur(), article.id, saisie, choisies); setPrixEnregistre(Number(prix)); setTailles(choisies); setPointures(""); setMessage("Article enregistré."); router.refresh(); }
     catch (error) { setErreur(error instanceof Error ? error.message : "Impossible d’enregistrer l’article. Réessayez."); }
     finally { verrou.current = false; setEnCours(false); }
   }
@@ -68,6 +70,7 @@ export default function ModifierArticle({ article }: { article: ArticleGere }) {
       <button type="submit" className={`${bouton} etiquette bg-noir text-blanc`}>{enCours ? "Enregistrement…" : "Enregistrer"}</button>
     </fieldset></form>
     {message && <p role="status" className="mt-4">{message}</p>}{erreur && <p role="alert" className="mt-4">{erreur}</p>}
+    <PromoArticle key={prixEnregistre} articleId={article.id} prixNormal={prixEnregistre} promo={article.promos} occupe={enCours} onOccupation={setEnCours} />
     <section className="mt-8 border-t border-trait pt-6" aria-label="Suppression de l’article">{confirmation ? <><p>Supprimer définitivement cet article et ses photos ?</p><div className="mt-3 flex flex-col gap-3"><button disabled={enCours} type="button" className={`${bouton} bg-noir text-blanc`} onClick={() => void supprimer()}>Oui, supprimer l’article</button><button disabled={enCours} type="button" className={bouton} onClick={() => setConfirmation(false)}>Annuler</button></div></> : <button disabled={enCours} type="button" className={`${bouton} w-full`} onClick={() => { setConfirmation(true); setMessage(""); }}>Supprimer l’article</button>}</section>
   </main>;
 }
