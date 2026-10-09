@@ -646,83 +646,117 @@ En tant que client, je veux ouvrir mon QR code depuis le message WhatsApp « com
 
 ## Module 14 — Parrainage (après le MVP)
 
-Source : demande du propriétaire du 9 octobre 2026 (« une section ou une page pour promouvoir le parrainage ; à l'inscription, un client peut donner le numéro WhatsApp de son parrain pour gagner des promos »). **Conception seulement : aucun code, aucune migration, à valider par le propriétaire.** Conception : `docs/architecture.md`, section « Parrainage (US-27) ». Maquette : `docs/maquettes/Parrainage.dc.html`. (Le module 13 est le retrait par QR code, US-26.)
+Source : demande du propriétaire du 9 octobre 2026 (« une section ou une page pour promouvoir le parrainage ; à l'inscription, un client peut donner le numéro WhatsApp de son parrain pour gagner des promos »). Conception (PR #67) puis **décisions du propriétaire du 9/10 à 19 h 16** (ci-dessous) : récompense **A, bon OranPromo de 300 DA**. Conception technique : `docs/architecture.md`, section « Parrainage (US-27) ». Maquette : `docs/maquettes/Parrainage.dc.html`. (Le module 13 est le retrait par QR code, US-26.)
 
-### US-27 — Parrainer un ami et être parrainé (vue d'ensemble) — **à valider par le propriétaire avant tout code**
-En tant que client, je veux inviter mes amis sur OranPromo avec mon lien ou mon numéro WhatsApp, et qu'on gagne tous les deux un avantage quand ils viennent chercher leur première commande, afin de faire connaître le site autour de moi.
-En tant que propriétaire, je veux que le parrainage fasse venir de **vrais clients qui viennent en boutique**, sans coût caché ni triche facile, et sans révéler qui est inscrit.
+**Ordre** : US-27 se code **après US-26** (retrait par QR code), car le parrainage n'est validé, et un bon n'est remboursé, que sur une commande remise par **QR code ou code à 4 chiffres**. Rien n'est codé pour l'instant.
 
-Livrée en 4 sous-stories, dans cet ordre (une PR chacune, après validation) :
+**Décisions du propriétaire (9 octobre 2026, 19 h 16)** :
+1. **Récompense : option A**. Un **bon OranPromo de 300 DA** pour le parrain **et** un pour le filleul, déduit **en caisse** sur une commande suivante, puis **remboursé chaque mois par OranPromo à la boutique**. Les options B (bon offert par la boutique) et C (Club) sont abandonnées.
+2. Le parrain se donne **dans les 7 jours** après l'inscription et **avant la première commande**.
+3. Le premier retrait du filleul doit avoir lieu **dans les 60 jours** après son inscription.
+4. Au plus **5 parrainages récompensés par parrain et par mois**.
+5. La première commande du filleul doit faire **au moins 2 000 DA**.
+6. **Pas de message WhatsApp** au parrain : tout se voit dans `/compte`.
+7. La première commande du filleul doit être **remise par QR code ou par code à 4 chiffres** (US-26). Une remise « Remis sans QR code » ne valide pas le parrainage.
+8. Le parrain voit le **prénom et l'initiale** du filleul validé.
+9. On garde le **tutoiement** sur les pages du parrainage.
+10. Textes arabes : **validés tels que proposés** (les textes du bon, n° 15 à 24, sont nouveaux : à relire).
+
+### US-27 — Parrainer un ami et être parrainé (vue d'ensemble) — **décisions prises le 9/10, à coder après US-26**
+En tant que client, je veux inviter mes amis sur OranPromo avec mon lien ou mon numéro WhatsApp, et qu'on reçoive chacun un bon de 300 DA quand ils viennent chercher leur première commande, afin de faire connaître le site autour de moi.
+En tant que propriétaire, je veux que le parrainage fasse venir de **vrais clients qui viennent en boutique**, avec une **dépense plafonnée**, des boutiques **remboursées sans erreur**, et sans révéler qui est inscrit.
+
+Livrée en 5 sous-stories, dans cet ordre (une PR chacune) :
 
 | Story | Contenu | Écrans |
 | --- | --- | --- |
-| US-27.1 | Base : code de parrainage, table `parrainages`, choix du parrain sans révéler si un numéro existe, validation au premier retrait, plafonds, interrupteur `parrainage` | aucun écran |
-| US-27.2 | Saisie du parrain (numéro WhatsApp ou code) à l'inscription, au premier achat ou dans `/compte` ; lien d'invitation `/p/<code>` | `/compte`, `/panier`, `/p/[code]` |
-| US-27.3 | Page `/parrainage`, bloc « Mon parrainage » dans `/compte`, bloc d'accueil, invitation après un retrait, récompense (option retenue) | `/parrainage`, `/compte`, `/`, `/compte/commandes/[id]` |
-| US-27.4 | Suivi admin : liste, signaux de triche, annuler une récompense, exclure un compte ; message WhatsApp au parrain (si retenu) | `/admin/parrainages` |
+| US-27.1 | Base : code de parrainage, table `parrainages`, choix du parrain sans révéler si un numéro existe, validation au premier retrait par QR code ou code, plafonds, budget, table `bons`, interrupteur `parrainage` | aucun écran |
+| US-27.2 | Saisie du parrain (numéro WhatsApp ou code) avant la première commande ou dans `/compte` ; lien d'invitation `/p/<code>` | `/compte`, `/panier`, `/p/[code]` |
+| US-27.3 | Page `/parrainage`, bloc « Mon parrainage » et « Mes bons » dans `/compte`, bloc d'accueil, invitation après un retrait | `/parrainage`, `/compte`, `/`, `/compte/commandes/[id]` |
+| US-27.4 | Bon dans la commande : choix au panier, montant à payer, bon visible par la boutique et sur le QR code, appliqué à la remise | `/panier`, `/compte/commandes/[id]`, `/retrait/[jeton]`, `/espace/commandes`, `/espace/retrait/[jeton]`, `/espace/scanner` |
+| US-27.5 | Admin : parrainages et signaux, relevés mensuels par boutique, export CSV, « Marquer comme payé », budget mensuel ; bloc « Bons à rembourser » de la boutique | `/admin/parrainages`, `/admin/remboursements`, `/espace` |
 
-**Ce qui ne change pas** : les règles de blocage, de no-show, de contestation et de vérification du numéro (US-20.4, US-21) restent **exactement** les mêmes. Le parrainage ne fait que **lire** le numéro vérifié et le statut « récupérée » ; il ne débloque personne, ne retire aucun no-show et ne donne aucune commande en plus.
+**Ce qui ne change pas** : les règles de blocage, de no-show, de contestation et de vérification du numéro (US-20.4, US-21) restent **exactement** les mêmes, ainsi que `passer_commande` et `changer_statut_commande`. Le parrainage **lit** le numéro vérifié et la remise par QR code (US-26) ; il ne débloque personne, ne retire aucun no-show et ne donne aucune commande en plus.
 
-**Règles proposées** (chiffres à valider, questions en fin de module) :
-- **Qui peut parrainer** : un compte `client` avec un **numéro vérifié par code** (US-21), non bloqué, non exclu du parrainage. Commerçants, ambassadeurs et admin : jamais (ils n'ont pas de numéro de connexion, US-21 relecture n°4).
-- **Qui peut être parrainé** : un **nouveau** compte client avec un numéro vérifié, inscrit depuis **7 jours au plus**, qui **n'a encore passé aucune commande**, et dont le numéro vérifié n'a **jamais** servi à un autre filleul (même après suppression ou changement de compte).
+**Règles** :
+- **Qui peut parrainer** : un compte `client` avec un **numéro vérifié par code** (US-21), non bloqué, non exclu du parrainage. Commerçants, ambassadeurs et admin : jamais.
+- **Qui peut être parrainé** : un **nouveau** compte client avec un numéro vérifié, inscrit depuis **7 jours au plus**, **sans aucune commande**, dont le numéro vérifié n'a **jamais** servi à un autre filleul.
 - **Un seul parrain par compte**. On peut corriger sa saisie **2 fois** (3 saisies au plus) tant qu'aucune commande n'est passée ; ensuite c'est figé (l'admin peut corriger).
-- **Refusés** : son propre numéro ou son propre code (« C'est ton propre numéro : choisis le numéro d'un ami. ») ; un parrain qui est son propre filleul (boucle A ↔ B) : refus **silencieux**.
-- **Pas d'énumération** : la réponse est **la même** que le numéro soit celui d'un client OranPromo ou non, qu'il soit bloqué, commerçant ou inconnu : « C'est noté. Si ce numéro est celui d'un client OranPromo, il deviendra ton parrain après ton premier retrait en boutique. ». Aucun écran, aucun message, aucun délai différent ne dit si un numéro est inscrit. Un numéro qui ne correspond à aucun parrain possible **n'est pas enregistré** (on ne garde pas le numéro d'un tiers).
-- **Récompense seulement après un vrai retrait** : le parrainage est **validé** quand la **première commande** du filleul passe au statut `recuperee` (donnée par la boutique, US-20.3 ; avec le scan du QR code quand US-26 sera en place), au plus tard **60 jours** après son inscription (sinon : expiré). Une inscription seule, une commande annulée, expirée ou non récupérée ne rapportent rien.
-- **Plafond** : **5 parrainages récompensés par parrain et par mois civil** ; au-delà, ils sont comptés (« validé, plafond atteint ») mais ne rapportent rien de plus.
-- **Interrupteur** : réglage `parrainage` dans `prive.reglages`, **désactivé par défaut**. Comme il exige des numéros vérifiés, il ne sert qu'en mode téléphone (US-21) : on l'active après la mise en service de la connexion par code.
+- **Refusés** : son propre numéro ou son propre code (« C'est ton propre numéro : choisis le numéro d'un ami. ») ; un parrain qui est le filleul de son filleul (boucle A ↔ B) : refus **silencieux**.
+- **Pas d'énumération** : la réponse est **la même** que le numéro soit celui d'un client ou non : « C'est noté. Si ce numéro est celui d'un client OranPromo, il deviendra ton parrain après ton premier retrait en boutique. ». Un numéro qui ne correspond à aucun parrain possible **n'est pas enregistré**. OranPromo **n'écrit jamais** au numéro saisi.
+- **Validation** : seule la **première commande récupérée** du filleul compte. Le parrainage est **validé** si elle est remise **par QR code ou par code à 4 chiffres** (US-26, `commandes.mode_remise` = `qr` ou `code` ; `manuel` = « Remis sans QR code »), avec un **total d'au moins 2 000 DA**, au plus **60 jours** après l'inscription. Si cette première commande récupérée ne remplit pas ces conditions (remise « sans QR code », moins de 2 000 DA, après 60 jours), le parrainage passe `non_valide` : une commande suivante ne le rattrape pas. Une commande annulée ou expirée ne compte pas (le parrainage reste en attente tant que le délai de 60 jours court). Inscription seule : rien.
+- **Récompense** : à la validation, la base crée **un bon de 300 DA pour le filleul** et **un bon de 300 DA pour le parrain**, sauf :
+  - parrain au **plafond** (5 parrainages récompensés ce mois civil, heure d'Alger) : bon du filleul seulement, statut `plafond` ;
+  - parrain bloqué ou exclu au moment de la validation : bon du filleul seulement, statut `refuse` ;
+  - **budget du mois** atteint : les bons attendent (statut `en_file`) et sont créés **le 1er du mois suivant**, dans l'ordre des validations, tant que le nouveau budget le permet ; le client voit « Ton bon arrive le 1er novembre (budget du mois atteint). ».
+- **Interrupteur** : réglage `parrainage` dans `prive.reglages`, désactivé par défaut ; il ne sert qu'en mode téléphone (US-21). Budget à 0 = aucun nouveau bon (les parrainages restent comptés et les bons en file).
 
-### US-27.1 — Parrainage dans la base (aucun écran)
-En tant que propriétaire, je veux que les règles du parrainage soient dans la base, afin qu'un bug d'écran ou un appel direct ne puisse pas les contourner.
-- Chaque client a un **code de parrainage** de 6 caractères (lettres majuscules et chiffres sans 0/O, 1/I/L), unique, créé par la base à la première demande ; il ne contient ni le numéro ni le nom.
-- `choisir_parrain(saisie)` (fonction de la base, le filleul connecté seulement) : accepte un numéro mobile algérien (mêmes formats que US-21) **ou** un code ; applique toutes les règles ci-dessus ; renvoie seulement `enregistre` (même réponse pour un parrain trouvé ou non), ou une erreur qui ne concerne **que le filleul lui-même** (numéro mal écrit, son propre numéro, délai de 7 jours passé, commande déjà passée, numéro non vérifié, 3 saisies atteintes).
-- Validation automatique (déclencheur au passage `recuperee`) : première commande récupérée du filleul, parrainage `en_attente` avec un parrain → `valide` (ou `plafond`), date, commande et boutique notées ; avantage donné au parrain **et** au filleul (option retenue, voir « Récompense »). Parrain bloqué ou exclu à ce moment : `refuse` (rien n'est donné).
-- Lecture : le filleul voit seulement « parrain enregistré : oui / non » et l'état de **son** parrainage ; le parrain voit le nombre de filleuls en attente et, pour les parrainages validés, le **prénom et l'initiale** du filleul avec la date ; jamais de numéro. L'admin voit tout.
-- Tests SQL : énumération (même résultat pour numéro inconnu, numéro de commerçant, compte bloqué, client valide), propre numéro, boucle, un seul parrain, 3 saisies, délai de 7 jours, commande déjà passée, numéro déjà utilisé par un ancien filleul, validation seulement au `recuperee` de la **première** commande (pas à `prete`, `annulee`, `expiree`), plafond mensuel, parrain bloqué, interrupteur désactivé, aucune règle de blocage / no-show / vérification modifiée (tests existants inchangés).
+**Le bon de 300 DA** (règles, détail dans `docs/architecture.md`) :
+- **Valable 60 jours** après sa création, dans **toutes les boutiques** OranPromo validées (sauf une boutique que l'admin a retirée des bons), **attaché au compte** (pas transférable, pas de code à recopier : il ne s'utilise que sur une commande passée par ce compte).
+- **Un seul bon par commande**, sur une commande d'au moins **1 000 DA** (proposition, voir « Question restante ») ; jamais de monnaie rendue ni de reste : 300 DA de moins sur le total, c'est tout. Pas de bon sur sa première commande (le filleul n'en a pas encore).
+- **Choisi au panier** : « Utiliser mon bon parrainage (−300 DA) », coché par défaut quand le client a un bon et que le total atteint 1 000 DA ; le panier affiche « Total 3 500 DA · Bon parrainage −300 DA · À payer en boutique 3 200 DA ». Le bon le plus proche de sa fin est utilisé en premier.
+- **Réservé** dès la commande (il ne peut pas servir deux fois en même temps) ; **rendu** au client si la commande est annulée ou expire (avec au moins 7 jours de validité restante : sa fin est repoussée si besoin) ; **utilisé** seulement quand la commande est remise **par QR code ou code**.
+- **Commande remise « sans QR code »** : le bon **ne s'applique pas** ; la confirmation le dit à la boutique (« Sans QR code ni code, le bon ne s'applique pas : encaissez 3 500 DA. Le bon reste au client. ») ; le bon est rendu au client ; rien à rembourser.
+- La boutique voit le bon **partout où elle voit la commande** : liste des commandes (« Bon parrainage −300 DA · à encaisser 3 200 DA »), résumé du scan (« Sous-total 3 500 DA · Bon parrainage OranPromo −300 DA · **À encaisser en espèces : 3 200 DA** » et « Ces 300 DA vous sont remboursés par OranPromo sur le relevé de novembre. »). Le client et le proche le voient sur le QR code (« À payer en espèces : 3 200 DA (bon −300 DA déduit) »).
+- **Remboursement** : chaque bon utilisé devient une ligne du **relevé mensuel** de la boutique (mois de la remise, heure d'Alger). Le 1er du mois, le relevé du mois passé est **clôturé** ; l'admin l'exporte en CSV, fait le virement (CCP, BaridiMob, en dehors du site), puis **« Marquer comme payé »** avec la référence du virement. La boutique voit ses relevés dans `/espace`. Objectif : payé avant le 10 du mois.
+- Messages WhatsApp : **aucun nouveau modèle**. Le message « nouvelle commande » à la boutique (modèle existant, Utilitaire) garde son texte ; son 4e paramètre (le total) devient « 3 200 DA à encaisser (bon parrainage −300 DA) » pour une commande avec bon : information sur la commande, pas de promotion.
+
+### US-27.1 — Parrainage et bons dans la base (aucun écran)
+En tant que propriétaire, je veux que les règles du parrainage et des bons soient dans la base, afin qu'un bug d'écran ou un appel direct ne puisse pas les contourner.
+- Code de parrainage de 6 caractères (sans 0/O, 1/I/L), unique, créé à la première demande ; ni numéro ni nom dedans.
+- `choisir_parrain(saisie)` : numéro algérien (formats de US-21) **ou** code ; toutes les règles ci-dessus ; réponse `enregistre` identique qu'un parrain soit trouvé ou non ; erreurs seulement sur le filleul lui-même (numéro mal écrit, son propre numéro, délai passé, commande déjà passée, numéro non vérifié, 3 saisies).
+- Validation par déclencheur au passage `prete → recuperee` de la **première commande récupérée** du filleul, d'après `commandes.mode_remise` (US-26, décision 8 : `qr` ou `code`) : contrôles (2 000 DA, 60 jours, plafond, parrain bloqué ou exclu, budget) puis création des bons (ou mise en file). Une première commande récupérée « sans QR code » (`mode_remise = 'manuel'`) → `non_valide`.
+- Bons : `utiliser_bon(commande)` (client de la commande, juste après `passer_commande`, commande `demandee`, sans bon, total ≥ 1 000 DA), rendu automatique à l'annulation et à l'expiration, utilisation à la remise par QR code ou code, rendu à la remise sans QR code.
+- Budget : `regler_budget_parrainage(montant)` (admin), lecture du budget utilisé ; tâche `pg_cron` du 1er du mois (bons en file, clôture des relevés) et quotidienne (bons expirés, parrainages `en_attente` de plus de 60 jours → `expire`).
+- Tests SQL : énumération (même résultat pour numéro inconnu, de commerçant, compte bloqué, client valide), propre numéro, boucle, un seul parrain, 3 saisies, 7 jours, commande déjà passée, numéro déjà filleul ; validation seulement à la remise par QR code ou code de la **première** commande ≥ 2 000 DA (pas à `prete`, pas « sans QR code », pas < 2 000 DA, pas après 60 jours) ; plafond de 5 ; budget (file, création le 1er dans l'ordre) ; un bon par commande, 1 000 DA minimum, bon d'un autre compte refusé, bon réservé non réutilisable, rendu à l'annulation / expiration / remise sans QR code, expiré non utilisable ; ligne de relevé créée seulement à la remise par QR code ou code ; relevé payé non modifiable ; `passer_commande`, `changer_statut_commande` et toutes les règles de blocage / no-show / vérification **inchangées** (définitions comparées par `pg_get_functiondef`).
 
 ### US-27.2 — Donner le numéro de mon parrain (pages `/compte`, `/panier`, `/p/[code]`)
-En tant que nouveau client, je veux indiquer le numéro WhatsApp (ou le code) de l'ami qui m'a fait connaître OranPromo, afin qu'on gagne tous les deux un avantage.
-- Champ **« Ton parrain (facultatif) : son numéro WhatsApp ou son code »** :
-  - sur le formulaire « Nom » demandé avant la première commande (`/panier`, après la connexion par code) ;
-  - dans `/compte`, bloc « Ton parrain », tant que les règles le permettent (7 jours, aucune commande) ; ensuite le bloc disparaît.
-- Lien d'invitation **`/p/<code>`** (envoyé par le parrain) : garde le code dans un cookie `parrain` (30 jours, seulement le code), puis ouvre `/parrainage` avec « Un ami t'invite sur OranPromo ». Le champ est alors **pré-rempli** avec le code ; le client doit quand même toucher « Valider » (pas d'ajout automatique). Un code inconnu ou mal formé donne la même page (pas d'énumération des codes).
-- Après « Valider » : toujours le même message (« C'est noté… ») ; le bloc affiche « Parrain enregistré » et « Modifier » (2 corrections au plus, tant qu'aucune commande n'est passée).
-- Numéro non algérien ou mal écrit : message de US-21 (« Saisissez un numéro de mobile algérien : 05, 06 ou 07 suivi de 8 chiffres. ») ; son propre numéro : « C'est ton propre numéro : choisis le numéro d'un ami. ».
-- Tests Vitest : normalisation numéro / code, cookie posé par `/p/<code>` (code seulement, httpOnly, 30 jours), champ pré-rempli, même message pour tout numéro valide (action serveur espionnée), bloc masqué après une commande.
+En tant que nouveau client, je veux indiquer le numéro WhatsApp (ou le code) de l'ami qui m'a fait connaître OranPromo, afin qu'on reçoive chacun un bon.
+- Champ **« Ton parrain (facultatif) : son numéro WhatsApp ou son code »** sur le formulaire « Nom » demandé avant la première commande (`/panier`) et dans `/compte` (bloc « Ton parrain ») tant que les règles le permettent (7 jours, aucune commande) ; ensuite le bloc disparaît.
+- Lien **`/p/<code>`** : cookie `parrain` (code seul, 30 jours), puis `/parrainage` avec « Un ami t'invite sur OranPromo » ; champ pré-rempli, le client touche quand même « Valider ». Code inconnu ou mal formé : même page.
+- Après « Valider » : toujours « C'est noté… » ; « Parrain enregistré » et « Modifier » (2 fois au plus, avant la première commande).
+- Rappel sous le champ : « Ton bon et celui de ton parrain arrivent après ta première commande d'au moins 2 000 DA, récupérée en boutique avec ton QR code. »
+- Tests Vitest : normalisation numéro / code, cookie de `/p/<code>`, champ pré-rempli, même message pour tout numéro valide, bloc masqué après une commande.
 
-### US-27.3 — Page « Parrainage » et mes filleuls (pages `/parrainage`, `/compte`, `/`, `/compte/commandes/[id]`)
-En tant que client, je veux comprendre le parrainage en 10 secondes et partager mon lien sur WhatsApp, afin d'inviter mes amis sans effort.
-- **`/parrainage`** (publique) : titre « Parraine tes amis », les 3 étapes (1. Partage ton lien ; 2. Ton ami s'inscrit avec son numéro WhatsApp et te choisit comme parrain ; 3. Quand il récupère sa première commande en boutique, vous gagnez tous les deux), la récompense (option retenue), les règles courtes (numéro vérifié, pas soi-même, 5 par mois, avantage après un vrai retrait).
-  - Connecté avec un numéro vérifié : **mon code**, **mon lien** `https://<site>/p/<code>`, « Copier le lien », **« Partager sur WhatsApp »** (`https://wa.me/?text=…` sans numéro : le client choisit le contact ou son statut ; OranPromo n'écrit jamais à ses amis), QR code du lien (optionnel, même outil que US-22).
-  - Non connecté : « Connecte-toi pour avoir ton lien » ; numéro non vérifié : « Vérifie ton numéro pour parrainer » (parcours US-21).
-- **`/compte`, bloc « Mon parrainage »** : code, boutons Copier / Partager, compteurs (« 2 amis ont fait leur premier retrait », « 1 ami inscrit, en attente de son premier retrait »), liste des parrainages validés (« Samir B. · 12 oct. · +30 jours Club ») et l'avantage en cours (« Club jusqu'au 14 novembre »).
-- **Accueil** : un bloc texte « Parraine tes amis » sous le bloc « Les boutiques sur la carte », lien vers `/parrainage` (aucune image ni script en plus).
-- **Après un retrait** : sur le suivi d'une commande `recuperee`, encadré « Merci ! Fais découvrir OranPromo à un ami » avec « Partager mon lien ». **Pas** dans les messages WhatsApp de commande (modèles « Utilitaire » : y ajouter de la promotion les ferait passer en « Marketing », plus cher, et risquerait des sanctions de Meta sur tout le compte).
-- En arabe (US-23) : même page de droite à gauche, textes du tableau ci-dessous.
-- Tests Vitest : lien et message de partage, code affiché seulement pour un numéro vérifié, compteurs, liste sans numéro, bloc d'accueil, encadré seulement sur une commande récupérée, textes fr / ar (mêmes clés).
+### US-27.3 — Page « Parrainage », mes filleuls et mes bons (pages `/parrainage`, `/compte`, `/`, `/compte/commandes/[id]`)
+En tant que client, je veux comprendre le parrainage en 10 secondes, partager mon lien sur WhatsApp et voir mes bons, afin d'inviter mes amis et d'utiliser ce que j'ai gagné.
+- **`/parrainage`** (publique) : « Parraine tes amis », les 3 étapes (1. Partage ton lien ; 2. Ton ami s'inscrit avec son numéro WhatsApp et te choisit comme parrain ; 3. Quand il récupère sa première commande d'au moins 2 000 DA en boutique avec son QR code, **vous recevez chacun un bon de 300 DA**), les règles courtes (numéro vérifié, pas soi-même, 5 amis récompensés par mois, bon valable 60 jours, un bon par commande d'au moins 1 000 DA, à déduire en boutique). Connecté avec un numéro vérifié : code, lien `/p/<code>`, « Copier le lien », « Partager sur WhatsApp » (`wa.me/?text=…` sans numéro), QR code du lien. Non connecté : « Connecte-toi pour avoir ton lien ».
+- **`/compte`, « Mon parrainage »** : code, Copier / Partager, compteurs (« 2 amis ont fait leur premier retrait · 1 en attente »), liste des parrainages validés (« Samir B. · 12 oct. · bon de 300 DA ») ; « plafond du mois atteint » quand c'est le cas.
+- **`/compte`, « Mes bons »** : chaque bon (« Bon parrainage · 300 DA · valable jusqu'au 11 décembre »), état (disponible, réservé pour la commande n° 128, utilisé le … chez …, expiré), bons en file (« arrive le 1er novembre ») ; phrase : « À utiliser au panier : 300 DA de moins, payés par OranPromo à la boutique. ».
+- **Accueil** : bloc texte « Parraine tes amis · 300 DA chacun » sous « Les boutiques sur la carte ».
+- **Après un retrait** : encadré « Merci ! Fais découvrir OranPromo à un ami : 300 DA chacun » sur le suivi d'une commande récupérée. Rien dans les messages WhatsApp.
+- En arabe (US-23) : textes du tableau ci-dessous, de droite à gauche.
+- Tests Vitest : lien et message de partage, code seulement pour un numéro vérifié, compteurs, liste sans numéro, « Mes bons » (états, dates), bloc d'accueil, encadré seulement sur une commande récupérée, textes fr / ar (mêmes clés).
 
-### US-27.4 — Suivi par l'admin (page `/admin/parrainages`)
-En tant qu'admin, je veux voir les parrainages et repérer la triche, afin de garder le parrainage honnête.
-- Liste des parrainages (les plus récents d'abord) : parrain et filleul (nom, numéro masqué « 0555 •• •• 56 »), dates d'inscription et de validation, boutique et montant de la première commande, statut (`en_attente`, `valide`, `plafond`, `expire`, `refuse`, `annule`).
-- **Signaux** (affichés, jamais bloquants automatiquement) : plusieurs filleuls d'un même parrain récupérés dans **la même boutique** ce mois-ci (3 ou plus) ; commande récupérée moins de 30 minutes après avoir été passée ; filleul qui ne commande plus jamais après son premier retrait ; petit montant (< 1 000 DA) ; parrain qui atteint le plafond chaque mois.
-- Actions : **Annuler la récompense** (motif obligatoire) ; **Exclure du parrainage** un compte (il ne peut plus parrainer ni être récompensé ; ses commandes et son compte ne changent pas). Aucune action ne touche au blocage ou aux no-shows.
-- Message WhatsApp au parrain quand un parrainage est validé : seulement si le propriétaire le retient (voir architecture : catégorie **Marketing**, environ 0,0225 $ par message remis, accord préalable du client nécessaire).
+### US-27.4 — Utiliser mon bon et le faire déduire en boutique (pages `/panier`, `/compte/commandes/[id]`, `/retrait/[jeton]`, `/espace/commandes`, `/espace/retrait/[jeton]`, `/espace/scanner`)
+En tant que client, je veux que mon bon soit déduit sans rien avoir à dire en caisse ; en tant que commerçant, je veux voir clairement combien encaisser et savoir que les 300 DA me seront remboursés.
+- **Panier** : case « Utiliser mon bon parrainage (−300 DA) » (cochée par défaut si un bon est disponible et le total ≥ 1 000 DA ; absente sinon, avec « Ton bon s'utilise dès 1 000 DA d'achat. » si le total est plus bas). Lignes « Total », « Bon parrainage −300 DA », « **À payer en boutique** ». À la commande, l'action serveur appelle `passer_commande` puis `utiliser_bon` ; si le bon n'a pas pu être appliqué (expiré entre-temps…), la commande reste valable au prix plein et le suivi l'affiche (« Bon non appliqué : il a expiré. ») — le client peut annuler s'il le souhaite.
+- **Suivi de commande et QR code** (client et proche, US-26) : « Bon parrainage −300 DA » et « À payer en espèces : 3 200 DA ».
+- **Boutique, liste des commandes** : sous le total, « Bon parrainage −300 DA · à encaisser 3 200 DA ».
+- **Boutique, résumé du scan** (US-26.3) : lignes, « Sous-total 3 500 DA », « Bon parrainage OranPromo −300 DA », **« À encaisser en espèces : 3 200 DA »** en grand, et « Ces 300 DA vous sont remboursés par OranPromo (relevé de novembre). ». « Remis au client » : le bon est utilisé, la ligne de relevé est créée.
+- **Boutique, « Remis sans QR code »** sur une commande avec bon : confirmation propre : « Sans QR code ni code, le bon ne s'applique pas : encaissez 3 500 DA. Le bon reste au client. » ; après la remise, le bon est rendu au client.
+- Tests Vitest : case du panier (cochée, absente, sous 1 000 DA), montants, appel `utiliser_bon` après `passer_commande` (et commande gardée si le bon échoue), affichage client / proche / boutique / scan, confirmation « sans QR code ».
 
-**Récompense : options** (détail, coûts et risques dans `docs/architecture.md`, « Parrainage (US-27) ») — le paiement se fait en boutique, il n'y a pas de paiement en ligne :
-- **A. Bon OranPromo en dinars** (ex. 300 DA au parrain et 300 DA au filleul), déduit en boutique sur une commande suivante, **remboursé à la boutique par OranPromo** chaque mois.
-- **B. Bon offert par la boutique** : chaque boutique qui le veut propose sa propre « offre parrainage » (ex. −10 % sur la première commande du filleul), à ses frais.
-- **C. Club Parrainage (recommandé pour démarrer)** : chaque parrainage validé donne **30 jours de Club** au parrain et au filleul ; le Club voit les **« Promos Club »** (promos réservées que les boutiques choisissent d'ouvrir) et un **badge « Parrain »** dans `/compte`. Aucun argent ne circule.
+### US-27.5 — Rembourser les boutiques et suivre le parrainage (pages `/admin/parrainages`, `/admin/remboursements`, `/espace`)
+En tant qu'admin, je veux savoir chaque mois combien rembourser à chaque boutique, l'exporter, noter que c'est payé, et repérer la triche ; en tant que commerçant, je veux voir ce qu'OranPromo me doit.
+- **`/admin/remboursements`** : choix du mois ; une ligne par boutique : nombre de bons, montant (« 4 bons · 1 200 DA »), état (`en_cours` pour le mois courant, `a_payer` après clôture le 1er, `paye` avec date et référence), signaux. Détail d'un relevé : commandes (n°, date de remise, QR code ou code, client prénom + initiale, total, bon). Boutons :
+  - **« Exporter CSV »** (un mois, toutes les boutiques ou une seule) ;
+  - **« Marquer comme payé »** (référence du virement obligatoire, date ; confirmation ; un relevé payé n'est plus modifiable) ;
+  - **« Mettre de côté »** une ligne suspecte (motif) : elle sort du relevé à payer et attend une décision (« Rembourser » la remet sur le relevé suivant, « Refuser » la retire, motif gardé).
+- **Budget du mois** (en haut de `/admin/remboursements` et de `/admin/parrainages`) : « Budget d'octobre : 9 600 DA émis sur 30 000 DA » ; champ « Budget mensuel (DA) » + « Enregistrer » (admin) ; 0 = plus de nouveau bon. Les bons émis comptent (pas seulement les bons utilisés) : c'est le plafond de ce qu'OranPromo peut avoir à payer.
+- **`/admin/parrainages`** : liste (parrain et filleul : nom, numéro masqué ; inscription, validation ; boutique, total, mode de remise ; statut `en_attente`, `valide`, `plafond`, `en_file`, `non_valide`, `expire`, `refuse`, `annule`), signaux, actions « Annuler les bons » (seulement s'ils ne sont pas utilisés ; motif), « Exclure du parrainage », « Retirer la boutique des bons » (ses nouvelles commandes ne peuvent plus porter de bon ; elle est prévenue par l'admin hors du site).
+- **`/espace`, bloc « Bons parrainage à rembourser »** (commerçant) : mois en cours (« 4 bons · 1 200 DA »), relevés passés (« Septembre : 2 400 DA · payé le 05/10, réf. … » ou « à payer avant le 10/10 »), lien vers le détail (commandes de sa boutique seulement).
+- Tests Vitest et SQL : relevé = somme des bons utilisés du mois par boutique (heure d'Alger), clôture le 1er, CSV (colonnes, séparateur, montants), « Marquer comme payé » réservé à l'admin et définitif, ligne mise de côté hors du total, budget (lecture, réglage admin seulement), bloc commerçant limité à sa boutique.
 
-**Textes en français et en arabe** (arabe simple avec des mots de darja d'Oran en gras, masculin générique ; à valider) :
+**Textes en français et en arabe** (arabe simple avec des mots de darja d'Oran en gras, masculin générique ; n° 1 à 4 et 6 à 12, 14 **validés** ; 5, 13 et 15 à 24 **nouveaux** avec le bon : à relire) :
 
-| # | Où | Français | Arabe proposé | Variante en arabe standard |
+| # | Où | Français | Arabe | Variante en arabe standard |
 | --- | --- | --- | --- | --- |
 | 1 | Page, titre | Parraine tes amis | **عرّض** صحابك | ادعُ أصدقاءك |
 | 2 | Étape 1 | Partage ton lien sur WhatsApp. | **ابعث** الرابط **نتاعك** لصحابك على واتساب. | أرسل رابطك إلى أصدقائك عبر واتساب. |
 | 3 | Étape 2 | Ton ami s'inscrit avec son numéro et te choisit comme parrain. | صاحبك يتسجّل **بنمرتو** ويكتب **نمرتك** ولا الكود **نتاعك**. | يسجّل صديقك برقمه ويختارك عرّابًا. |
 | 4 | Étape 3 | Quand il récupère sa première commande en boutique, vous gagnez tous les deux. | **كي يدّي** أول طلب من **الحانوت**، **تربحو بجوج**. | عندما يستلم أول طلب من المحل، تربحان معًا. |
-| 5 | Récompense (option C) | 30 jours de Club : les promos réservées aux membres. | 30 يوم في **النادي**: تخفيضات غير للأعضاء. | 30 يومًا في النادي: تخفيضات خاصة بالأعضاء. |
+| 5 | Récompense (nouveau) | Un bon de 300 DA chacun, à déduire en boutique. | **بون** تاع 300 دج لكل واحد، **ينقص** من **الخلاص** في **الحانوت**. | قسيمة بقيمة 300 دج لكل واحد، تُخصم في المحل. |
 | 6 | Bouton | Partager sur WhatsApp | **ابعث** على واتساب | شارك عبر واتساب |
 | 7 | Bouton | Copier le lien | انسخ الرابط | انسخ الرابط |
 | 8 | Champ | Ton parrain (facultatif) : son numéro WhatsApp ou son code | **اللي عرضك** (**إلا حبيت**): **النمرة** نتاع الواتساب **ولا** الكود | العرّاب (اختياري): رقم واتساب أو الرمز |
@@ -730,17 +764,23 @@ En tant qu'admin, je veux voir les parrainages et repérer la triche, afin de ga
 | 10 | Erreur | C'est ton propre numéro : choisis le numéro d'un ami. | هادي **نمرتك** أنت: **ختار** **نمرة** صاحبك. | هذا رقمك أنت: اختر رقم صديقك. |
 | 11 | `/compte` | 2 amis ont fait leur premier retrait · 1 en attente | 2 صحاب **دّاو** أول طلب · 1 **مازال** | صديقان استلما أول طلب · 1 في الانتظار |
 | 12 | Invitation | Un ami t'invite sur OranPromo | صاحبك **عرضك** لـ OranPromo | صديقك يدعوك إلى OranPromo |
-| 13 | Accueil, bloc | Parraine tes amis · Gagne l'accès au Club | **عرّض** صحابك · **اربح** الدخول **للنادي** | ادعُ أصدقاءك · اربح دخول النادي |
+| 13 | Accueil, bloc (nouveau) | Parraine tes amis · 300 DA chacun | **عرّض** صحابك · 300 دج لكل واحد | ادعُ أصدقاءك · 300 دج لكل واحد |
 | 14 | Après un retrait | Merci ! Fais découvrir OranPromo à un ami. | **يعطيك الصحة**! **عرّف** صاحبك بـ OranPromo. | شكرًا! عرّف صديقك على OranPromo. |
+| 15 | `/compte`, titre | Mes bons | **البونات** نتاعي | قسائمي |
+| 16 | Bon | Bon parrainage · 300 DA · valable jusqu'au 11 décembre | **بون** العرضة · 300 دج · صالح حتى 11 ديسمبر | قسيمة الدعوة · 300 دج · صالحة حتى 11 ديسمبر |
+| 17 | Panier, case | Utiliser mon bon parrainage (−300 DA) | **خدم** بالبون نتاعي (−300 دج) | استعمل قسيمتي (−300 دج) |
+| 18 | Panier, total | À payer en boutique | **تخلّص** في **الحانوت** | المبلغ المطلوب في المحل |
+| 19 | Panier, sous 1 000 DA | Ton bon s'utilise dès 1 000 DA d'achat. | البون **يخدم** من 1000 دج **وفوق**. | تُستعمل القسيمة ابتداءً من 1000 دج. |
+| 20 | Bon en file | Ton bon arrive le 1er novembre (budget du mois atteint). | البون نتاعك **يجيك** نهار 1 نوفمبر (**الميزانية** تاع الشهر **كملت**). | ستصلك القسيمة يوم 1 نوفمبر (ميزانية الشهر نفدت). |
+| 21 | Bon, réservé | Réservé pour la commande n° 128 | **محجوز** للطلب رقم 128 | محجوزة للطلب رقم 128 |
+| 22 | Bon, utilisé | Utilisé le 12/10 chez Boutique Nour | **تخدم** نهار 12/10 عند Boutique Nour | استُعملت يوم 12/10 لدى Boutique Nour |
+| 23 | Bon, expiré | Expiré le 11/12 | **فات وقتو** نهار 11/12 | انتهت صلاحيتها يوم 11/12 |
+| 24 | Rappel sous le champ du parrain | Ton bon et celui de ton parrain arrivent après ta première commande d'au moins 2 000 DA, récupérée en boutique avec ton QR code. | البون نتاعك ونتاع **اللي عرضك** **يجيو** من بعد أول طلب تاع 2000 دج **وفوق**، **تدّيه** من **الحانوت** بالـ QR نتاعك. | تصل قسيمتك وقسيمة عرّابك بعد أول طلب بقيمة 2000 دج على الأقل، تستلمه من المحل برمز QR. |
 
-**Questions au propriétaire** (à trancher avant le code) :
-1. **Récompense** : A, B ou C ? (recommandation : **C** pour démarrer, sans argent ; A plus tard avec un budget mensuel fixe).
-2. **Délai pour donner son parrain** : 7 jours après l'inscription et avant la première commande ? (proposé)
-3. **Délai pour le premier retrait** : 60 jours après l'inscription ? (proposé)
-4. **Plafond** : 5 parrainages récompensés par parrain et par mois ? (proposé)
-5. **Option C** : 30 jours de Club par parrainage validé, pour le parrain **et** le filleul, cumulables jusqu'à 6 mois ? Le filleul a-t-il le Club **dès l'inscription** (plus attirant) ou seulement après son premier retrait (proposé, plus sûr) ?
-6. **Montant minimum** de la première commande pour valider (ex. 1 000 DA) ? (proposé : aucun avec C ; 2 000 DA avec A)
-7. **Message WhatsApp au parrain** quand un ami valide : oui (Marketing, ≈ 0,0225 $ par message, case « J'accepte les messages de OranPromo » à cocher) ou non, seulement dans `/compte` (proposé au début) ?
-8. **US-26 (QR code de retrait)** : exiger que la première commande du filleul ait été récupérée **par scan du QR code ou code à 4 chiffres** pour valider le parrainage (proposé dès que US-26 est en place) ?
-9. **Nom affiché au parrain** : prénom + initiale du filleul validé (proposé) ou rien du tout ?
-10. **Ton en français** : le parrainage tutoie (« Parraine tes amis », ton entre amis, proposé) alors que le reste du site vouvoie (« Vérifiez votre numéro ») : garder le tutoiement ici, ou tout vouvoyer ?
+L'espace commerçant et l'administration restent en français (US-23).
+
+**Questions restantes** (petites, réponse par défaut entre parenthèses ; elles n'empêchent pas de coder US-27.1) :
+1. Montant minimum d'une commande pour **utiliser** un bon : 1 000 DA (proposé) ?
+2. Budget mensuel de départ : combien ? (proposé : **30 000 DA**, soit 50 parrainages complets par mois ; à 0, aucun bon n'est créé)
+3. Coordonnées de virement des boutiques (CCP, RIB, BaridiMob) : gardées **hors du site** par le propriétaire au lancement (proposé : aucune donnée bancaire dans la base) ?
+4. Accord écrit avec chaque boutique (elle accepte les bons, OranPromo rembourse avant le 10 du mois suivant, OranPromo peut refuser une ligne suspecte) : à préparer par le propriétaire avant d'activer `parrainage` (proposé).
