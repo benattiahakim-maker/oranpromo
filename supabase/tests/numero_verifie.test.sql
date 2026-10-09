@@ -29,8 +29,9 @@ create function pg_temp.compte(id uuid) returns void language sql as $$
   select set_config('request.jwt.claim.sub', coalesce(id::text, ''), true);
 $$;
 
-delete from prive.reglages where cle in ('connexion_client', 'blocage_par_numero', 'jeton_notifications');
-insert into prive.reglages (cle, valeur) values ('jeton_notifications', encode(sha256(convert_to('jeton-de-test-0123456789', 'UTF8')), 'hex'));
+delete from prive.reglages where cle in ('connexion_client', 'blocage_par_numero', 'jeton_notifications', 'jeton_codes_telephone');
+-- Depuis 20261010150000_secret_codes_telephone.sql, les limites d'envoi ont leur propre secret.
+insert into prive.reglages (cle, valeur) values ('jeton_codes_telephone', encode(sha256(convert_to('jeton-de-test-0123456789', 'UTF8')), 'hex'));
 
 -- Comptes : un client ancien (e-mail), un client par numéro, une boutique.
 insert into auth.users (id, email) values

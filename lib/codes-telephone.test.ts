@@ -18,7 +18,8 @@ const JETON = "secret-serveur-0123456789";
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv("CONNEXION_CLIENT", "telephone");
-  vi.stubEnv("CRON_SECRET", JETON);
+  vi.stubEnv("CODES_TELEPHONE_SECRET", JETON);
+  vi.stubEnv("CRON_SECRET", "secret-de-la-tache-whatsapp");
   rpc.mockResolvedValue({ error: null });
   signInWithOtp.mockResolvedValue({ data: {}, error: null });
   verifyOtp.mockResolvedValue({ data: { session: { access_token: "x" } }, error: null });
@@ -60,8 +61,8 @@ describe("envoi du code de connexion (US-21.2)", () => {
     await expect(envoyerCodeConnexionClient(client, "0555123456", "j")).rejects.toThrow(MESSAGE_NON_ACTIVEE);
     expect(signInWithOtp).not.toHaveBeenCalled();
   });
-  it("refuse sans jeton serveur (CRON_SECRET) : limites impossibles à vérifier", async () => {
-    vi.stubEnv("CRON_SECRET", "");
+  it("refuse sans jeton serveur (CODES_TELEPHONE_SECRET, même si CRON_SECRET existe) : limites impossibles à vérifier", async () => {
+    vi.stubEnv("CODES_TELEPHONE_SECRET", "");
     await expect(envoyerCodeConnexionClient(client, "0555123456", "j")).rejects.toThrow(MESSAGE_NON_CONFIGUREE);
     expect(signInWithOtp).not.toHaveBeenCalled();
   });
