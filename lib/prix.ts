@@ -1,3 +1,5 @@
+import { isolerGaucheDroite, type Langue } from "@/lib/langue";
+
 // Calcul et affichage des prix. Les prix sont des entiers en dinars (DA).
 
 export type Promo = {
@@ -22,9 +24,10 @@ export function pourcentageReduction(prix: number, prixPromo: number): number {
   return Math.round(((prix - prixPromo) / prix) * 100);
 }
 
-/** Format français : 3500 → "3 500 DA". */
-export function formaterPrix(montant: number): string {
+/** Format français : 3500 → "3 500 DA". En arabe (US-23) : "3 500 دج", le nombre isolé de gauche à droite. */
+export function formaterPrix(montant: number, langue: Langue = "fr"): string {
   const nombre = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(montant);
   // Intl utilise une espace fine insécable : on la remplace par une espace insécable classique.
-  return `${nombre.replace(/ /g, " ")} DA`;
+  const chiffres = nombre.replace(/ /g, " ");
+  return langue === "ar" ? `${isolerGaucheDroite(chiffres)}\u00a0دج` : `${chiffres}\u00a0DA`;
 }

@@ -17,15 +17,15 @@
   --color-trait: var(--trait);
   --color-fond-photo: var(--fond-photo);
   --color-erreur: var(--erreur);
-  --font-sans: var(--font-jost);
-  --font-titre: var(--font-bodoni);
+  --font-sans: var(--font-jost), var(--font-tajawal);
+  --font-titre: var(--font-bodoni), var(--font-naskh);
   --radius-*: initial;
 }
 
 body {
   background: var(--blanc);
   color: var(--noir);
-  font-family: var(--font-jost), system-ui, sans-serif;
+  font-family: var(--font-jost), var(--font-tajawal), system-ui, sans-serif;
 }
 
 /* Petits libellés en capitales espacées (boutons, rubriques) */
@@ -33,6 +33,13 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.15em;
   font-size: 0.75rem;
+}
+
+/* US-23 : l'arabe n'a pas de capitales et l'espacement des lettres casse les liaisons. */
+[dir="rtl"] .etiquette {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.875rem;
 }
 
 /* Défilement horizontal sans barre visible (galerie photo) : le doigt, la molette et les flèches restent actifs. */

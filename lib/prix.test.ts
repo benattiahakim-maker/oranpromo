@@ -36,3 +36,10 @@ describe("formaterPrix", () => {
     expect(formaterPrix(0)).toBe("0 DA");
   });
 });
+
+describe("formaterPrix en arabe (US-23)", () => {
+  it("dinars en « دج », nombre isolé de gauche à droite ; le français ne change pas", () => {
+    expect(formaterPrix(3500, "ar")).toBe("\u20663\u00a0500\u2069\u00a0دج");
+    expect(formaterPrix(3500, "fr")).toBe(formaterPrix(3500));
+  });
+});

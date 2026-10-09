@@ -215,9 +215,9 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         <Link 
           href="/"
           aria-label="Retour"
-          className="absolute top-3 left-2 w-11 h-11 flex items-center justify-center bg-blanc/80 backdrop-blur-sm"
+          className="absolute top-3 start-2 w-11 h-11 flex items-center justify-center bg-blanc/80 backdrop-blur-sm"
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" strokeWidth="1.2">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" strokeWidth="1.2" className="rtl:-scale-x-100">
             <path d="M15 18l-6-6 6-6"></path>
           </svg>
         </Link>
@@ -240,7 +240,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           <div className="text-lg">
             {isPromoActive && (
               <>
-                <span className="text-gris line-through mr-2">{prixNormalAffiche}</span>
+                <span className="text-gris line-through me-2">{prixNormalAffiche}</span>
                 {prixAfficheFormate}
               </>
             )}

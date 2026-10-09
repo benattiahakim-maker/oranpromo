@@ -65,7 +65,7 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
         return <Link key={article.id} href={`/a/${article.id}`} className="min-w-0 text-center">
           <div className="relative aspect-[4/5] bg-fond-photo">{photo ? <Image src={photo.adresse_vignette ?? photo.adresse} alt={article.titre} fill sizes="(max-width: 512px) 45vw, 230px" className="object-cover" unoptimized /> : <span className="flex h-full items-center justify-center text-xs text-gris">Aucune photo</span>}</div>
           <h3 className="mt-3 break-words text-sm font-light">{article.titre}</h3>
-          <p className="mt-1 text-sm">{enPromo && <del className="mr-2 text-gris">{formaterPrix(article.prix)}</del>}{formaterPrix(prixAffiche(article.prix, article.promo, maintenant))}</p>
+          <p className="mt-1 text-sm">{enPromo && <del className="me-2 text-gris">{formaterPrix(article.prix)}</del>}{formaterPrix(prixAffiche(article.prix, article.promo, maintenant))}</p>
         </Link>;
       })}</div>
       {!liste.length && <p className="px-6 py-8 text-center text-sm text-gris">Aucun article disponible pour le moment.</p>}

@@ -66,7 +66,7 @@ export default function CodeTelephone({ usage, suite = null, numeroInitial = nul
   }
 
   const champ = "box-border min-h-[50px] w-full rounded-none border border-trait bg-blanc p-3 font-[inherit] text-base text-noir";
-  if (etape === "code" && numero) return <form noValidate onSubmit={verifier} className="flex flex-col gap-3 text-left">
+  if (etape === "code" && numero) return <form noValidate onSubmit={verifier} className="flex flex-col gap-3 text-start">
     <p role="status" className="m-0 text-sm leading-[1.6]">{message || `Code envoyé au ${telephoneLisible(numero)}.`}</p>
     <label htmlFor="code-telephone" className="etiquette text-xs">Code à 6 chiffres</label>
     <input id="code-telephone" inputMode="numeric" autoComplete="one-time-code" maxLength={7} value={code} disabled={enCours}
@@ -76,7 +76,7 @@ export default function CodeTelephone({ usage, suite = null, numeroInitial = nul
     <button type="button" disabled={enCours} onClick={() => { setEtape("numero"); setErreur(""); setMessage(""); }} className="min-h-11 text-sm text-gris underline">Changer de numéro ou recevoir un nouveau code</button>
   </form>;
 
-  return <form noValidate onSubmit={e => { e.preventDefault(); void envoyer(); }} className="flex flex-col gap-3 text-left">
+  return <form noValidate onSubmit={e => { e.preventDefault(); void envoyer(); }} className="flex flex-col gap-3 text-start">
     <label htmlFor="numero-telephone" className="etiquette text-xs">Numéro de mobile</label>
     <input id="numero-telephone" type="tel" inputMode="tel" autoComplete="tel" placeholder="0555 12 34 56" value={saisie} disabled={enCours}
       onChange={e => { setSaisie(e.target.value); setErreur(""); }} aria-invalid={Boolean(erreur)} aria-describedby="aide-numero-telephone" className={champ} />

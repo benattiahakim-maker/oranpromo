@@ -41,7 +41,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
       </form>
       <p role="status" className="px-5 pb-5 text-sm text-gris">{resultats.length} résultat{resultats.length > 1 ? "s" : ""}</p>
       {resultats.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-6 px-5">{resultats.slice((page - 1) * ARTICLES_PAR_PAGE, page * ARTICLES_PAR_PAGE).map(article => <CarteArticle key={article.id} article={article} />)}</div> : <p className="px-5 py-8 text-center">Aucun article ne correspond à votre recherche. Essayez d’autres critères ou effacez les filtres.</p>}
-      <nav aria-label="Pagination du catalogue" className="flex justify-between px-5 pt-8">{page > 1 && <Link href={lienPage(page - 1)} className="border border-noir px-4 py-3">Précédent</Link>}{page * ARTICLES_PAR_PAGE < resultats.length && <Link href={lienPage(page + 1)} className="ml-auto border border-noir px-4 py-3">Suivant</Link>}</nav>
+      <nav aria-label="Pagination du catalogue" className="flex justify-between px-5 pt-8">{page > 1 && <Link href={lienPage(page - 1)} className="border border-noir px-4 py-3">Précédent</Link>}{page * ARTICLES_PAR_PAGE < resultats.length && <Link href={lienPage(page + 1)} className="ms-auto border border-noir px-4 py-3">Suivant</Link>}</nav>
     </main>
   </div>;
 }
