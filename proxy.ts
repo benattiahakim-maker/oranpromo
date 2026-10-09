@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/supabase/types";
+import { origineRequete } from "@/lib/origine";
 
 export async function proxy(request: NextRequest) {
   let reponse = NextResponse.next({ request });
@@ -24,8 +25,7 @@ export async function proxy(request: NextRequest) {
   const chemin = request.nextUrl.pathname;
   const protege = ((chemin === "/espace" || chemin.startsWith("/espace/")) && chemin !== "/espace/connexion" && chemin !== "/espace/connexion/") || chemin === "/admin" || chemin.startsWith("/admin/");
   if (protege && (error || !user)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/espace/connexion"; url.search = "";
+    const url = new URL("/espace/connexion", origineRequete(request));
     const redirection = NextResponse.redirect(url);
     reponse.cookies.getAll().forEach(cookie => redirection.cookies.set(cookie));
     entetesCache.forEach((valeur, nom) => redirection.headers.set(nom, valeur));
