@@ -91,9 +91,81 @@ export type Database = {
           },
         ]
       }
+      bons: {
+        Row: {
+          commande_id: string | null
+          cree_le: string
+          expire_le: string | null
+          id: string
+          montant: number
+          origine: string
+          parrainage_id: string | null
+          profil_id: string
+          releve_id: string | null
+          statut: string
+          utilise_le: string | null
+        }
+        Insert: {
+          commande_id?: string | null
+          cree_le?: string
+          expire_le?: string | null
+          id?: string
+          montant?: number
+          origine: string
+          parrainage_id?: string | null
+          profil_id: string
+          releve_id?: string | null
+          statut?: string
+          utilise_le?: string | null
+        }
+        Update: {
+          commande_id?: string | null
+          cree_le?: string
+          expire_le?: string | null
+          id?: string
+          montant?: number
+          origine?: string
+          parrainage_id?: string | null
+          profil_id?: string
+          releve_id?: string | null
+          statut?: string
+          utilise_le?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bons_commande_id_fkey"
+            columns: ["commande_id"]
+            isOneToOne: false
+            referencedRelation: "commandes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bons_parrainage_id_fkey"
+            columns: ["parrainage_id"]
+            isOneToOne: false
+            referencedRelation: "parrainages"
+            referencedColumns: ["filleul_id"]
+          },
+          {
+            foreignKeyName: "bons_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bons_releve_fkey"
+            columns: ["releve_id"]
+            isOneToOne: false
+            referencedRelation: "releves_bons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       boutiques: {
         Row: {
           adresse: string | null
+          bons_acceptes: boolean
           cree_le: string
           facebook: string | null
           horaires: string | null
@@ -109,6 +181,7 @@ export type Database = {
         }
         Insert: {
           adresse?: string | null
+          bons_acceptes?: boolean
           cree_le?: string
           facebook?: string | null
           horaires?: string | null
@@ -124,6 +197,7 @@ export type Database = {
         }
         Update: {
           adresse?: string | null
+          bons_acceptes?: boolean
           cree_le?: string
           facebook?: string | null
           horaires?: string | null
@@ -141,6 +215,7 @@ export type Database = {
       }
       commandes: {
         Row: {
+          bon_id: string | null
           boutique_id: string
           client_id: string
           client_nom: string
@@ -159,12 +234,14 @@ export type Database = {
           note: string | null
           numero: number
           prete_le: string | null
+          remise_bon: number
           statut: Database["public"]["Enums"]["statut_commande"]
           telephone_verifie: boolean
           terminee_le: string | null
           total: number
         }
         Insert: {
+          bon_id?: string | null
           boutique_id: string
           client_id: string
           client_nom: string
@@ -183,12 +260,14 @@ export type Database = {
           note?: string | null
           numero?: never
           prete_le?: string | null
+          remise_bon?: number
           statut?: Database["public"]["Enums"]["statut_commande"]
           telephone_verifie?: boolean
           terminee_le?: string | null
           total?: number
         }
         Update: {
+          bon_id?: string | null
           boutique_id?: string
           client_id?: string
           client_nom?: string
@@ -207,12 +286,20 @@ export type Database = {
           note?: string | null
           numero?: never
           prete_le?: string | null
+          remise_bon?: number
           statut?: Database["public"]["Enums"]["statut_commande"]
           telephone_verifie?: boolean
           terminee_le?: string | null
           total?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "commandes_bon_id_fkey"
+            columns: ["bon_id"]
+            isOneToOne: false
+            referencedRelation: "bons"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "commandes_boutique_id_fkey"
             columns: ["boutique_id"]
@@ -391,6 +478,83 @@ export type Database = {
           },
         ]
       }
+      lignes_releve: {
+        Row: {
+          bon_id: string | null
+          boutique_id: string
+          client: string
+          commande_id: string | null
+          id: string
+          mode_remise: string
+          montant: number
+          motif: string | null
+          numero_commande: number
+          releve_id: string
+          remise_le: string
+          statut: string
+          total_commande: number
+        }
+        Insert: {
+          bon_id?: string | null
+          boutique_id: string
+          client: string
+          commande_id?: string | null
+          id?: string
+          mode_remise: string
+          montant: number
+          motif?: string | null
+          numero_commande: number
+          releve_id: string
+          remise_le: string
+          statut?: string
+          total_commande: number
+        }
+        Update: {
+          bon_id?: string | null
+          boutique_id?: string
+          client?: string
+          commande_id?: string | null
+          id?: string
+          mode_remise?: string
+          montant?: number
+          motif?: string | null
+          numero_commande?: number
+          releve_id?: string
+          remise_le?: string
+          statut?: string
+          total_commande?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lignes_releve_bon_id_fkey"
+            columns: ["bon_id"]
+            isOneToOne: true
+            referencedRelation: "bons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lignes_releve_boutique_id_fkey"
+            columns: ["boutique_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lignes_releve_commande_id_fkey"
+            columns: ["commande_id"]
+            isOneToOne: false
+            referencedRelation: "commandes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lignes_releve_releve_id_fkey"
+            columns: ["releve_id"]
+            isOneToOne: false
+            referencedRelation: "releves_bons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages_whatsapp: {
         Row: {
           commande_id: string | null
@@ -453,6 +617,74 @@ export type Database = {
           },
         ]
       }
+      parrainages: {
+        Row: {
+          boutique_id: string | null
+          commande_id: string | null
+          cree_le: string
+          filleul_id: string
+          modifie_le: string
+          motif: string | null
+          parrain_id: string | null
+          saisies: number
+          statut: string
+          valide_le: string | null
+        }
+        Insert: {
+          boutique_id?: string | null
+          commande_id?: string | null
+          cree_le?: string
+          filleul_id: string
+          modifie_le?: string
+          motif?: string | null
+          parrain_id?: string | null
+          saisies?: number
+          statut?: string
+          valide_le?: string | null
+        }
+        Update: {
+          boutique_id?: string | null
+          commande_id?: string | null
+          cree_le?: string
+          filleul_id?: string
+          modifie_le?: string
+          motif?: string | null
+          parrain_id?: string | null
+          saisies?: number
+          statut?: string
+          valide_le?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parrainages_boutique_id_fkey"
+            columns: ["boutique_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parrainages_commande_id_fkey"
+            columns: ["commande_id"]
+            isOneToOne: false
+            referencedRelation: "commandes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parrainages_filleul_id_fkey"
+            columns: ["filleul_id"]
+            isOneToOne: true
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parrainages_parrain_id_fkey"
+            columns: ["parrain_id"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       photos: {
         Row: {
           adresse: string
@@ -491,10 +723,12 @@ export type Database = {
           bloque_le: string | null
           bloque_par_admin: boolean
           boutique_id: string | null
+          code_parrainage: string | null
           cree_le: string
           id: string
           no_shows: number
           nom: string | null
+          parrainage_exclu: boolean
           role: Database["public"]["Enums"]["role_utilisateur"]
           telephone: string | null
           telephone_verifie_le: string | null
@@ -504,10 +738,12 @@ export type Database = {
           bloque_le?: string | null
           bloque_par_admin?: boolean
           boutique_id?: string | null
+          code_parrainage?: string | null
           cree_le?: string
           id: string
           no_shows?: number
           nom?: string | null
+          parrainage_exclu?: boolean
           role?: Database["public"]["Enums"]["role_utilisateur"]
           telephone?: string | null
           telephone_verifie_le?: string | null
@@ -517,10 +753,12 @@ export type Database = {
           bloque_le?: string | null
           bloque_par_admin?: boolean
           boutique_id?: string | null
+          code_parrainage?: string | null
           cree_le?: string
           id?: string
           no_shows?: number
           nom?: string | null
+          parrainage_exclu?: boolean
           role?: Database["public"]["Enums"]["role_utilisateur"]
           telephone?: string | null
           telephone_verifie_le?: string | null
@@ -560,6 +798,63 @@ export type Database = {
             columns: ["article_id"]
             isOneToOne: true
             referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      releves_bons: {
+        Row: {
+          boutique_id: string
+          cloture_le: string | null
+          cree_le: string
+          id: string
+          mois: string
+          montant: number
+          nombre: number
+          paye_le: string | null
+          paye_par: string | null
+          reference_paiement: string | null
+          statut: string
+        }
+        Insert: {
+          boutique_id: string
+          cloture_le?: string | null
+          cree_le?: string
+          id?: string
+          mois: string
+          montant?: number
+          nombre?: number
+          paye_le?: string | null
+          paye_par?: string | null
+          reference_paiement?: string | null
+          statut?: string
+        }
+        Update: {
+          boutique_id?: string
+          cloture_le?: string | null
+          cree_le?: string
+          id?: string
+          mois?: string
+          montant?: number
+          nombre?: number
+          paye_le?: string | null
+          paye_par?: string | null
+          reference_paiement?: string | null
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "releves_bons_boutique_id_fkey"
+            columns: ["boutique_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "releves_bons_paye_par_fkey"
+            columns: ["paye_par"]
+            isOneToOne: false
+            referencedRelation: "profils"
             referencedColumns: ["id"]
           },
         ]
@@ -681,6 +976,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      annuler_bons_parrainage: {
+        Args: { filleul: string; motif: string }
+        Returns: number
+      }
       annuler_no_show: { Args: { commande: string }; Returns: undefined }
       bloquer_client: { Args: { client: string }; Returns: undefined }
       boutiques_carte: {
@@ -696,6 +995,7 @@ export type Database = {
           slug: string
         }[]
       }
+      budget_parrainage: { Args: { mois?: string }; Returns: Json }
       changer_statut_commande: {
         Args: {
           commande: string
@@ -705,6 +1005,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      choisir_parrain: { Args: { saisie: string }; Returns: string }
       commande_a_confirmer: {
         Args: { commande: string; jeton: string }
         Returns: Json
@@ -723,6 +1024,10 @@ export type Database = {
         Returns: undefined
       }
       debloquer_client: { Args: { client: string }; Returns: undefined }
+      decider_ligne: {
+        Args: { decision: string; ligne: string; motif: string }
+        Returns: undefined
+      }
       declarer_no_show: { Args: { commande: string }; Returns: undefined }
       definir_langue_commande: {
         Args: { commande: string; langue: string }
@@ -743,10 +1048,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      exclure_parrainage: {
+        Args: { exclu: boolean; profil: string }
+        Returns: undefined
+      }
       jeton_retrait_envoi: {
         Args: { commande: string; jeton: string }
         Returns: string
       }
+      marquer_releve_paye: {
+        Args: { paye_le: string; reference: string; releve: string }
+        Returns: undefined
+      }
+      mes_bons: { Args: never; Returns: Json }
       messages_whatsapp_commande: {
         Args: { commande: string }
         Returns: {
@@ -769,12 +1083,22 @@ export type Database = {
           texte: string
         }[]
       }
+      mettre_de_cote: {
+        Args: { ligne: string; motif: string }
+        Returns: undefined
+      }
+      mon_code_parrainage: { Args: never; Returns: string }
+      mon_parrainage: { Args: never; Returns: Json }
       passer_commande: {
         Args: { boutique: string; lignes: Json; note?: string }
         Returns: string
       }
       rattacher_commercant: {
         Args: { boutique: string; email_commercant: string }
+        Returns: undefined
+      }
+      regler_budget_parrainage: {
+        Args: { montant: number }
         Returns: undefined
       }
       remettre_commande: {
@@ -791,6 +1115,10 @@ export type Database = {
           reservation: string
           succes: boolean
         }
+        Returns: undefined
+      }
+      retirer_boutique_des_bons: {
+        Args: { boutique: string; retiree: boolean }
         Returns: undefined
       }
       retrait_boutique: {
@@ -815,6 +1143,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      utiliser_bon: { Args: { commande: string }; Returns: string }
       valider_no_show: { Args: { commande: string }; Returns: undefined }
     }
     Enums: {

@@ -662,7 +662,7 @@ Source : demande du propriétaire du 9 octobre 2026 (« une section ou une page 
 9. On garde le **tutoiement** sur les pages du parrainage.
 10. Textes arabes : **validés tels que proposés** (les textes du bon, n° 15 à 24, sont nouveaux : à relire).
 
-### US-27 — Parrainer un ami et être parrainé (vue d'ensemble) — **décisions prises le 9/10, à coder après US-26**
+### US-27 — Parrainer un ami et être parrainé (vue d'ensemble) — **décisions prises le 9/10, en cours de code (US-26 fusionnée)**
 En tant que client, je veux inviter mes amis sur OranPromo avec mon lien ou mon numéro WhatsApp, et qu'on reçoive chacun un bon de 300 DA quand ils viennent chercher leur première commande, afin de faire connaître le site autour de moi.
 En tant que propriétaire, je veux que le parrainage fasse venir de **vrais clients qui viennent en boutique**, avec une **dépense plafonnée**, des boutiques **remboursées sans erreur**, et sans révéler qui est inscrit.
 
@@ -701,7 +701,7 @@ Livrée en 5 sous-stories, dans cet ordre (une PR chacune) :
 - **Remboursement** : chaque bon utilisé devient une ligne du **relevé mensuel** de la boutique (mois de la remise, heure d'Alger). Le 1er du mois, le relevé du mois passé est **clôturé** ; l'admin l'exporte en CSV, fait le virement (CCP, BaridiMob, en dehors du site), puis **« Marquer comme payé »** avec la référence du virement. La boutique voit ses relevés dans `/espace`. Objectif : payé avant le 10 du mois.
 - Messages WhatsApp : **aucun nouveau modèle**. Le message « nouvelle commande » à la boutique (modèle existant, Utilitaire) garde son texte ; son 4e paramètre (le total) devient « 3 200 DA à encaisser (bon parrainage −300 DA) » pour une commande avec bon : information sur la commande, pas de promotion.
 
-### US-27.1 — Parrainage et bons dans la base (aucun écran)
+### US-27.1 — Parrainage et bons dans la base (aucun écran) — **codée** (migration `20261012090000_parrainage.sql`)
 En tant que propriétaire, je veux que les règles du parrainage et des bons soient dans la base, afin qu'un bug d'écran ou un appel direct ne puisse pas les contourner.
 - Code de parrainage de 6 caractères (sans 0/O, 1/I/L), unique, créé à la première demande ; ni numéro ni nom dedans.
 - `choisir_parrain(saisie)` : numéro algérien (formats de US-21) **ou** code ; toutes les règles ci-dessus ; réponse `enregistre` identique qu'un parrain soit trouvé ou non ; erreurs seulement sur le filleul lui-même (numéro mal écrit, son propre numéro, délai passé, commande déjà passée, numéro non vérifié, 3 saisies).
@@ -779,7 +779,7 @@ En tant qu'admin, je veux savoir chaque mois combien rembourser à chaque boutiq
 
 L'espace commerçant et l'administration restent en français (US-23).
 
-**Questions restantes** (petites, réponse par défaut entre parenthèses ; elles n'empêchent pas de coder US-27.1) :
+**Questions restantes** — **réponses du propriétaire (9/10, 19 h 38) : les réponses par défaut** (1 000 DA ; 30 000 DA ; aucune donnée bancaire dans la base ; accord écrit avec les boutiques à signer par le propriétaire avant d'activer `parrainage`). Questions d'origine :
 1. Montant minimum d'une commande pour **utiliser** un bon : 1 000 DA (proposé) ?
 2. Budget mensuel de départ : combien ? (proposé : **30 000 DA**, soit 50 parrainages complets par mois ; à 0, aucun bon n'est créé)
 3. Coordonnées de virement des boutiques (CCP, RIB, BaridiMob) : gardées **hors du site** par le propriétaire au lancement (proposé : aucune donnée bancaire dans la base) ?

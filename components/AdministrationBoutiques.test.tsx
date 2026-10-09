@@ -8,7 +8,7 @@ import type { Tables } from "@/lib/supabase/types";
 const { ajouterBoutique, modifierStatutBoutique, rattacherCompteBoutique, refresh } = vi.hoisted(() => ({ ajouterBoutique: vi.fn(), modifierStatutBoutique: vi.fn(), rattacherCompteBoutique: vi.fn(), refresh: vi.fn() }));
 vi.mock("@/app/admin/boutiques/actions", () => ({ ajouterBoutique, modifierStatutBoutique, rattacherCompteBoutique }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
-const boutique: Tables<"boutiques"> = { id: "boutique", nom: "Étoile", quartier: "Akid Lotfi", statut: "en_attente", slug: "etoile", adresse: "Oran", whatsapp: "+213555123456", latitude: null, longitude: null, horaires: null, instagram: null, facebook: null, cree_le: "2026-10-09T00:00:00Z" };
+const boutique: Tables<"boutiques"> = { id: "boutique", nom: "Étoile", quartier: "Akid Lotfi", statut: "en_attente", slug: "etoile", adresse: "Oran", whatsapp: "+213555123456", latitude: null, longitude: null, horaires: null, instagram: null, facebook: null, cree_le: "2026-10-09T00:00:00Z", bons_acceptes: true };
 beforeEach(() => { vi.clearAllMocks(); modifierStatutBoutique.mockResolvedValue({ succes: true, message: "Statut enregistré." }); rattacherCompteBoutique.mockResolvedValue({ succes: true, message: "Compte rattaché." }); });
 afterEach(cleanup);
 describe("US-16 : interface boutiques", () => {
