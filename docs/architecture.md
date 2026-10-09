@@ -11,13 +11,15 @@ app/
   page.tsx                      accueil : univers, grande photo, tuiles, promos du moment (US-04, lib/accueil.ts)
   catalogue/page.tsx            catalogue, recherche, filtres (US-05, US-06)
   a/[id]/page.tsx               fiche article + aperçu de partage (US-02, 03, 07, 17)
-  b/[slug]/page.tsx             vitrine boutique + aperçu de partage (US-01, 03)
+  b/[slug]/page.tsx             vitrine boutique + aperçu de partage (US-01, 03, 22)
+  b/[slug]/apercu/route.tsx     image d'aperçu générée (boutique sans photo d'article, US-22)
   espace/connexion/page.tsx     connexion par lien e-mail (US-09)
   auth/callback/route.ts        retour du lien e-mail → session (US-09)
   espace/page.tsx               mes articles (US-11)
   espace/articles/nouveau/      ajout d'article, fiche IA (US-10, 14, 15)
   espace/articles/[id]/         modification, promo (US-11, 12)
   espace/statistiques/          mes chiffres (US-13)
+  espace/affiche/page.tsx       affiche à imprimer avec le QR code de la boutique (US-22)
   espace/commandes/             commandes reçues par la boutique (US-20.3)
   panier/page.tsx               panier d'une boutique, « Commander » (US-20.2)
   compte/connexion/page.tsx     connexion client par lien e-mail ou par numéro + code (US-20.2, US-21)
@@ -32,6 +34,7 @@ components/                     composants d'affichage réutilisables
 lib/
   prix.ts                       règles de prix et promo (testé)
   whatsapp.ts                   liens wa.me (testé)
+  lien-boutique.ts              slug, lien public, partage WhatsApp, aperçu, QR code de la boutique (US-22, testé)
   stock.ts                      stock par taille (US-20.1, testé)
   panier.ts                     panier d'une boutique, gardé dans le navigateur (US-20.2, testé)
   commandes.ts                  statuts, transitions, frise, lecture et actions (US-20.2, 20.3, testé)
@@ -61,7 +64,7 @@ Colonnes en `snake_case` français sans accents. Prix = entiers en dinars.
 
 | Table | Rôle | Points clés |
 | --- | --- | --- |
-| `boutiques` | vitrines | `slug` unique ; `statut` : `en_attente`, `validee`, `suspendue` ; seul un admin change le statut |
+| `boutiques` | vitrines | `slug` unique, lisible (`^[a-z0-9]+(-[a-z0-9]+)*$`, 2 à 60 caractères, contrainte `boutiques_slug_lisible`, US-22) ; `statut` : `en_attente`, `validee`, `suspendue` ; seul un admin change le statut |
 | `profils` | un par compte connecté | `role` : `client` (par défaut pour un nouveau compte), `commercant`, `ambassadeur`, `admin` ; `boutique_id` ; `nom`, `telephone` (format `+213XXXXXXXXX` quand l'utilisateur le saisit) ; `telephone_verifie_le` (numéro vérifié par code, US-21, écrit par la base) ; `no_shows`, `bloque`, `bloque_le`, `bloque_par_admin` (modifiables seulement par la base et l'admin) ; créé automatiquement à l'inscription |
 | `articles` | articles | `statut` : `disponible`, `reserve`, `vendu`, `masque` ; `categorie` : liste fixe de 19 catégories (règle dans la base) ; `genre` : `homme`, `femme`, `enfant`, `mixte` ; `derniere_confirmation` ; `propose_par_ia` ; `masque_par_moderation` (seul un admin le lève) |
 | `photos` | 1 à 5 par article | `adresse` (grande photo 1200 px, fiche article), `adresse_vignette` (miniature 400 px, cartes ; vide pour les anciennes photos → repli sur `adresse`), `ordre` ; adresses limitées au stockage `photos` du projet, dossier de l'article (règle dans la base) |
@@ -193,13 +196,24 @@ Les deux réglages vont ensemble : d'abord `CONNEXION_CLIENT=telephone` sur Verc
 - limites par numéro ci-dessus ; refus des numéros non algériens (écran, serveur, base) ;
 - risque restant : un robot qui appelle directement l'API Supabase Auth (sans passer par le site) contourne la limite par numéro, mais doit quand même réussir le captcha ; les limites de Supabase (Authentication > Rate Limits, SMS par heure) et de Twilio Verify (limites par numéro, Fraud Guard, pays autorisés = Algérie seulement) restent actives.
 
+## Lien de boutique à partager (US-22)
+
+Stories : `docs/user-stories.md`, module 9.
+
+- **Adresse** : `/b/<slug>` (page existante, US-01/03) ; lien absolu = `NEXT_PUBLIC_SITE_URL` + `/b/<slug>` (`lienBoutique()`, `lib/lien-boutique.ts`). Pas de nouvelle route publique ni de redirection : le slug est l'adresse.
+- **Slug** : tiré du nom (`slugBoutique()`, `lib/boutique.ts`), coupé à 50 caractères ; à la création (`creerBoutique`), on essaie `nom`, puis `nom-2` … `nom-9`, puis `nom-<6 caractères aléatoires>` ; la contrainte unique de la base reste l'arbitre (conflit `23505` → candidat suivant). L'ambassadeur ne voit pas toutes les boutiques (RLS) : on ne vérifie pas avant, on réessaie. Format vérifié par la base (contrainte `boutiques_slug_lisible`, migration `…_slug_lisible.sql`, en plus du `check` initial `^[a-z0-9-]{2,60}$`) et par `slugValide()`. Le slug d'une boutique publiée ne change qu'avec un admin (règle existante, `prive.proteger_coordonnees_boutique`).
+- **Visibilité** : seule une boutique `validee` est lue par le public (RLS existante + filtre `statut = 'validee'` dans la page et dans `apercu`) ; sinon « Boutique indisponible », `robots: noindex`, et `apercu` répond 404.
+- **Aperçu** (`generateMetadata` de `app/b/[slug]/page.tsx`) : `title` = nom, `description` = `descriptionBoutique()` (quartier, nombre d'articles disponibles), `alternates.canonical`, Open Graph (`type: website`, `siteName: OranPromo`, `locale: fr_FR`) et Twitter (`summary_large_image`) ; image = grande photo (`photos.adresse`) du dernier article disponible, sinon `/b/<slug>/apercu` (1200 × 630, PNG, `ImageResponse` de `next/og`, inclus dans Next.js : nom de la boutique, quartier, « OranPromo », noir sur blanc). Pas de logo de boutique (aucune colonne prévue).
+- **Bloc « Partager ma boutique »** (`components/PartagerBoutique.tsx`, sur `/espace`) : lien, « Copier le lien » (`navigator.clipboard`), « Partager sur WhatsApp » (`lienPartageWhatsApp()` → `https://wa.me/?text=…`, sans numéro : le commerçant choisit le contact ou son statut), QR code, « Télécharger le QR code » (SVG), « Imprimer l'affiche » (`/espace/affiche`). Boutique non validée : message, ni lien de partage ni QR code.
+- **QR code** : dépendance `qrcode` (MIT, génération locale, aucun service externe), appelée côté serveur seulement (`qrCodeSvg()` dans `lib/lien-boutique.ts`) ; SVG noir sur blanc, correction d'erreur `M`, marge de 4 modules (lisible imprimé en petit).
+
 ## Variables d'environnement
 
 | Variable | Où | Rôle |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | navigateur et serveur | connexion à Supabase (clé publique) |
 | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODELE` | serveur | IA (US-14, US-15) |
-| `NEXT_PUBLIC_SITE_URL` | serveur | adresse publique du site |
+| `NEXT_PUBLIC_SITE_URL` | serveur | adresse publique du site ; base des liens de boutique et des QR codes (US-22) : à régler sur le vrai domaine avant d'imprimer des affiches |
 | `WHATSAPP_FOURNISSEUR` | serveur | `meta` (par défaut) ; prévu pour `twilio` |
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` | serveur | WhatsApp Cloud API (Meta) ; vides = aucun envoi |
 | `WHATSAPP_LANGUE` | serveur | langue des modèles Meta (`fr` par défaut) |

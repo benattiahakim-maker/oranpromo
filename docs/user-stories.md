@@ -309,3 +309,20 @@ En tant que propriétaire, je veux qu'un client bloqué ne puisse pas recommence
 En tant que propriétaire, je veux une liste claire de ce que je dois configurer, afin d'activer la connexion par téléphone sans aide.
 - `docs/ETAT.md` liste les étapes : Twilio (compte, service Verify, expéditeur WhatsApp approuvé par Meta, SMS), Supabase (fournisseur Phone = Twilio Verify, protection anti-robot Turnstile), Cloudflare Turnstile (site et clé secrète), Vercel (`NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `CONNEXION_CLIENT`), réglage de la base, et les coûts connus avec leur source.
 - **Aucune clé** Twilio, Turnstile (secrète) ou Supabase (service) dans le code, `.env.example` ou un commit : elles se saisissent dans le tableau de bord Supabase.
+
+## Module 9 — Faire connaître sa boutique (après le MVP)
+
+Source : carte Trello « Parcours · Connexion par code WhatsApp, arabe/darja, lien boutique » (partie « lien boutique » ; la connexion par code est la US-21). Conception : `docs/architecture.md`, section « Lien de boutique à partager (US-22) ».
+
+### US-22 — Partager le lien de ma boutique (pages `/espace`, `/espace/affiche`, `/b/[slug]`)
+En tant que commerçant, je veux un lien court et lisible vers ma vitrine, à mettre dans la bio Instagram, TikTok ou Facebook, à envoyer sur WhatsApp et à afficher en boutique avec un QR code, afin que mes clientes trouvent mes articles en un clic.
+- Chaque boutique a une adresse courte, lisible et stable : `https://<site>/b/<slug>`, avec un slug tiré du nom (`Boutique Nour` → `boutique-nour`). Format imposé par la base : minuscules sans accents, chiffres, tirets simples entre les mots (ni au début, ni à la fin, ni doublés), 2 à 60 caractères ; unique. Un nom déjà pris donne `-2`, `-3`… ; un nom sans lettre latine (arabe seul) donne `boutique`, `boutique-2`…
+- Le slug ne change plus une fois la boutique publiée (seul un admin peut le changer : règle existante) : le lien imprimé ou mis en bio reste valable.
+- Seule une boutique **validée** est joignable par son lien ; en attente ou suspendue → « Boutique indisponible », sans aperçu, non indexée.
+- Le lien collé dans WhatsApp, Facebook, Instagram ou X affiche un aperçu : nom de la boutique, quartier et nombre d'articles disponibles, et une image (grande photo du dernier article disponible ; sans article, une image générée en noir et blanc avec le nom de la boutique et « OranPromo »). Balises Open Graph et Twitter (`summary_large_image`), adresse canonique.
+- Dans `/espace`, un bloc « Partager ma boutique » montre le lien et propose : « Copier le lien » (message « Lien copié »), « Partager sur WhatsApp » (`https://wa.me/?text=…` avec un message pré-rempli et le lien), le QR code du lien, « Télécharger le QR code » (fichier SVG) et « Imprimer l'affiche ».
+- `/espace/affiche` : affiche à imprimer (A4, noir et blanc) avec le nom de la boutique, le QR code, le lien et « Scannez pour voir nos articles et nos promos » ; bouton « Imprimer » (masqué à l'impression). Réservée au commerçant de la boutique.
+- Le QR code est généré côté serveur, sans service externe ni payant.
+- Boutique pas encore validée : le bloc affiche « Votre lien sera actif dès que votre boutique sera validée par OranPromo. » sans bouton de partage ni QR code ; boutique suspendue : « Votre boutique est suspendue : son lien affiche « Boutique indisponible ». ».
+- Tests Vitest : slug (format, suffixe, nom arabe), lien absolu, message et lien WhatsApp, description de l'aperçu, QR code, bloc de partage selon le statut, métadonnées de la vitrine ; tests SQL : format du slug refusé par la base.
+
