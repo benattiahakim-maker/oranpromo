@@ -152,6 +152,7 @@ export type Database = {
           expire_le: string | null
           id: string
           langue: string
+          mode_remise: string | null
           motif_annulation: string | null
           no_show_annule_le: string | null
           no_show_le: string | null
@@ -175,6 +176,7 @@ export type Database = {
           expire_le?: string | null
           id?: string
           langue?: string
+          mode_remise?: string | null
           motif_annulation?: string | null
           no_show_annule_le?: string | null
           no_show_le?: string | null
@@ -198,6 +200,7 @@ export type Database = {
           expire_le?: string | null
           id?: string
           langue?: string
+          mode_remise?: string | null
           motif_annulation?: string | null
           no_show_annule_le?: string | null
           no_show_le?: string | null
@@ -770,6 +773,10 @@ export type Database = {
         Args: { boutique: string; email_commercant: string }
         Returns: undefined
       }
+      remettre_commande: {
+        Args: { code?: string; jeton?: string }
+        Returns: Json
+      }
       resultat_message_whatsapp: {
         Args: {
           definitif?: boolean
@@ -782,6 +789,18 @@ export type Database = {
         }
         Returns: undefined
       }
+      retrait_boutique: {
+        Args: { code?: string; jeton?: string }
+        Returns: Json
+      }
+      retrait_client: {
+        Args: { commande: string }
+        Returns: {
+          code: string
+          jeton: string
+        }[]
+      }
+      retrait_par_lien: { Args: { jeton: string }; Returns: Json }
       signaler_article: {
         Args: {
           article: string
