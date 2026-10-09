@@ -598,9 +598,9 @@ components/MonParrainage.tsx, MesBons.tsx, ChoixParrain.tsx, BonPanier.tsx, Bons
 
 Pages existantes touchées (US-27.4) : `/panier` (`PanierCommande`, action `commanderPanier`), `/compte/commandes/[id]`, `/retrait/[jeton]`, `/espace/commandes`, `/espace/retrait/[jeton]`, `/espace/scanner` (US-26), `/compte`, `/espace`, `/`. **Aucune nouvelle dépendance** (QR code du lien : `qrCodeSvg()` existant), **aucune nouvelle variable d'environnement**.
 
-## Tableau des commandes (US-28) — conception, **en attente de la validation du propriétaire**
+## Tableau des commandes (US-28) — **validé par le propriétaire le 9/10 à 20 h 49** (option A)
 
-Story : `docs/user-stories.md`, module 15 (contenu validé par le propriétaire le 9/10 à 20 h 42, 10 questions ouvertes). Maquette : `docs/maquettes/TableauCommandes.dc.html` (375 px et 1 024 px). **Rien n'est codé.** Les routes, fonctions et fichiers ci-dessous sont écrits ici pour être ajoutés au moment du code (règle « ne rien inventer »). Option A retenue par défaut : **aucune migration, aucune nouvelle dépendance**.
+Story : `docs/user-stories.md`, module 15 (contenu validé par le propriétaire le 9/10 à 20 h 42, 10 questions ouvertes). Maquette : `docs/maquettes/TableauCommandes.dc.html` (375 px et 1 024 px). Décisions : fin du module 15 (option A, montant à encaisser, pas de photo, pas de notification). Les routes, fonctions et fichiers ci-dessous sont ceux du code (US-28.1 à 28.4). Option A retenue : **aucune migration, aucune nouvelle dépendance**.
 
 **Ce qui ne change pas** : `changer_statut_commande`, `prive.confirmer_commande`, `prive.retirer_stock`, `declarer_no_show`, `remettre_commande`, les bons (US-27), l'expiration (pg_cron, 15 min), les règles RLS, le blocage et le numéro vérifié ; les actions serveur actuelles `changerStatutCommandeBoutique` et `declarerClientPasVenu` (`app/espace/commandes/actions.ts`) restent celles des boutons d'une commande.
 
