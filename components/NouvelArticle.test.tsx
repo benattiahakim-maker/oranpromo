@@ -5,8 +5,9 @@ import NouvelArticle from "./NouvelArticle";
 const { publierArticle, compression } = vi.hoisted(() => ({ publierArticle: vi.fn(), compression: vi.fn() }));
 vi.mock("@/lib/compression-photo", () => ({ compresserPhoto: compression }));
 vi.mock("@/lib/supabase/client", () => ({ creerClientNavigateur: () => ({}) }));
-vi.mock("@/lib/publication-article", () => ({ publierArticle, ErreurPublicationArticle: class extends Error {} }));
+vi.mock("@/lib/envoi-article", () => ({ publierArticleNavigateur: (...args: unknown[]) => publierArticle({}, args[0], args[1], args[2], undefined, args[3]) }));
 beforeEach(() => {
+  localStorage.clear();
   publierArticle.mockReset();
   compression.mockResolvedValue(new Blob(["jpeg"], { type: "image/jpeg" }));
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, json: async () => ({ message: "L’IA est indisponible, remplissez la fiche à la main" }) }));

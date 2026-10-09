@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Enums, Tables } from "./supabase/types";
 import { donneesArticle, normaliserTailles, validerArticle, type SaisieArticle } from "./article";
+import { compresserPhoto } from "./compression-photo";
+import { TAILLE_PHOTO_MAX } from "./article";
 
 export const STATUTS_ARTICLE = { disponible: "Disponible", reserve: "Réservé", vendu: "Vendu", masque: "Masqué" } as const;
 export type ArticleGere = Tables<"articles"> & { photos: Tables<"photos">[]; tailles: Tables<"tailles">[]; promos: Tables<"promos"> | null };
@@ -55,16 +57,51 @@ export async function changerStatut(client: SupabaseClient<Database>, id: string
   if (error || !data) throw new Error("Impossible de changer le statut. Réessayez.");
 }
 
-export async function modifierArticle(client: SupabaseClient<Database>, id: string, saisie: SaisieArticle, tailles: TailleModifiee[]) {
+export type ModificationPhotos = { garder: string[]; fichiers: File[] };
+export async function modifierArticle(client: SupabaseClient<Database>, id: string, saisie: SaisieArticle, tailles: TailleModifiee[], photos?: ModificationPhotos, compression = compresserPhoto) {
   const erreurs = validerArticle({ ...saisie, tailles: tailles.map(t => t.libelle) }, { verifierPhotos: false });
   if (Object.keys(erreurs).length) throw new Error("Vérifiez les champs du formulaire.");
   const article = await articleDeMaBoutique(client, id);
   // Confirmer d’abord l’article : même une modification partielle des tailles reste datée.
   verifierPrixAvecPromo(Number(saisie.prix.trim()), article.promos);
+  if (photos) {
+    if (new Set(photos.garder).size !== photos.garder.length || photos.garder.some(id => !article.photos.some(p => p.id === id)) || photos.garder.length + photos.fichiers.length < 1 || photos.garder.length + photos.fichiers.length > 5) throw new Error("Conservez entre 1 et 5 photos de cet article.");
+  }
   const { data, error } = await client.from("articles").update(confirmerModification(donneesArticle(saisie))).eq("id", id).eq("boutique_id", article.boutique_id).select("id").single();
   if (error || !data) throw new Error("Impossible d’enregistrer l’article. Réessayez.");
   const { error: erreurTailles } = await client.from("tailles").upsert(preparerTailles(id, article.tailles, tailles), { onConflict: "article_id,libelle" });
   if (erreurTailles) throw new Error("Les informations ont été enregistrées, mais pas les tailles. Réessayez d’enregistrer.");
+  if (photos) await modifierPhotosArticle(client, article, photos, compression);
+}
+
+export async function modifierPhotosArticle(client: SupabaseClient<Database>, article: ArticleGere, photos: ModificationPhotos, compression = compresserPhoto) {
+  const stockage = client.storage.from("photos"), envoyes: string[] = [];
+  let insertionTerminee = false;
+  try {
+    const nouvelles = [];
+    for (const fichier of photos.fichiers) {
+      const jpeg = await compression(fichier);
+      if (jpeg.type !== "image/jpeg" || !jpeg.size || jpeg.size > TAILLE_PHOTO_MAX) throw new Error("La photo compressée doit être un JPEG de moins de 5 Mo.");
+      const chemin = `${article.boutique_id}/${article.id}/${crypto.randomUUID()}.jpg`;
+      envoyes.push(chemin);
+      const { error } = await stockage.upload(chemin, jpeg, { contentType: "image/jpeg", upsert: false });
+      if (error) throw error;
+      nouvelles.push({ article_id: article.id, adresse: stockage.getPublicUrl(chemin).data.publicUrl, ordre: photos.garder.length + nouvelles.length });
+    }
+    if (nouvelles.length) { const { error } = await client.from("photos").insert(nouvelles); if (error) throw error; }
+    insertionTerminee = true;
+    const retirees = article.photos.filter(p => !photos.garder.includes(p.id));
+    if (retirees.length) {
+      const { error } = await client.from("photos").delete().eq("article_id", article.id).in("id", retirees.map(p => p.id));
+      if (error) throw new Error("Les nouvelles photos sont enregistrées, mais les anciennes n’ont pas pu être retirées. Rechargez la page avant de réessayer.");
+      const chemins = retirees.flatMap(p => [p.adresse, p.adresse_vignette]).filter((a): a is string => Boolean(a)).map(a => cheminPhotoArticle(a, article.boutique_id, article.id)).filter((a): a is string => Boolean(a));
+      if (chemins.length) { const { error } = await stockage.remove(chemins); if (error) throw new Error("Les photos sont mises à jour, mais le nettoyage du stockage a échoué. Contactez l’administrateur."); }
+    }
+    for (const [ordre, id] of photos.garder.entries()) { const { error } = await client.from("photos").update({ ordre }).eq("id", id).eq("article_id", article.id); if (error) throw new Error("Les photos sont enregistrées, mais leur ordre n’a pas pu être mis à jour. Rechargez la page."); }
+  } catch (error) {
+    if (!insertionTerminee && envoyes.length) { const { error: nettoyage } = await stockage.remove(envoyes); if (nettoyage) throw new Error("L’envoi des photos a échoué et le nettoyage est incomplet. Contactez l’administrateur."); }
+    throw new Error(error instanceof Error && insertionTerminee ? error.message : "Les champs sont enregistrés, mais les photos n’ont pas été modifiées. Réessayez.");
+  }
 }
 
 export async function supprimerArticle(client: SupabaseClient<Database>, id: string) {

@@ -7,6 +7,7 @@
   --gris: #6f6f6f;
   --trait: #e6e6e6;
   --fond-photo: #f3f2ef;
+  --erreur: #B42318;
 }
 
 @theme inline {
@@ -15,6 +16,7 @@
   --color-gris: var(--gris);
   --color-trait: var(--trait);
   --color-fond-photo: var(--fond-photo);
+  --color-erreur: var(--erreur);
   --font-sans: var(--font-jost);
   --font-titre: var(--font-bodoni);
   --radius-*: initial;

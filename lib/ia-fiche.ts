@@ -1,4 +1,4 @@
-import { CATEGORIES_ARTICLE, GENRES_ARTICLE } from "./article";
+import { CATEGORIES_ARTICLE, GENRES_ARTICLE, couleurDepuisIA } from "./article";
 
 export const IA_INDISPONIBLE = "L’IA est indisponible, remplissez la fiche à la main";
 export const PHOTO_A_REPRENDRE = "Prenez une autre photo du vêtement, bien éclairée et nette";
@@ -29,11 +29,12 @@ export function validerFicheIA(valeur: unknown): FicheIA {
   if (Array.from(fiche.titre).length < 2 || Array.from(fiche.titre).length > 120 || fiche.description.length > 600 || fiche.couleur.length > 80 || !CATEGORIES_ARTICLE.some(c => c === fiche.categorie) || !GENRES_ARTICLE.some(g => g === fiche.genre)) throw new Error(IA_INDISPONIBLE);
   const phrases = fiche.description.match(/[^.!?]+[.!?]?/g) ?? [];
   fiche.description = phrases.filter(texteSur).slice(0, 2).map(p => p.trim()).join(" ");
-  if (!texteSur(fiche.couleur)) fiche.couleur = "";
+  fiche.couleur = couleurDepuisIA(fiche.couleur);
   if (!texteSur(fiche.titre)) fiche.titre = fiche.categorie;
   return fiche;
 }
 
 export function champsVidesAPreRemplir(saisie: FicheIA, proposition: FicheIA): Partial<FicheIA> {
-  return Object.fromEntries(CHAMPS_IA.filter(c => !saisie[c].trim() && proposition[c]).map(c => [c, proposition[c]]));
+  const normalisee = { ...proposition, couleur: couleurDepuisIA(proposition.couleur) };
+  return Object.fromEntries(CHAMPS_IA.filter(c => !saisie[c].trim() && normalisee[c]).map(c => [c, normalisee[c]]));
 }

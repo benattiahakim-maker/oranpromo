@@ -8,9 +8,10 @@ import type { ArticleGere } from "@/lib/gestion-articles";
 const { changerStatut, modifierArticle, supprimerArticle, refresh, replace } = vi.hoisted(() => ({ changerStatut: vi.fn(), modifierArticle: vi.fn(), supprimerArticle: vi.fn(), refresh: vi.fn(), replace: vi.fn() }));
 vi.mock("@/lib/gestion-articles", async importOriginal => ({ ...await importOriginal<typeof import("@/lib/gestion-articles")>(), changerStatut, modifierArticle, supprimerArticle }));
 vi.mock("@/lib/supabase/client", () => ({ creerClientNavigateur: () => "client" }));
+vi.mock("@/lib/envoi-article", () => ({ modifierArticleNavigateur: (...args: unknown[]) => modifierArticle("client", ...args) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh, replace }) }));
 const article: ArticleGere = { id: "article", boutique_id: "boutique", titre: "Polo", categorie: "Polos", genre: "homme", couleur: null, description: null, description_ar: null, cree_le: "2026-10-09T00:00:00Z", derniere_confirmation: "2026-10-09T00:00:00Z", propose_par_ia: false, prix: 3500, statut: "disponible", photos: [], promos: null, tailles: [{ id: "s", article_id: "article", libelle: "S", disponible: true }, { id: "m", article_id: "article", libelle: "M", disponible: true }] };
-beforeEach(() => { vi.clearAllMocks(); changerStatut.mockResolvedValue(undefined); modifierArticle.mockResolvedValue(undefined); supprimerArticle.mockResolvedValue(undefined); });
+beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); changerStatut.mockResolvedValue(undefined); modifierArticle.mockResolvedValue(undefined); supprimerArticle.mockResolvedValue(undefined); });
 afterEach(cleanup);
 describe("US-11 : liste et modification", () => {
   it("change le statut directement dans la liste", async () => {
@@ -22,8 +23,8 @@ describe("US-11 : liste et modification", () => {
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "vendu" } }); await screen.findByRole("alert"); expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("disponible");
   });
   it("retire une taille vendue sans la supprimer", async () => {
-    render(<ModifierArticle article={article} />); fireEvent.click(screen.getByRole("checkbox", { name: "S disponible" })); fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
-    await waitFor(() => expect(modifierArticle).toHaveBeenCalledWith("client", "article", expect.any(Object), [{ libelle: "S", disponible: false }, { libelle: "M", disponible: true }])); expect(await screen.findByRole("status")).toHaveTextContent("Article enregistré");
+    render(<ModifierArticle article={article} />); fireEvent.click(screen.getByRole("button", { name: "S" })); fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await waitFor(() => expect(modifierArticle).toHaveBeenCalledWith("client", "article", expect.any(Object), [{ libelle: "M", disponible: true }])); expect(await screen.findByRole("status")).toHaveTextContent("Article enregistré");
   });
   it("affiche la validation sous le champ et ne sauvegarde rien", async () => {
     render(<ModifierArticle article={article} />); fireEvent.change(screen.getByRole("textbox", { name: "Titre" }), { target: { value: "" } }); fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));

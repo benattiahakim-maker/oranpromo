@@ -1,0 +1,14 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { modifierArticleNavigateur, publierArticleNavigateur } from "./envoi-article";
+const { compresser, publier, modifier } = vi.hoisted(() => ({ compresser: vi.fn(), publier: vi.fn(), modifier: vi.fn() }));
+vi.mock("./compression-photo", () => ({ compresserPhoto: compresser }));
+vi.mock("@/app/espace/articles/actions", () => ({ publierArticleServeur: publier, modifierArticleServeur: modifier }));
+const saisie = { titre: "Polo", categorie: "Polos", genre: "homme", couleur: "Bleu", description: "", prix: "3500", tailles: ["M"], photos: [] };
+const fichier = new File(["original"], "photo.png", { type: "image/png" });
+beforeEach(() => { vi.clearAllMocks(); compresser.mockResolvedValue(new Blob(["jpeg"], { type: "image/jpeg" })); publier.mockResolvedValue({ id: "article" }); modifier.mockResolvedValue({}); });
+describe("envoi des formulaires au serveur", () => {
+  it("compresse toutes les photos avant envoi, sans expédier l’original", async () => { expect(await publierArticleNavigateur("boutique", saisie, [fichier, fichier], true)).toBe("article"); expect(compresser).toHaveBeenCalledTimes(2); const corps = publier.mock.calls[0][0] as FormData; expect(corps.get("boutiqueId")).toBe("boutique"); expect(corps.get("ia")).toBe("true"); expect(corps.getAll("photos")).toHaveLength(2); expect((corps.get("photos") as File).type).toBe("image/jpeg"); expect(JSON.parse(String(corps.get("saisie")))).toMatchObject({ couleur: "Bleu", tailles: ["M"], photos: [] }); });
+  it("conserve les identifiants existants en modification et renvoie les photos enregistrées", async () => { modifier.mockResolvedValue({ photos: [{ id: "nouvelle", adresse: "https://exemple.fr/photo", ordre: 1 }] }); expect(await modifierArticleNavigateur("article", saisie, [{ libelle: "M", disponible: true }], { garder: ["ancienne"], fichiers: [fichier] })).toHaveLength(1); const corps = modifier.mock.calls[0][0] as FormData; expect(corps.get("garder")).toBe('["ancienne"]'); expect(corps.get("id")).toBe("article"); });
+  it.each([new Blob([], { type: "image/jpeg" }), new Blob(["png"], { type: "image/png" }), new Blob([new Uint8Array(5 * 1024 * 1024 + 1)], { type: "image/jpeg" })])("refuse une compression invalide avant tout envoi", async jpeg => { compresser.mockResolvedValue(jpeg); await expect(publierArticleNavigateur("boutique", saisie, [fichier], false)).rejects.toThrow("JPEG"); expect(publier).not.toHaveBeenCalled(); });
+  it("remonte les erreurs françaises du serveur", async () => { publier.mockResolvedValue({ erreur: "Choisissez une couleur dans la liste." }); await expect(publierArticleNavigateur("boutique", saisie, [], false)).rejects.toThrow("couleur"); modifier.mockResolvedValue({ erreur: "Session expirée" }); await expect(modifierArticleNavigateur("article", saisie, [])).rejects.toThrow("Session"); });
+});
