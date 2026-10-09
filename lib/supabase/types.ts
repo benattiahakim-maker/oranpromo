@@ -150,6 +150,8 @@ export type Database = {
           expire_le: string | null
           id: string
           motif_annulation: string | null
+          no_show_annule_le: string | null
+          no_show_le: string | null
           note: string | null
           numero: number
           prete_le: string | null
@@ -167,6 +169,8 @@ export type Database = {
           expire_le?: string | null
           id?: string
           motif_annulation?: string | null
+          no_show_annule_le?: string | null
+          no_show_le?: string | null
           note?: string | null
           numero?: never
           prete_le?: string | null
@@ -184,6 +188,8 @@ export type Database = {
           expire_le?: string | null
           id?: string
           motif_annulation?: string | null
+          no_show_annule_le?: string | null
+          no_show_le?: string | null
           note?: string | null
           numero?: never
           prete_le?: string | null
@@ -615,6 +621,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      annuler_no_show: { Args: { commande: string }; Returns: undefined }
       changer_statut_commande: {
         Args: {
           commande: string
@@ -626,6 +633,7 @@ export type Database = {
       }
       consommer_quota_ia: { Args: never; Returns: boolean }
       debloquer_client: { Args: { client: string }; Returns: undefined }
+      declarer_no_show: { Args: { commande: string }; Returns: undefined }
       messages_whatsapp_commande: {
         Args: { commande: string }
         Returns: {
@@ -661,6 +669,7 @@ export type Database = {
           definitif?: boolean
           erreur?: string
           identifiant?: string
+          jeton: string
           message: string
           reservation: string
           succes: boolean

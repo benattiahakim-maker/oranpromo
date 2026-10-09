@@ -27,10 +27,27 @@ export function profilComplet(profil: Pick<ProfilClient, "nom" | "telephone"> | 
   return Boolean(profil?.nom && profil.telephone && /^\+213[1-9]\d{8}$/.test(profil.telephone));
 }
 
+// Même règle que prive.nom_valide() dans la base (migration 20261009230000) : le nom part dans des messages
+// WhatsApp, il ne doit contenir ni lien, ni numéro, ni retour à la ligne.
+export const NOM_MAX = 60;
+const CARACTERES_NOM = /^[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u017F\u0621-\u063A\u0641-\u0652\u0671-\u06D3' \u2019-]+$/u;
+
+/** Nom nettoyé (espaces en trop retirés), tel que la base l’enregistre. */
+export function nettoyerNom(nom: string): string {
+  return nom.trim().replace(/ {2,}/g, " ");
+}
+
+/** Lettres latines (avec accents) ou arabes, espaces, apostrophe, tiret ; 2 à 60 caractères, au moins 2 lettres. */
+export function nomValide(nom: string): boolean {
+  return nom.length >= 2 && nom.length <= NOM_MAX && nom === nom.trim() && !nom.includes("  ")
+    && CARACTERES_NOM.test(nom) && nom.replace(/[ '\u2019-]/g, "").length >= 2;
+}
+
 export function validerProfilClient(saisie: SaisieProfilClient): ErreursProfilClient {
   const erreurs: ErreursProfilClient = {};
-  const nom = saisie.nom.trim();
-  if (nom.length < 2 || nom.length > 80) erreurs.nom = "Votre nom doit contenir entre 2 et 80 caractères.";
+  const nom = nettoyerNom(saisie.nom);
+  if (nom.length < 2 || nom.length > NOM_MAX) erreurs.nom = `Votre nom doit contenir entre 2 et ${NOM_MAX} caractères.`;
+  else if (!nomValide(nom)) erreurs.nom = "Votre nom ne peut contenir que des lettres, des espaces, une apostrophe ou un tiret (pas de chiffres ni de lien).";
   if (!normaliserWhatsAppAlgerien(saisie.telephone)) erreurs.telephone = "Saisissez un numéro algérien valide, par exemple 0555 12 34 56.";
   return erreurs;
 }
@@ -54,11 +71,15 @@ export async function enregistrerProfilClient(client: SupabaseClient<Database>, 
   if (Object.keys(erreurs).length) throw new ErreurValidationProfil(erreurs);
   const { data: { user }, error } = await client.auth.getUser();
   if (error || !user) throw new Error("Votre session a expiré. Reconnectez-vous.");
-  const { data, error: erreurMaj } = await client.from("profils").update({ nom: saisie.nom.trim(), telephone: normaliserWhatsAppAlgerien(saisie.telephone)! }).eq("id", user.id).select("id").maybeSingle();
+  const { data, error: erreurMaj } = await client.from("profils").update({ nom: nettoyerNom(saisie.nom), telephone: normaliserWhatsAppAlgerien(saisie.telephone)! }).eq("id", user.id).select("id").maybeSingle();
+  // 23514 / 42501 : refus de la base avec un message en français (nom invalide, compte bloqué…).
+  if (erreurMaj && (erreurMaj.code === "23514" || erreurMaj.code === "42501") && erreurMaj.message) throw new Error(erreurMaj.message);
   if (erreurMaj || !data) throw new Error("Impossible d’enregistrer votre profil. Réessayez.");
 }
 
 // --- US-20.4 : clients à surveiller (admin) ----------------------------------
+// Les no-shows sont déclarés par la boutique (« Client pas venu ») et comptés par compte ET par numéro
+// (migration 20261009230000) ; l’admin peut annuler une déclaration.
 export type ClientSurveille = Pick<Tables<"profils">, "id" | "nom" | "telephone" | "no_shows" | "bloque" | "bloque_le">;
 
 /** Clients bloqués puis clients avec des no-shows (lecture réservée à l’admin par la base). */
@@ -72,4 +93,23 @@ export async function listerClientsSurveilles(client: SupabaseClient<Database>):
 export async function debloquerClient(client: SupabaseClient<Database>, id: string) {
   const { error } = await client.rpc("debloquer_client", { client: id });
   if (error) throw new Error(error.code === "42501" || error.code === "P0002" ? error.message : "Impossible de débloquer ce client. Réessayez.");
+}
+
+export type NoShowDeclare = Pick<Tables<"commandes">, "id" | "numero" | "client_id" | "client_telephone" | "no_show_le"> & { boutiques: { nom: string } | null };
+
+/** No-shows déclarés et non annulés (lecture des commandes réservée à l’admin pour toutes les boutiques). */
+export async function listerNoShowsDeclares(client: SupabaseClient<Database>): Promise<NoShowDeclare[]> {
+  const { data, error } = await client.from("commandes").select("id, numero, client_id, client_telephone, no_show_le, boutiques(nom)").not("no_show_le", "is", null).is("no_show_annule_le", null).order("no_show_le", { ascending: false }).limit(500);
+  if (error) throw new Error("Impossible de charger les no-shows. Réessayez.");
+  return (data ?? []) as unknown as NoShowDeclare[];
+}
+
+/** No-shows comptés pour ce client : ses commandes ou celles passées avec son numéro. */
+export function noShowsDuClient(client: Pick<ClientSurveille, "id" | "telephone">, noShows: NoShowDeclare[]): NoShowDeclare[] {
+  return noShows.filter(n => n.client_id === client.id || (client.telephone !== null && n.client_telephone === client.telephone));
+}
+
+export async function annulerNoShow(client: SupabaseClient<Database>, commandeId: string) {
+  const { error } = await client.rpc("annuler_no_show", { commande: commandeId });
+  if (error) throw new Error(error.code === "42501" || error.code === "P0002" ? error.message : "Impossible d’annuler ce no-show. Réessayez.");
 }

@@ -182,7 +182,7 @@ La réservation par simple message WhatsApp (US-07) est remplacée par une vraie
 | US-20.1 | Stock par article et par taille | `/espace` (Mes articles) |
 | US-20.2 | Compte client, panier, commande, « Mes commandes » avec la frise | `/a/[id]`, `/panier`, `/compte`, `/compte/commandes`, `/compte/commandes/[id]` |
 | US-20.3 | Commandes reçues par la boutique et changements de statut | `/espace/commandes` |
-| US-20.4 | Expiration après 24 h, no-shows et blocage | `/admin/clients` |
+| US-20.4 | Expiration après 24 h, « Client pas venu » déclaré par la boutique, no-shows et blocage | `/espace/commandes`, `/admin/clients` |
 | US-20.5 | Messages WhatsApp automatiques (API WhatsApp Business) | aucun écran |
 
 **Statuts d'une commande** (règles dans la base) :
@@ -194,7 +194,7 @@ La réservation par simple message WhatsApp (US-07) est remplacée par une vraie
 | `prete` | préparée : le client a **24 h** pour venir | boutique | `confirmee` |
 | `recuperee` | venu et payé en boutique (fin) | boutique | `prete` |
 | `annulee` | annulée avec un motif (fin) ; le stock revient si elle était confirmée ou prête | client (`demandee`, `confirmee`) ou boutique (`demandee`, `confirmee`, `prete`) | |
-| `expiree` | pas venu sous 24 h (fin) ; le stock revient, +1 no-show | automatique | `prete` |
+| `expiree` | pas venu sous 24 h (fin) ; le stock revient ; **pas de no-show automatique** : la boutique peut ensuite signaler « Client pas venu » | automatique | `prete` |
 
 Chaque changement de statut est enregistré (statut, date, auteur, note) et affiché au client comme une frise.
 
@@ -214,7 +214,7 @@ En tant que client, je veux mettre des articles d'une même boutique dans un pan
 - Le panier (`/panier`, gardé dans le téléphone) ne contient que des articles d'**une seule boutique** ; ajouter un article d'une autre boutique demande de remplacer le panier.
 - Dans le panier, je modifie les quantités, retire une ligne, ajoute une note pour la boutique (300 caractères au plus) et vois le total en DA (prix promo actif compris).
 - « Commander » demande d'être connecté : connexion par lien e-mail (`/compte/connexion`, en attendant le SMS), puis retour au panier. Un nouveau compte a le rôle `client`.
-- À la première commande, je saisis mon nom et mon numéro de téléphone (format algérien, WhatsApp), gardés dans mon profil (`/compte`).
+- À la première commande, je saisis mon nom et mon numéro de téléphone (format algérien, WhatsApp), gardés dans mon profil (`/compte`). Le nom : lettres (latines avec accents, ou arabes), espaces, apostrophe, tiret, 2 à 60 caractères ; ni chiffres ni lien (il est repris dans les messages WhatsApp).
 - La base recalcule les prix et refuse : un article non visible, une taille épuisée, une quantité au-delà du stock, plus de 10 lignes, un client bloqué, plus de 5 commandes en cours ou plus de 10 commandes par heure. Le message d'erreur est en français.
 - Après la commande, le panier est vidé et j'arrive sur le suivi de ma commande.
 - « Mes commandes » (`/compte/commandes`) liste mes commandes, les plus récentes d'abord, avec boutique, date, total et statut.
@@ -229,7 +229,8 @@ En tant que commerçant, je veux voir les commandes de ma boutique et changer le
 - Je vois les commandes « En cours » (demandée, confirmée, prête) puis « Terminées », avec numéro, date, nom et téléphone du client (lien WhatsApp), lignes (titre, taille, quantité, prix) et total.
 - Boutons selon le statut : `demandee` → « Confirmer » ou « Annuler » ; `confirmee` → « Prête » ou « Annuler » ; `prete` → « Récupérée » ou « Annuler ».
 - Annuler demande un motif : « Plus en stock », « Boutique indisponible » ou « Autre » ; une note facultative est montrée au client.
-- Confirmer baisse le stock de chaque ligne (jamais sous 0) ; annuler une commande confirmée ou prête remet le stock.
+- Confirmer baisse le stock de chaque ligne. Si une ligne dépasse le stock (vente en direct), la confirmation est refusée avec « Stock insuffisant pour « article » en taille … » et un lien vers « Mes articles » : la boutique corrige son stock ou annule avec le motif « Plus en stock ». Annuler une commande confirmée ou prête remet le stock.
+- Sur une commande expirée (ou prête depuis plus de 24 h), le bouton « Client pas venu » (avec confirmation) compte un no-show au client, une seule fois par commande (US-20.4).
 - Après une annulation « Plus en stock », un lien mène à « Mes articles » pour corriger les quantités.
 - La base refuse toute transition non prévue, et toute commande d'une autre boutique (règle dans la base).
 - La navigation de l'espace affiche « Commandes » avec le nombre de commandes à confirmer.
@@ -237,15 +238,16 @@ En tant que commerçant, je veux voir les commandes de ma boutique et changer le
 
 ### US-20.4 — Expiration, no-shows et blocage (page `/admin/clients`)
 En tant que propriétaire de la plateforme, je veux repérer les clients qui ne viennent pas chercher leurs commandes, afin de protéger les boutiques.
-- Une commande `prete` depuis 24 h passe automatiquement `expiree` (tâche planifiée toutes les 15 minutes dans la base, `pg_cron`) ; le stock revient.
-- Chaque commande expirée ajoute 1 no-show au client. Il est averti à chaque fois (WhatsApp, US-20.5, et sur `/compte`) du nombre d'essais restants.
+- Une commande `prete` depuis 24 h passe automatiquement `expiree` (tâche planifiée toutes les 15 minutes dans la base, `pg_cron`) ; le stock revient ; le client reçoit un simple rappel. **Aucun no-show n'est compté automatiquement** (décision du propriétaire : une boutique pourrait sinon marquer « prête » trop tôt et faire compter un no-show au client).
+- La boutique signale « Client pas venu » sur une commande expirée, ou prête depuis plus de 24 h (`/espace/commandes`) : c'est ce qui compte 1 no-show, une seule fois par commande, et seulement par la boutique de la commande. Le client est averti (WhatsApp, US-20.5, et sur `/compte`) du nombre d'essais restants.
+- Les no-shows suivent le compte **et** le numéro de téléphone : un nouveau compte avec le même numéro les reprend, et un compte bloqué ne peut pas changer de numéro.
 - Au 5e no-show, le compte est bloqué automatiquement : il ne peut plus commander, et `/compte` l'explique.
-- `/admin/clients` (admin seulement) liste les clients bloqués puis ceux qui ont des no-shows (nom, téléphone, no-shows, date de blocage) ; « Débloquer » remet le compteur à 0.
+- `/admin/clients` (admin seulement) liste les clients bloqués puis ceux qui ont des no-shows (nom, téléphone, no-shows, date de blocage), avec les commandes signalées ; « Annuler » sur un no-show baisse le compteur (et débloque sous 5) ; « Débloquer » remet le compteur à 0.
 - Maquette : `ClientsBloques.dc.html`.
 
 ### US-20.5 — Messages WhatsApp automatiques
 En tant que boutique et client, je veux être prévenu sur WhatsApp, afin de ne pas rater une commande.
-- Messages : nouvelle commande → boutique ; commande prête → client (avec l'heure limite) ; commande expirée → client (rappel ferme mais poli + essais restants) ; compte bloqué → client.
+- Messages : nouvelle commande → boutique ; commande prête → client (avec l'heure limite) ; commande expirée → client (rappel ferme mais poli) ; client pas venu, signalé par la boutique → client (avertissement + essais restants) ; compte bloqué → client.
 - Chaque message est d'abord enregistré dans la base (`messages_whatsapp`, statut `a_envoyer`), créé par la base au changement de statut, puis envoyé côté serveur par l'API WhatsApp Business (Meta Cloud API) avec des modèles de message approuvés par Meta.
 - Sans configuration (`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` vides), rien n'est envoyé : les messages restent `a_envoyer`.
 - Un envoi raté est retenté (5 essais au plus), puis marqué `echec`. Une panne WhatsApp ne bloque jamais une commande.

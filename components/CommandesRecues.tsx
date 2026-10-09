@@ -2,8 +2,8 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { changerStatutCommandeBoutique } from "@/app/espace/commandes/actions";
-import { ACTION_BOUTIQUE, annulableParBoutique, formaterDateHeure, libelleMotif, MOTIFS_ANNULATION, MOTIFS_BOUTIQUE, NOTE_SUIVI_MAX, quantiteTotale, STATUTS_COMMANDE, type CommandeRecue, type MotifBoutique, type StatutCommande } from "@/lib/commandes";
+import { changerStatutCommandeBoutique, declarerClientPasVenu } from "@/app/espace/commandes/actions";
+import { ACTION_BOUTIQUE, annulableParBoutique, estStockInsuffisant, formaterDateHeure, peutDeclarerNoShow, libelleMotif, MOTIFS_ANNULATION, MOTIFS_BOUTIQUE, NOTE_SUIVI_MAX, quantiteTotale, STATUTS_COMMANDE, type CommandeRecue, type MotifBoutique, type StatutCommande } from "@/lib/commandes";
 import { telephoneLisible } from "@/lib/clients";
 import { formaterPrix } from "@/lib/prix";
 import { lienContactClient } from "@/lib/whatsapp";
@@ -22,6 +22,8 @@ function CarteCommande({ commande, boutique }: { commande: CommandeRecue; boutiq
   const [message, setMessage] = useState("");
   const [stockACorriger, setStockACorriger] = useState(false);
   const [enCours, setEnCours] = useState(false);
+  const [pasVenu, setPasVenu] = useState(false);
+  const [maintenant] = useState(() => Date.now());
   const verrou = useRef(false);
   const action = ACTION_BOUTIQUE[commande.statut];
 
@@ -33,7 +35,20 @@ function CarteCommande({ commande, boutique }: { commande: CommandeRecue; boutiq
       const resultat = await changerStatutCommandeBoutique(commande.id, statut, statut === "annulee" ? motif : null, note);
       setMessage(resultat.message);
       if (resultat.succes) { setStockACorriger(statut === "annulee" && motif === "plus_en_stock"); setAnnulation(false); setNote(""); router.refresh(); }
+      // Confirmation refusée : le stock ne suffit plus (vente en direct) → corriger le stock ou annuler.
+      else setStockACorriger(estStockInsuffisant(resultat.message));
     } catch { setMessage("Impossible de modifier la commande. Vérifiez votre connexion."); }
+    finally { verrou.current = false; setEnCours(false); }
+  }
+
+  async function signalerPasVenu() {
+    if (verrou.current) return;
+    verrou.current = true; setEnCours(true); setMessage("");
+    try {
+      const resultat = await declarerClientPasVenu(commande.id);
+      setMessage(resultat.message);
+      if (resultat.succes) { setPasVenu(false); router.refresh(); }
+    } catch { setMessage("Impossible de signaler ce client. Vérifiez votre connexion."); }
     finally { verrou.current = false; setEnCours(false); }
   }
 
@@ -45,6 +60,7 @@ function CarteCommande({ commande, boutique }: { commande: CommandeRecue; boutiq
     <p className="text-sm">Total {formaterPrix(commande.total)} · {quantiteTotale(commande.lignes_commande)} pièce{quantiteTotale(commande.lignes_commande) > 1 ? "s" : ""}</p>
     {commande.note && <p className="text-sm text-gris">Note du client : « {commande.note} »</p>}
     {motifAffiche && <p className="text-sm text-gris">Motif : {motifAffiche}</p>}
+    {commande.no_show_le && <p className="text-sm text-gris">Client pas venu · signalé le {formaterDateHeure(commande.no_show_le)}{commande.no_show_annule_le ? " (annulé par OranPromo)" : ""}</p>}
     {(action || annulableParBoutique(commande.statut)) && !annulation && <div className="mt-1 flex gap-2">
       {action && <button type="button" disabled={enCours} onClick={() => void changer(action.statut)} className="etiquette min-h-11 flex-1 bg-noir text-blanc">{action.libelle}</button>}
       <button type="button" disabled={enCours} onClick={() => { setAnnulation(true); setMessage(""); }} className="etiquette min-h-11 border border-noir px-3">Annuler</button>
@@ -56,6 +72,9 @@ function CarteCommande({ commande, boutique }: { commande: CommandeRecue; boutiq
       <textarea id={`note-${commande.id}`} rows={2} maxLength={NOTE_SUIVI_MAX} value={note} disabled={enCours} onChange={e => setNote(e.target.value)} className="mt-1 box-border w-full resize-none rounded-none border border-trait p-2 font-[inherit] text-base" />
       <div className="mt-2 flex gap-2"><button type="button" disabled={enCours} onClick={() => void changer("annulee")} className="etiquette min-h-11 flex-1 bg-noir text-blanc">Annuler la commande</button><button type="button" disabled={enCours} onClick={() => setAnnulation(false)} className="etiquette min-h-11 border border-trait px-3">Retour</button></div>
     </fieldset>}
+    {peutDeclarerNoShow(commande, maintenant) && !annulation && (pasVenu
+      ? <div className="mt-1 flex flex-col gap-2 border border-trait p-3"><p className="text-sm">Le client n’est pas venu chercher sa commande ? Il recevra un avertissement sur WhatsApp ; au 5e oubli, son compte est bloqué.</p><div className="flex gap-2"><button type="button" disabled={enCours} onClick={() => void signalerPasVenu()} className="etiquette min-h-11 flex-1 bg-noir text-blanc">Confirmer : pas venu</button><button type="button" disabled={enCours} onClick={() => setPasVenu(false)} className="etiquette min-h-11 border border-trait px-3">Retour</button></div></div>
+      : <button type="button" disabled={enCours} onClick={() => { setPasVenu(true); setMessage(""); }} className="etiquette mt-1 min-h-11 border border-noir px-3">Client pas venu</button>)}
     {message && <p role="status" className="text-sm">{message}</p>}
     {stockACorriger && <Link href="/espace" className="text-sm underline">Corriger le stock dans Mes articles</Link>}
   </article>;

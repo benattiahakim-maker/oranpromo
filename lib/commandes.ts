@@ -133,3 +133,19 @@ export async function compterCommandesAConfirmer(client: SupabaseClient<Database
   const { count, error } = await client.from("commandes").select("id", { count: "exact", head: true }).eq("boutique_id", boutiqueId).eq("statut", "demandee");
   return error ? 0 : count ?? 0;
 }
+
+/** Refus de confirmation de la base quand le stock ne suffit plus (relecture point 1). */
+export function estStockInsuffisant(message: string): boolean { return message.startsWith("Stock insuffisant"); }
+
+// --- No-shows déclarés par la boutique (relecture point 11, option C) ---------
+/** « Client pas venu » : commande expirée, ou prête depuis plus de 24 h, et pas encore signalée. */
+export function peutDeclarerNoShow(commande: Pick<Tables<"commandes">, "statut" | "expire_le" | "no_show_le">, maintenant: number): boolean {
+  if (commande.no_show_le) return false;
+  if (commande.statut === "expiree") return true;
+  return commande.statut === "prete" && Boolean(commande.expire_le) && Date.parse(commande.expire_le!) <= maintenant;
+}
+
+export async function declarerNoShow(client: SupabaseClient<Database>, id: string) {
+  const { error } = await client.rpc("declarer_no_show", { commande: id });
+  if (error) throw new Error(messageErreurCommande(error, "Impossible de signaler ce client. Réessayez."));
+}
