@@ -47,3 +47,16 @@ describe("US-25.1 : messages du panier pour la beauté", () => {
     expect(traduireMessage("Vous pouvez commander au plus 3 pièces dans cette contenance.", "ar")).toBe("تقدر تطلب 3 برك في هاد الحجم.");
   });
 });
+
+describe("US-25.4 : messages de la base pour les produits de beauté", () => {
+  it("« contenance » traduite par « الحجم »", () => {
+    expect(traduireMessage("Il ne reste que 2 pièce(s) en contenance 100 ml pour « Eau de parfum oud boisé ».", "ar")).toBe("بقاو غير 2 في الحجم 100 ml لـ « Eau de parfum oud boisé ».");
+    expect(traduireMessage("La contenance 50 ml de « Eau de parfum rose et musc » n'existe plus : retirez-la du panier.", "ar")).toBe("الحجم 50 ml تاع « Eau de parfum rose et musc » ما بقاش: نحّيه من السلة.");
+    expect(traduireMessage("Le même article et la même contenance apparaissent deux fois dans le panier.", "ar")).toBe("نفس السلعة بنفس الحجم كاينة جوج مرات في السلة.");
+  });
+  it("la mode garde « مقاس » ; en français, le message de la base est affiché tel quel", () => {
+    expect(traduireMessage("Il ne reste que 1 pièce(s) en taille M pour « Polo ».", "ar")).toBe("بقاو غير 1 في مقاس M لـ « Polo ».");
+    expect(traduireMessage("Le même article et la même taille apparaissent deux fois dans le panier.", "ar")).toBe("نفس السلعة بنفس المقاس كاينة جوج مرات في السلة.");
+    expect(traduireMessage("Il ne reste que 2 pièce(s) en contenance 100 ml pour « Oud ».", "fr")).toBe("Il ne reste que 2 pièce(s) en contenance 100 ml pour « Oud ».");
+  });
+});

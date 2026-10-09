@@ -73,6 +73,8 @@ const FIXES: Record<string, string> = {
   "Un article du panier n'est plus disponible : retirez-le et réessayez.": "سلعة في السلة ما بقاتش: نحّيها وعاود جرّب.",
   "Cet article n'est plus en ligne.": "هاد السلعة ما بقاتش في الموقع.",
   "Le même article et la même taille apparaissent deux fois dans le panier.": "نفس السلعة بنفس المقاس كاينة جوج مرات في السلة.",
+  // US-25.4 : la base écrit « contenance » pour les produits de beauté.
+  "Le même article et la même contenance apparaissent deux fois dans le panier.": "نفس السلعة بنفس الحجم كاينة جوج مرات في السلة.",
   "Une commande contient de 1 à 10 lignes.": "الطلب فيه من 1 حتى 10 سلع.",
   "Une ligne du panier est incomplète (article, taille ou quantité manquant) : videz le panier et réessayez.": "سطر في السلة ناقص (السلعة، المقاس ولا الكمية): فرّغ السلة وعاود جرّب.",
   "Une ligne du panier est invalide : videz le panier et réessayez.": "سطر في السلة فيه مشكل: فرّغ السلة وعاود جرّب.",
@@ -113,6 +115,9 @@ const MODELES: [RegExp, string][] = [
   [/^La note (?:pour la boutique )?doit faire (\d+) caractères au plus\.$/, "الكلمة لازم ما تفوتش $1 حرف."],
   [/^Il ne reste que (\d+) pièce\(s\) en taille (.+) pour « (.+) »\.$/, "بقاو غير $1 في مقاس $2 لـ « $3 »."],
   [/^La taille (.+) de « (.+) » n'existe plus : retirez-la du panier\.$/, "مقاس $1 تاع « $2 » ما بقاش: نحّيه من السلة."],
+  // US-25.4 : produits de beauté (« 100 ml » reste tel quel dans le message).
+  [/^Il ne reste que (\d+) pièce\(s\) en contenance (.+) pour « (.+) »\.$/, "بقاو غير $1 في الحجم $2 لـ « $3 »."],
+  [/^La contenance (.+) de « (.+) » n'existe plus : retirez-la du panier\.$/, "الحجم $1 تاع « $2 » ما بقاش: نحّيه من السلة."],
   [/^Changement de statut impossible : la commande est déjà « (.+) »\.$/, "ما نقدروش نبدّلو الطلب: راهو « $1 »."],
 ];
 

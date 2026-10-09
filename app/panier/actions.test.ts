@@ -60,3 +60,15 @@ describe("US-23 : langue de la commande (messages WhatsApp au client)", () => {
     erreur.mockRestore();
   });
 });
+
+describe("US-25.4 : refus de la base pour un produit de beauté", () => {
+  it("arabe : « contenance » → « الحجم » ; français : tel quel", async () => {
+    const refus = "Il ne reste que 1 pièce(s) en contenance 100 ml pour « Eau de parfum oud boisé ».";
+    cookie.langue = "ar";
+    passer.mockRejectedValueOnce(new Error(refus));
+    expect(await commanderPanier("b1", [{ ...ligne, taille: "100 ml" }], "")).toEqual({ erreur: "بقاو غير 1 في الحجم 100 ml لـ « Eau de parfum oud boisé »." });
+    cookie.langue = "fr";
+    passer.mockRejectedValueOnce(new Error(refus));
+    expect(await commanderPanier("b1", [{ ...ligne, taille: "100 ml" }], "")).toEqual({ erreur: refus });
+  });
+});

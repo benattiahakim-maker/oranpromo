@@ -112,3 +112,14 @@ describe("US-25.1 : ligne de parfum dans le panier", () => {
     expect(screen.getByText(/^مقاس M · /)).toBeInTheDocument();
   });
 });
+
+describe("US-25.4 : refus de la base pour un parfum", () => {
+  const refus = "Il ne reste que 1 pièce(s) en contenance 100 ml pour « Eau de parfum oud boisé ».";
+  it("français : « contenance » affiché tel quel, panier gardé", async () => {
+    commanderPanier.mockResolvedValue({ erreur: refus });
+    render(<PanierCommande profil={complet} />);
+    fireEvent.click(screen.getByRole("button", { name: "Commander" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(refus);
+    expect(localStorage.getItem(CLE_PANIER)).not.toBeNull();
+  });
+});
