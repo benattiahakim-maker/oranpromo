@@ -25,6 +25,10 @@ describe("US-09 : e-mail", () => {
     signInWithOtp.mockResolvedValue({ error: { message: "Rate limit exceeded" } });
     await expect(envoyerLienConnexion("hakim@example.com", "http://localhost:3000")).rejects.toThrow("Impossible d’envoyer le lien");
   });
+  it("explique la limite d’envoi au lieu d’inviter à réessayer immédiatement", async () => {
+    signInWithOtp.mockResolvedValue({ error: { status: 429, code: "over_email_send_rate_limit" } });
+    await expect(envoyerLienConnexion("hakim@example.com", "http://localhost:3000")).rejects.toThrow("La limite d’envoi des e-mails de connexion est atteinte.");
+  });
 });
 
 describe("US-09 : destination suite", () => {

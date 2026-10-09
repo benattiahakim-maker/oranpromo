@@ -1,5 +1,7 @@
 import { creerClientNavigateur } from "./supabase/client";
 
+export class ErreurConnexion extends Error {}
+
 /** Validation commune au formulaire et à l’envoi du lien (remplaçable par SMS). */
 export function emailValide(email: string): boolean {
   const adresse = email.trim();
@@ -32,5 +34,8 @@ export async function envoyerLienConnexion(email: string, origine: string) {
     email: email.trim(),
     options: { emailRedirectTo: `${origine}/auth/callback?suite=/espace` },
   });
-  if (error) throw new Error("Impossible d’envoyer le lien de connexion. Réessayez dans quelques instants.");
+  if (error?.code === "over_email_send_rate_limit" || error?.code === "over_request_rate_limit" || error?.status === 429) {
+    throw new ErreurConnexion("La limite d’envoi des e-mails de connexion est atteinte. Attendez avant de demander un nouveau lien.");
+  }
+  if (error) throw new ErreurConnexion("Impossible d’envoyer le lien de connexion. Réessayez dans quelques instants.");
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { emailValide, envoyerLienConnexion } from "@/lib/connexion";
+import { emailValide, envoyerLienConnexion, ErreurConnexion } from "@/lib/connexion";
 
 export default function ConnexionEmail() {
   const [email, setEmail] = useState("");
@@ -19,7 +19,7 @@ export default function ConnexionEmail() {
     try {
       await envoyerLienConnexion(email, window.location.origin);
       setMessage("Un lien de connexion vous a été envoyé par e-mail");
-    } catch { setErreur("Impossible d’envoyer le lien de connexion. Réessayez dans quelques instants."); }
+    } catch (error) { setErreur(error instanceof ErreurConnexion ? error.message : "Impossible d’envoyer le lien de connexion. Réessayez dans quelques instants."); }
     finally { envoi.current = false; setEnCours(false); }
   }
 
