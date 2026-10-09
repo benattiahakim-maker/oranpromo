@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { consommerQuotaIA, verifierAccesIA } from "@/lib/acces-ia";
 import { TRADUCTION_INDISPONIBLE, validerSaisieTraduction, validerTraductionIA } from "@/lib/ia-traduction";
+import { CorpsTropGros, lireCorpsLimite } from "@/lib/corps-requete";
 
 export const runtime = "nodejs";
 const reponse = (message: string, status: number) => Response.json({ message }, { status, headers: { "Cache-Control": "no-store" } });
@@ -10,10 +11,9 @@ export async function POST(request: Request) {
     const client = await creerClientServeur();
     const refus = await verifierAccesIA(client, { connexion: "Connectez-vous pour traduire une fiche.", indisponible: TRADUCTION_INDISPONIBLE });
     if (refus) return reponse(refus.message, refus.statut);
-    if (Number(request.headers.get("content-length")) > 16384) return reponse("Le texte à traduire est trop long.", 413);
     let saisie;
-    try { saisie = validerSaisieTraduction(await request.json()); }
-    catch (error) { return reponse(error instanceof SyntaxError ? "Envoyez un titre et une description au format JSON." : error instanceof Error ? error.message : "Vérifiez le texte à traduire.", 400); }
+    try { saisie = validerSaisieTraduction(JSON.parse(new TextDecoder().decode(await lireCorpsLimite(request, 16384)))); }
+    catch (error) { if (error instanceof CorpsTropGros) return reponse("Le texte à traduire est trop long.", 413); return reponse(error instanceof SyntaxError ? "Envoyez un titre et une description au format JSON." : error instanceof Error ? error.message : "Vérifiez le texte à traduire.", 400); }
     const cle = process.env.ANTHROPIC_API_KEY;
     if (!cle) return reponse(TRADUCTION_INDISPONIBLE, 503);
     const quota = await consommerQuotaIA(client, TRADUCTION_INDISPONIBLE);

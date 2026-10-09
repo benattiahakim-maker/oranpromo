@@ -3,6 +3,7 @@ import { creerClientServeur } from "@/lib/supabase/server";
 import { consommerQuotaIA, verifierAccesIA } from "@/lib/acces-ia";
 import { CATEGORIES_ARTICLE, GENRES_ARTICLE, TAILLE_PHOTO_MAX } from "@/lib/article";
 import { ErreurPhotoIA, IA_INDISPONIBLE, validerFicheIA } from "@/lib/ia-fiche";
+import { CorpsTropGros, lireFormulaireLimite } from "@/lib/corps-requete";
 
 export const runtime = "nodejs";
 const reponse = (message: string, statut: number) => Response.json({ message }, { status: statut, headers: { "Cache-Control": "no-store" } });
@@ -11,9 +12,10 @@ export async function POST(request: Request) {
     const client = await creerClientServeur();
     const refus = await verifierAccesIA(client, { connexion: "Connectez-vous pour préparer une fiche.", indisponible: IA_INDISPONIBLE });
     if (refus) return reponse(refus.message, refus.statut);
-    if (Number(request.headers.get("content-length")) > TAILLE_PHOTO_MAX + 65536) return reponse("La photo doit être un JPEG de 5 Mo maximum.", 413);
+    // Taille bornée même sans Content-Length (envoi « chunked ») : jamais plus de 5 Mo + 64 Ko lus en mémoire.
     let formulaire: FormData;
-    try { formulaire = await request.formData(); } catch { return reponse("Envoyez une seule photo JPEG.", 400); }
+    try { formulaire = await lireFormulaireLimite(request, TAILLE_PHOTO_MAX + 65536); }
+    catch (error) { return error instanceof CorpsTropGros ? reponse("La photo doit être un JPEG de 5 Mo maximum.", 413) : reponse("Envoyez une seule photo JPEG.", 400); }
     const photos = formulaire.getAll("photo"), photo = photos[0];
     if (photos.length !== 1 || !(photo instanceof File) || [...formulaire.keys()].some(c => c !== "photo")) return reponse("Envoyez une seule photo JPEG.", 400);
     if (photo.size > TAILLE_PHOTO_MAX) return reponse("La photo doit être un JPEG de 5 Mo maximum.", 413);
