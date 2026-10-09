@@ -4,6 +4,7 @@
 .espace *, .espace *::before, .espace *::after { box-sizing: border-box; }
 .espace a { color: inherit; text-decoration: none; }
 .espace ul { list-style: none; margin: 0; padding: 0; }
+.espace ol, .espace dl, .espace dd { list-style: none; margin: 0; padding: 0; }
 .espace fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .espace h1, .espace p { margin: 0; }
 .espace button, .espace input, .espace textarea, .espace select { font-family: inherit; }

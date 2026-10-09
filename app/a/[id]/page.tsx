@@ -4,6 +4,7 @@ import GalerieArticle from "@/components/GalerieArticle";
 import PartagerArticle from "@/components/PartagerArticle";
 import ReservationArticle from "@/components/ReservationArticle";
 import SignalerArticle from "@/components/SignalerArticle";
+import EnregistrerVue from "@/components/EnregistrerVue";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { 
   formaterPrix, 
@@ -194,6 +195,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
   return (
     <div className="mx-auto w-full max-w-lg min-h-screen bg-blanc">
+      <EnregistrerVue boutiqueId={article.boutique_id} articleId={article.id} />
       {/* Photo carousel */}
       <div className="relative bg-fond-photo">
         {photos.length > 0 ? (
@@ -216,7 +218,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           </svg>
         </Link>
         
-        <PartagerArticle titre={article.titre} />
+        <PartagerArticle titre={article.titre} boutiqueId={article.boutique_id} articleId={article.id} />
       </div>
 
       <main className="px-6 pt-6 pb-0 flex flex-col gap-6 text-center">

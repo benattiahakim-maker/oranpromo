@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { enregistrerEvenement } from "@/lib/evenements";
 
-export default function PartagerArticle({ titre, libelle = "Partager" }: { titre: string; libelle?: string }) {
+export default function PartagerArticle({ titre, boutiqueId, articleId, libelle = "Partager" }: { titre: string; boutiqueId: string; articleId?: string; libelle?: string }) {
   const [message, setMessage] = useState("");
   async function partager() {
+    void enregistrerEvenement("partage", boutiqueId, articleId);
     try {
       if (navigator.share) await navigator.share({ title: titre, url: window.location.href });
       else { await navigator.clipboard.writeText(window.location.href); setMessage("Lien copié"); }

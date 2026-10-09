@@ -5,6 +5,7 @@ import { formaterPrix, prixAffiche, promoActive } from "@/lib/prix";
 import { numeroWhatsApp } from "@/lib/whatsapp";
 import { positionBoutique, trierArticlesVitrine } from "@/lib/vitrine";
 import PartagerArticle from "@/components/PartagerArticle";
+import EnregistrerVue from "@/components/EnregistrerVue";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,8 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
   const itineraire = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(position)}`;
 
   return <div className="mx-auto w-full max-w-lg pb-10">
-    <header className="relative flex items-center gap-4 border-b border-trait px-4 py-3"><Link href="/" aria-label="Retour à l’accueil" className="flex h-11 w-11 items-center justify-center">←</Link><span className="font-titre text-xl tracking-[0.2em]">ORANPROMO</span><PartagerArticle titre={boutique.nom} libelle="Partager la boutique" /></header>
+    <EnregistrerVue boutiqueId={boutique.id} />
+    <header className="relative flex items-center gap-4 border-b border-trait px-4 py-3"><Link href="/" aria-label="Retour à l’accueil" className="flex h-11 w-11 items-center justify-center">←</Link><span className="font-titre text-xl tracking-[0.2em]">ORANPROMO</span><PartagerArticle titre={boutique.nom} boutiqueId={boutique.id} libelle="Partager la boutique" /></header>
     <section className="flex flex-col gap-3 px-6 py-8 text-center">
       <p className="etiquette text-gris">{boutique.quartier}</p>
       <h1 className="font-titre break-words text-3xl">{boutique.nom}</h1>

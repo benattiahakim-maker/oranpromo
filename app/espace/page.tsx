@@ -33,6 +33,7 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
       {profil?.boutique_id && <Link href="/espace/articles/nouveau" className="etiquette mt-6 flex min-h-[54px] items-center justify-center bg-noir px-4 text-blanc">+ Ajouter un article</Link>}
       {erreur === "deconnexion" && <p role="alert" className="mt-4">Impossible de vous déconnecter. Réessayez.</p>}
       <form action={deconnecter}><button type="submit" className="etiquette my-6 min-h-[44px] w-full border border-noir px-4">Se déconnecter</button></form>
+      {profil?.boutique_id && <Link href="/espace/statistiques" className="etiquette my-6 flex min-h-[44px] items-center justify-center border border-noir px-4">Mes statistiques</Link>}
     </div>
   </main>;
 }
