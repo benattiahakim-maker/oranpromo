@@ -241,6 +241,30 @@ Conception proposée :
 - Dates : `Intl.DateTimeFormat("ar-DZ", { numberingSystem: "latn" })` pour garder les chiffres 0-9 ; prix : `formaterPrix` gagne une langue (`DA` → `دج`).
 - Maquette : `docs/maquettes/FicheArabe.dc.html`.
 
+## Confirmer depuis WhatsApp (US-20.6) — conception, **pas encore codé**
+
+Story : `docs/user-stories.md`, US-20.6. Maquettes : `WhatsAppConfirmer.dc.html`, `ConfirmerCommande.dc.html`.
+
+**Bouton lien ou bouton de réponse rapide ?** (modèles « Utilitaire » de Meta : jusqu'à 10 boutons, dont « URL » et « Quick reply » ; developers.facebook.com/documentation/business-messaging/whatsapp/templates/utility-templates)
+- **Bouton lien (retenu)** : `https://<domaine>/confirmer/{{1}}` ; un seul paramètre, **à la fin** de l'adresse, envoyé à chaque message (`components: [{ type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: "<lien>" }] }]`, caractères spéciaux encodés) ; libellé 25 caractères au plus ; le lien s'ouvre dans le navigateur du téléphone (developers.facebook.com/documentation/business-messaging/whatsapp/templates/components). Rien à recevoir de Meta : pas de webhook.
+- Réponse rapide (écartée pour l'instant) : vraie confirmation en une touche, mais il faut une route webhook publique qui reçoit les messages de Meta, vérifie la signature (`X-Hub-Signature-256`, clé secrète de l'application Meta), retrouve la commande depuis le `payload` et répond ; une réponse ouvre aussi une conversation de service de 24 h. Plus de code, un secret Meta de plus, et un échec se voit mal (la boutique ne voit pas de page). À reconsidérer si les boutiques trouvent 2 touches de trop.
+- L'adresse du site est **fixée dans le modèle** : il faut le domaine définitif (`NEXT_PUBLIC_SITE_URL`) avant de soumettre le modèle à Meta.
+
+**Avec ou sans connexion ?** Proposition : **sans connexion**, le lien suffit.
+- Avec connexion : plus sûr si le message est transféré, mais les commerçants se connectent par lien e-mail et le navigateur ouvert par WhatsApp n'a souvent pas leur session : il faudrait se reconnecter (e-mail, puis retour) à chaque fois, et la « confirmation en un clic » disparaît.
+- Sans connexion : le lien ne permet qu'**une** chose — passer **cette** commande de « demandée » à « confirmée » pour **sa** boutique — pendant 24 h, une seule fois. S'il fuit (message transféré, capture d'écran), le pire est une commande confirmée trop tôt : le stock baisse, la boutique peut encore l'annuler (« Plus en stock », « Autre ») dans son espace, et le client n'est pas prévenu par un message (la confirmation n'envoie rien). La page ne montre ni le numéro du client ni aucun lien d'action autre que « Confirmer ». Risque jugé acceptable pour le gain.
+
+**Lien** (aucune nouvelle table) :
+- `<commande>.<expiration>.<signature>` : identifiant de la commande, date d'expiration (secondes, base 36, envoi + 24 h), signature `HMAC-SHA256(CONFIRMATION_SECRET, "confirmer:" + commande + ":" + boutique + ":" + expiration)` en base64url. Calculé par le serveur **au moment de l'envoi** du message (`lib/notifications/`, la commande et la boutique sont connues par `messages_whatsapp.commande_id`) : il n'est stocké nulle part (ni dans `messages_whatsapp.parametres`, ni ailleurs).
+- Usage unique : la base n'accepte que `demandee → confirmee` ; une fois confirmée, le lien ne fait plus rien (« déjà confirmée »).
+- Nouvelle variable serveur **`CONFIRMATION_SECRET`** (32 caractères aléatoires au moins), empreinte SHA-256 dans `prive.reglages`, clé `jeton_confirmation` (même principe que `CODES_TELEPHONE_SECRET` et `VISITEURS_SECRET`).
+
+**Page et base** :
+- `app/confirmer/[jeton]/page.tsx` (lecture seule : vérifie la signature et l'expiration côté serveur, puis lit la commande par une fonction de la base protégée par le secret, `commande_a_confirmer(jeton_serveur, commande, boutique)` : numéro, prénom, lignes, total, note, statut) et `app/confirmer/[jeton]/actions.ts` (action serveur « Confirmer la commande » : revérifie le lien puis appelle `confirmer_commande_par_lien(jeton_serveur, commande, boutique)`).
+- `confirmer_commande_par_lien` : `security definer`, secret obligatoire, commande de **cette** boutique, verrou de la commande, mêmes règles que `changer_statut_commande` pour `demandee → confirmee` (`prive.retirer_stock`, refus « Stock insuffisant pour … »), `confirmee_le`, ligne de suivi `auteur = 'boutique'`, `auteur_id` vide, note « Confirmée depuis WhatsApp ». Résultat : `confirmee`, `deja_confirmee` (confirmée, prête, récupérée), `annulee`, `expiree`. La partie commune avec `changer_statut_commande` est mise dans une fonction `prive.confirmer_commande(…)` pour que les deux boutons gardent toujours les mêmes règles.
+- Interrupteur : réglage `bouton_confirmer` (`prive.reglages`, `on` après l'approbation de Meta). Quand il est `on`, la base crée le message `oranpromo_nouvelle_commande_confirmer` (mêmes 4 paramètres) au lieu de `oranpromo_nouvelle_commande` ; le serveur y ajoute le bouton ; sans `CONFIRMATION_SECRET`, il envoie l'ancien modèle sans bouton (aucun message perdu).
+- Modèle à faire approuver (catégorie « Utilitaire », langue `fr`) : `oranpromo_nouvelle_commande_confirmer` : « Nouvelle commande n° {{1}} sur OranPromo : {{2}}, {{3}} article(s), {{4}}. Touchez Confirmer, ou confirmez-la dans votre espace OranPromo, rubrique Commandes. » + bouton lien « Confirmer » → `https://<domaine>/confirmer/{{1}}`.
+
 ## Limites par visiteur (vues, clics, partages, signalements)
 
 Carte Trello « Sécurité · Limiter les envois en masse ». Migration `20261010180000_limites_visiteurs.sql`.
