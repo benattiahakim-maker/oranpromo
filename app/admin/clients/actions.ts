@@ -24,7 +24,7 @@ export async function annulerNoShowClient(commandeId: string) {
   } catch (error) { return { succes: false, message: error instanceof Error ? error.message : "Impossible d’annuler ce no-show. Réessayez." }; }
 }
 
-/** Relecture n°2 : l’admin bloque un compte (par exemple un numéro partagé par plusieurs comptes). */
+/** L’admin bloque un compte à la main (aucun message WhatsApp ; levé seulement par « Débloquer »). */
 export async function bloquerCompteClient(id: string) {
   try {
     if (typeof id !== "string") throw new Error("Client invalide.");

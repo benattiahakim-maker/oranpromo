@@ -720,18 +720,6 @@ export type Database = {
           texte: string
         }[]
       }
-      numeros_partages: {
-        Args: never
-        Returns: {
-          bloque: boolean
-          client_id: string
-          no_shows: number
-          no_shows_numero: number
-          nom: string
-          telephone: string
-          telephone_actuel: string
-        }[]
-      }
       passer_commande: {
         Args: { boutique: string; lignes: Json; note?: string }
         Returns: string
