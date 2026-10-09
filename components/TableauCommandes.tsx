@@ -56,7 +56,7 @@ export default function TableauCommandes({ commandes, etape, boutique, maintenan
       {/* En-têtes du tableau, sur ordinateur seulement. */}
       <div aria-hidden="true" className="etiquette hidden min-h-10 items-center border-b border-noir text-[10px] text-gris lg:flex">
         {statutGroupe && <span className="w-11 shrink-0" />}
-        <span className={`grid flex-1 ${COLONNES} gap-x-3 pl-3`}><span>N°</span><span>Prénom</span><span>Articles</span><span className="text-right">À encaisser</span><span>{etape ? ETAPES[etape].heure : "Étape"}</span><span>Échéance</span><span>Bon</span></span>
+        <span className={`grid flex-1 ${COLONNES} gap-x-3 ${statutGroupe ? "" : "pl-3"}`}><span>N°</span><span>Prénom</span><span>Articles</span><span className="text-right">À encaisser</span><span>{etape ? ETAPES[etape].heure : "Étape"}</span><span>Échéance</span><span>Bon</span></span>
         <span className="w-[158px]" />
       </div>
       <ul>{commandes.map(c => <Ligne key={c.id} commande={c} etape={etape} boutique={boutique} maintenant={maintenant} ouverte={ouverte === c.id} alerte={alertes[c.id]}
