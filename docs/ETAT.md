@@ -6,7 +6,7 @@
 ## Où on en est
 
 - Les **19 user stories du MVP sont codées** (US-01 à US-19). Elles sont dans la colonne Trello « À vérifier » : codées, mais pas encore toutes testées en vrai.
-- **820 tests** passent (+ 236 tests SQL), `npm run lint` et `npm run build` passent.
+- **820 tests** passent (+ 250 tests SQL), `npm run lint` et `npm run build` passent.
 - Déjà testé en vrai : la page d'accueil (ancienne version), la fiche article, la réservation WhatsApp.
 - Pas encore re-testé : la connexion par lien e-mail (corrigée le 9/10), le nouveau formulaire d'article, et tout ce qui a été fait le 9/10 après-midi (voir ci-dessous).
 - **Connexion des clients par téléphone (US-21)** : codée, **pas encore en service**. Le site reste en mode e-mail tant que le propriétaire n'a pas fait la checklist ci-dessous (« US-21 : à configurer par le propriétaire ») ; code par WhatsApp uniquement (pas de SMS), donc rien avant l'approbation de l'expéditeur WhatsApp par Meta.
@@ -72,6 +72,7 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
 15. **Relecture n°5 par Claude** (PR #42, puis cette mise à jour) : un compte qui **cesse d'être client** (rattaché comme commerçant par `rattacher_commercant`, promu admin ou ambassadeur, ou tout autre changement de `profils.role`) **perd son numéro de connexion** : la base vide `auth.users.phone`, `phone_confirmed_at` et `phone_change` (et le code en cours) ; il ne peut plus se connecter par code, seulement par lien e-mail. `profils.telephone_verifie_le` est effacé, et `profils.telephone` aussi **s'il était le numéro de connexion vérifié** (le numéro est libéré : un vrai client peut le vérifier) ; un numéro saisi à la main, non vérifié, est gardé (simple contact, il ne compte jamais pour un autre compte). Les no-shows du compte sont recalculés (ceux comptés par le numéro ne comptent plus). Nettoyage unique des comptes non clients qui avaient encore un numéro : **0 ligne** en production (le compte admin et le compte commerçant n'en avaient pas). Redevenir client ne rend pas le numéro : il faut le vérifier de nouveau par code. Migration `20261010160000_numero_retire_non_clients` **appliquée** le 9/10 vers 16 h 30 (une entrée vide du même nom, version 20261009142819, appliquée par erreur juste avant — un simple commentaire, sans effet — a été **retirée de l’historique Supabase** le 9/10 vers 16 h 35 avec l’accord du propriétaire ; seule reste la vraie, version 20261009142837). Tests SQL : `numero_retire_non_clients.test.sql` (21). Types inchangés ; 806 tests Vitest, lint et build OK.
 16. **Lot du propriétaire du 9/10 (fin d'après-midi)** :
    - **Point 1, bug du nom de boutique** (PR « Nom de boutique 80 ») : le formulaire acceptait 120 caractères, la base 80 (erreur technique à la création). Une seule limite, **80 caractères** (celle de la base, choisie pour ne rien migrer et garder des noms lisibles sur les cartes et l'affiche) : champ limité à 80, message « Le nom de la boutique doit contenir entre 2 et 80 caractères. » à l'écran, sur le serveur et dans la base (déclencheur `boutique_nom_verifie`, espaces autour retirés). Migration `20261010170000_nom_boutique_80` **appliquée** le 9/10 vers 16 h 40 (noms existants : 13 caractères au plus). Tests SQL : `nom_boutique_80.test.sql` (10).
+   - **Point 3, données de démonstration** (PR « Données de démo ») : script de retrait `supabase/scripts/retirer_donnees_demo.sql` prêt, **NON appliqué** (hors `supabase/migrations` : jamais appliqué automatiquement). Liste exacte de ce qu'il supprime et mode d'emploi : section « Retrait des données de démonstration (jour de la mise en ligne) » ci-dessous. Tests SQL : `retirer_donnees_demo.test.sql` (14). **C'est le propriétaire qui décide du jour** (le jour de la mise en ligne).
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
 
@@ -141,6 +142,31 @@ Coût : 0,05 $ par vérification réussie + frais Meta ≈ 0,004 $ par message r
 
 Option D (hook en fonction Postgres + `pg_net`) écartée : `pg_net` est asynchrone, le hook ne saurait pas si le message est parti.
 
+## Retrait des données de démonstration (jour de la mise en ligne)
+
+**Décision du propriétaire, le jour de la mise en ligne.** Le script `supabase/scripts/retirer_donnees_demo.sql` n'a **pas** été lancé.
+
+Ce qu'il supprimera — liste relevée en **lecture seule** sur la base de production le 9 octobre 2026 vers 16 h 40 :
+
+| Table | Lignes | Détail |
+| --- | --- | --- |
+| `auth.users` (+ `profils`, `auth.identities` par cascade) | 1 (+ 1 + 1) | compte de test `hakim3142@gmail.com` (`da9f4aa4-9bfa-4312-9a8f-05c3eefffc99`, commerçant de Boutique Nour) ; aucune session ouverte |
+| `boutiques` | 1 | « Boutique Nour » (`22222222-2222-2222-2222-222222222222`, slug `boutique-nour`, WhatsApp de test `+213000000002`) |
+| `articles` | 5 | `a0000000-…-001` Polo piqué bleu marine, `…-002` Chemise en lin blanche, `…-003` Jean droit brut (Maison Ilyes) ; `…-004` Robe longue fleurie, `…-005` Foulard en soie (Boutique Nour) |
+| `photos` | 6 | toutes sur `placehold.co` (2 pour le polo, 1 pour chacun des 4 autres) |
+| `tailles` | 10 | 4 + 2 + 1 + 2 + 1 |
+| `promos` | 2 | polo (`…-001`) et robe (`…-004`) |
+| `evenements` | 6 | 3 vues et 3 clics « Réserver » sur le polo (`…-001`) |
+| `signalements`, `decisions`, `commandes`, `lignes_commande`, `suivi_commandes`, `contestations`, `messages_whatsapp`, `appels_ia`, `prive.envois_codes` | 0 | rien aujourd'hui ; le script supprimera aussi ce qui aura été créé d'ici là pour ces comptes, boutiques et articles |
+| Stockage `photos` | 0 fichier | si des fichiers de démo apparaissent, le script s'arrête et demande de les supprimer d'abord dans Storage (Supabase interdit de le faire en SQL) |
+
+**Gardé** : le compte admin `benattia.hakim@gmail.com` (le script s'arrête s'il devait supprimer un admin), la boutique « Maison Ilyes » (boutique de l'admin, vide après le retrait — **attention, son WhatsApp est le numéro français du propriétaire : à changer ou à supprimer avant la mise en ligne**, décision du propriétaire), les réglages (`prive.reglages`), et les lignes de vraies commandes qui citeraient un article de démo (titre et prix gardés, lien vers l'article retiré).
+
+Mode d'emploi (Supabase > SQL Editor) :
+1. coller le fichier et le lancer tel quel = **essai à blanc** : rien n'est supprimé, le tableau final indique ce qui le serait (relancer l'essai juste avant pour vérifier la liste) ;
+2. remplacer `appliquer constant boolean := false` par `true` (ligne marquée ⚠), relancer : suppression en une seule transaction (en cas d'erreur, rien n'est supprimé) ;
+3. relancer avec `true` : le tableau doit afficher 0 partout.
+
 ## Reprendre le travail (sur le PC)
 
 1. Fermer la fenêtre noire de `lancer-site.bat` si elle est ouverte.
@@ -178,7 +204,7 @@ Option D (hook en fonction Postgres + `pg_net`) écartée : `pg_net` est asynchr
   - jean vendu ;
   - robe avec une promo expirée ;
   - foulard.
-  - Ils seront supprimés avant la mise en ligne (carte Backlog « Données de test »).
+  - Ils seront supprimés avant la mise en ligne (carte Backlog « Données de test ») par le script `supabase/scripts/retirer_donnees_demo.sql` (voir « Retrait des données de démonstration »).
 
 ## Infrastructure
 
