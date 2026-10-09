@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { creerFournisseurMeta } from "./meta";
 import { preparerBoutonConfirmer, secretConfirmation } from "@/lib/confirmation";
+import { jetonRetraitValide } from "@/lib/retrait";
 import type { FournisseurWhatsApp, MessageWhatsApp } from "./types";
 
 export type { FournisseurWhatsApp, MessageWhatsApp, ResultatEnvoi } from "./types";
@@ -46,6 +47,27 @@ export type OptionsEnvoi = {
   maintenant?: () => number;
 };
 
+export const MODELE_RETRAIT = "oranpromo_commande_prete_retrait";
+export const MODELE_PRETE_SANS_BOUTON = "oranpromo_commande_prete";
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/**
+ * US-26.4 : « commande prête » avec le bouton « Mon QR code ». Le 5e paramètre est l'identifiant de la commande ;
+ * le jeton de retrait est demandé à la base au moment de l'envoi (avec CRON_SECRET) et sert seulement de paramètre
+ * du bouton (https://<domaine>/retrait/<jeton>). Commande plus prête ou jeton absent : ancien modèle sans bouton.
+ */
+export async function preparerBoutonRetrait(client: SupabaseClient<Database>, message: MessageWhatsApp, jeton: string): Promise<MessageWhatsApp> {
+  if (message.modele !== MODELE_RETRAIT) return message;
+  const corps = message.parametres.slice(0, 4);
+  const commandeId = message.parametres[4];
+  const sansBouton = { ...message, modele: MODELE_PRETE_SANS_BOUTON, parametres: corps, bouton: undefined };
+  if (!commandeId || !UUID.test(commandeId)) return sansBouton;
+  try {
+    const { data, error } = await client.rpc("jeton_retrait_envoi", { jeton, commande: commandeId });
+    return !error && jetonRetraitValide(data) ? { ...message, parametres: corps, bouton: data } : sansBouton;
+  } catch { return sansBouton; }
+}
+
 /** Envoie les messages un par un et enregistre chaque résultat dans la base (avec le jeton du serveur). Ne lève jamais d'erreur. */
 export async function envoyerMessages(client: SupabaseClient<Database>, messages: MessageWhatsApp[], fournisseur: FournisseurWhatsApp, jeton: string, options: OptionsEnvoi = {}) {
   const maintenant = options.maintenant ?? Date.now;
@@ -54,7 +76,7 @@ export async function envoyerMessages(client: SupabaseClient<Database>, messages
     // Arrêt avant la limite de durée de la fonction : un message coupé en plein envoi partirait deux fois.
     if (options.finAvant !== undefined && maintenant() + DUREE_ENVOI_MAX_MS > options.finAvant) { reportes++; continue; }
     let resultat;
-    try { resultat = await fournisseur.envoyer(message); }
+    try { resultat = await fournisseur.envoyer(await preparerBoutonRetrait(client, message, jeton)); }
     catch { resultat = { succes: false as const, erreur: "Erreur d’envoi.", definitif: false }; }
     if (resultat.succes) envoyes++; else echecs++;
     const { error } = await client.rpc("resultat_message_whatsapp", resultat.succes

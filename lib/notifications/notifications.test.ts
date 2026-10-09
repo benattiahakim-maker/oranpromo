@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { DUREE_ENVOI_MAX_MS, envoyerMessages, envoyerMessagesCommande, envoyerMessagesEnAttente, fournisseurWhatsApp, jetonNotifications, lireMessages, type FournisseurWhatsApp, type MessageWhatsApp } from ".";
+import { DUREE_ENVOI_MAX_MS, envoyerMessages, preparerBoutonRetrait, envoyerMessagesCommande, envoyerMessagesEnAttente, fournisseurWhatsApp, jetonNotifications, lireMessages, type FournisseurWhatsApp, type MessageWhatsApp } from ".";
 
 const JETON = "jeton-serveur-0123456789";
 import { corpsMessageMeta, creerFournisseurMeta, langueModeleMeta } from "./meta";
@@ -123,6 +123,53 @@ describe("US-20.6 : bouton « Confirmer » (lien signé)", () => {
       { type: "body", parameters: ["15", "Samia", "2", "8 700 DA"].map(text => ({ type: "text", text })) },
       { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: "lien-signe" }] },
     ]);
+  });
+});
+
+describe("US-26.4 : bouton « Mon QR code » du message « commande prête »", () => {
+  const ID = "0b9f2c1e-5a4d-4c3b-9e8f-112233445566";
+  const JETON_RETRAIT = "q7Kx2mPZ9vTfW8LrB4n1aE";
+  const retrait: MessageWhatsApp = { ...message, modele: "oranpromo_commande_prete_retrait", parametres: ["Samia", "12", "Boutique Un", "10/10 à 12h00", ID] };
+  it("demande le jeton à la base avec CRON_SECRET au moment de l’envoi ; il ne sert qu’au bouton", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: JETON_RETRAIT, error: null });
+    const m = await preparerBoutonRetrait(base(rpc), retrait, JETON);
+    expect(rpc).toHaveBeenCalledWith("jeton_retrait_envoi", { jeton: JETON, commande: ID });
+    expect(m).toEqual({ ...retrait, parametres: ["Samia", "12", "Boutique Un", "10/10 à 12h00"], bouton: JETON_RETRAIT });
+    const corps = corpsMessageMeta(m, "fr");
+    expect(corps.template.name).toBe("oranpromo_commande_prete_retrait");
+    expect(corps.template.components).toEqual([
+      { type: "body", parameters: ["Samia", "12", "Boutique Un", "10/10 à 12h00"].map(text => ({ type: "text", text })) },
+      { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: JETON_RETRAIT }] },
+    ]);
+  });
+  it.each([
+    ["commande plus prête (aucun jeton)", { data: null, error: null }],
+    ["refus de la base", { data: null, error: { code: "42501" } }],
+    ["réponse au mauvais format", { data: "pas un jeton", error: null }],
+  ])("%s : ancien modèle, 4 paramètres, sans bouton", async (_cas, reponse) => {
+    const m = await preparerBoutonRetrait(base(vi.fn().mockResolvedValue(reponse)), retrait, JETON);
+    expect(m.modele).toBe("oranpromo_commande_prete"); expect(m.parametres).toHaveLength(4); expect(m.bouton).toBeUndefined();
+  });
+  it("5e paramètre absent ou invalide : ancien modèle sans appel ; autres modèles inchangés", async () => {
+    const rpc = vi.fn();
+    expect((await preparerBoutonRetrait(base(rpc), { ...retrait, parametres: retrait.parametres.slice(0, 4) }, JETON)).modele).toBe("oranpromo_commande_prete");
+    expect((await preparerBoutonRetrait(base(rpc), { ...retrait, parametres: [...retrait.parametres.slice(0, 4), "x"] }, JETON)).modele).toBe("oranpromo_commande_prete");
+    expect(await preparerBoutonRetrait(base(rpc), message, JETON)).toBe(message);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+  it("envoyerMessages envoie le message avec le bouton, puis enregistre le résultat", async () => {
+    const rpc = vi.fn().mockResolvedValueOnce({ data: JETON_RETRAIT, error: null }).mockResolvedValue({ error: null });
+    const envoyer = vi.fn().mockResolvedValue({ succes: true, identifiant: "wamid.9" });
+    expect(await envoyerMessages(base(rpc), [retrait], { nom: "test", envoyer }, JETON)).toEqual({ envoyes: 1, echecs: 0, reportes: 0 });
+    expect(envoyer).toHaveBeenCalledWith(expect.objectContaining({ modele: "oranpromo_commande_prete_retrait", bouton: JETON_RETRAIT, parametres: ["Samia", "12", "Boutique Un", "10/10 à 12h00"] }));
+    expect(rpc).toHaveBeenLastCalledWith("resultat_message_whatsapp", { jeton: JETON, message: "m1", reservation: "r1", succes: true, identifiant: "wamid.9" });
+  });
+  it("ancien message « prête » : envoyé tel quel, sans appel", async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    const envoyer = vi.fn().mockResolvedValue({ succes: true, identifiant: null });
+    await envoyerMessages(base(rpc), [message], { nom: "test", envoyer }, JETON);
+    expect(envoyer).toHaveBeenCalledWith(message);
+    expect(rpc).not.toHaveBeenCalledWith("jeton_retrait_envoi", expect.anything());
   });
 });
 

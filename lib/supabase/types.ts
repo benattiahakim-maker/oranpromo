@@ -743,6 +743,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      jeton_retrait_envoi: {
+        Args: { commande: string; jeton: string }
+        Returns: string
+      }
       messages_whatsapp_commande: {
         Args: { commande: string }
         Returns: {
