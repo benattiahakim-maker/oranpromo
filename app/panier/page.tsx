@@ -3,6 +3,7 @@ import PanierCommande, { type ProfilPanier } from "@/components/PanierCommande";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { lireProfilClient, profilComplet } from "@/lib/clients";
 import { modeConnexionClient } from "@/lib/telephone";
+import { getTextes } from "@/lib/langue-serveur";
 
 export const metadata = { title: "Mon panier", robots: { index: false, follow: false } };
 
@@ -16,7 +17,7 @@ export default async function Panier() {
       telephoneVerifie: Boolean(lu.telephone_verifie_le), verificationRequise };
   } catch { /* Profil illisible : le bouton propose de se connecter, la base vérifiera à la commande. */ }
   return <><EntetePublic /><main className="mx-auto w-full max-w-lg bg-blanc pb-6 text-noir">
-    <h1 className="pt-6 pb-2 text-center font-titre text-[28px] font-normal">Mon panier</h1>
+    <h1 className="pt-6 pb-2 text-center font-titre text-[28px] font-normal">{(await getTextes()).panier.titre}</h1>
     <PanierCommande profil={profil} />
   </main></>;
 }

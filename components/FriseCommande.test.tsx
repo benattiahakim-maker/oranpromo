@@ -11,3 +11,14 @@ describe("frise du suivi (US-20.2)", () => {
     expect(etapes.map(e => e.textContent)).toEqual(["Demandéeven. 9 oct. · 13:05« Samedi »", "Confirméeven. 9 oct. · 13:30", "Prête (à venir)", "Récupérée (à venir)"]);
   });
 });
+
+describe("US-23 : suivi en arabe", () => {
+  it("étapes traduites", async () => {
+    const { default: FournisseurTextes } = await import("./FournisseurTextes");
+    const { textesDe } = await import("@/lib/textes");
+    const { render: rendu, screen: ecran } = await import("@testing-library/react");
+    rendu(<FournisseurTextes langue="ar" textes={textesDe("ar")}><FriseCommande statut="confirmee" suivi={[{ statut: "demandee", date: "2026-10-09T10:00:00Z", note: null, auteur: "client" }, { statut: "confirmee", date: "2026-10-09T10:05:00Z", note: null, auteur: "client" }]} /></FournisseurTextes>);
+    expect(ecran.getByText("تأكّد")).toBeTruthy();
+    expect(ecran.getByText("واجد (من بعد)")).toBeTruthy();
+  });
+});

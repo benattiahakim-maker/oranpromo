@@ -73,3 +73,15 @@ describe("panier et commande (US-20.2)", () => {
     expect(screen.queryByLabelText("Téléphone WhatsApp")).not.toBeInTheDocument();
   });
 });
+
+describe("US-23 : panier en arabe", () => {
+  it("bouton « اطلب » (texte validé), total en دج, mention « الخلاص في الحانوت »", async () => {
+    const { default: FournisseurTextes } = await import("./FournisseurTextes");
+    const { textesDe } = await import("@/lib/textes");
+    render(<FournisseurTextes langue="ar" textes={textesDe("ar")}><PanierCommande profil={complet} /></FournisseurTextes>);
+    expect(screen.getByRole("button", { name: "اطلب" })).toBeInTheDocument();
+    expect(screen.getByText("\u20668\u00a0700\u2069\u00a0دج", { normalizer: texte => texte })).toBeInTheDocument();
+    expect(screen.getByText(/الخلاص في الحانوت/)).toBeInTheDocument();
+    expect(screen.getByText("المجموع")).toBeInTheDocument();
+  });
+});

@@ -26,4 +26,21 @@ describe("US-23 : dictionnaires", () => {
     expect(ar.erreur.titre).toBe("كاين مشكل");
     expect(ar.erreur.reessayer).toBe("عاود جرّب");
   });
+  it("les textes validés par le propriétaire (9/10) sont repris tels quels", () => {
+    expect(ar.accueil.voirPromos).toBe("شوف التخفيضات"); // 1
+    expect(ar.fiche.ajouter).toBe("زيد للسلة"); // 2
+    expect(ar.panier.commander).toBe("اطلب"); // 3
+    expect(ar.fiche.confirmation).toContain("الخلاص في الحانوت"); // 4
+    expect(ar.panier.mention).toContain("الخلاص في الحانوت");
+    expect(ar.commandes.titresSuivi.prete).toBe("طلبك راهو واجد"); // 5
+    expect(ar.noShows.contester).toBe("اعترض"); // 6
+    expect(ar.fiche.plusDisponible).toBe("هاد السلعة ما بقاتش"); // 7
+    expect(`${ar.erreur.titre} · ${ar.erreur.reessayer}`).toBe("كاين مشكل · عاود جرّب"); // 9
+  });
+  it("chaque catégorie et chaque univers a sa traduction", async () => {
+    const { CATEGORIES_ARTICLE, UNIVERS, GENRES_ARTICLE } = await import("@/lib/article");
+    for (const c of CATEGORIES_ARTICLE) { expect(fr.listes.categories[c]).toBe(c); expect(ar.listes.categories[c]).toBeTruthy(); }
+    for (const u of UNIVERS) expect(fr.listes.univers[u.cle]).toBe(u.nom);
+    for (const g of GENRES_ARTICLE) expect(ar.listes.genres[g]).toBeTruthy();
+  });
 });

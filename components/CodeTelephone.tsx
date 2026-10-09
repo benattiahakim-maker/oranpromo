@@ -6,11 +6,14 @@ import { envoyerCodeVerification, verifierCodeVerification } from "@/app/compte/
 import { telephoneLisible } from "@/lib/clients";
 import { MESSAGE_TELEPHONE_INVALIDE, nettoyerCode, normaliserTelephoneClient } from "@/lib/telephone";
 import Turnstile from "./Turnstile";
+import { remplir } from "@/lib/langue";
+import { useTextes } from "./FournisseurTextes";
 
 // US-21.2 : numéro → code à 6 chiffres (WhatsApp uniquement : pas de SMS, décision du propriétaire).
 // « connexion » : se connecter ou créer un compte (captcha Turnstile) ; « verification » : compte déjà connecté.
 export default function CodeTelephone({ usage, suite = null, numeroInitial = null, onVerifie }: { usage: "connexion" | "verification"; suite?: string | null; numeroInitial?: string | null; onVerifie?: () => void }) {
   const router = useRouter();
+  const t = useTextes().code;
   const cleTurnstile = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
   const captcha = usage === "connexion" && cleTurnstile !== "";
   const [etape, setEtape] = useState<"numero" | "code">("numero");
@@ -29,13 +32,13 @@ export default function CodeTelephone({ usage, suite = null, numeroInitial = nul
     setMessage("");
     const normalise = normaliserTelephoneClient(saisie);
     if (!normalise) { setErreur(MESSAGE_TELEPHONE_INVALIDE); return; }
-    if (captcha && !jeton) { setErreur("Cochez d’abord le contrôle anti-robot ci-dessous."); return; }
+    if (captcha && !jeton) { setErreur(t.antiRobot); return; }
     verrou.current = true; setEnCours(true); setErreur("");
     try {
       const resultat = usage === "connexion" ? await envoyerCodeConnexion(normalise, jeton) : await envoyerCodeVerification(normalise);
       if (resultat.succes) { setNumero(resultat.numero ?? normalise); setCode(""); setEtape("code"); setMessage(resultat.message); }
       else setErreur(resultat.message);
-    } catch { setErreur("Impossible d’envoyer le code. Vérifiez votre connexion et réessayez."); }
+    } catch { setErreur(t.envoiImpossible); }
     finally {
       verrou.current = false; setEnCours(false);
       if (captcha) { setJeton(null); setReinitialiser(n => n + 1); } // un jeton Turnstile ne sert qu'une fois
@@ -46,7 +49,7 @@ export default function CodeTelephone({ usage, suite = null, numeroInitial = nul
     event.preventDefault();
     if (verrou.current || !numero) return;
     const propre = nettoyerCode(code);
-    if (!propre) { setErreur("Saisissez les 6 chiffres du code reçu."); return; }
+    if (!propre) { setErreur(t.saisir); return; }
     verrou.current = true; setEnCours(true); setErreur(""); setMessage("");
     try {
       if (usage === "connexion") {
@@ -61,28 +64,28 @@ export default function CodeTelephone({ usage, suite = null, numeroInitial = nul
         onVerifie?.();
         router.refresh();
       }
-    } catch { setErreur("Impossible de vérifier le code. Vérifiez votre connexion et réessayez."); }
+    } catch { setErreur(t.verificationImpossible); }
     finally { verrou.current = false; setEnCours(false); }
   }
 
   const champ = "box-border min-h-[50px] w-full rounded-none border border-trait bg-blanc p-3 font-[inherit] text-base text-noir";
   if (etape === "code" && numero) return <form noValidate onSubmit={verifier} className="flex flex-col gap-3 text-start">
-    <p role="status" className="m-0 text-sm leading-[1.6]">{message || `Code envoyé au ${telephoneLisible(numero)}.`}</p>
-    <label htmlFor="code-telephone" className="etiquette text-xs">Code à 6 chiffres</label>
-    <input id="code-telephone" inputMode="numeric" autoComplete="one-time-code" maxLength={7} value={code} disabled={enCours}
+    <p role="status" className="m-0 text-sm leading-[1.6]">{message || remplir(t.envoye, { numero: `\u2066${telephoneLisible(numero)}\u2069` })}</p>
+    <label htmlFor="code-telephone" className="etiquette text-xs">{t.code}</label>
+    <input id="code-telephone" dir="ltr" inputMode="numeric" autoComplete="one-time-code" maxLength={7} value={code} disabled={enCours}
       onChange={e => { setCode(e.target.value); setErreur(""); }} aria-invalid={Boolean(erreur)} className={`${champ} tracking-[0.3em]`} />
     {erreur && <p role="alert" className="m-0 text-sm">{erreur}</p>}
-    <button type="submit" disabled={enCours} className="etiquette min-h-[54px] bg-noir px-3 text-xs text-blanc disabled:opacity-50">{enCours ? "Vérification…" : "Valider le code"}</button>
-    <button type="button" disabled={enCours} onClick={() => { setEtape("numero"); setErreur(""); setMessage(""); }} className="min-h-11 text-sm text-gris underline">Changer de numéro ou recevoir un nouveau code</button>
+    <button type="submit" disabled={enCours} className="etiquette min-h-[54px] bg-noir px-3 text-xs text-blanc disabled:opacity-50">{enCours ? t.verification : t.valider}</button>
+    <button type="button" disabled={enCours} onClick={() => { setEtape("numero"); setErreur(""); setMessage(""); }} className="min-h-11 text-sm text-gris underline">{t.changer}</button>
   </form>;
 
   return <form noValidate onSubmit={e => { e.preventDefault(); void envoyer(); }} className="flex flex-col gap-3 text-start">
-    <label htmlFor="numero-telephone" className="etiquette text-xs">Numéro de mobile</label>
-    <input id="numero-telephone" type="tel" inputMode="tel" autoComplete="tel" placeholder="0555 12 34 56" value={saisie} disabled={enCours}
+    <label htmlFor="numero-telephone" className="etiquette text-xs">{t.numero}</label>
+    <input id="numero-telephone" dir="ltr" type="tel" inputMode="tel" autoComplete="tel" placeholder="0555 12 34 56" value={saisie} disabled={enCours}
       onChange={e => { setSaisie(e.target.value); setErreur(""); }} aria-invalid={Boolean(erreur)} aria-describedby="aide-numero-telephone" className={champ} />
-    <p id="aide-numero-telephone" className="m-0 text-[13px] text-gris">Mobile algérien uniquement (05, 06 ou 07). Vous recevez un code à 6 chiffres sur WhatsApp.</p>
+    <p id="aide-numero-telephone" className="m-0 text-[13px] text-gris">{t.aide}</p>
     {captcha && <Turnstile cle={cleTurnstile} onJeton={setJeton} reinitialiser={reinitialiser} />}
     {erreur && <p role="alert" className="m-0 text-sm">{erreur}</p>}
-    <button type="submit" disabled={enCours || (captcha && !jeton)} className="etiquette min-h-[54px] bg-noir px-3 text-xs text-blanc disabled:opacity-50">{enCours ? "Envoi en cours…" : "Recevoir le code sur WhatsApp"}</button>
+    <button type="submit" disabled={enCours || (captcha && !jeton)} className="etiquette min-h-[54px] bg-noir px-3 text-xs text-blanc disabled:opacity-50">{enCours ? t.envoi : t.recevoir}</button>
   </form>;
 }

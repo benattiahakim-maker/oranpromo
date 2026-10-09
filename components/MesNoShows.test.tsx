@@ -64,3 +64,14 @@ describe("contester un no-show depuis /compte", () => {
     expect(screen.queryByRole("button", { name: "Contester" })).not.toBeInTheDocument();
   });
 });
+
+describe("US-23 : contestation en arabe", () => {
+  it("bouton « اعترض » (texte validé) et date en arabe", async () => {
+    const { default: FournisseurTextes } = await import("./FournisseurTextes");
+    const { textesDe } = await import("@/lib/textes");
+    render(<FournisseurTextes langue="ar" textes={textesDe("ar")}><MesNoShows noShows={[base]} maintenant={maintenant} /></FournisseurTextes>);
+    expect(screen.getByRole("button", { name: "اعترض" })).toBeInTheDocument();
+    expect(screen.getByText(/الطلب رقم 12/)).toBeInTheDocument();
+    expect(screen.getByText(/أكتوبر · 11:00/)).toBeInTheDocument();
+  });
+});
