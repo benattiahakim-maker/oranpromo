@@ -29,6 +29,8 @@ export const ar: Textes = {
   listes: {
     univers: { femme: "نساء", homme: "رجال", enfant: "أطفال", beaute: "تجميل" },
     genres: { homme: "رجال", femme: "نساء", enfant: "أطفال", mixte: "للجميع" },
+    genresBeaute: { femme: "ليها", homme: "ليه", mixte: "للجوج" },
+    raccourcisBeaute: { "Parfums": "عطور", "Maquillage": "ماكياج", "Soins visage et corps": "العناية", "Cheveux": "الشعر", "Hammam et traditionnel": "حمّام" },
     groupesCategories: { mode: "لبسة", beaute: "تجميل" },
     categories: {
       "T-shirts et polos": "تيشيرتات وبولو",
@@ -96,6 +98,11 @@ export const ar: Textes = {
     unResultat: "النتائج: {n}",
     resultats: "النتائج: {n}",
     aucun: "ما لقينا حتى سلعة. جرّب كلمات أخرى ولا امسح الفلاتر.",
+    aucunBeaute: "ما كاين حتى منتوج تجميل دابا.",
+    contenance: "الحجم",
+    pour: "لمن",
+    tout: "كامل",
+    categoriesBeaute: "أصناف التجميل",
     pagination: "صفحات الكتالوغ",
     precedent: "السابق",
     suivant: "التالي",

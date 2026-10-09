@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
 import { prixAffiche, promoActive, type Promo } from "./prix";
-import { CATEGORIES_ARTICLE, CATEGORIES_BEAUTE, CATEGORIES_MODE, UNIVERS, type CleUnivers } from "./article";
+import { CATEGORIES_ARTICLE, CATEGORIES_BEAUTE, CATEGORIES_MODE, TAILLES_ARTICLE, TAILLE_UNIQUE, UNIVERS, estCategorieBeaute, type CleUnivers } from "./article";
 
 export type CarteArticle = { id: string; titre: string; description: string | null; categorie: string; genre: string; prix: number; cree_le: string; boutique: { nom: string; quartier: string }; photo: string | null; tailles: string[]; promo: Promo | null };
 
@@ -64,15 +64,44 @@ export function trierCategories(categories: string[]): string[] {
   return [...new Set(categories)].sort((a, b) => rang(a) - rang(b) || a.localeCompare(b, "fr"));
 }
 
+// US-25.2 : le catalogue est « en mode beauté » quand l'univers Beauté ou une catégorie beauté est choisi :
+// filtre « Contenance » (au lieu de « Taille ») et genre « Pour elle / Pour lui / Mixte ».
+export function catalogueBeaute(filtres: Pick<FiltresCatalogue, "univers" | "categorie">): boolean {
+  return filtres.univers === "beaute" || Boolean(filtres.categorie && estCategorieBeaute(filtres.categorie));
+}
+
+// Genres retenus par le filtre « genre ». En beauté (décision du propriétaire du 9/10), « Pour elle » et
+// « Pour lui » incluent les produits mixtes ; ailleurs, égalité stricte (inchangé).
+export function genresFiltres(filtres: FiltresCatalogue): string[] | null {
+  if (!filtres.genre) return null;
+  if (catalogueBeaute(filtres) && (filtres.genre === "femme" || filtres.genre === "homme")) return [filtres.genre, "mixte"];
+  return [filtres.genre];
+}
+
+const rangUnique = (v: string) => v === TAILLE_UNIQUE ? 1 : 0;
+
+// US-25.2 : contenances triées par volume (5 ml avant 50 ml), les valeurs inconnues ensuite (ordre alphabétique), « Unique » à la fin.
+export function trierContenances(valeurs: string[]): string[] {
+  const volume = (v: string) => { const m = /^(\d+) ml$/.exec(v); return m ? Number(m[1]) : Number.POSITIVE_INFINITY; };
+  return [...new Set(valeurs)].sort((a, b) => rangUnique(a) - rangUnique(b) || volume(a) - volume(b) || a.localeCompare(b, "fr"));
+}
+
+// US-25.2 : tailles de vêtements XS → 3XL, puis pointures et tailles chiffrées (36 avant 100), puis le reste, « Unique » à la fin.
+export function trierTailles(valeurs: string[]): string[] {
+  const rang = (v: string) => { const i = TAILLES_ARTICLE.findIndex(t => t === v); if (i >= 0) return i; return /^\d+$/.test(v) ? 100 + Number(v) : Number.POSITIVE_INFINITY; };
+  return [...new Set(valeurs)].sort((a, b) => rangUnique(a) - rangUnique(b) || rang(a) - rang(b) || a.localeCompare(b, "fr"));
+}
+
 export function filtrerCatalogue(articles: CarteArticle[], filtres: FiltresCatalogue, maintenant = new Date()): CarteArticle[] {
   const recherche = normaliserRecherche(filtres.q ?? "");
+  const genres = genresFiltres(filtres);
   return articles.filter(article => {
     const prix = prixAffiche(article.prix, article.promo, maintenant);
     return (!estUnivers(filtres.univers) || articleDansUnivers(article, filtres.univers))
       && (!recherche || normaliserRecherche(`${article.titre} ${article.description ?? ""} ${article.categorie}`).includes(recherche))
       && (!filtres.categorie || article.categorie === filtres.categorie)
       && (!filtres.taille || article.tailles.includes(filtres.taille))
-      && (!filtres.genre || article.genre === filtres.genre)
+      && (!genres || genres.includes(article.genre))
       && (filtres.min === undefined || prix >= filtres.min)
       && (filtres.max === undefined || prix <= filtres.max)
       && (!filtres.quartier || article.boutique.quartier === filtres.quartier)
@@ -93,7 +122,8 @@ export async function chargerCatalogue(client: SupabaseClient<Database>, filtres
     requete = requete.in("categorie", [...categories]);
     if (genres) requete = requete.in("genre", genres as Database["public"]["Enums"]["genre_article"][]);
   }
-  if (filtres.genre) requete = requete.eq("genre", filtres.genre as Database["public"]["Enums"]["genre_article"]);
+  const genres = genresFiltres(filtres);
+  if (genres) requete = requete.in("genre", genres as Database["public"]["Enums"]["genre_article"][]);
   if (filtres.quartier) requete = requete.eq("boutiques.quartier", filtres.quartier);
   if (filtres.taille) requete = requete.eq("filtre_taille.libelle", filtres.taille).eq("filtre_taille.disponible", true);
   if (filtres.promo) requete = requete.gt("filtre_promo.date_fin", maintenant.toISOString());
@@ -102,7 +132,9 @@ export async function chargerCatalogue(client: SupabaseClient<Database>, filtres
   return filtrerCatalogue(((data ?? []) as unknown as LigneCarte[]).map(versCarte), filtres, maintenant);
 }
 
-export type OptionsCatalogue = { categories: string[]; tailles: string[]; quartiers: string[] };
+// `tailles` : tailles des articles de mode ; `contenances` : celles des articles de beauté (US-25.2), séparées
+// d'après la catégorie de l'article, jamais d'après le texte « ml ».
+export type OptionsCatalogue = { categories: string[]; tailles: string[]; contenances: string[]; quartiers: string[] };
 
 // Valeurs proposées dans les listes de filtres : lecture légère, limitée aux articles publics.
 export async function chargerOptionsCatalogue(client: SupabaseClient<Database>, maintenant = new Date()): Promise<OptionsCatalogue> {
@@ -112,5 +144,6 @@ export async function chargerOptionsCatalogue(client: SupabaseClient<Database>, 
   if (error) throw new Error("Impossible de charger le catalogue.");
   const lignes = (data ?? []) as unknown as { categorie: string; boutiques: { quartier: string }; tailles: { libelle: string; disponible: boolean }[] }[];
   const trier = (valeurs: string[]) => [...new Set(valeurs)].sort();
-  return { categories: trierCategories(lignes.map(l => l.categorie)), tailles: trier(lignes.flatMap(l => l.tailles.filter(t => t.disponible).map(t => t.libelle))), quartiers: trier(lignes.map(l => l.boutiques.quartier)) };
+  const disponibles = (beaute: boolean) => lignes.filter(l => estCategorieBeaute(l.categorie) === beaute).flatMap(l => l.tailles.filter(t => t.disponible).map(t => t.libelle));
+  return { categories: trierCategories(lignes.map(l => l.categorie)), tailles: trierTailles(disponibles(false)), contenances: trierContenances(disponibles(true)), quartiers: trier(lignes.map(l => l.boutiques.quartier)) };
 }
