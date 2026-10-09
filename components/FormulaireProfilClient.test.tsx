@@ -27,3 +27,14 @@ describe("profil client (US-20.2, US-21.2)", () => {
     expect(enregistrerProfil).not.toHaveBeenCalled();
   });
 });
+
+describe("US-23 : erreurs du profil en arabe", () => {
+  it("nom vide : erreur en arabe", async () => {
+    const { default: FournisseurTextes } = await import("./FournisseurTextes");
+    const { textesDe } = await import("@/lib/textes");
+    render(<FournisseurTextes langue="ar" textes={textesDe("ar")}><FormulaireProfilClient nom="" telephone="+213555123456" telephoneModifiable={false} /></FournisseurTextes>);
+    fireEvent.click(screen.getByRole("button", { name: textesDe("ar").profil.enregistrer }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("الاسم لازم يكون من 2 حتى 60 حرف.");
+    expect(enregistrerNom).not.toHaveBeenCalled();
+  });
+});

@@ -3,10 +3,11 @@ import { enregistrerMesure, envoyerSignalement } from "./actions";
 
 const { mesurer, signaler, ErreurSignalement } = vi.hoisted(() => ({ mesurer: vi.fn(), signaler: vi.fn(), ErreurSignalement: class ErreurSignalement extends Error {} }));
 const entetes = new Headers({ "x-real-ip": "105.98.1.2" });
-vi.mock("next/headers", () => ({ headers: async () => entetes }));
+const { cookie } = vi.hoisted(() => ({ cookie: { langue: "fr" } }));
+vi.mock("next/headers", () => ({ headers: async () => entetes, cookies: async () => ({ get: (nom: string) => (nom === "langue" ? { value: cookie.langue } : undefined) }) }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({}) }));
 vi.mock("@/lib/visiteurs", () => ({ mesurerEvenement: mesurer, signalerArticle: signaler, ErreurSignalement, MESSAGE_SIGNALEMENT_ECHEC: "Le signalement n’a pas pu être envoyé. Réessayez." }));
-beforeEach(() => { vi.clearAllMocks(); });
+beforeEach(() => { vi.clearAllMocks(); cookie.langue = "fr"; });
 
 describe("actions serveur des visiteurs (limites par visiteur)", () => {
   it("mesure : transmet la session et les en-têtes de la requête", async () => {
@@ -25,5 +26,13 @@ describe("actions serveur des visiteurs (limites par visiteur)", () => {
     expect(await envoyerSignalement("a", "arnaque", "")).toEqual({ succes: false, message: "Vous avez déjà signalé cet article, merci. Il sera examiné rapidement." });
     signaler.mockRejectedValue(new Error("secret interne"));
     expect((await envoyerSignalement("a", "arnaque", "")).message).toBe("Le signalement n’a pas pu être envoyé. Réessayez.");
+  });
+});
+
+describe("US-23 : signalement en arabe", () => {
+  it("remercie en arabe", async () => {
+    cookie.langue = "ar";
+    signaler.mockResolvedValue(undefined);
+    expect(await envoyerSignalement("a", "arnaque", "")).toEqual({ succes: true, message: "يعطيك الصحة، راح نشوفو." });
   });
 });

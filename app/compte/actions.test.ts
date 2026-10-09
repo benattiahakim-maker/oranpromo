@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { contesterMonNoShow, enregistrerNom, envoyerCodeVerification, verifierCodeVerification } from "./actions";
 const { contester, nomClient, envoyerVerif, verifierVerif, ErreurCode } = vi.hoisted(() => ({ contester: vi.fn(), nomClient: vi.fn(), envoyerVerif: vi.fn(), verifierVerif: vi.fn(), ErreurCode: class ErreurCode extends Error {} }));
+const { cookie } = vi.hoisted(() => ({ cookie: { langue: "fr" } }));
+vi.mock("next/headers", () => ({ cookies: async () => ({ get: (nom: string) => (nom === "langue" ? { value: cookie.langue } : undefined) }) }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({}) }));
 vi.mock("@/lib/clients", () => ({ contesterNoShow: contester, enregistrerNomClient: nomClient, enregistrerProfilClient: vi.fn(), ErreurValidationProfil: class extends Error {} }));
 vi.mock("@/lib/codes-telephone", () => ({ envoyerCodeVerificationClient: envoyerVerif, verifierCodeVerificationClient: verifierVerif, ErreurCode, MESSAGE_CODE_ENVOYE: "Code envoyé sur WhatsApp." }));
 vi.mock("@/lib/commandes", () => ({ annulerCommandeClient: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
-beforeEach(() => { vi.clearAllMocks(); });
+beforeEach(() => { vi.clearAllMocks(); cookie.langue = "fr"; });
 describe("contester un no-show (action serveur)", () => {
   it("transmet la contestation", async () => {
     contester.mockResolvedValue(undefined);

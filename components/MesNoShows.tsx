@@ -6,6 +6,7 @@ import { aUneContestationEnAttente, DELAI_CONTESTATION_JOURS, delaiContestationD
 import { formaterDateHeure } from "@/lib/commandes";
 import { remplir } from "@/lib/langue";
 import { useLangue, useTextes } from "./FournisseurTextes";
+import { traduireMessage } from "@/lib/textes/messages";
 
 // Contestation d’un no-show : le client voit ses commandes déclarées « non récupérées » et peut en contester
 // chacune une fois, avec un motif court. OranPromo (l’admin) confirme ou annule.
@@ -37,7 +38,7 @@ function LigneNoShow({ noShow, delaiDepasse, autreEnAttente }: { noShow: MonNoSh
   async function envoyer(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (verrou.current) return;
-    const erreur = erreurMotifContestation(motif);
+    const erreur = traduireMessage(erreurMotifContestation(motif), langue);
     if (erreur) { setMessage(erreur); return; }
     verrou.current = true; setEnCours(true); setMessage("");
     try { const resultat = await contesterMonNoShow(noShow.id, motif); setMessage(resultat.message); if (resultat.succes) { setOuvert(false); router.refresh(); } }

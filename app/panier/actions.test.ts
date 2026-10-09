@@ -3,11 +3,13 @@ import { commanderPanier } from "./actions";
 
 const { getUser, passer, after, envoyer } = vi.hoisted(() => ({ getUser: vi.fn(), passer: vi.fn(), after: vi.fn((tache: () => unknown) => { void tache(); }), envoyer: vi.fn() }));
 vi.mock("next/server", () => ({ after }));
+const { cookie } = vi.hoisted(() => ({ cookie: { langue: "fr" } }));
+vi.mock("next/headers", () => ({ cookies: async () => ({ get: (nom: string) => (nom === "langue" ? { value: cookie.langue } : undefined) }) }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ auth: { getUser } }) }));
 vi.mock("@/lib/commandes", () => ({ passerCommande: passer }));
 vi.mock("@/lib/notifications", () => ({ envoyerMessagesCommande: envoyer }));
 const ligne = { article_id: "a1", taille: "M", quantite: 2 };
-beforeEach(() => { vi.clearAllMocks(); getUser.mockResolvedValue({ data: { user: { id: "k1" } }, error: null }); passer.mockResolvedValue("c1"); });
+beforeEach(() => { vi.clearAllMocks(); cookie.langue = "fr"; getUser.mockResolvedValue({ data: { user: { id: "k1" } }, error: null }); passer.mockResolvedValue("c1"); });
 
 describe("commander le panier (US-20.2, US-20.5)", () => {
   it("passe la commande puis prévient la boutique sur WhatsApp après la réponse", async () => {
@@ -25,5 +27,15 @@ describe("commander le panier (US-20.2, US-20.5)", () => {
     getUser.mockResolvedValue({ data: { user: null }, error: null });
     expect(await commanderPanier("b1", [ligne], "")).toEqual({ connexion: true, erreur: "Connectez-vous pour commander." });
     expect(passer).not.toHaveBeenCalled();
+  });
+});
+
+describe("US-23 : erreurs de commande en arabe", () => {
+  it("erreur de la base avec valeurs, et connexion demandée", async () => {
+    cookie.langue = "ar";
+    passer.mockRejectedValueOnce(new Error("Il ne reste que 1 pièce(s) en taille M pour « Polo bleu »."));
+    expect(await commanderPanier("b1", [ligne], "")).toEqual({ erreur: "بقاو غير 1 في مقاس M لـ « Polo bleu »." });
+    getUser.mockResolvedValueOnce({ data: { user: null }, error: null });
+    expect(await commanderPanier("b1", [ligne], "")).toEqual({ connexion: true, erreur: "ادخل لحسابك باش تطلب." });
   });
 });

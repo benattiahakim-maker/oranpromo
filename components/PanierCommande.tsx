@@ -11,6 +11,7 @@ import { abonnerPanier, changerQuantitePanier, lignesCommande, lirePanier, NOTE_
 import { messageNoShows } from "@/lib/clients";
 import { remplir } from "@/lib/langue";
 import { useLangue, useTextes } from "./FournisseurTextes";
+import { traduireMessage } from "@/lib/textes/messages";
 
 // US-21.2 : verificationRequise = mode téléphone (CONNEXION_CLIENT=telephone) ; telephoneVerifie = numéro vérifié par code.
 export type ProfilPanier = { nom: string | null; telephone: string | null; complet: boolean; bloque: boolean; noShows: number; telephoneVerifie?: boolean; verificationRequise?: boolean } | null;
@@ -42,7 +43,7 @@ export default function PanierCommande({ profil }: { profil: ProfilPanier }) {
     finally { verrou.current = false; setEnCours(false); }
   }
 
-  const avertissement = profil ? messageNoShows(profil.noShows, profil.bloque) : null;
+  const avertissement = profil ? traduireMessage(messageNoShows(profil.noShows, profil.bloque), langue) : null;
   return <div className="px-6">
     <p className="etiquette pb-2 text-center text-gris">{panier.boutiqueNom}</p>
     <ul aria-label={t.articles}>{panier.lignes.map(ligne => <li key={`${ligne.articleId}|${ligne.taille}`} className="flex items-center gap-3 border-b border-trait py-3">

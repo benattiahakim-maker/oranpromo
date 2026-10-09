@@ -7,13 +7,15 @@ import { telephoneLisible } from "@/lib/clients";
 import { MESSAGE_TELEPHONE_INVALIDE, nettoyerCode, normaliserTelephoneClient } from "@/lib/telephone";
 import Turnstile from "./Turnstile";
 import { remplir } from "@/lib/langue";
-import { useTextes } from "./FournisseurTextes";
+import { useLangue, useTextes } from "./FournisseurTextes";
+import { traduireMessage } from "@/lib/textes/messages";
 
 // US-21.2 : numéro → code à 6 chiffres (WhatsApp uniquement : pas de SMS, décision du propriétaire).
 // « connexion » : se connecter ou créer un compte (captcha Turnstile) ; « verification » : compte déjà connecté.
 export default function CodeTelephone({ usage, suite = null, numeroInitial = null, onVerifie }: { usage: "connexion" | "verification"; suite?: string | null; numeroInitial?: string | null; onVerifie?: () => void }) {
   const router = useRouter();
   const t = useTextes().code;
+  const langue = useLangue();
   const cleTurnstile = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
   const captcha = usage === "connexion" && cleTurnstile !== "";
   const [etape, setEtape] = useState<"numero" | "code">("numero");
@@ -31,7 +33,7 @@ export default function CodeTelephone({ usage, suite = null, numeroInitial = nul
     if (verrou.current) return;
     setMessage("");
     const normalise = normaliserTelephoneClient(saisie);
-    if (!normalise) { setErreur(MESSAGE_TELEPHONE_INVALIDE); return; }
+    if (!normalise) { setErreur(traduireMessage(MESSAGE_TELEPHONE_INVALIDE, langue)); return; }
     if (captcha && !jeton) { setErreur(t.antiRobot); return; }
     verrou.current = true; setEnCours(true); setErreur("");
     try {

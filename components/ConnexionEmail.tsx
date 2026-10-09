@@ -3,10 +3,12 @@
 import { useRef, useState } from "react";
 import { emailValide, envoyerLienConnexion, ErreurConnexion } from "@/lib/connexion";
 import Turnstile from "./Turnstile";
-import { useTextes } from "./FournisseurTextes";
+import { useLangue, useTextes } from "./FournisseurTextes";
+import { traduireMessage } from "@/lib/textes/messages";
 
 export default function ConnexionEmail({ suite = "/espace" }: { suite?: string }) {
   const t = useTextes().connexion;
+  const langue = useLangue();
   const [email, setEmail] = useState("");
   const [erreur, setErreur] = useState("");
   const [message, setMessage] = useState("");
@@ -27,7 +29,7 @@ export default function ConnexionEmail({ suite = "/espace" }: { suite?: string }
     try {
       await envoyerLienConnexion(email, window.location.origin, suite, jeton);
       setMessage(t.emailEnvoye);
-    } catch (error) { setErreur(error instanceof ErreurConnexion ? error.message : t.emailImpossible); }
+    } catch (error) { setErreur(error instanceof ErreurConnexion ? traduireMessage(error.message, langue) : t.emailImpossible); }
     finally {
       envoi.current = false; setEnCours(false);
       if (cleTurnstile) { setJeton(null); setReinitialiser(n => n + 1); } // un jeton ne sert qu'une fois
