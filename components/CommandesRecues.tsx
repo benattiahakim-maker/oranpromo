@@ -15,7 +15,8 @@ export default function CommandesRecues({ commandes, boutique }: { commandes: Co
   return <ul>{commandes.map(c => <li key={c.id}><CarteCommande commande={c} boutique={boutique} /></li>)}</ul>;
 }
 
-function CarteCommande({ commande, boutique }: { commande: CommandeRecue; boutique: string }) {
+/** Détail d’une commande avec ses boutons ; US-28.1 : réutilisé, sans changement de règle, sous la ligne dépliée du tableau (`dansTableau`). */
+export function CarteCommande({ commande, boutique, dansTableau = false }: { commande: CommandeRecue; boutique: string; dansTableau?: boolean }) {
   const router = useRouter();
   const [annulation, setAnnulation] = useState(false);
   const [motif, setMotif] = useState<MotifBoutique | null>(null);
@@ -55,8 +56,9 @@ function CarteCommande({ commande, boutique }: { commande: CommandeRecue; boutiq
   }
 
   const motifAffiche = libelleMotif(commande.motif_annulation);
-  return <article aria-label={`Commande n° ${commande.numero}`} className="flex flex-col gap-1.5 border-b border-trait py-4">
-    <div className="flex items-start justify-between gap-3"><span className="min-w-0 break-words text-sm">N° {commande.numero} · {commande.client_nom}</span><span className="etiquette shrink-0 whitespace-nowrap text-right">{STATUTS_COMMANDE[commande.statut]}</span></div>
+  return <article aria-label={`Commande n° ${commande.numero}`} className={`flex flex-col gap-1.5 ${dansTableau ? "max-w-[560px] py-1" : "border-b border-trait py-4"}`}>
+    {!dansTableau && <div className="flex items-start justify-between gap-3"><span className="min-w-0 break-words text-sm">N° {commande.numero} · {commande.client_nom}</span><span className="etiquette shrink-0 whitespace-nowrap text-right">{STATUTS_COMMANDE[commande.statut]}</span></div>}
+    {dansTableau && <p className="text-sm">{commande.client_nom} · {STATUTS_COMMANDE[commande.statut]}</p>}
     {commande.statut === "prete" && commande.expire_le && <p className="text-xs text-gris">À récupérer jusqu’au {formaterDateHeure(commande.expire_le)}</p>}
     <p className="text-xs text-gris">{formaterDateHeure(commande.cree_le)} · <a href={lienContactClient(commande.client_telephone, commande.numero, boutique)} target="_blank" rel="noopener noreferrer" className="underline">{telephoneLisible(commande.client_telephone)} · WhatsApp</a></p>
     <ul className="text-[13px] font-light">{commande.lignes_commande.map(l => <li key={l.id}>{l.titre} · {l.taille} × {l.quantite} · {formaterPrix(l.prix_unitaire * l.quantite)}</li>)}</ul>
