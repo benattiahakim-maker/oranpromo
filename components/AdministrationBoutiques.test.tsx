@@ -23,5 +23,10 @@ describe("US-16 : interface boutiques", () => {
     rattacherCompteBoutique.mockResolvedValue({ succes: false, message: "Le commerçant doit d’abord se connecter une fois." }); render(<BoutiquesAdministration boutiques={[boutique]} role="admin" />);
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "vendeur@example.com" } }); fireEvent.click(screen.getByRole("button", { name: "Rattacher" })); await waitFor(() => expect(rattacherCompteBoutique).toHaveBeenCalledWith("boutique", "vendeur@example.com")); expect(await screen.findByRole("alert")).toHaveTextContent("se connecter une fois");
   });
+  it("nom : champ limité à 80 caractères, message clair au-delà", () => {
+    render(<NouvelleBoutique />); const champ = screen.getAllByRole("textbox")[0]; expect(champ).toHaveAttribute("name", "nom"); expect(champ).toHaveAttribute("maxLength", "80");
+    fireEvent.change(champ, { target: { value: "A".repeat(81) } }); fireEvent.click(screen.getByRole("button", { name: "Créer la boutique" }));
+    expect(screen.getByText("Le nom de la boutique doit contenir entre 2 et 80 caractères.")).toBeInTheDocument(); expect(ajouterBoutique).not.toHaveBeenCalled();
+  });
   it("affiche la validation sous chaque champ obligatoire", () => { render(<NouvelleBoutique />); fireEvent.click(screen.getByRole("button", { name: "Créer la boutique" })); expect(screen.getAllByRole("alert")).toHaveLength(4); expect(ajouterBoutique).not.toHaveBeenCalled(); });
 });

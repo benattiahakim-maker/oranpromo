@@ -2,7 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { validerBoutique, type ErreursBoutique, type SaisieBoutique } from "@/lib/boutique";
+import { NOM_BOUTIQUE_MAX, validerBoutique, type ErreursBoutique, type SaisieBoutique } from "@/lib/boutique";
 import { ajouterBoutique } from "@/app/admin/boutiques/actions";
 
 const vide: SaisieBoutique = { nom: "", quartier: "", adresse: "", latitude: "", longitude: "", horaires: "", whatsapp: "", instagram: "", facebook: "" };
@@ -22,7 +22,7 @@ export default function NouvelleBoutique() {
     finally { verrou.current = false; setEnCours(false); }
   }
   return <section aria-labelledby="nouvelle-boutique" className="mt-8 border-t border-trait pt-6"><h2 id="nouvelle-boutique" className="my-6 font-titre text-[28px] font-normal">Nouvelle boutique</h2>
-    <form onSubmit={event => void envoyer(event)} noValidate><fieldset disabled={enCours} className="flex min-w-0 flex-col gap-5">{champs.map(champ => <label key={champ.nom} className="etiquette">{champ.texte}<input name={champ.nom} type={champ.nom === "whatsapp" ? "tel" : "text"} inputMode={["latitude", "longitude"].includes(champ.nom) ? "decimal" : undefined} value={saisie[champ.nom]} placeholder={champ.placeholder} onChange={event => setSaisie(avant => ({ ...avant, [champ.nom]: event.target.value }))} aria-invalid={Boolean(erreurs[champ.nom])} aria-describedby={`erreur-boutique-${champ.nom}`} className="mt-2 min-h-[44px] w-full border border-trait bg-blanc px-3 py-2 text-base text-noir" />{erreurs[champ.nom] && <span role="alert" id={`erreur-boutique-${champ.nom}`} className="mt-2 block text-sm normal-case tracking-normal">{erreurs[champ.nom]}</span>}</label>)}<button type="submit" className="etiquette min-h-[44px] border border-noir bg-noir px-3 py-2 text-blanc">{enCours ? "Création…" : "Créer la boutique"}</button></fieldset></form>
+    <form onSubmit={event => void envoyer(event)} noValidate><fieldset disabled={enCours} className="flex min-w-0 flex-col gap-5">{champs.map(champ => <label key={champ.nom} className="etiquette">{champ.texte}<input name={champ.nom} type={champ.nom === "whatsapp" ? "tel" : "text"} inputMode={["latitude", "longitude"].includes(champ.nom) ? "decimal" : undefined} value={saisie[champ.nom]} maxLength={champ.nom === "nom" ? NOM_BOUTIQUE_MAX : undefined} placeholder={champ.placeholder} onChange={event => setSaisie(avant => ({ ...avant, [champ.nom]: event.target.value }))} aria-invalid={Boolean(erreurs[champ.nom])} aria-describedby={`erreur-boutique-${champ.nom}`} className="mt-2 min-h-[44px] w-full border border-trait bg-blanc px-3 py-2 text-base text-noir" />{erreurs[champ.nom] && <span role="alert" id={`erreur-boutique-${champ.nom}`} className="mt-2 block text-sm normal-case tracking-normal">{erreurs[champ.nom]}</span>}</label>)}<button type="submit" className="etiquette min-h-[44px] border border-noir bg-noir px-3 py-2 text-blanc">{enCours ? "Création…" : "Créer la boutique"}</button></fieldset></form>
     {message && <p role="status" className="mt-4">{message}</p>}{erreur && <p role="alert" className="mt-4">{erreur}</p>}
   </section>;
 }
