@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { creerClientServeur } from "@/lib/supabase/server";
+import { consommerQuotaIA, verifierAccesIA } from "@/lib/acces-ia";
 import { TRADUCTION_INDISPONIBLE, validerSaisieTraduction, validerTraductionIA } from "@/lib/ia-traduction";
 
 export const runtime = "nodejs";
@@ -7,17 +8,16 @@ const reponse = (message: string, status: number) => Response.json({ message }, 
 export async function POST(request: Request) {
   try {
     const client = await creerClientServeur();
-    const { data: { user }, error } = await client.auth.getUser();
-    if (error || !user) return reponse("Connectez-vous pour traduire une fiche.", 401);
-    const { data: profil, error: erreurProfil } = await client.from("profils").select("boutique_id").eq("id", user.id).maybeSingle();
-    if (erreurProfil) return reponse(TRADUCTION_INDISPONIBLE, 503);
-    if (!profil?.boutique_id) return reponse("Votre compte n’est rattaché à aucune boutique", 403);
+    const refus = await verifierAccesIA(client, { connexion: "Connectez-vous pour traduire une fiche.", indisponible: TRADUCTION_INDISPONIBLE });
+    if (refus) return reponse(refus.message, refus.statut);
     if (Number(request.headers.get("content-length")) > 16384) return reponse("Le texte à traduire est trop long.", 413);
     let saisie;
     try { saisie = validerSaisieTraduction(await request.json()); }
     catch (error) { return reponse(error instanceof SyntaxError ? "Envoyez un titre et une description au format JSON." : error instanceof Error ? error.message : "Vérifiez le texte à traduire.", 400); }
     const cle = process.env.ANTHROPIC_API_KEY;
     if (!cle) return reponse(TRADUCTION_INDISPONIBLE, 503);
+    const quota = await consommerQuotaIA(client, TRADUCTION_INDISPONIBLE);
+    if (quota) return reponse(quota.message, quota.statut);
     const claude = new Anthropic({ apiKey: cle, timeout: 15000, maxRetries: 0 });
     const controleur = new AbortController();
     let minuterie: ReturnType<typeof setTimeout> | undefined;

@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { creerClientNavigateur } from "@/lib/supabase/client";
-import { changerStatut, STATUTS_ARTICLE, type ArticleGere } from "@/lib/gestion-articles";
+import { changerStatut, MASQUE_PAR_MODERATION, STATUTS_ARTICLE, type ArticleGere } from "@/lib/gestion-articles";
 import { formaterPrix, prixAffiche, promoActive } from "@/lib/prix";
 import type { Enums } from "@/lib/supabase/types";
 
@@ -33,7 +33,8 @@ function LigneArticle({ article }: { article: ArticleGere }) {
       </Link>
       <div className="min-w-0 flex-1"><Link href={`/espace/articles/${article.id}`} className="block break-words text-sm font-light">{article.titre}</Link><p className="mt-1 text-sm">{formaterPrix(prixAffiche(article.prix, promo))}</p>
         {promoActive(promo) && <p className="etiquette mt-2 text-noir">PROMO</p>}
-        <label className="mt-2 block text-xs">Statut de {article.titre}<select aria-label={`Statut de ${article.titre}`} value={statut} disabled={enCours} onChange={event => void changer(event.target.value as Enums<"statut_article">)} className="mt-1 min-h-[44px] w-full border border-trait bg-blanc px-2 text-noir">{Object.entries(STATUTS_ARTICLE).map(([valeur, texte]) => <option key={valeur} value={valeur}>{texte}</option>)}</select></label>
+        <label className="mt-2 block text-xs">Statut de {article.titre}<select aria-label={`Statut de ${article.titre}`} value={statut} disabled={enCours || article.masque_par_moderation} onChange={event => void changer(event.target.value as Enums<"statut_article">)} className="mt-1 min-h-[44px] w-full border border-trait bg-blanc px-2 text-noir">{Object.entries(STATUTS_ARTICLE).map(([valeur, texte]) => <option key={valeur} value={valeur}>{texte}</option>)}</select></label>
+        {article.masque_par_moderation && <p className="mt-2 text-xs text-gris">{MASQUE_PAR_MODERATION}</p>}
       </div>
     </div>
     {enCours && <p role="status" className="mt-2 text-sm">Enregistrement…</p>}{erreur && <p role="alert" className="mt-2 text-sm">{erreur}</p>}

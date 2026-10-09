@@ -11,7 +11,7 @@ vi.mock("./PromoArticle", () => ({ default: () => null }));
 afterEach(() => { cleanup(); localStorage.clear(); vi.clearAllMocks(); });
 describe("US-15 : formulaire de modification", () => {
   it("charge le texte arabe existant et sauvegarde sa correction", async () => {
-    const article: ArticleGere = { id: "a", boutique_id: "b", titre: "Polo bleu", categorie: "Polos", genre: "homme", prix: 3500, couleur: null, description: "Manches courtes.", description_ar: "قميص أزرق\nأكمام قصيرة.", cree_le: "2026-10-09T10:00:00Z", derniere_confirmation: "2026-10-09T10:00:00Z", propose_par_ia: false, statut: "disponible", tailles: [{ id: "t", article_id: "a", libelle: "M", disponible: true }], photos: [], promos: null };
+    const article: ArticleGere = { id: "a", boutique_id: "b", titre: "Polo bleu", categorie: "Polos", genre: "homme", prix: 3500, couleur: null, description: "Manches courtes.", description_ar: "قميص أزرق\nأكمام قصيرة.", cree_le: "2026-10-09T10:00:00Z", derniere_confirmation: "2026-10-09T10:00:00Z", propose_par_ia: false, masque_par_moderation: false, statut: "disponible", tailles: [{ id: "t", article_id: "a", libelle: "M", disponible: true }], photos: [], promos: null };
     render(<ModifierArticle article={article} />);
     const zone = screen.getByRole("textbox", { name: "Texte arabe (facultatif)" });
     expect((zone as HTMLTextAreaElement).value).toBe(article.description_ar);

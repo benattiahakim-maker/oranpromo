@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { creerClientServeur } from "@/lib/supabase/server";
+import { consommerQuotaIA, verifierAccesIA } from "@/lib/acces-ia";
 import { CATEGORIES_ARTICLE, GENRES_ARTICLE, TAILLE_PHOTO_MAX } from "@/lib/article";
 import { ErreurPhotoIA, IA_INDISPONIBLE, validerFicheIA } from "@/lib/ia-fiche";
 
@@ -8,11 +9,8 @@ const reponse = (message: string, statut: number) => Response.json({ message }, 
 export async function POST(request: Request) {
   try {
     const client = await creerClientServeur();
-    const { data: { user }, error } = await client.auth.getUser();
-    if (error || !user) return reponse("Connectez-vous pour préparer une fiche.", 401);
-    const { data: profil, error: erreurProfil } = await client.from("profils").select("boutique_id").eq("id", user.id).maybeSingle();
-    if (erreurProfil) return reponse(IA_INDISPONIBLE, 503);
-    if (!profil?.boutique_id) return reponse("Votre compte n’est rattaché à aucune boutique", 403);
+    const refus = await verifierAccesIA(client, { connexion: "Connectez-vous pour préparer une fiche.", indisponible: IA_INDISPONIBLE });
+    if (refus) return reponse(refus.message, refus.statut);
     if (Number(request.headers.get("content-length")) > TAILLE_PHOTO_MAX + 65536) return reponse("La photo doit être un JPEG de 5 Mo maximum.", 413);
     let formulaire: FormData;
     try { formulaire = await request.formData(); } catch { return reponse("Envoyez une seule photo JPEG.", 400); }
@@ -24,6 +22,8 @@ export async function POST(request: Request) {
     if (image[0] !== 255 || image[1] !== 216 || image[2] !== 255) return reponse("Cette photo JPEG est invalide.", 400);
     const cle = process.env.ANTHROPIC_API_KEY;
     if (!cle) return reponse(IA_INDISPONIBLE, 503);
+    const quota = await consommerQuotaIA(client, IA_INDISPONIBLE);
+    if (quota) return reponse(quota.message, quota.statut);
     const claude = new Anthropic({ apiKey: cle, timeout: 15000, maxRetries: 0 });
     const controleur = new AbortController();
     let minuterie: ReturnType<typeof setTimeout> | undefined;

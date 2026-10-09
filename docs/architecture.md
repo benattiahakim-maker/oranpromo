@@ -47,13 +47,14 @@ Colonnes en `snake_case` français sans accents. Prix = entiers en dinars.
 | --- | --- | --- |
 | `boutiques` | vitrines | `slug` unique ; `statut` : `en_attente`, `validee`, `suspendue` ; seul un admin change le statut |
 | `profils` | un par compte connecté | `role` : `commercant`, `ambassadeur`, `admin` ; `boutique_id` ; créé automatiquement à l'inscription |
-| `articles` | articles | `statut` : `disponible`, `reserve`, `vendu`, `masque` ; `genre` : `homme`, `femme`, `enfant`, `mixte` ; `derniere_confirmation` ; `propose_par_ia` |
+| `articles` | articles | `statut` : `disponible`, `reserve`, `vendu`, `masque` ; `genre` : `homme`, `femme`, `enfant`, `mixte` ; `derniere_confirmation` ; `propose_par_ia` ; `masque_par_moderation` (seul un admin le lève) |
 | `photos` | 1 à 5 par article | `adresse`, `adresse_vignette`, `ordre` |
 | `tailles` | tailles d'un article | `libelle`, `disponible` ; unique par article |
 | `promos` | au plus une par article | `prix_promo`, `badge`, `date_fin` |
 | `evenements` | statistiques | `type` : `vue_article`, `vue_boutique`, `clic_reserver`, `partage` |
 | `signalements` | signalements clients | `statut` : `ouvert`, `traite`, `rejete` |
 | `decisions` | décisions de modération | `action`, `auteur_id`, `date` |
+| `appels_ia` | quota des routes IA | `utilisateur_id`, `date` ; aucune lecture directe, uniquement via `consommer_quota_ia()` (30 appels par heure et par compte) |
 
 Le stockage `photos` (public, 5 Mo max, jpeg/png/webp) impose le chemin `<boutique_id>/<article_id>/<fichier>`.
 
@@ -64,6 +65,10 @@ Le stockage `photos` (public, 5 Mo max, jpeg/png/webp) impose le chemin `<boutiq
 - Une promo est active si sa `date_fin` n'est pas passée ; sinon le prix normal s'applique. Calcul à la lecture (`promoActive`, `prixAffiche` dans `lib/prix.ts`).
 - Un article non confirmé depuis 21 jours n'est plus visible du public (règle dans la base).
 - Seules les boutiques validées sont publiques.
+- Seuls un admin ou un ambassadeur créent une boutique ; une fois publiée (validée ou suspendue), son nom, son WhatsApp, son slug et ses liens ne changent qu'avec un admin (règle dans la base).
+- Les dates `cree_le` et `derniere_confirmation` d'un article sont fixées par la base pour le commerçant (heure du serveur).
+- Un article masqué par la modération (`masque_par_moderation`) ne peut pas être démasqué par le commerçant (règle dans la base, rappelée dans `lib/gestion-articles.ts`).
+- Les routes IA sont réservées aux boutiques validées et limitées par compte (`lib/acces-ia.ts`).
 - L'IA ne propose jamais prix, tailles, marque ni authenticité.
 - Affichage des prix : toujours `formaterPrix()` → « 3 500 DA ».
 

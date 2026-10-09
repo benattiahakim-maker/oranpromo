@@ -61,7 +61,7 @@ export async function modererArticle(client: SupabaseClient<Database>, articleId
   if (erreurArticle || !article) throw new Error("Cet article est introuvable. Actualisez la page.");
   let effetApplique = false;
   if (action === "masquer" || action === "suspendre") {
-    const requete = action === "masquer" ? client.from("articles").update({ statut: "masque" }).eq("id", articleId) : client.from("boutiques").update({ statut: "suspendue" }).eq("id", article.boutique_id);
+    const requete = action === "masquer" ? client.from("articles").update({ statut: "masque", masque_par_moderation: true }).eq("id", articleId) : client.from("boutiques").update({ statut: "suspendue" }).eq("id", article.boutique_id);
     const { data, error } = await requete.select("id").single();
     if (error || !data) throw new Error("Impossible d’appliquer cette action. Les signalements restent ouverts.");
     effetApplique = true;

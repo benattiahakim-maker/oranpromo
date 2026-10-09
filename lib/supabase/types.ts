@@ -20,6 +20,7 @@ export type Database = {
           description_ar: string | null;
           genre: Database["public"]["Enums"]["genre_article"];
           id: string;
+          masque_par_moderation: boolean;
           prix: number;
           propose_par_ia: boolean;
           statut: Database["public"]["Enums"]["statut_article"];
@@ -35,6 +36,7 @@ export type Database = {
           description_ar?: string | null;
           genre?: Database["public"]["Enums"]["genre_article"];
           id?: string;
+          masque_par_moderation?: boolean;
           prix: number;
           propose_par_ia?: boolean;
           statut?: Database["public"]["Enums"]["statut_article"];
@@ -240,6 +242,10 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      consommer_quota_ia: {
+        Args: never;
+        Returns: boolean;
+      };
       rattacher_commercant: {
         Args: { boutique: string; email_commercant: string };
         Returns: undefined;

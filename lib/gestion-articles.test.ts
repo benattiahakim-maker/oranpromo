@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { changerStatut, cheminPhotoArticle, confirmerModification, modifierArticle, preparerTailles, supprimerArticle, verifierPrixAvecPromo } from "./gestion-articles";
+import { changerStatut, MASQUE_PAR_MODERATION, cheminPhotoArticle, confirmerModification, modifierArticle, preparerTailles, supprimerArticle, verifierPrixAvecPromo } from "./gestion-articles";
 
 function simulation() {
   const article = { id: "article", boutique_id: "boutique", promos: null as { prix_promo: number } | null, tailles: [{ libelle: "S", disponible: true }, { libelle: "M", disponible: true }], photos: [{ adresse: "https://iloyliuzsflzbkhpvxjt.supabase.co/storage/v1/object/public/photos/boutique/article/photo.jpg", adresse_vignette: "https://iloyliuzsflzbkhpvxjt.supabase.co/storage/v1/object/public/photos/boutique/article/vignette.webp" }] };
@@ -34,6 +34,10 @@ describe("US-11 : gestion de mes articles", () => {
     const test = simulation(); await changerStatut(test.client, "article", statut);
     expect(test.profile.eq).toHaveBeenCalledWith("id", "compte"); expect(test.requete.eq).toHaveBeenCalledWith("boutique_id", "boutique");
     expect(test.update).toHaveBeenCalledWith({ statut, derniere_confirmation: expect.any(String) });
+  });
+  it.each(["disponible", "reserve", "vendu", "masque"] as const)("refuse le statut %s sur un article masqué par la modération, avant toute écriture", async statut => {
+    const test = simulation(); test.requete.maybeSingle.mockResolvedValue({ data: { id: "article", boutique_id: "boutique", statut: "masque", masque_par_moderation: true, photos: [], tailles: [], promos: null }, error: null });
+    await expect(changerStatut(test.client, "article", statut)).rejects.toThrow(MASQUE_PAR_MODERATION); expect(test.update).not.toHaveBeenCalled();
   });
   it("refuse un article absent de ma boutique avant toute écriture", async () => {
     const test = simulation(); test.requete.maybeSingle.mockResolvedValue({ data: null, error: null });
