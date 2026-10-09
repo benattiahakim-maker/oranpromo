@@ -31,4 +31,16 @@ describe("US-23 : sélecteur de langue dans l'en-tête", () => {
     render(<EntetePublic />);
     expect(screen.getByRole("button", { name: "العربية" })).toBeTruthy();
   });
+  it("US-24.3 : lien « Carte » vers /carte, et le panier en icône avec un nom lisible", () => {
+    render(<FournisseurTextes langue="fr" textes={textesDe("fr")}><EntetePublic /></FournisseurTextes>);
+    expect(screen.getByRole("link", { name: "Carte" }).getAttribute("href")).toBe("/carte");
+    const panier = screen.getByRole("link", { name: "Panier" });
+    expect(panier.getAttribute("href")).toBe("/panier");
+    expect(panier.querySelector("svg")).toBeTruthy();
+    expect(panier.textContent).toBe("");
+  });
+  it("US-24.3 : en arabe, « الخريطة »", () => {
+    render(<FournisseurTextes langue="ar" textes={textesDe("ar")}><EntetePublic /></FournisseurTextes>);
+    expect(screen.getByRole("link", { name: "الخريطة" }).getAttribute("href")).toBe("/carte");
+  });
 });
