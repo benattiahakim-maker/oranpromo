@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { annulerNoShow, aUneContestationEnAttente, bloquerClient, contesterNoShow, delaiContestationDepasse, erreurMotifContestation, etatContestation, listerContestationsEnAttente, listerMesNoShows, nettoyerMotifContestation, validerNoShow, debloquerClient, grouperNumerosPartages, listerNumerosPartages, listerClientsSurveilles, listerNoShowsDeclares, nettoyerNom, nomValide, noShowsDuClient, enregistrerProfilClient, ErreurValidationProfil, essaisRestants, messageNoShows, profilComplet, telephoneLisible, validerProfilClient } from "./clients";
+import { annulerNoShow, aUneContestationEnAttente, bloquerClient, contesterNoShow, delaiContestationDepasse, erreurMotifContestation, etatContestation, listerContestationsEnAttente, listerMesNoShows, nettoyerMotifContestation, validerNoShow, debloquerClient, grouperNumerosPartages, listerNumerosPartages, listerClientsSurveilles, listerNoShowsDeclares, nettoyerNom, nomValide, noShowsDuClient, enregistrerNomClient, enregistrerProfilClient, ErreurValidationProfil, essaisRestants, messageNoShows, profilComplet, telephoneLisible, validerProfilClient } from "./clients";
 
 describe("profil client (US-20.2, US-20.4)", () => {
   it("compte les essais restants avant le blocage au 5e no-show", () => {
@@ -213,5 +213,24 @@ describe("règles de la contestation (migration 20261009235500)", () => {
     const selections = appels.filter(a => a[0] === "select").map(a => String(a[1]));
     expect(selections).toHaveLength(2);
     for (const s of selections) { expect(s).toContain("contestations(motif)"); expect(s).not.toContain("contestation_motif"); }
+  });
+});
+
+describe("US-21.2 : numéro vérifié", () => {
+  it("en mode téléphone, un profil complet a un numéro vérifié", () => {
+    expect(profilComplet({ nom: "Samia", telephone: "+213555123456", telephone_verifie_le: null }, true)).toBe(false);
+    expect(profilComplet({ nom: "Samia", telephone: "+213555123456", telephone_verifie_le: "2026-10-10T08:00:00Z" }, true)).toBe(true);
+    expect(profilComplet({ nom: null, telephone: "+213555123456", telephone_verifie_le: "2026-10-10T08:00:00Z" }, true)).toBe(false);
+    expect(profilComplet({ nom: "Samia", telephone: "+213555123456", telephone_verifie_le: null })).toBe(true);
+  });
+  it("enregistre le nom seul, sans toucher au numéro", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: { id: "u1" }, error: null });
+    const update = vi.fn(() => ({ eq: () => ({ select: () => ({ maybeSingle }) }) }));
+    const client = { auth: { getUser: async () => ({ data: { user: { id: "u1" } }, error: null }) }, from: () => ({ update }) } as unknown as SupabaseClient<Database>;
+    await enregistrerNomClient(client, "  Samia   B ");
+    expect(update).toHaveBeenCalledWith({ nom: "Samia B" });
+    await expect(enregistrerNomClient(client, "S4mia")).rejects.toBeInstanceOf(ErreurValidationProfil);
+    maybeSingle.mockResolvedValueOnce({ data: null, error: { code: "23514", message: "Nom invalide : lettres…" } });
+    await expect(enregistrerNomClient(client, "Samia")).rejects.toThrow("Nom invalide");
   });
 });

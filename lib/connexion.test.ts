@@ -17,6 +17,15 @@ describe("US-09 : e-mail", () => {
     await envoyerLienConnexion(" hakim@example.com ", "http://localhost:3000");
     expect(signInWithOtp).toHaveBeenCalledWith({ email: "hakim@example.com", options: { emailRedirectTo: "http://localhost:3000/auth/callback?suite=/espace" } });
   });
+  it("transmet le jeton anti-robot Turnstile quand il y en a un (US-21)", async () => {
+    signInWithOtp.mockResolvedValue({ error: null });
+    await envoyerLienConnexion("hakim@example.com", "http://localhost:3000", "/espace", "jeton-captcha");
+    expect(signInWithOtp).toHaveBeenCalledWith({ email: "hakim@example.com", options: { emailRedirectTo: "http://localhost:3000/auth/callback?suite=/espace", captchaToken: "jeton-captcha" } });
+  });
+  it("explique un contrôle anti-robot refusé", async () => {
+    signInWithOtp.mockResolvedValue({ error: { status: 400, code: "captcha_failed" } });
+    await expect(envoyerLienConnexion("hakim@example.com", "http://localhost:3000", "/espace", "x")).rejects.toThrow("contrôle anti-robot");
+  });
   it("n’envoie rien si l’adresse est invalide", async () => {
     await expect(envoyerLienConnexion("invalide", "http://localhost:3000")).rejects.toThrow("Saisissez une adresse e-mail valide.");
     expect(signInWithOtp).not.toHaveBeenCalled();

@@ -6,8 +6,9 @@ import { CLE_PANIER } from "@/lib/panier";
 
 const { commanderPanier, push, refresh } = vi.hoisted(() => ({ commanderPanier: vi.fn(), push: vi.fn(), refresh: vi.fn() }));
 vi.mock("@/app/panier/actions", () => ({ commanderPanier }));
-vi.mock("@/app/compte/actions", () => ({ enregistrerProfil: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
+vi.mock("@/app/compte/actions", () => ({ enregistrerProfil: vi.fn(), enregistrerNom: vi.fn(), envoyerCodeVerification: vi.fn(), verifierCodeVerification: vi.fn() }));
+vi.mock("@/app/compte/connexion/actions", () => ({ envoyerCodeConnexion: vi.fn(), verifierCodeConnexion: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh, replace: vi.fn() }) }));
 afterEach(cleanup);
 beforeEach(() => {
   vi.clearAllMocks(); localStorage.clear();
@@ -58,5 +59,17 @@ describe("panier et commande (US-20.2)", () => {
     localStorage.clear();
     render(<PanierCommande profil={complet} />);
     expect(screen.getByText("Votre panier est vide.")).toBeInTheDocument();
+  });
+  it("mode téléphone : numéro non vérifié → vérification par code au lieu de « Commander » (US-21.2)", () => {
+    render(<PanierCommande profil={{ ...complet, complet: false, telephoneVerifie: false, verificationRequise: true }} />);
+    expect(screen.getByText("Vérifiez votre numéro pour commander")).toBeInTheDocument();
+    expect(screen.getByLabelText("Numéro de mobile")).toHaveValue("0555 11 12 22");
+    expect(screen.queryByRole("button", { name: "Commander" })).not.toBeInTheDocument();
+  });
+  it("mode téléphone : numéro vérifié sans nom → le nom seul est demandé", () => {
+    render(<PanierCommande profil={{ ...complet, nom: null, complet: false, telephoneVerifie: true, verificationRequise: true }} />);
+    expect(screen.getByText("Avant votre première commande, indiquez votre nom.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Nom et prénom")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Téléphone WhatsApp")).not.toBeInTheDocument();
   });
 });
