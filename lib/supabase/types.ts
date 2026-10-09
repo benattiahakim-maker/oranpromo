@@ -151,6 +151,7 @@ export type Database = {
           cree_le: string
           expire_le: string | null
           id: string
+          langue: string
           motif_annulation: string | null
           no_show_annule_le: string | null
           no_show_le: string | null
@@ -173,6 +174,7 @@ export type Database = {
           cree_le?: string
           expire_le?: string | null
           id?: string
+          langue?: string
           motif_annulation?: string | null
           no_show_annule_le?: string | null
           no_show_le?: string | null
@@ -195,6 +197,7 @@ export type Database = {
           cree_le?: string
           expire_le?: string | null
           id?: string
+          langue?: string
           motif_annulation?: string | null
           no_show_annule_le?: string | null
           no_show_le?: string | null
@@ -394,6 +397,7 @@ export type Database = {
           erreur: string | null
           id: string
           identifiant_fournisseur: string | null
+          langue: string
           modele: string
           parametres: Json
           reservation: string | null
@@ -410,6 +414,7 @@ export type Database = {
           erreur?: string | null
           id?: string
           identifiant_fournisseur?: string | null
+          langue?: string
           modele: string
           parametres?: Json
           reservation?: string | null
@@ -426,6 +431,7 @@ export type Database = {
           erreur?: string | null
           id?: string
           identifiant_fournisseur?: string | null
+          langue?: string
           modele?: string
           parametres?: Json
           reservation?: string | null
@@ -702,6 +708,10 @@ export type Database = {
       }
       debloquer_client: { Args: { client: string }; Returns: undefined }
       declarer_no_show: { Args: { commande: string }; Returns: undefined }
+      definir_langue_commande: {
+        Args: { commande: string; langue: string }
+        Returns: undefined
+      }
       enregistrer_envoi_code: {
         Args: { jeton: string; numero: string }
         Returns: undefined

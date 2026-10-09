@@ -60,6 +60,12 @@ export async function passerCommande(client: SupabaseClient<Database>, boutiqueI
   return data;
 }
 
+/** US-23 : langue du site au moment de la commande (messages WhatsApp au client). Seul le client de la commande peut la changer. */
+export async function definirLangueCommande(client: SupabaseClient<Database>, id: string, langue: "fr" | "ar") {
+  const { error } = await client.rpc("definir_langue_commande", { commande: id, langue });
+  if (error) throw new Error(messageErreurCommande(error, "Langue de la commande non enregistrée."));
+}
+
 export async function changerStatutCommande(client: SupabaseClient<Database>, id: string, statut: StatutCommande, options: { motif?: MotifAnnulation | null; note?: string } = {}) {
   const note = options.note?.trim() ?? "";
   if (note.length > NOTE_SUIVI_MAX) throw new Error(`La note doit faire ${NOTE_SUIVI_MAX} caractères au plus.`);
