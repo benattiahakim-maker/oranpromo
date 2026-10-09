@@ -98,3 +98,16 @@ describe("vérifier le numéro d’un compte connecté (US-21.2)", () => {
     expect(m.refresh).toHaveBeenCalled();
   });
 });
+
+describe("US-23 : erreurs en arabe", () => {
+  it("numéro invalide : message en arabe, aucun envoi", async () => {
+    const { default: FournisseurTextes } = await import("./FournisseurTextes");
+    const { textesDe } = await import("@/lib/textes");
+    const t = textesDe("ar").code;
+    render(<FournisseurTextes langue="ar" textes={textesDe("ar")}><CodeTelephone usage="connexion" suite="/panier" /></FournisseurTextes>);
+    fireEvent.change(screen.getByLabelText(t.numero), { target: { value: "0123" } });
+    fireEvent.click(screen.getByRole("button", { name: t.recevoir }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("بورطابل جزائري");
+    expect(m.envoyerCodeConnexion).not.toHaveBeenCalled();
+  });
+});

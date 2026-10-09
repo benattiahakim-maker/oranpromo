@@ -2,6 +2,7 @@ import Link from "next/link";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { formaterDateHeure, listerMesCommandes, type ResumeCommande } from "@/lib/commandes";
 import { getLangue } from "@/lib/langue-serveur";
+import { traduireMessage } from "@/lib/textes/messages";
 import { remplir } from "@/lib/langue";
 import { textesDe } from "@/lib/textes";
 import { lireProfilClient, messageNoShows } from "@/lib/clients";
@@ -18,7 +19,7 @@ export default async function MesCommandes() {
   try {
     commandes = await listerMesCommandes(client);
     const profil = await lireProfilClient(client);
-    avertissement = profil ? messageNoShows(profil.no_shows, profil.bloque) : null;
+    avertissement = profil ? traduireMessage(messageNoShows(profil.no_shows, profil.bloque), langue) : null;
   } catch { erreur = true; }
   return <main className="mx-auto w-full max-w-lg bg-blanc px-6 pb-10 text-noir">
     <header className="border-b border-trait pb-5 pt-6 text-center"><p className="etiquette text-gris">{textes.compte.monCompte}</p><h1 className="font-titre text-[28px] font-normal">{t.titre}</h1></header>

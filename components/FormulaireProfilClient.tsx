@@ -2,12 +2,14 @@
 import { useRef, useState } from "react";
 import { enregistrerNom, enregistrerProfil } from "@/app/compte/actions";
 import { telephoneLisible, validerProfilClient, type ErreursProfilClient } from "@/lib/clients";
-import { useTextes } from "./FournisseurTextes";
+import { useLangue, useTextes } from "./FournisseurTextes";
+import { traduireErreurs } from "@/lib/textes/messages";
 
 // US-20.2 : nom et numéro WhatsApp du client, demandés avant la première commande.
 // US-21 : telephoneModifiable = false (mode téléphone ou numéro déjà vérifié) → le nom seul ; le numéro change par code.
 export default function FormulaireProfilClient({ nom = "", telephone = "", bouton, onEnregistre, telephoneModifiable = true }: { nom?: string | null; telephone?: string | null; bouton?: string; onEnregistre?: () => void; telephoneModifiable?: boolean }) {
   const t = useTextes().profil;
+  const langue = useLangue();
   const [champs, setChamps] = useState({ nom: nom ?? "", telephone: telephone ? telephoneLisible(telephone) : "" });
   const [erreurs, setErreurs] = useState<ErreursProfilClient>({});
   const [message, setMessage] = useState("");
@@ -16,7 +18,7 @@ export default function FormulaireProfilClient({ nom = "", telephone = "", bouto
   async function envoyer(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (verrou.current) return;
-    const locales = validerProfilClient(telephoneModifiable ? champs : { nom: champs.nom, telephone: "0555000000" });
+    const locales = traduireErreurs(validerProfilClient(telephoneModifiable ? champs : { nom: champs.nom, telephone: "0555000000" }), langue);
     setErreurs(locales); setMessage("");
     if (Object.keys(locales).length) return;
     verrou.current = true; setEnCours(true);

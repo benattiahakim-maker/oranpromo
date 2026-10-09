@@ -85,3 +85,12 @@ describe("US-23 : panier en arabe", () => {
     expect(screen.getByText("المجموع")).toBeInTheDocument();
   });
 });
+
+describe("US-23 : avertissement no-show en arabe", () => {
+  it("compte bloqué : explication en arabe", async () => {
+    const { default: FournisseurTextes } = await import("./FournisseurTextes");
+    const { textesDe } = await import("@/lib/textes");
+    render(<FournisseurTextes langue="ar" textes={textesDe("ar")}><PanierCommande profil={{ ...complet, bloque: true, noShows: 5 }} /></FournisseurTextes>);
+    expect(screen.getByText(/حسابك تبلوكا من بعد 5/)).toBeInTheDocument();
+  });
+});

@@ -6,7 +6,8 @@ import FormulaireProfilClient from "@/components/FormulaireProfilClient";
 import MesNoShows from "@/components/MesNoShows";
 import NumeroVerifie from "@/components/NumeroVerifie";
 import { modeConnexionClient } from "@/lib/telephone";
-import { getTextes } from "@/lib/langue-serveur";
+import { getLangue, getTextes } from "@/lib/langue-serveur";
+import { traduireMessage } from "@/lib/textes/messages";
 
 export const metadata = { title: "Mon compte", robots: { index: false, follow: false } };
 
@@ -17,7 +18,7 @@ export default async function MonCompte({ searchParams }: { searchParams: Promis
   try { profil = await lireProfilClient(await creerClientServeur()); }
   catch { return <main className="mx-auto w-full max-w-lg p-6"><p role="alert">{t.chargementImpossible}</p></main>; }
   if (!profil) redirect("/compte/connexion?suite=/compte");
-  const avertissement = messageNoShows(profil.no_shows, profil.bloque);
+  const avertissement = traduireMessage(messageNoShows(profil.no_shows, profil.bloque), await getLangue());
   const parTelephone = modeConnexionClient() === "telephone";
   let noShows: MonNoShow[] = [];
   try { noShows = await listerMesNoShows(await creerClientServeur()); } catch { noShows = []; }

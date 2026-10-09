@@ -7,13 +7,15 @@ import { ajouterAuPanier, chargerPanierLocal, ErreurAutreBoutique, ErreurPanier,
 import { lienQuestionArticle } from "@/lib/whatsapp";
 import { remplir } from "@/lib/langue";
 import { traduire } from "@/lib/textes";
-import { useTextes } from "./FournisseurTextes";
+import { useLangue, useTextes } from "./FournisseurTextes";
+import { traduireMessage } from "@/lib/textes/messages";
 
 // US-20.2 : la fiche ajoute l’article au panier d’une boutique (remplace « Réserver sur WhatsApp », US-07).
 type Props = { articleId: string; boutique: { id: string; nom: string; whatsapp: string }; titre: string; prix: number; photo: string | null; tailles: { libelle: string; quantite: number }[] };
 
 export default function CommandeArticle({ articleId, boutique, titre, prix, photo, tailles }: Props) {
   const t = useTextes().fiche;
+  const langue = useLangue();
   const tailleUnique = useTextes().listes.tailleUnique;
   const disponibles = tailles.filter(t => t.quantite > 0);
   const unique = tailles.length === 1 && disponibles.length === 1 && /^(unique|taille unique|tu)$/i.test(disponibles[0].libelle.trim());
@@ -38,8 +40,8 @@ export default function CommandeArticle({ articleId, boutique, titre, prix, phot
       // Le clic est compté comme une demande de réservation (statistiques US-08 / US-13), sans donnée personnelle.
       void enregistrerEvenement("clic_reserver", boutique.id, articleId, selection);
     } catch (error) {
-      if (error instanceof ErreurAutreBoutique) { setConflit(error.message); return; }
-      setErreur(error instanceof ErreurPanier ? error.message : t.ajoutImpossible);
+      if (error instanceof ErreurAutreBoutique) { setConflit(traduireMessage(error.message, langue)); return; }
+      setErreur(error instanceof ErreurPanier ? traduireMessage(error.message, langue) : t.ajoutImpossible);
     }
   }
 

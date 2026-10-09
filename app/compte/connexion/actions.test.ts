@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { envoyerCodeConnexion, verifierCodeConnexion } from "./actions";
 
 const { envoyer, verifier, ErreurCode } = vi.hoisted(() => ({ envoyer: vi.fn(), verifier: vi.fn(), ErreurCode: class ErreurCode extends Error {} }));
+const { cookie } = vi.hoisted(() => ({ cookie: { langue: "fr" } }));
+vi.mock("next/headers", () => ({ cookies: async () => ({ get: (nom: string) => (nom === "langue" ? { value: cookie.langue } : undefined) }) }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({}) }));
 vi.mock("@/lib/codes-telephone", () => ({ envoyerCodeConnexionClient: envoyer, verifierCodeConnexionClient: verifier, ErreurCode, MESSAGE_CODE_ENVOYE: "Code envoyé sur WhatsApp." }));
-beforeEach(() => { vi.clearAllMocks(); });
+beforeEach(() => { vi.clearAllMocks(); cookie.langue = "fr"; });
 
 describe("connexion par numéro (actions serveur, US-21.2)", () => {
   it("envoie le code et rend le numéro normalisé", async () => {
@@ -29,5 +31,19 @@ describe("connexion par numéro (actions serveur, US-21.2)", () => {
     expect(await verifierCodeConnexion("0555123456", "000000", "/panier")).toEqual({ succes: false, message: "Code incorrect ou expiré." });
     verifier.mockRejectedValue(new Error("boom"));
     expect((await verifierCodeConnexion("0555123456", "000000", "/panier")).message).toContain("Impossible de vérifier");
+  });
+});
+
+describe("US-23 : messages en arabe", () => {
+  it("code faux : « الكود غالط ولا فات وقتو… » (texte validé n° 8) ; message inconnu : français gardé", async () => {
+    cookie.langue = "ar";
+    verifier.mockRejectedValueOnce(new ErreurCode("Code incorrect ou expiré. Vérifiez les 6 chiffres ou demandez un nouveau code."));
+    expect(await verifierCodeConnexion("+213555123456", "000000", null)).toEqual({ succes: false, message: "الكود غالط ولا فات وقتو. شوف الأرقام الستة ولا اطلب كود جديد." });
+    verifier.mockRejectedValueOnce(new ErreurCode("Message que personne n’a traduit."));
+    expect((await verifierCodeConnexion("+213555123456", "000000", null)).message).toBe("Message que personne n’a traduit.");
+  });
+  it("en français, rien ne change", async () => {
+    verifier.mockRejectedValueOnce(new ErreurCode("Code incorrect ou expiré. Vérifiez les 6 chiffres ou demandez un nouveau code."));
+    expect((await verifierCodeConnexion("+213555123456", "000000", null)).message).toBe("Code incorrect ou expiré. Vérifiez les 6 chiffres ou demandez un nouveau code.");
   });
 });

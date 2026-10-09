@@ -1,4 +1,5 @@
 "use server";
+import { enLangue } from "@/lib/langue-serveur";
 import { redirect } from "next/navigation";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { contesterNoShow, enregistrerNomClient, enregistrerProfilClient, ErreurValidationProfil, type ErreursProfilClient, type SaisieProfilClient } from "@/lib/clients";
@@ -7,7 +8,7 @@ import { envoyerCodeVerificationClient, ErreurCode, MESSAGE_CODE_ENVOYE, verifie
 
 export type ResultatCompte = { succes: boolean; message: string; erreurs?: ErreursProfilClient };
 
-export async function enregistrerProfil(saisie: SaisieProfilClient): Promise<ResultatCompte> {
+async function enregistrerProfilEnFrancais(saisie: SaisieProfilClient): Promise<ResultatCompte> {
   try {
     if (!saisie || typeof saisie.nom !== "string" || typeof saisie.telephone !== "string") throw new Error("Vérifiez votre nom et votre numéro.");
     await enregistrerProfilClient(await creerClientServeur(), { nom: saisie.nom, telephone: saisie.telephone });
@@ -18,7 +19,7 @@ export async function enregistrerProfil(saisie: SaisieProfilClient): Promise<Res
 }
 
 /** Mode téléphone ou numéro déjà vérifié : seul le nom se modifie ici (le numéro change par code). */
-export async function enregistrerNom(nom: string): Promise<ResultatCompte> {
+async function enregistrerNomEnFrancais(nom: string): Promise<ResultatCompte> {
   try {
     if (typeof nom !== "string") throw new Error("Vérifiez votre nom.");
     await enregistrerNomClient(await creerClientServeur(), nom);
@@ -38,7 +39,7 @@ export async function envoyerCodeVerification(telephone: string): Promise<Result
   }
 }
 
-export async function verifierCodeVerification(telephone: string, code: string): Promise<ResultatCompte> {
+async function verifierCodeVerificationEnFrancais(telephone: string, code: string): Promise<ResultatCompte> {
   try {
     await verifierCodeVerificationClient(await creerClientServeur(), telephone, code);
     return { succes: true, message: "Numéro vérifié." };
@@ -47,7 +48,7 @@ export async function verifierCodeVerification(telephone: string, code: string):
   }
 }
 
-export async function annulerMaCommande(id: string, note: string): Promise<ResultatCompte> {
+async function annulerMaCommandeEnFrancais(id: string, note: string): Promise<ResultatCompte> {
   try {
     if (typeof id !== "string" || typeof note !== "string") throw new Error("Commande invalide.");
     await annulerCommandeClient(await creerClientServeur(), id, note);
@@ -56,7 +57,7 @@ export async function annulerMaCommande(id: string, note: string): Promise<Resul
 }
 
 /** Contester un no-show déclaré par la boutique (motif court, une fois par no-show). */
-export async function contesterMonNoShow(id: string, motif: string): Promise<ResultatCompte> {
+async function contesterMonNoShowEnFrancais(id: string, motif: string): Promise<ResultatCompte> {
   try {
     if (typeof id !== "string" || typeof motif !== "string") throw new Error("Contestation invalide.");
     await contesterNoShow(await creerClientServeur(), id, motif);
@@ -69,4 +70,25 @@ export async function deconnecterClient() {
   const { error } = await client.auth.signOut({ scope: "local" });
   if (error) redirect("/compte?erreur=deconnexion");
   redirect("/");
+}
+
+// US-23 : messages dans la langue du visiteur.
+export async function enregistrerProfil(saisie: SaisieProfilClient): Promise<ResultatCompte> {
+  return enLangue(await enregistrerProfilEnFrancais(saisie));
+}
+
+export async function enregistrerNom(nom: string): Promise<ResultatCompte> {
+  return enLangue(await enregistrerNomEnFrancais(nom));
+}
+
+export async function verifierCodeVerification(telephone: string, code: string): Promise<ResultatCompte> {
+  return enLangue(await verifierCodeVerificationEnFrancais(telephone, code));
+}
+
+export async function annulerMaCommande(id: string, note: string): Promise<ResultatCompte> {
+  return enLangue(await annulerMaCommandeEnFrancais(id, note));
+}
+
+export async function contesterMonNoShow(id: string, motif: string): Promise<ResultatCompte> {
+  return enLangue(await contesterMonNoShowEnFrancais(id, motif));
 }

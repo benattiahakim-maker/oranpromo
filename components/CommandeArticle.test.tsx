@@ -59,3 +59,14 @@ describe("US-23 : fiche en arabe", () => {
     expect(screen.getByText(/الخلاص في الحانوت/)).toBeInTheDocument();
   });
 });
+
+describe("US-23 : erreurs du panier en arabe", () => {
+  it("panier d’une autre boutique : message en arabe, nom de la boutique gardé", async () => {
+    const { default: FournisseurTextes } = await import("./FournisseurTextes");
+    const { textesDe } = await import("@/lib/textes");
+    localStorage.setItem(CLE_PANIER, JSON.stringify({ boutiqueId: "autre", boutiqueNom: "Maison Ilyes", lignes: [{ articleId: "x", titre: "Robe", taille: "38", quantite: 1, prix: 5000, photo: null }] }));
+    render(<FournisseurTextes langue="ar" textes={textesDe("ar")}><CommandeArticle {...article} tailles={[{ libelle: "Unique", quantite: 3 }]} /></FournisseurTextes>);
+    fireEvent.click(screen.getByRole("button", { name: "زيد للسلة" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("السلة فيها سلع من Maison Ilyes. الطلب يكون من حانوت واحد برك.");
+  });
+});
