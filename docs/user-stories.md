@@ -75,12 +75,17 @@ Le site ne voit pas la conversation WhatsApp : la confirmation, la mise de côt�
 
 ## Module 4 — Espace commerçant
 
-### US-09 — Se connecter avec son numéro de téléphone (page `/espace/connexion`)
+### US-09 — Se connecter (page `/espace/connexion`)
 En tant que commerçant, je veux me connecter sans mot de passe, afin de n'avoir rien à retenir.
-- Je saisis mon numéro au format algérien (+213).
-- Étant donné un numéro rattaché à une boutique, alors je reçois un code à 6 chiffres valable 10 minutes. → `supabase.auth.signInWithOtp({ phone })` puis `verifyOtp`.
-- Un code faux 5 fois de suite bloque les essais pendant 15 minutes.
-- Je reste connecté 30 jours sur le même téléphone.
+
+> **Provisoire (MVP) : connexion par lien envoyé par e-mail.** La connexion par SMS demande un fournisseur SMS payant (Twilio…) ; elle sera branchée avant la mise en ligne. Le code doit isoler l'envoi dans une fonction pour pouvoir passer au SMS sans tout réécrire.
+
+- Je saisis mon adresse e-mail ; un e-mail invalide affiche un message en français sous le champ.
+- Étant donné une adresse valide, quand je valide, alors je vois « Un lien de connexion vous a été envoyé par e-mail » et je reçois un lien. → `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: <origine>/auth/callback?suite=/espace } })`.
+- Le lien ouvre `/auth/callback`, qui échange le code contre une session (`exchangeCodeForSession`) puis redirige vers `/espace`. Un lien expiré ou déjà utilisé renvoie vers `/espace/connexion` avec un message en français.
+- Toute page sous `/espace` (sauf `/espace/connexion`) redirige vers `/espace/connexion` si je ne suis pas connecté.
+- Je reste connecté sur le même appareil (session rafraîchie automatiquement par le proxy/middleware Next.js).
+- Un bouton « Se déconnecter » ferme la session.
 
 ### US-10 — Ajouter un article (page `/espace/articles/nouveau`)
 En tant que commerçant, je veux ajouter un article depuis mon téléphone, afin de le rendre visible en ligne.
@@ -134,7 +139,7 @@ En tant que commerçant, je veux une version en arabe de la description, afin de
 ### US-16 — Créer et valider une boutique (page `/admin/boutiques`)
 En tant qu'administrateur ou ambassadeur, je veux créer une boutique pour un commerçant, afin de l'installer sur place.
 - Je saisis : nom, quartier, adresse, position sur la carte, horaires, numéro WhatsApp, liens réseaux.
-- Le numéro WhatsApp devient l'identifiant de connexion du commerçant (US-09).
+- Le commerçant se connecte avec son e-mail (US-09) ; un administrateur rattache ensuite son compte à la boutique (`profils.boutique_id`).
 - Une boutique créée par un ambassadeur reste « en attente » jusqu'à validation par un administrateur.
 - Seules les boutiques validées sont visibles des clients.
 
