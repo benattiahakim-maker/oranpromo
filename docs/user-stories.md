@@ -538,7 +538,7 @@ En tant que cliente ou commerçant, je veux que les refus de la base parlent de 
 
 Idée du propriétaire (9 octobre 2026), inspirée de Too Good To Go. Conception : `docs/architecture.md`, section « Retrait par QR code (US-26) ». Maquette : `docs/maquettes/RetraitQR.dc.html`.
 
-### US-26 — Retirer sa commande en montrant un QR code (vue d'ensemble) — **à valider par le propriétaire avant tout code**
+### US-26 — Retirer sa commande en montrant un QR code (vue d'ensemble) — **validée par le propriétaire le 9/10** (décisions en fin de module)
 En tant que client, je veux montrer un QR code au vendeur quand je viens chercher ma commande (ou l'envoyer à un proche qui y va à ma place), et en tant que commerçant, je veux le scanner avec mon téléphone pour voir tout de suite quoi remettre et combien encaisser, afin que le retrait soit rapide et sans erreur de commande.
 
 Livrée en 4 sous-stories, dans cet ordre (une PR chacune), après validation :
@@ -565,7 +565,8 @@ Livrée en 4 sous-stories, dans cet ordre (une PR chacune), après validation :
 - **Invisible pour la boutique avant le scan** : ni le jeton ni le code n'apparaissent dans l'espace commerçant, la liste des commandes ou les données que la boutique peut lire.
 - **Expire avec la commande** : seulement tant que la commande est « Prête » et avant sa date limite (24 h). Annulée ou expirée : « Cette commande a été annulée. » / « Cette commande a expiré : elle n'est plus à remettre. »
 - Le **code à 4 chiffres** n'est valable que pour les commandes prêtes **de la boutique connectée** ; deux commandes prêtes d'une même boutique n'ont jamais le même code.
-- **Limite d'essais** : 5 QR codes ou codes faux en 15 minutes pour une boutique → « Trop d'essais. Réessayez dans 15 minutes, ou utilisez la liste des commandes. »
+- **Pas de blocage de la boutique** sur des QR codes ou codes faux (décision du propriétaire : un compte par numéro WhatsApp, on ne bloque pas les boutiques) : chaque erreur donne le même message, sans limite d'essais. La sécurité tient au jeton de 128 bits et au code limité aux commandes prêtes de la boutique connectée.
+- **Mode de remise enregistré** par la base sur la commande (`qr`, `code` ou `manuel`), impossible à modifier ensuite : il servira au parrainage (US-27 : le premier retrait du filleul doit être validé par QR code ou code à 4 chiffres).
 - Ouvrir la page du QR code (client ou proche) **ne change rien** ; scanner **ne remet rien** : seule la touche « Remis au client » remet la commande.
 
 **Bouton manuel « Récupérée »** (proposition) : il **reste**, renommé « Remis sans QR code », derrière une confirmation (« Le client n'a ni QR code ni code ? Remettez la commande seulement si vous le reconnaissez. »). Raisons : téléphone du client déchargé ou sans internet, client âgé, scanner en panne ; le supprimer bloquerait des remises réelles. Le suivi indique « Remise sans QR code ». Dans la carte de la commande, le texte guide vers le scan : « Remise : scannez le QR code du client. »
@@ -600,12 +601,12 @@ Livrée en 4 sous-stories, dans cet ordre (une PR chacune), après validation :
 | 18 | Boutique, déjà remise | Déjà remise le 10/10 à 17 h 05. | **تسلّمت** من قبل، نهار 10/10 على 17:05. | تم تسليمه سابقًا يوم 10/10 على 17:05. |
 | 19 | Boutique, expirée | Cette commande a expiré : elle n'est plus à remettre. | الطلبية **فات** وقتها: **ما تسلّمهاش**. | انتهت صلاحية الطلب: لا تسلّمه. |
 | 20 | Boutique, code faux | Code faux. Vérifiez les 4 chiffres avec le client. | الرقم **غالط**. **عاود شوف** الـ4 أرقام مع الزبون. | الرمز خاطئ. تحقّق من الأرقام الأربعة مع الزبون. |
-| 21 | Boutique, trop d'essais | Trop d'essais. Réessayez dans 15 minutes, ou utilisez la liste des commandes. | **بزّاف** المحاولات. **عاود** من بعد 15 دقيقة، ولا **خدم** بالليستة تاع الطلبيات. | محاولات كثيرة. أعد المحاولة بعد 15 دقيقة أو استعمل قائمة الطلبات. |
+| 21 | ~~Boutique, trop d'essais~~ | (supprimé : pas de limite d'essais, décision 6) | | |
 | 22 | Boutique, caméra bloquée | La caméra est bloquée. Autorisez-la dans les réglages du navigateur (cadenas à côté de l'adresse), ou tapez le code. | الكاميرا **مبلوكية**. **حلّها** من الإعدادات تاع المتصفح (القفل حدا العنوان)، ولا **اكتب** الرقم. | الكاميرا محظورة. اسمح بها من إعدادات المتصفح أو أدخل الرمز. |
 
-L'espace commerçant est aujourd'hui en français seulement (US-23) : les textes 11 à 22 en arabe ne servent que si le propriétaire veut le scanner en arabe (question 4).
+L'espace commerçant est aujourd'hui en français seulement (US-23) : les textes 11 à 22 en arabe serviront quand tout l'espace passera en arabe (décision 4) ; le scanner est en français pour l'instant.
 
-**Questions au propriétaire** :
+**Questions posées au propriétaire** (réponses : « Décisions du propriétaire » ci-dessous) :
 1. **Lecteur de QR code sur iPhone** : le lecteur intégré au navigateur (`BarcodeDetector`) marche sur Chrome et Samsung Internet pour Android, **pas sur iPhone** (Safari, et Chrome sur iPhone qui utilise Safari). Proposition **A** (recommandée) : ajouter la petite bibliothèque **jsQR** (gratuite, Apache-2.0, environ 46 Ko compressés, chargée seulement sur un téléphone qui n'a pas le lecteur intégré). Proposition **B** : aucune bibliothèque ; sur iPhone, le commerçant scanne avec l'appareil photo de l'iPhone (le QR code ouvre directement la page de la commande dans son espace) ou tape le code. Laquelle ?
 2. **Bouton manuel** : garder « Remis sans QR code » derrière une confirmation (proposé), ou le supprimer (QR code ou code obligatoire) ?
 3. **Prénom du client sur le résumé** de la boutique : le garder (proposé, la boutique le voit déjà dans sa liste) ? Faut-il en plus que le proche dise un nom ?
@@ -615,6 +616,33 @@ L'espace commerçant est aujourd'hui en français seulement (US-23) : les textes
 7. **Lien du proche** : la page `/retrait/<jeton>` montre les articles et le montant (proposé, pour que le proche sache quoi prendre et combien apporter). D'accord ?
 
 **Ce qui ne change pas** : statuts et transitions des commandes, expiration à 24 h, no-shows, contestation, blocage, vérification du numéro, stock (déjà retiré à la confirmation).
+
+**Décisions du propriétaire (9 octobre 2026, 19 h 16)** — conception validée :
+1. **iPhone** : on ajoute **jsqr**, chargée seulement quand le lecteur intégré (`BarcodeDetector`) manque.
+2. **« Remis sans QR code »** gardé, derrière une confirmation.
+3. La boutique voit le **prénom** du client ; le proche ne donne aucun nom.
+4. **Scanner en français** pour l'instant ; l'arabe viendra avec tout l'espace commerçant.
+5. **Nouveau modèle Meta** « commande prête » avec le bouton « Mon QR code », **désactivé par un réglage** (`bouton_retrait`) tant que Meta ne l'a pas approuvé.
+6. **Changement** : **aucune limite d'essais, aucun blocage de la boutique** sur des codes ou QR codes faux (un compte par numéro WhatsApp, on ne bloque pas les boutiques). On garde le message unique (« Ce QR code n'est pas valide pour votre boutique. » / « Code faux… »), le jeton de 128 bits et le code limité aux commandes prêtes de la boutique.
+7. La page du proche montre les **articles et le montant**, jamais le nom ni le téléphone du client.
+8. **Parrainage (US-27)** : le premier retrait du filleul devra être validé par QR code ou code à 4 chiffres : le **mode de remise** est enregistré de façon fiable par la base (`commandes.mode_remise`).
+
+### US-26.1 — Jeton de retrait dans la base (aucun écran)
+En tant que propriétaire, je veux que chaque commande prête ait un QR code et un code à 4 chiffres sûrs, et que la base retienne comment elle a été remise.
+- Jeton (128 bits) et code (unique parmi les commandes prêtes de la boutique) créés au passage « Prête », invisibles pour la boutique ; fonctions `retrait_client`, `retrait_par_lien`, `retrait_boutique`, `remettre_commande` ; `commandes.mode_remise` (`qr`, `code`, `manuel`) posé par la base, jamais modifiable.
+- Tests SQL : voir `docs/architecture.md`.
+
+### US-26.2 — Mon QR code de retrait (pages `/compte/commandes/[id]`, `/retrait/[jeton]`)
+En tant que client, je veux voir mon QR code et mon code quand ma commande est prête, et pouvoir les envoyer à un proche.
+- Bloc « Mon QR code de retrait » (maquette ①), page du proche sans connexion (maquette ③), français et arabe.
+
+### US-26.3 — Scanner et remettre (pages `/espace/commandes`, `/espace/scanner`, `/espace/retrait/[jeton]`)
+En tant que commerçant, je veux scanner le QR code du client (ou taper son code) pour voir quoi remettre et combien encaisser, puis toucher « Remis au client ».
+- Maquette ④ à ⑧ (sauf « Trop d'essais »), en français.
+
+### US-26.4 — Bouton « Mon QR code » dans le message « commande prête »
+En tant que client, je veux ouvrir mon QR code depuis le message WhatsApp « commande prête ».
+- Modèle `oranpromo_commande_prete_retrait` à faire approuver par Meta ; réglage `bouton_retrait` à `on` ensuite. Sans le réglage, l'ancien message part, inchangé.
 
 ## Module 14 — Parrainage (après le MVP)
 
