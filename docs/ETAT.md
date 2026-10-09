@@ -6,7 +6,7 @@
 ## Où on en est
 
 - Les **19 user stories du MVP sont codées** (US-01 à US-19). Elles sont dans la colonne Trello « À vérifier » : codées, mais pas encore toutes testées en vrai.
-- **538 tests** passent, `npm run lint` et `npm run build` passent.
+- **622 tests** passent, `npm run lint` et `npm run build` passent.
 - Déjà testé en vrai : la page d'accueil (ancienne version), la fiche article, la réservation WhatsApp.
 - Pas encore re-testé : la connexion par lien e-mail (corrigée le 9/10), le nouveau formulaire d'article, et tout ce qui a été fait le 9/10 après-midi (voir ci-dessous).
 
@@ -23,7 +23,10 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
 3. **PR #4** Tech : miniatures 400 px (`photos.adresse_vignette`) sur les cartes, grandes photos à 1200 px, envoi limité à 4 Mo (limite Vercel 4,5 Mo).
 4. **PR #5** Catégories : nouvelle liste en 4 univers (14 catégories mode, 5 beauté avec contenance en ml), filtre « Univers » dans le catalogue, IA à jour. Migration `categories_univers` appliquée (anciennes catégories renommées).
 5. **PR #6** Design : nouvelle page d'accueil (univers, grande photo, tuiles par univers et catégorie, images tirées des articles). Maquette `docs/maquettes/Accueil.dc.html`.
-6. **En cours** : objet **commande** avec statut et suivi client (carte Trello « Commandes · Objet commande avec statut et suivi client », story US-20). Décisions : compte client lié au téléphone, plusieurs articles d'une même boutique, stock par taille qui baisse à la confirmation, WhatsApp automatique (API WhatsApp Business), expiration 24 h après « prête », blocage au 5e no-show.
+6. **Commandes** (US-20, PR #8 à #14) : objet commande avec statut et suivi client.
+   - PR #8 docs, stories US-20 à US-20.5 et maquettes ; PR #9 stock par taille (`tailles.quantite`, boutons −/+, « Vendu » à 0) ; PR #10 côté client (rôle `client`, panier d'une seule boutique, « Mes commandes » avec frise, « Ajouter au panier » remplace « Réserver sur WhatsApp ») ; PR #11 côté boutique (Confirmer = le stock baisse, Prête, Récupérée, Annuler avec motif) ; PR #12 expiration 24 h après « prête », no-shows, blocage au 5e, déblocage dans `/admin/clients` ; PR #13 WhatsApp automatique (API Meta, file `messages_whatsapp`, tâche `GET /api/notifications/whatsapp` protégée par `CRON_SECRET`) ; PR #14 types régénérés depuis Supabase.
+   - Migrations appliquées : `activer_pg_cron`, `stock_par_taille`, `role_client`, `commandes`, `commandes_boutique`, `expiration_no_shows`, `messages_whatsapp`. Tâche pg_cron `expirer-commandes` toutes les 15 min.
+   - Reste à faire : compte WhatsApp Business chez Meta, 4 modèles de messages à faire approuver (voir `docs/architecture.md`), variables `WHATSAPP_*` et `CRON_SECRET`, programmer l'appel de la tâche d'envoi toutes les 5 min. Sans ça, les messages restent en attente.
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
 
@@ -83,7 +86,7 @@ Reste à faire côté propriétaire : plafond de dépenses dans la console Anthr
 ## Prochaines étapes (Trello « À faire »)
 
 1. **Test** : tester tout le parcours en vrai sur le PC (checklist dans la carte), puis les cartes « À vérifier » du 9/10.
-2. **Commandes** : fin du développement en cours, puis migrations à appliquer et compte WhatsApp Business à créer.
+2. **Commandes** : tester en vrai (panier, commande, confirmation, prête, expiration), puis configurer WhatsApp Business.
 3. **IA** : le propriétaire crée la clé API Claude, la colle dans `.env.local` et fixe un plafond de dépenses.
 4. **Catégories** : faire valider la nouvelle liste par 2 ou 3 commerçants.
 
