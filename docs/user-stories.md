@@ -787,7 +787,7 @@ L'espace commerçant et l'administration restent en français (US-23).
 
 ## Module 15 — Tableau des commandes de la boutique (après le MVP)
 
-Source : demande du propriétaire du 9 octobre 2026 (20 h 42) : « un vrai tableau de gestion des commandes pour les commerçants dans `/espace/commandes` ». Contenu **validé par le propriétaire** (points 1 à 7 ci-dessous) ; **conception seulement, rien n'est codé** : la mise en œuvre attend sa validation des maquettes et ses réponses aux questions. Conception technique : `docs/architecture.md`, section « Tableau des commandes (US-28) ». Maquette : `docs/maquettes/TableauCommandes.dc.html` (375 px et ordinateur 1 024 px).
+Source : demande du propriétaire du 9 octobre 2026 (20 h 42) : « un vrai tableau de gestion des commandes pour les commerçants dans `/espace/commandes` ». Contenu **validé par le propriétaire** (points 1 à 7 ci-dessous) ; maquettes et réponses aux questions **validées le 9/10 à 20 h 49** (décisions en fin de module). Conception technique : `docs/architecture.md`, section « Tableau des commandes (US-28) ». Maquette : `docs/maquettes/TableauCommandes.dc.html` (375 px et ordinateur 1 024 px).
 
 **Aujourd'hui** : deux onglets « En cours » / « Terminées », une grande carte par commande (US-20.3), bouton « Scanner un QR code client » et « Remis sans QR code » (US-26.3), bon parrainage affiché (US-27.4). Une boutique qui reçoit 15 commandes dans la journée doit faire défiler 15 grandes cartes et toucher chaque bouton un par un.
 
@@ -802,7 +802,7 @@ Source : demande du propriétaire du 9 octobre 2026 (20 h 42) : « un vrai table
 
 Ordre des modules : US-28 peut se coder tout de suite (US-26 et US-27 sont fusionnées).
 
-Restent tels quels : bouton « Scanner un QR code client », « Remis sans QR code » derrière sa confirmation, « Client pas venu », « Annuler » avec motif, bon parrainage. **Aucune règle ne change** : statuts et transitions (`changer_statut_commande`, `prive.confirmer_commande`), expiration à 24 h, no-shows, contestation, blocage, numéro vérifié, bons. L'espace commerçant reste **en français** ; l'arabe viendra avec tout l'espace (même décision que US-26, point 4) : les textes sont dans un seul fichier pour être traduits plus tard.
+Restent tels quels : bouton « Scanner un QR code client », « Remis sans QR code » derrière sa confirmation, « Client pas venu », « Annuler » avec motif, bon parrainage. **Aucune règle ne change** : statuts et transitions (`changer_statut_commande`, `prive.confirmer_commande`), expiration à 24 h, no-shows, contestation, blocage, numéro vérifié, bons. L'espace commerçant reste **en français** ; l'arabe viendra avec tout l'espace (même décision que US-26, point 4) : les textes restent dans les composants comme le reste de l'espace et passeront dans `lib/textes` à ce moment-là.
 
 Livrée en 4 sous-stories, dans cet ordre (une PR chacune) :
 
@@ -813,7 +813,7 @@ Livrée en 4 sous-stories, dans cet ordre (une PR chacune) :
 | US-28.3 | Liste de préparation imprimable | `/espace/commandes/preparation` |
 | US-28.4 | Mise à jour automatique, signal visuel et sonore d'une nouvelle commande | `/espace/commandes` (et compteur du menu) |
 
-### US-28 — Gérer ses commandes dans un tableau (vue d'ensemble) — **conception, en attente de la validation du propriétaire**
+### US-28 — Gérer ses commandes dans un tableau (vue d'ensemble) — **validée par le propriétaire le 9/10 à 20 h 49**
 En tant que commerçant, je veux voir d'un coup d'œil ce que je dois confirmer, préparer et remettre, traiter plusieurs commandes à la fois et savoir tout de suite qu'une commande arrive, afin de répondre vite sans rien oublier.
 
 ### US-28.1 — Étapes, lignes serrées, urgence, recherche (page `/espace/commandes`)
@@ -821,7 +821,7 @@ En tant que commerçant, je veux voir d'un coup d'œil ce que je dois confirmer,
 - **Étape ouverte par défaut** : la première non vide parmi « À confirmer », « À préparer », « Prêtes » (sinon « À confirmer ») — question 10.
 - **Téléphone (375 px), une ligne serrée par commande** (environ 64 px au lieu de 250) :
   - à gauche, case à cocher (zone de 44 px) sur « À confirmer » et « À préparer » seulement ;
-  - ligne 1 : « N° 131 · Samia », à droite le montant « 8 700 DA » ;
+  - ligne 1 : « N° 131 · Samia », à droite le **montant à encaisser** (après le bon parrainage, décision 8) ;
   - ligne 2 (petite, grise) : « 2 articles · reçue à 14 h 05 », à droite l'**urgence** : « attend depuis 42 min » ou « expire dans 1 h 20 », **en rouge** au-delà du seuil (voir plus bas) ; étiquette « Bon −300 » si un bon parrainage est appliqué ; « Nouveau » pendant 2 minutes pour une commande arrivée pendant que la page est ouverte ;
   - toucher la ligne **déplie le détail** (articles, téléphone et WhatsApp du client, note, motif, suivi) et les **boutons d'aujourd'hui** (« Confirmer », « Prête », « Annuler » avec motif, « Remis sans QR code », « Client pas venu ») ; une seule commande dépliée à la fois.
 - **Ordinateur (≥ 1 024 px), tableau compact** : colonnes ☐ · N° · Prénom · Articles · Montant · Reçue · Échéance · Bon · (bouton de l'étape). Une ligne = 44 px. Le bouton de l'étape (« Confirmer » / « Prête ») est dans la ligne ; cliquer la ligne ouvre le même détail sous la ligne. La page s'élargit (jusqu'à 1 120 px) seulement sur ordinateur ; le menu de l'espace ne change pas.
@@ -891,3 +891,15 @@ En tant que commerçant, je veux voir d'un coup d'œil ce que je dois confirmer,
 8. **Montant affiché** : le total de la commande avec l'étiquette « Bon −300 » (proposé), ou directement le montant à encaisser ?
 9. **Recherche** : numéro ou début du prénom (validé). Ajouter les 4 derniers chiffres du téléphone ?
 10. **Étape ouverte par défaut** : la première étape non vide (proposé) ou toujours « À confirmer » ?
+
+**Décisions du propriétaire (9/10, 20 h 49)** — réponses proposées acceptées :
+1. Seuils du rouge : « À confirmer » après **30 min** d'attente, « À préparer » après **2 h**, « Prêtes » à **moins de 3 h** de l'expiration.
+2. Mise à jour : **option A**, interrogation toutes les **20 s** (pas de Realtime, aucune migration).
+3. Son : bouton « Activer le son » seulement ; **pas de notifications** du téléphone.
+4. Ordinateur : **un tableau par étape**, avec les onglets.
+5. Actions groupées : **20 au plus**, **pas d'annulation groupée**.
+6. Liste de préparation : **commandes confirmées seulement** ; pas de photo (petites photos facultatives si peu coûteuses : non retenues, pour garder une feuille noir et blanc légère).
+7. Terminées : **7 derniers jours**, compteur « aujourd'hui ».
+8. Montant de la ligne / colonne : **montant à encaisser** après le bon (`total − remise_bon`), avec l'étiquette « Bon −300 » ; le détail garde « Total … · Bon parrainage −300 DA · à encaisser … ».
+9. Recherche : numéro ou début du prénom ; **pas de chiffres du téléphone** dans les lignes.
+10. Étape ouverte par défaut : **la première non vide** (« À confirmer », puis « À préparer », puis « Prêtes », sinon « À confirmer »).
