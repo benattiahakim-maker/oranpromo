@@ -155,3 +155,31 @@ export async function chercherCommandes(client: Client, boutiqueId: string, rech
   if (error) throw new Error("Impossible de chercher les commandes. Réessayez.");
   return (data ?? []) as unknown as CommandeRecue[];
 }
+
+// --- US-28.2 : actions groupées ------------------------------------------------
+export const GROUPE_MAX = 20;
+export type StatutGroupe = "confirmee" | "prete";
+export const ACTION_GROUPEE: Partial<Record<EtapeCommande, StatutGroupe>> = { a_confirmer: "confirmee", a_preparer: "prete" };
+export type ResultatGroupe = { succes: boolean; message: string; reussies: { id: string; numero: number }[]; echecs: { id: string; numero: number | null; message: string; deja: boolean }[] };
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Vérifie la demande avant toute lecture : 1 à 20 identifiants valides (doublons retirés), « confirmee » ou « prete » seulement. */
+export function lireDemandeGroupee(ids: unknown, statut: unknown): { ids: string[]; statut: StatutGroupe } | { refus: string } {
+  if (statut !== "confirmee" && statut !== "prete") return { refus: "Action impossible." };
+  if (!Array.isArray(ids) || !ids.every(id => typeof id === "string" && UUID.test(id))) return { refus: "Demande invalide." };
+  const uniques = [...new Set(ids as string[])];
+  if (!uniques.length) return { refus: "Cochez au moins une commande." };
+  if (uniques.length > GROUPE_MAX) return { refus: `${GROUPE_MAX} au plus à la fois.` };
+  return { ids: uniques, statut };
+}
+
+/** Compte rendu : « 3 commandes confirmées. », puis une ligne par échec. */
+export function compteRendu(resultat: ResultatGroupe, statut: StatutGroupe): { titre: string; lignes: { id: string; texte: string }[] } {
+  const n = resultat.reussies.length;
+  const fait = statut === "confirmee" ? (n > 1 ? "confirmées" : "confirmée") : (n > 1 ? "marquées prêtes" : "marquée prête");
+  const titre = !resultat.succes ? resultat.message : n === 0 ? "Aucune commande modifiée." : `${n} commande${n > 1 ? "s" : ""} ${fait}.`;
+  const deja = statut === "confirmee" ? "déjà confirmée" : "déjà prête";
+  const non = statut === "confirmee" ? "non confirmée" : "non marquée prête";
+  const lignes = resultat.echecs.map(e => ({ id: e.id, texte: e.numero === null ? e.message : e.deja ? `N° ${e.numero} : ${deja}.` : `N° ${e.numero} ${non} : ${e.message}` }));
+  return { titre, lignes };
+}

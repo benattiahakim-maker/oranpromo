@@ -124,6 +124,7 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
 
 25. **Tableau des commandes (US-28), le code** — une PR par étape, **aucune migration, aucune dépendance** :
    - **US-28.1** (PR « US-28.1 ») : `/espace/commandes` en 4 étapes avec compteurs (`?etape=`, ancienne adresse `?vue=terminees` gardée, première étape non vide par défaut), lignes serrées sur téléphone et tableau compact sur ordinateur (une seule liste), la plus urgente d'abord, rouge 30 min / 2 h / 3 h avec le texte, montant à encaisser après le bon avec « Bon −300 », recherche n° ou début du prénom (toutes les étapes, 50 au plus), détail déplié = carte d'avant (mêmes boutons, « Remis sans QR code » derrière sa confirmation). Captures `us28-1-*-375.png` et `us28-1-*-1024.png`.
+   - **US-28.2** (PR « US-28.2 ») : cases à cocher sur « À confirmer » et « À préparer », « Confirmer les 3 » / « Marquer prêtes (3) », 20 au plus ; une seule action serveur `changerStatutCommandesBoutique` qui passe chaque commande, de la plus ancienne à la plus récente, par les mêmes contrôles et par `changer_statut_commande` (rien de nouveau dans la base) ; compte rendu commande par commande (message de la base pour le stock, « déjà confirmée »), échecs cochés, WhatsApp « prête » seulement pour les réussies. Pas d'annulation, de remise ni de « Client pas venu » groupés. Captures `us28-2-*`.
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
 
