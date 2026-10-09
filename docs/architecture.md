@@ -18,13 +18,24 @@ app/
   espace/articles/nouveau/      ajout d'article, fiche IA (US-10, 14, 15)
   espace/articles/[id]/         modification, promo (US-11, 12)
   espace/statistiques/          mes chiffres (US-13)
-  admin/...                     boutiques, modération, tableau de bord (US-16, 18, 19)
+  espace/commandes/             commandes reçues par la boutique (US-20.3)
+  panier/page.tsx               panier d'une boutique, « Commander » (US-20.2)
+  compte/connexion/page.tsx     connexion client par lien e-mail (US-20.2)
+  compte/page.tsx               profil client : nom, téléphone, no-shows (US-20.2, 20.4)
+  compte/commandes/             mes commandes et suivi avec la frise (US-20.2)
+  admin/...                     boutiques, modération, tableau de bord, clients bloqués (US-16, 18, 19, 20.4)
   api/ia/fiche/route.ts         photo → fiche (US-14)
   api/ia/traduire/route.ts      traduction arabe (US-15)
+  api/notifications/whatsapp/route.ts  envoi des messages WhatsApp en attente, appelé par une tâche planifiée (US-20.5)
 components/                     composants d'affichage réutilisables
 lib/
   prix.ts                       règles de prix et promo (testé)
-  whatsapp.ts                   lien de réservation (testé)
+  whatsapp.ts                   liens wa.me (testé)
+  stock.ts                      stock par taille (US-20.1, testé)
+  panier.ts                     panier d'une boutique, gardé dans le navigateur (US-20.2, testé)
+  commandes.ts                  statuts, transitions, frise, lecture et actions (US-20.2, 20.3, testé)
+  clients.ts                    profil client, no-shows, déblocage (US-20.2, 20.4, testé)
+  notifications/                messages WhatsApp : fournisseur (Meta Cloud API), envoi de la file d'attente (US-20.5, testé)
   supabase/client.ts            client navigateur ("use client")
   supabase/server.ts            client serveur (pages, routes, actions)
   supabase/types.ts             types générés depuis la base (ne pas modifier à la main)
@@ -38,6 +49,7 @@ docs/                           user stories, architecture, maquettes
 - **Écritures du commerçant** : actions serveur (`"use server"`) ou client navigateur avec la session du commerçant. La base refuse toute écriture hors de sa boutique, même si l'interface a un bug.
 - **Routes `app/api/`** : uniquement pour ce qui a besoin d'un secret (IA Claude). Pas de route API pour lire des données que Supabase sert déjà.
 - **Statistiques** : insertion dans `evenements` (autorisée à tout visiteur, sans donnée personnelle).
+- **Commandes** : aucune écriture directe dans `commandes`, `lignes_commande`, `suivi_commandes` ; tout passe par les fonctions de la base `passer_commande()` et `changer_statut_commande()` (appelées par des actions serveur), qui vérifient les droits, les transitions et déplacent le stock.
 
 ## Base de données (déjà créée sur Supabase, projet `oranpromo`)
 
@@ -46,14 +58,19 @@ Colonnes en `snake_case` français sans accents. Prix = entiers en dinars.
 | Table | Rôle | Points clés |
 | --- | --- | --- |
 | `boutiques` | vitrines | `slug` unique ; `statut` : `en_attente`, `validee`, `suspendue` ; seul un admin change le statut |
-| `profils` | un par compte connecté | `role` : `commercant`, `ambassadeur`, `admin` ; `boutique_id` ; créé automatiquement à l'inscription |
+| `profils` | un par compte connecté | `role` : `client` (par défaut pour un nouveau compte), `commercant`, `ambassadeur`, `admin` ; `boutique_id` ; `nom`, `telephone` (format `+213XXXXXXXXX` quand l'utilisateur le saisit) ; `no_shows`, `bloque`, `bloque_le` (modifiables seulement par la base et l'admin) ; créé automatiquement à l'inscription |
 | `articles` | articles | `statut` : `disponible`, `reserve`, `vendu`, `masque` ; `categorie` : liste fixe de 19 catégories (règle dans la base) ; `genre` : `homme`, `femme`, `enfant`, `mixte` ; `derniere_confirmation` ; `propose_par_ia` ; `masque_par_moderation` (seul un admin le lève) |
 | `photos` | 1 à 5 par article | `adresse` (grande photo 1200 px, fiche article), `adresse_vignette` (miniature 400 px, cartes ; vide pour les anciennes photos → repli sur `adresse`), `ordre` ; adresses limitées au stockage `photos` du projet, dossier de l'article (règle dans la base) |
-| `tailles` | tailles d'un article | `libelle`, `disponible` ; unique par article |
+| `tailles` | tailles d'un article | `libelle`, `quantite` (stock indicatif, 0 à 999, 1 par défaut), `disponible` (calculé par la base : `quantite > 0`) ; unique par article |
 | `promos` | au plus une par article | `prix_promo` (> 0 et < `articles.prix`, règle dans la base), `badge`, `date_fin` |
 | `evenements` | statistiques | `type` : `vue_article`, `vue_boutique`, `clic_reserver`, `partage` ; `date` fixée par la base ; 120 par minute et par boutique au plus |
 | `signalements` | signalements clients | `statut` : `ouvert`, `traite`, `rejete` ; `cree_le` fixée par la base ; 10 par heure et par article, 200 par heure au total |
 | `decisions` | décisions de modération | `action`, `auteur_id`, `date` |
+| `commandes` | commandes client (US-20) | `numero` (affiché « n° 12 »), `client_id`, `boutique_id`, `statut` : `demandee`, `confirmee`, `prete`, `recuperee`, `annulee`, `expiree` ; `client_nom`, `client_telephone` (copiés du profil à la commande) ; `note` (client, 300 car.), `motif_annulation` : `plus_en_stock`, `boutique_indisponible`, `client_a_annule`, `autre` ; `total` (DA) ; dates `cree_le`, `confirmee_le`, `prete_le`, `expire_le` (= `prete_le` + 24 h), `terminee_le` |
+| `lignes_commande` | articles d'une commande | `commande_id`, `article_id` (vide si l'article est supprimé), `titre`, `taille`, `quantite` (1 à 10), `prix_unitaire` (prix affiché au moment de la commande, promo active comprise) |
+| `suivi_commandes` | frise d'une commande | `commande_id`, `statut`, `date`, `auteur_id` (vide = automatique), `auteur` : `client`, `boutique`, `admin`, `systeme` ; `note` (300 car.) |
+| `messages_whatsapp` | file d'attente des messages WhatsApp (US-20.5) | `destinataire` (`+213…`), `modele` (nom du modèle Meta), `parametres` (liste de textes), `texte` (version lisible), `commande_id`, `statut` : `a_envoyer`, `envoye`, `echec` ; `tentatives` (5 au plus), `reserve_jusqu_a`, `erreur`, `identifiant_fournisseur`, `cree_le`, `envoye_le` ; lisible par l'admin seulement, écrit par la base |
+| `prive.reglages` | réglages internes (schéma non exposé) | `cle`, `valeur` ; ex. `jeton_notifications` = empreinte SHA-256 du secret de la tâche d'envoi WhatsApp |
 | `appels_ia` | quota des routes IA | `utilisateur_id`, `date` ; aucune lecture directe, uniquement via `consommer_quota_ia()` (30 appels par heure et par compte) |
 
 Le stockage `photos` (public, 5 Mo max, jpeg/png/webp) impose le chemin `<boutique_id>/<article_id>/<fichier>`.
@@ -83,6 +100,40 @@ Le stockage `photos` (public, 5 Mo max, jpeg/png/webp) impose le chemin `<boutiq
   - La base refuse une catégorie hors liste (`prive.verifier_categorie_article`, migration `20261009170000_categories_univers.sql`). Changer la liste = modifier `lib/article.ts` ET une nouvelle migration.
   - Univers dans le catalogue (`lib/catalogue.ts`, `?univers=femme|homme|enfant|beaute`) : Femme / Homme = mode du genre ou mixte, Enfant = mode enfant, Beauté = catégories beauté.
 - Affichage des prix : toujours `formaterPrix()` → « 3 500 DA ».
+
+## Commandes (US-20)
+
+Décisions du propriétaire : compte client lié au numéro de téléphone (connexion par lien e-mail en attendant le SMS) ; le client suit, la boutique met à jour ; une commande = plusieurs articles d'**une** boutique ; stock par taille, indicatif ; WhatsApp automatique.
+
+- **Stock** (`lib/stock.ts`, migration `…_stock_par_taille.sql`) : `tailles.quantite` ; `disponible` est recalculé par la base (`quantite > 0`). Une écriture de `disponible` seule (ancien code, formulaire de modification) met la quantité à 0 ou à au moins 1. Quand la somme des quantités d'un article disponible ou réservé tombe à 0, la base le passe « Vendu » ; quand elle repasse au-dessus de 0 alors qu'il était « Vendu », il redevient « Disponible ». Le commerçant modifie la quantité directement (`tailles`, droits existants).
+- **Panier** (`lib/panier.ts`) : gardé dans le navigateur (`localStorage`, clé `oranpromo:panier`), une seule boutique, 10 lignes au plus, quantité 1 à 10 par ligne. Les prix du panier sont indicatifs : la base recalcule à la commande.
+- **Passer commande** : `passer_commande(boutique, lignes, note)` (fonction de la base, `security definer`) : compte connecté, non bloqué, avec nom et téléphone, pas sa propre boutique ; boutique validée ; articles visibles de cette boutique ; taille existante avec `quantite >= quantite demandée` ; 1 à 10 lignes ; au plus 5 commandes en cours (`demandee`, `confirmee`, `prete`) et 10 commandes par heure par client. Le stock ne bouge pas.
+- **Transitions** : `changer_statut_commande(commande, statut, motif, note)` :
+  - boutique (ou admin) : `demandee → confirmee` (stock − quantité, jamais sous 0), `confirmee → prete` (`prete_le` = maintenant, `expire_le` = + 24 h), `prete → recuperee`, et `demandee|confirmee|prete → annulee` avec un motif `plus_en_stock`, `boutique_indisponible` ou `autre` ;
+  - client : `demandee|confirmee → annulee` (motif `client_a_annule`) ;
+  - annuler une commande `confirmee` ou `prete` remet le stock (ligne dont l'article ou la taille a disparu : ignorée).
+  - Toute autre transition est refusée. Chaque transition ajoute une ligne à `suivi_commandes`.
+- **Expiration** : `prive.expirer_commandes()` passe `expiree` les commandes `prete` dont `expire_le` est passé, remet le stock, ajoute 1 à `profils.no_shows` du client et bloque le compte au 5e (`bloque`, `bloque_le`). Lancée toutes les 15 minutes par `pg_cron` (job `expirer-commandes`, créé par la migration si l'extension est disponible).
+- **Déblocage** : `debloquer_client(client)` (admin seulement) : `bloque = false`, `no_shows = 0`.
+- **Droits (RLS)** : le client lit ses commandes, leurs lignes et leur suivi ; la boutique lit ceux de sa boutique ; l'admin lit tout. Aucune politique d'écriture : uniquement les fonctions ci-dessus. Le client ne peut changer ni son rôle, ni `no_shows`, ni `bloque`.
+- **Messages WhatsApp** (`lib/notifications/`) :
+  - la base crée les messages dans `messages_whatsapp` (déclencheurs sur `suivi_commandes` et `profils`) : `oranpromo_nouvelle_commande` (boutique), `oranpromo_commande_prete`, `oranpromo_commande_expiree` (avec les essais restants), `oranpromo_compte_bloque` (client) ;
+  - envoi côté serveur seulement, par le fournisseur choisi (`WHATSAPP_FOURNISSEUR`, `meta` par défaut : WhatsApp Cloud API, messages modèles en français) ; sans `WHATSAPP_TOKEN` et `WHATSAPP_PHONE_NUMBER_ID`, aucun envoi ;
+  - juste après une action (commande, changement de statut), l'action serveur envoie les messages de cette commande (`messages_whatsapp_commande()`, réservé aux participants) ;
+  - les autres (expiration, blocage, échecs) sont envoyés par `GET /api/notifications/whatsapp`, protégé par `Authorization: Bearer <CRON_SECRET>`, appelé par une tâche planifiée (Vercel Cron ou autre) ; la base vérifie l'empreinte du secret (`messages_whatsapp_en_attente()`, `prive.reglages`) ;
+  - chaque envoi réserve le message 2 minutes (pas de double envoi), 5 tentatives au plus, puis `echec`.
+
+## Variables d'environnement
+
+| Variable | Où | Rôle |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | navigateur et serveur | connexion à Supabase (clé publique) |
+| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODELE` | serveur | IA (US-14, US-15) |
+| `NEXT_PUBLIC_SITE_URL` | serveur | adresse publique du site |
+| `WHATSAPP_FOURNISSEUR` | serveur | `meta` (par défaut) ; prévu pour `twilio` |
+| `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` | serveur | WhatsApp Cloud API (Meta) ; vides = aucun envoi |
+| `WHATSAPP_LANGUE` | serveur | langue des modèles Meta (`fr` par défaut) |
+| `CRON_SECRET` | serveur | secret de la tâche d'envoi des messages en attente |
 
 ## IA (US-14, US-15)
 

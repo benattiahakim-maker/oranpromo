@@ -63,6 +63,8 @@ En tant que client, je veux taper un mot (« polo », « jean »), afin de trouv
 ## Module 3 — Réservation WhatsApp
 
 ### US-07 — Réserver un article sur WhatsApp
+> Remplacée par la commande enregistrée (US-20.2) : le bouton de la fiche devient « Ajouter au panier ». Le lien WhatsApp vers la boutique reste disponible pour poser une question.
+
 En tant que client, je veux réserver un article en un clic, afin que la boutique le mette de côté pour moi.
 - La fiche demande de choisir une taille avant d'activer le bouton « Réserver sur WhatsApp » (sauf article en taille unique).
 - Étant donné une taille choisie, quand je clique, alors WhatsApp s'ouvre vers le numéro de la boutique avec un message pré-rempli. → utiliser `lienReservation()` de `lib/whatsapp.ts`.
@@ -166,3 +168,85 @@ En tant qu'administrateur, je veux traiter les signalements, afin d'appliquer le
 En tant qu'administrateur, je veux un tableau de bord simple, afin de suivre le lancement.
 - Je vois : boutiques actives, articles en ligne, promos en cours, clics « Réserver » sur 7 et 30 jours.
 - Je vois les boutiques sans mise à jour depuis 3 semaines, pour les relancer.
+
+## Module 7 — Commandes avec statut et suivi (après le MVP)
+
+Source : carte Trello « Commandes · Objet commande avec statut et suivi client » (décisions du propriétaire du 9 octobre 2026). Tables, colonnes et règles : `docs/architecture.md`, section « Commandes ».
+
+### US-20 — Commander et suivre sa commande (vue d'ensemble)
+En tant que client, je veux commander plusieurs articles d'une boutique et suivre ma commande, afin de savoir quand elle est prête et de venir la chercher.
+La réservation par simple message WhatsApp (US-07) est remplacée par une vraie commande enregistrée, découpée en 5 sous-stories livrées dans cet ordre :
+
+| Story | Contenu | Écrans |
+| --- | --- | --- |
+| US-20.1 | Stock par article et par taille | `/espace` (Mes articles) |
+| US-20.2 | Compte client, panier, commande, « Mes commandes » avec la frise | `/a/[id]`, `/panier`, `/compte`, `/compte/commandes`, `/compte/commandes/[id]` |
+| US-20.3 | Commandes reçues par la boutique et changements de statut | `/espace/commandes` |
+| US-20.4 | Expiration après 24 h, no-shows et blocage | `/admin/clients` |
+| US-20.5 | Messages WhatsApp automatiques (API WhatsApp Business) | aucun écran |
+
+**Statuts d'une commande** (règles dans la base) :
+
+| Statut | Signification | Qui le donne | Depuis |
+| --- | --- | --- | --- |
+| `demandee` | le client a envoyé la commande | client | — |
+| `confirmee` | la boutique a les articles : **le stock baisse** | boutique | `demandee` |
+| `prete` | préparée : le client a **24 h** pour venir | boutique | `confirmee` |
+| `recuperee` | venu et payé en boutique (fin) | boutique | `prete` |
+| `annulee` | annulée avec un motif (fin) ; le stock revient si elle était confirmée ou prête | client (`demandee`, `confirmee`) ou boutique (`demandee`, `confirmee`, `prete`) | |
+| `expiree` | pas venu sous 24 h (fin) ; le stock revient, +1 no-show | automatique | `prete` |
+
+Chaque changement de statut est enregistré (statut, date, auteur, note) et affiché au client comme une frise.
+
+### US-20.1 — Gérer le stock par taille (page `/espace`)
+En tant que commerçant, je veux indiquer combien il me reste de pièces par taille, afin que les clients ne commandent que ce que j'ai.
+- Chaque taille d'un article a une quantité (0 à 999). Un nouvel article a 1 pièce par taille choisie.
+- Dans « Mes articles », chaque taille affiche sa quantité avec des boutons « − » et « + » (zones de 44 px) ; un appui enregistre tout de suite.
+- Une taille à 0 est « épuisée » : barrée sur la fiche, non commandable, absente du filtre de taille du catalogue.
+- Quand toutes les tailles d'un article tombent à 0, l'article passe automatiquement « Vendu » (il sort des listes, sa fiche affiche « Article plus disponible ») ; quand une taille repasse au-dessus de 0, il redevient « Disponible ». Règle dans la base.
+- Retirer une taille dans la modification de l'article la met à 0 ; la rajouter lui redonne au moins 1 pièce.
+- Le stock reste indicatif (la boutique vend aussi en direct) : la boutique vérifie à la confirmation (US-20.3).
+- Maquette : `docs/maquettes/MesArticles.dc.html`.
+
+### US-20.2 — Commander en tant que client (pages `/a/[id]`, `/panier`, `/compte`)
+En tant que client, je veux mettre des articles d'une même boutique dans un panier et les commander, afin que la boutique me les prépare.
+- Sur la fiche, je choisis une taille (sauf taille unique) et une quantité (1 à 10, au plus le stock), puis « Ajouter au panier ». Le clic est compté comme un `clic_reserver` (statistiques US-08 / US-13 inchangées).
+- Le panier (`/panier`, gardé dans le téléphone) ne contient que des articles d'**une seule boutique** ; ajouter un article d'une autre boutique demande de remplacer le panier.
+- Dans le panier, je modifie les quantités, retire une ligne, ajoute une note pour la boutique (300 caractères au plus) et vois le total en DA (prix promo actif compris).
+- « Commander » demande d'être connecté : connexion par lien e-mail (`/compte/connexion`, en attendant le SMS), puis retour au panier. Un nouveau compte a le rôle `client`.
+- À la première commande, je saisis mon nom et mon numéro de téléphone (format algérien, WhatsApp), gardés dans mon profil (`/compte`).
+- La base recalcule les prix et refuse : un article non visible, une taille épuisée, une quantité au-delà du stock, plus de 10 lignes, un client bloqué, plus de 5 commandes en cours ou plus de 10 commandes par heure. Le message d'erreur est en français.
+- Après la commande, le panier est vidé et j'arrive sur le suivi de ma commande.
+- « Mes commandes » (`/compte/commandes`) liste mes commandes, les plus récentes d'abord, avec boutique, date, total et statut.
+- Le suivi (`/compte/commandes/[id]`) affiche les lignes, le total, la boutique (adresse, lien WhatsApp), la **frise** des statuts (date, heure, note) et, quand elle est prête, l'heure limite de retrait.
+- Je peux annuler ma commande tant qu'elle est `demandee` ou `confirmee`.
+- Je ne vois que mes commandes (règle dans la base).
+- Un lien discret « Une question ? Écrire à la boutique » sur la fiche ouvre WhatsApp sans passer commande.
+- Maquettes : `Fiche.dc.html`, `Panier.dc.html`, `MesCommandes.dc.html`, `SuiviCommande.dc.html`.
+
+### US-20.3 — Traiter les commandes reçues (page `/espace/commandes`)
+En tant que commerçant, je veux voir les commandes de ma boutique et changer leur statut, afin que le client sache où en est sa commande.
+- Je vois les commandes « En cours » (demandée, confirmée, prête) puis « Terminées », avec numéro, date, nom et téléphone du client (lien WhatsApp), lignes (titre, taille, quantité, prix) et total.
+- Boutons selon le statut : `demandee` → « Confirmer » ou « Annuler » ; `confirmee` → « Prête » ou « Annuler » ; `prete` → « Récupérée » ou « Annuler ».
+- Annuler demande un motif : « Plus en stock », « Boutique indisponible » ou « Autre » ; une note facultative est montrée au client.
+- Confirmer baisse le stock de chaque ligne (jamais sous 0) ; annuler une commande confirmée ou prête remet le stock.
+- Après une annulation « Plus en stock », un lien mène à « Mes articles » pour corriger les quantités.
+- La base refuse toute transition non prévue, et toute commande d'une autre boutique (règle dans la base).
+- La navigation de l'espace affiche « Commandes » avec le nombre de commandes à confirmer.
+- Maquette : `CommandesRecues.dc.html`.
+
+### US-20.4 — Expiration, no-shows et blocage (page `/admin/clients`)
+En tant que propriétaire de la plateforme, je veux repérer les clients qui ne viennent pas chercher leurs commandes, afin de protéger les boutiques.
+- Une commande `prete` depuis 24 h passe automatiquement `expiree` (tâche planifiée toutes les 15 minutes dans la base, `pg_cron`) ; le stock revient.
+- Chaque commande expirée ajoute 1 no-show au client. Il est averti à chaque fois (WhatsApp, US-20.5, et sur `/compte`) du nombre d'essais restants.
+- Au 5e no-show, le compte est bloqué automatiquement : il ne peut plus commander, et `/compte` l'explique.
+- `/admin/clients` (admin seulement) liste les clients bloqués puis ceux qui ont des no-shows (nom, téléphone, no-shows, date de blocage) ; « Débloquer » remet le compteur à 0.
+- Maquette : `ClientsBloques.dc.html`.
+
+### US-20.5 — Messages WhatsApp automatiques
+En tant que boutique et client, je veux être prévenu sur WhatsApp, afin de ne pas rater une commande.
+- Messages : nouvelle commande → boutique ; commande prête → client (avec l'heure limite) ; commande expirée → client (rappel ferme mais poli + essais restants) ; compte bloqué → client.
+- Chaque message est d'abord enregistré dans la base (`messages_whatsapp`, statut `a_envoyer`), créé par la base au changement de statut, puis envoyé côté serveur par l'API WhatsApp Business (Meta Cloud API) avec des modèles de message approuvés par Meta.
+- Sans configuration (`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` vides), rien n'est envoyé : les messages restent `a_envoyer`.
+- Un envoi raté est retenté (5 essais au plus), puis marqué `echec`. Une panne WhatsApp ne bloque jamais une commande.
+- Le fournisseur est isolé (`lib/notifications/`) pour pouvoir passer à Twilio sans toucher au reste.
