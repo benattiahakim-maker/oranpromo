@@ -146,7 +146,6 @@ export type Database = {
           client_nom: string
           client_telephone: string
           confirmee_le: string | null
-          contestation_motif: string | null
           contestation_validee_le: string | null
           contestee_le: string | null
           cree_le: string
@@ -168,7 +167,6 @@ export type Database = {
           client_nom: string
           client_telephone: string
           confirmee_le?: string | null
-          contestation_motif?: string | null
           contestation_validee_le?: string | null
           contestee_le?: string | null
           cree_le?: string
@@ -190,7 +188,6 @@ export type Database = {
           client_nom?: string
           client_telephone?: string
           confirmee_le?: string | null
-          contestation_motif?: string | null
           contestation_validee_le?: string | null
           contestee_le?: string | null
           cree_le?: string
@@ -219,6 +216,42 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contestations: {
+        Row: {
+          client_id: string
+          commande_id: string
+          cree_le: string
+          motif: string
+        }
+        Insert: {
+          client_id: string
+          commande_id: string
+          cree_le?: string
+          motif: string
+        }
+        Update: {
+          client_id?: string
+          commande_id?: string
+          cree_le?: string
+          motif?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contestations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contestations_commande_id_fkey"
+            columns: ["commande_id"]
+            isOneToOne: true
+            referencedRelation: "commandes"
             referencedColumns: ["id"]
           },
         ]

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { annulerNoShow, bloquerClient, contesterNoShow, erreurMotifContestation, etatContestation, listerContestationsEnAttente, listerMesNoShows, nettoyerMotifContestation, validerNoShow, debloquerClient, grouperNumerosPartages, listerNumerosPartages, listerClientsSurveilles, listerNoShowsDeclares, nettoyerNom, nomValide, noShowsDuClient, enregistrerProfilClient, ErreurValidationProfil, essaisRestants, messageNoShows, profilComplet, telephoneLisible, validerProfilClient } from "./clients";
+import { annulerNoShow, aUneContestationEnAttente, bloquerClient, contesterNoShow, delaiContestationDepasse, erreurMotifContestation, etatContestation, listerContestationsEnAttente, listerMesNoShows, nettoyerMotifContestation, validerNoShow, debloquerClient, grouperNumerosPartages, listerNumerosPartages, listerClientsSurveilles, listerNoShowsDeclares, nettoyerNom, nomValide, noShowsDuClient, enregistrerProfilClient, ErreurValidationProfil, essaisRestants, messageNoShows, profilComplet, telephoneLisible, validerProfilClient } from "./clients";
 
 describe("profil client (US-20.2, US-20.4)", () => {
   it("compte les essais restants avant le blocage au 5e no-show", () => {
@@ -187,5 +187,31 @@ describe("contestation d’un no-show (migration 20261009234500)", () => {
     expect(rpc).toHaveBeenCalledWith("valider_no_show", { commande: "c1" });
     rpc.mockResolvedValue({ error: { code: "P0002", message: "Aucune contestation en attente sur cette commande." } });
     await expect(validerNoShow({ rpc } as unknown as SupabaseClient<Database>, "c1")).rejects.toThrow("Aucune contestation");
+  });
+});
+
+describe("règles de la contestation (migration 20261009235500)", () => {
+  it("7 jours pour contester après la déclaration", () => {
+    const declare = "2026-10-01T10:00:00Z";
+    expect(delaiContestationDepasse({ no_show_le: declare }, Date.parse("2026-10-08T09:59:00Z"))).toBe(false);
+    expect(delaiContestationDepasse({ no_show_le: declare }, Date.parse("2026-10-08T10:01:00Z"))).toBe(true);
+    expect(delaiContestationDepasse({ no_show_le: null }, Date.parse("2026-10-02T10:00:00Z"))).toBe(true);
+  });
+  it("repère une contestation déjà en attente", () => {
+    expect(aUneContestationEnAttente([{ contestee_le: null, contestation_validee_le: null }])).toBe(false);
+    expect(aUneContestationEnAttente([{ contestee_le: "2026-10-01T10:00:00Z", contestation_validee_le: "2026-10-02T10:00:00Z" }])).toBe(false);
+    expect(aUneContestationEnAttente([{ contestee_le: null, contestation_validee_le: null }, { contestee_le: "2026-10-01T10:00:00Z", contestation_validee_le: null }])).toBe(true);
+  });
+  it("lit le motif dans la table contestations (pas dans commandes, que lit la boutique)", async () => {
+    const appels: unknown[][] = [];
+    const chaine: Record<string, unknown> = {};
+    for (const m of ["select", "eq", "not", "is", "order"]) chaine[m] = (...a: unknown[]) => { appels.push([m, ...a]); return chaine; };
+    chaine.limit = async () => ({ data: [], error: null });
+    const client = { auth: { getUser: async () => ({ data: { user: { id: "moi" } }, error: null }) }, from: () => chaine } as unknown as SupabaseClient<Database>;
+    await listerMesNoShows(client);
+    await listerContestationsEnAttente(client);
+    const selections = appels.filter(a => a[0] === "select").map(a => String(a[1]));
+    expect(selections).toHaveLength(2);
+    for (const s of selections) { expect(s).toContain("contestations(motif)"); expect(s).not.toContain("contestation_motif"); }
   });
 });

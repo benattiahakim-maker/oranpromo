@@ -88,7 +88,7 @@ function LigneContestation({ contestation: c }: { contestation: ContestationEnAt
   return <div className="border-b border-trait py-3.5">
     <p className="text-sm font-light">{c.client_nom} · {telephoneLisible(c.client_telephone)}</p>
     <p className="text-xs text-gris">Commande n° {c.numero}{c.boutiques ? ` · ${c.boutiques.nom}` : ""}{c.no_show_le ? ` · no-show du ${formaterDateHeure(c.no_show_le)}` : ""}{c.contestee_le ? ` · contesté le ${formaterDateHeure(c.contestee_le)}` : ""}</p>
-    <p className="mt-1 break-words text-sm">« {c.contestation_motif} »</p>
+    {c.contestations?.motif && <p className="mt-1 break-words text-sm">« {c.contestations.motif} »</p>}
     <div className="mt-2 flex gap-2">
       <button type="button" disabled={enCours} onClick={() => void agir("valider")} aria-label={`Valider le no-show de la commande n° ${c.numero}`} className="etiquette min-h-11 flex-1 border border-noir px-3">Valider le no-show</button>
       <button type="button" disabled={enCours} onClick={() => void agir("annuler")} aria-label={`Annuler le no-show contesté de la commande n° ${c.numero}`} className="etiquette min-h-11 flex-1 border border-trait px-3">Annuler le no-show</button>
