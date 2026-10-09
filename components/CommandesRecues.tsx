@@ -7,6 +7,7 @@ import { ACTION_BOUTIQUE, annulableParBoutique, estStockInsuffisant, formaterDat
 import { telephoneLisible } from "@/lib/clients";
 import { formaterPrix } from "@/lib/prix";
 import { lienContactClient } from "@/lib/whatsapp";
+import { aEncaisser } from "@/lib/bons";
 
 // US-20.3 : commandes reçues par la boutique, avec les boutons de changement de statut.
 export default function CommandesRecues({ commandes, boutique }: { commandes: CommandeRecue[]; boutique: string }) {
@@ -60,6 +61,8 @@ function CarteCommande({ commande, boutique }: { commande: CommandeRecue; boutiq
     <p className="text-xs text-gris">{formaterDateHeure(commande.cree_le)} · <a href={lienContactClient(commande.client_telephone, commande.numero, boutique)} target="_blank" rel="noopener noreferrer" className="underline">{telephoneLisible(commande.client_telephone)} · WhatsApp</a></p>
     <ul className="text-[13px] font-light">{commande.lignes_commande.map(l => <li key={l.id}>{l.titre} · {l.taille} × {l.quantite} · {formaterPrix(l.prix_unitaire * l.quantite)}</li>)}</ul>
     <p className="text-sm">Total {formaterPrix(commande.total)} · {quantiteTotale(commande.lignes_commande)} pièce{quantiteTotale(commande.lignes_commande) > 1 ? "s" : ""}</p>
+    {/* US-27.4 : bon parrainage OranPromo (300 DA remboursés à la boutique). */}
+    {(commande.remise_bon ?? 0) > 0 && <p className="text-sm font-medium">Bon parrainage −{formaterPrix(commande.remise_bon)} · à encaisser {formaterPrix(aEncaisser(commande.total, commande.remise_bon))}</p>}
     {commande.note && <p className="text-sm text-gris">Note du client : « {commande.note} »</p>}
     {motifAffiche && <p className="text-sm text-gris">Motif : {motifAffiche}</p>}
     {commande.no_show_le && <p className="text-sm text-gris">Client pas venu · signalé le {formaterDateHeure(commande.no_show_le)}{commande.no_show_annule_le ? " (annulé par OranPromo)" : ""}</p>}
@@ -70,7 +73,7 @@ function CarteCommande({ commande, boutique }: { commande: CommandeRecue; boutiq
     </div>}
     {/* US-26.3, décision 2 : remise manuelle gardée, derrière une confirmation. */}
     {commande.statut === "prete" && !annulation && (sansQr
-      ? <div className="mt-1 flex flex-col gap-2 border border-trait p-3"><p className="text-sm">Le client n’a ni QR code ni code ? Remettez la commande seulement si vous le reconnaissez.</p><div className="flex gap-2"><button type="button" disabled={enCours} onClick={() => void changer("recuperee")} className="etiquette min-h-11 flex-1 bg-noir text-blanc">Confirmer la remise</button><button type="button" disabled={enCours} onClick={() => setSansQr(false)} className="etiquette min-h-11 border border-trait px-3">Retour</button></div></div>
+      ? <div className="mt-1 flex flex-col gap-2 border border-trait p-3"><p className="text-sm">Le client n’a ni QR code ni code ? Remettez la commande seulement si vous le reconnaissez.</p>{(commande.remise_bon ?? 0) > 0 && <p className="text-sm font-medium">Sans QR code ni code, le bon ne s’applique pas : encaissez {formaterPrix(commande.total)}. Le bon reste au client.</p>}<div className="flex gap-2"><button type="button" disabled={enCours} onClick={() => void changer("recuperee")} className="etiquette min-h-11 flex-1 bg-noir text-blanc">Confirmer la remise</button><button type="button" disabled={enCours} onClick={() => setSansQr(false)} className="etiquette min-h-11 border border-trait px-3">Retour</button></div></div>
       : <button type="button" disabled={enCours} onClick={() => { setSansQr(true); setMessage(""); }} className="min-h-11 self-start text-sm underline">Remis sans QR code</button>)}
     {annulation && <fieldset className="mt-1 border border-trait p-3">
       <legend className="etiquette px-1">Motif de l’annulation</legend>

@@ -114,3 +114,25 @@ describe("commandes reçues (US-20.3)", () => {
     expect(screen.getByRole("button", { name: "Client pas venu" })).toBeInTheDocument();
   });
 });
+
+describe("US-27.4 : bon parrainage dans la liste de la boutique", () => {
+  it("sous le total : « Bon parrainage −300 DA · à encaisser 8 400 DA »", () => {
+    render(<CommandesRecues commandes={[commande("confirmee", { bon_id: "b1", remise_bon: 300 })]} boutique="Boutique Amine" />);
+    expect(screen.getByText(/Bon parrainage −300\sDA · à encaisser 8\s400\sDA/)).toBeInTheDocument();
+  });
+  it("sans bon : pas de ligne", () => {
+    render(<CommandesRecues commandes={[commande("confirmee")]} boutique="Boutique Amine" />);
+    expect(screen.queryByText(/Bon parrainage/)).toBeNull();
+  });
+  it("« Remis sans QR code » avec un bon : la confirmation dit d'encaisser le total, le bon reste au client", () => {
+    render(<CommandesRecues commandes={[commande("prete", { bon_id: "b1", remise_bon: 300 })]} boutique="Boutique Amine" />);
+    fireEvent.click(screen.getByRole("button", { name: "Remis sans QR code" }));
+    expect(screen.getByText(/Sans QR code ni code, le bon ne s’applique pas : encaissez 8\s700\sDA\. Le bon reste au client\./)).toBeInTheDocument();
+    expect(changerStatutCommandeBoutique).not.toHaveBeenCalled();
+  });
+  it("« Remis sans QR code » sans bon : pas de phrase sur le bon", () => {
+    render(<CommandesRecues commandes={[commande("prete")]} boutique="Boutique Amine" />);
+    fireEvent.click(screen.getByRole("button", { name: "Remis sans QR code" }));
+    expect(screen.queryByText(/le bon ne s’applique pas/)).toBeNull();
+  });
+});

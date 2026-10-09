@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { aEncaisser, bonApplicable, bonDisponible, etatBon, formaterJourCourt, formaterJourMois, moisAlger, nomMois, premierDuMoisSuivant, raisonBonNonApplique, resultatBon, utiliserBon, type BonClient } from "./bons";
+import { aEncaisser, bonApplicable, releveDuMois, bonDisponible, etatBon, formaterJourCourt, formaterJourMois, moisAlger, nomMois, premierDuMoisSuivant, raisonBonNonApplique, resultatBon, utiliserBon, type BonClient } from "./bons";
 
 describe("bons de parrainage (US-27)", () => {
   it("montant à encaisser = total − bon", () => {
@@ -79,5 +79,14 @@ describe("US-27.4 : bon posé après la commande", () => {
     expect(raisonBonNonApplique("applique")).toBeNull();
     expect(raisonBonNonApplique("<script>")).toBeNull();
     expect(raisonBonNonApplique(undefined)).toBeNull();
+  });
+});
+
+describe("US-27.4 : relevé de remboursement nommé pour la boutique", () => {
+  it("« relevé de novembre », « relevé d’octobre », « relevé d’août »", () => {
+    expect(releveDuMois("2026-11-01")).toBe("relevé de novembre");
+    expect(releveDuMois("2026-10-01")).toBe("relevé d’octobre");
+    expect(releveDuMois("2026-08-01")).toBe("relevé d’août");
+    expect(releveDuMois("2026-04-01")).toBe("relevé d’avril");
   });
 });
