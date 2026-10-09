@@ -10,7 +10,7 @@ vi.mock("@/lib/gestion-articles", async importOriginal => ({ ...await importOrig
 vi.mock("@/lib/supabase/client", () => ({ creerClientNavigateur: () => "client" }));
 vi.mock("@/lib/envoi-article", () => ({ modifierArticleNavigateur: (...args: unknown[]) => modifierArticle("client", ...args) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh, replace }) }));
-const article: ArticleGere = { id: "article", boutique_id: "boutique", titre: "Polo", categorie: "Polos", genre: "homme", couleur: null, description: null, description_ar: null, cree_le: "2026-10-09T00:00:00Z", derniere_confirmation: "2026-10-09T00:00:00Z", propose_par_ia: false, masque_par_moderation: false, prix: 3500, statut: "disponible", photos: [], promos: null, tailles: [{ id: "s", article_id: "article", libelle: "S", disponible: true }, { id: "m", article_id: "article", libelle: "M", disponible: true }] };
+const article: ArticleGere = { id: "article", boutique_id: "boutique", titre: "Polo", categorie: "T-shirts et polos", genre: "homme", couleur: null, description: null, description_ar: null, cree_le: "2026-10-09T00:00:00Z", derniere_confirmation: "2026-10-09T00:00:00Z", propose_par_ia: false, masque_par_moderation: false, prix: 3500, statut: "disponible", photos: [], promos: null, tailles: [{ id: "s", article_id: "article", libelle: "S", disponible: true }, { id: "m", article_id: "article", libelle: "M", disponible: true }] };
 beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); changerStatut.mockResolvedValue(undefined); modifierArticle.mockResolvedValue(undefined); supprimerArticle.mockResolvedValue(undefined); });
 afterEach(cleanup);
 describe("US-11 : liste et modification", () => {

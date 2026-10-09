@@ -5,7 +5,7 @@ import { publierArticle } from "./publication-article";
 import type { SaisieArticle } from "./article";
 
 const fichiers = [new File(["photo"], "photo.jpg", { type: "image/jpeg" })];
-const saisie: SaisieArticle = { titre: "Polo bleu", categorie: "Polos", genre: "homme", couleur: "", description: "", prix: "3500", tailles: ["M", "m", "L"], photos: fichiers };
+const saisie: SaisieArticle = { titre: "Polo bleu", categorie: "T-shirts et polos", genre: "homme", couleur: "", description: "", prix: "3500", tailles: ["M", "m", "L"], photos: fichiers };
 
 function clientTest() {
   const ordre: string[] = [];

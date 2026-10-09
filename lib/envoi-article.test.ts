@@ -3,7 +3,7 @@ import { modifierArticleNavigateur, publierArticleNavigateur } from "./envoi-art
 const { compresser, publier, modifier } = vi.hoisted(() => ({ compresser: vi.fn(), publier: vi.fn(), modifier: vi.fn() }));
 vi.mock("./compression-photo", () => ({ preparerPhoto: compresser }));
 vi.mock("@/app/espace/articles/actions", () => ({ publierArticleServeur: publier, modifierArticleServeur: modifier }));
-const saisie = { titre: "Polo", categorie: "Polos", genre: "homme", couleur: "Bleu", description: "", prix: "3500", tailles: ["M"], photos: [] };
+const saisie = { titre: "Polo", categorie: "T-shirts et polos", genre: "homme", couleur: "Bleu", description: "", prix: "3500", tailles: ["M"], photos: [] };
 const fichier = new File(["original"], "photo.png", { type: "image/png" });
 beforeEach(() => { vi.clearAllMocks(); compresser.mockResolvedValue({ photo: new Blob(["jpeg"], { type: "image/jpeg" }), vignette: new Blob(["mini"], { type: "image/jpeg" }) }); publier.mockResolvedValue({ id: "article" }); modifier.mockResolvedValue({}); });
 describe("envoi des formulaires au serveur", () => {

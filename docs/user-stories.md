@@ -45,7 +45,8 @@ En tant que client, je veux voir sur la page d'accueil les promos en cours à Or
 
 ### US-05 — Filtrer le catalogue (page `/catalogue`)
 En tant que client, je veux filtrer les articles de toutes les boutiques, afin de trouver ce qui me correspond.
-- Filtres : catégorie, taille, genre (homme, femme, enfant), fourchette de prix, quartier, « en promo seulement ».
+- Filtres : univers (Femme, Homme, Enfant, Beauté), catégorie (groupée Mode / Beauté), taille ou contenance, genre (homme, femme, enfant, mixte), fourchette de prix, quartier, « en promo seulement ».
+- Univers : Femme et Homme = articles de mode de ce genre ou mixtes ; Enfant = mode enfant ; Beauté = les 5 catégories beauté (`/catalogue?univers=beaute`).
 - Étant donné plusieurs filtres choisis, alors seuls les articles qui les respectent tous s'affichent.
 - Le nombre de résultats est affiché ; aucun résultat affiche un message et un bouton « Effacer les filtres ».
 - Les filtres sont gardés dans l'adresse de la page (paramètres d'URL), pour qu'une recherche puisse être partagée.
@@ -90,7 +91,10 @@ En tant que commerçant, je veux me connecter sans mot de passe, afin de n'avoir
 ### US-10 — Ajouter un article (page `/espace/articles/nouveau`)
 En tant que commerçant, je veux ajouter un article depuis mon téléphone, afin de le rendre visible en ligne.
 - Je peux prendre une photo avec l'appareil ou en choisir dans ma galerie (1 à 5 photos).
-- Champs obligatoires : au moins une photo, titre, catégorie, prix en DA, au moins une taille.
+- Champs obligatoires : au moins une photo, titre, catégorie, genre (sauf beauté : facultatif, enregistré « mixte »), prix en DA, au moins une taille (beauté : une contenance en ml, ou « Unique »).
+- Catégories (liste fixe, `lib/article.ts`, vérifiée aussi par la base) :
+  - Mode (Femme / Homme / Enfant) : T-shirts et polos, Chemises, Pulls et sweats, Vestes et manteaux, Pantalons et jeans, Survêtements et ensembles, Robes, Jupes, Abayas, djellabas, kamis, Tenues traditionnelles, Hijabs et foulards, Chaussures, Sacs, Accessoires.
+  - Beauté : Parfums, Maquillage, Soins visage et corps, Cheveux, Hammam et traditionnel.
 - Étant donné un champ obligatoire vide, quand je valide, alors un message en français s'affiche sous ce champ.
 - Étant donné un formulaire complet, quand je valide, alors l'article est en ligne et je vois son lien à partager.
 - Les photos sont compressées avant envoi. Chemin de stockage imposé : `photos/<boutique_id>/<article_id>/<fichier>`.
@@ -122,9 +126,10 @@ En tant que commerçant, je veux voir combien de personnes ont vu mes articles e
 En tant que commerçant ou ambassadeur, je veux que l'IA remplisse la fiche à partir de la photo, afin de créer un article en quelques secondes.
 - Étant donné une première photo ajoutée (US-10), alors l'IA propose en moins de 10 secondes : titre, description courte, catégorie, genre, couleur principale.
 - Les champs proposés sont pré-remplis et modifiables ; un repère indique « proposé par l'IA » (`propose_par_ia = true`).
-- Le prix et les tailles ne sont jamais proposés par l'IA : le commerçant les saisit.
+- Le prix, les tailles et les contenances ne sont jamais proposés par l'IA : le commerçant les saisit.
+- L'IA choisit la catégorie dans la liste officielle (mode et beauté).
 - La description ne mentionne ni marque ni authenticité, même si un logo est visible.
-- Étant donné une photo qui ne montre pas un vêtement, ou floue, alors l'IA ne remplit rien et un message demande une autre photo.
+- Étant donné une photo qui ne montre ni un article de mode (vêtement, chaussure, sac, accessoire) ni un produit de beauté, ou floue, alors l'IA ne remplit rien et un message demande une autre photo.
 - Étant donné l'IA indisponible, alors le formulaire reste utilisable à la main.
 - Rien n'est publié sans validation du commerçant.
 

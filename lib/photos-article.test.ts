@@ -15,7 +15,7 @@ function simulation() {
   const client = { auth: { getUser: async () => ({ data: { user: { id: "compte" } }, error: null }) }, from: vi.fn((table: string) => table === "profils" ? { select: () => profil } : table === "tailles" ? { upsert } : table === "photos" ? { insert: insertion, delete: suppression, update: ordre } : { select: () => requete, update }), storage: { from: () => stockage } } as unknown as SupabaseClient<Database>;
   return { client, update, insertion, suppression, upload, remove, fin };
 }
-const saisie = { titre: "Polo", categorie: "Polos", genre: "homme", couleur: "Bleu", description: "", prix: "3500", tailles: ["M"], photos: [] };
+const saisie = { titre: "Polo", categorie: "T-shirts et polos", genre: "homme", couleur: "Bleu", description: "", prix: "3500", tailles: ["M"], photos: [] };
 const fichier = new File(["jpeg"], "p.jpg", { type: "image/jpeg" });
 const compression = async (f: File) => f;
 describe("photos en modification", () => {
