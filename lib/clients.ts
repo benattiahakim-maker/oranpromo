@@ -141,7 +141,8 @@ export async function bloquerClient(client: SupabaseClient<Database>, id: string
 
 // --- Contestation d’un no-show (décision du propriétaire, migration 20261009234500) --------
 // Le client conteste depuis /compte avec un motif court, une fois par no-show. Tant que la contestation est en
-// attente, le no-show ne compte pas pour le blocage. L’admin valide le no-show (il compte de nouveau) ou l’annule.
+// attente, le no-show ne compte pas pour un nouveau blocage ; un compte déjà bloqué le reste (relecture n°4, il
+// faut une décision de l’admin). L’admin valide le no-show (il compte de nouveau) ou l’annule.
 export const MOTIF_CONTESTATION_MIN = 5;
 export const MOTIF_CONTESTATION_MAX = 300;
 

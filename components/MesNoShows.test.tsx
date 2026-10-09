@@ -49,6 +49,10 @@ describe("contester un no-show depuis /compte", () => {
     expect(screen.getByText("Votre motif : J’étais malade")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Contester" })).not.toBeInTheDocument();
   });
+  it("relecture n°4 : prévient qu’un compte déjà bloqué le reste pendant la contestation", () => {
+    render(<MesNoShows noShows={[base]} maintenant={maintenant} />);
+    expect(screen.getByText(/un compte déjà bloqué le reste jusqu’à cette décision/)).toBeInTheDocument();
+  });
   it("règle des 7 jours : plus de bouton Contester après le délai", () => {
     render(<MesNoShows noShows={[{ ...base, no_show_le: "2026-10-02T09:00:00Z" }]} maintenant={maintenant} />);
     expect(screen.getByText("Délai de contestation dépassé (7 jours).")).toBeInTheDocument();

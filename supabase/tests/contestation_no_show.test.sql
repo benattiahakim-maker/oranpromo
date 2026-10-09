@@ -66,7 +66,8 @@ begin
   perform changer_statut_commande(c, 'confirmee');
   perform changer_statut_commande(c, 'prete');
   reset role;
-  update commandes set expire_le = now() - interval '1 minute' where id = c;
+  -- Commande vieillie de 2 h : la limite de 3 commandes par heure et par boutique (relecture n°4) ne gêne pas.
+  update commandes set expire_le = now() - interval '1 minute', cree_le = now() - interval '2 hours' where id = c;
   set local role authenticated;
   perform pg_temp.compte('b1000000-0000-0000-0000-000000000001');
   perform declarer_no_show(c);
@@ -116,7 +117,8 @@ select pg_temp.compte('c1000000-0000-0000-0000-000000000002') \g /dev/null
 select pg_temp.erreur(format('select contester_no_show(%L, ''Je réessaie encore'')', :'n1'), '23514', 'déjà contesté', 'après validation, pas de nouvelle contestation');
 
 -- ---------------------------------------------------------------------------
--- 5 no-shows → bloqué ; contester le 5e débloque ; valider rebloque ; annuler (chemin existant) débloque.
+-- 5 no-shows → bloqué ; contester le 5e NE débloque PAS (relecture n°4) ; valider : toujours bloqué, sans nouveau
+-- message ; annuler (décision de l'admin) débloque.
 -- ---------------------------------------------------------------------------
 select pg_temp.no_show('c1000000-0000-0000-0000-000000000002') as n2 \gset
 select pg_temp.no_show('c1000000-0000-0000-0000-000000000002') as n3 \gset
@@ -128,18 +130,18 @@ set local role authenticated;
 select pg_temp.compte('c1000000-0000-0000-0000-000000000002') \g /dev/null
 select contester_no_show(:'n5', 'Commande prête puis no-show tout de suite') \g /dev/null
 reset role;
-select pg_temp.ok((select no_shows = 4 and not bloque and bloque_le is null from profils where id = 'c1000000-0000-0000-0000-000000000002'),
-  'un compte bloqué conteste : 5 → 4, débloqué tant que la contestation est en attente');
+select pg_temp.ok((select no_shows = 4 and bloque and bloque_le is not null and not bloque_par_admin from profils where id = 'c1000000-0000-0000-0000-000000000002'),
+  'relecture n°4 : un compte déjà bloqué conteste : compteur 4, mais toujours bloqué (5 avec la contestation)');
 set local role authenticated;
 select pg_temp.compte('c1000000-0000-0000-0000-000000000002') \g /dev/null
-select pg_temp.ok(passer_commande('d1000000-0000-0000-0000-000000000002', '[{"article_id":"e1000000-0000-0000-0000-000000000002","taille":"M","quantite":1}]') is not null,
-  'débloqué par la contestation : il commande de nouveau');
+select pg_temp.erreur($$select passer_commande('d1000000-0000-0000-0000-000000000002', '[{"article_id":"e1000000-0000-0000-0000-000000000002","taille":"M","quantite":1}]')$$,
+  '42501', 'bloqué', 'relecture n°4 : contester ne permet pas de commander de nouveau');
 select pg_temp.compte('a1000000-0000-0000-0000-000000000001') \g /dev/null
 select valider_no_show(:'n5') \g /dev/null
 reset role;
 select pg_temp.ok((select no_shows = 5 and bloque from profils where id = 'c1000000-0000-0000-0000-000000000002')
-  and (select count(*) from messages_whatsapp where modele = 'oranpromo_compte_bloque' and destinataire = '+213555200002') = 2,
-  'admin valide : 5 → bloqué de nouveau (message de blocage existant)');
+  and (select count(*) from messages_whatsapp where modele = 'oranpromo_compte_bloque' and destinataire = '+213555200002') = 1,
+  'relecture n°4 : admin valide : 5, toujours bloqué, un seul message « compte bloqué » (pas de doublon)');
 select pg_temp.ok((select count(*) from messages_whatsapp where texte ilike '%contest%') = 0, 'aucun nouveau message WhatsApp pour la contestation');
 set local role authenticated;
 select pg_temp.compte('c1000000-0000-0000-0000-000000000002') \g /dev/null
@@ -175,8 +177,8 @@ select debloquer_client('c1000000-0000-0000-0000-000000000002') \g /dev/null
 reset role;
 select pg_temp.ok((select not bloque and not bloque_par_admin and no_shows = 0 from profils where id = 'c1000000-0000-0000-0000-000000000002'),
   'Débloquer lève le blocage de l''admin et remet à 0');
-select pg_temp.ok((select count(*) from messages_whatsapp where modele = 'oranpromo_compte_bloque' and destinataire = '+213555200002') = 2,
-  'le blocage par l''admin n''envoie pas de message');
+select pg_temp.ok((select count(*) from messages_whatsapp where modele = 'oranpromo_compte_bloque' and destinataire = '+213555200002') = 1,
+  'le blocage par l''admin n''envoie pas de message (toujours un seul message « compte bloqué »)');
 
 rollback;
 \echo 'Tous les tests SQL de la contestation des no-shows passent.'

@@ -14,7 +14,7 @@ export default function MesNoShows({ noShows, maintenant: maintenantFixe }: { no
   const enAttente = aUneContestationEnAttente(noShows);
   return <section aria-labelledby="mes-no-shows" className="mt-6">
     <h2 id="mes-no-shows" className="etiquette">Commandes non récupérées ({noShows.length})</h2>
-    <p className="mt-2 text-xs leading-[1.6] text-gris">La boutique a signalé que vous n’êtes pas venu(e). Si c’est une erreur, contestez dans les {DELAI_CONTESTATION_JOURS} jours : la commande ne compte plus tant qu’OranPromo n’a pas décidé. Une seule contestation à la fois.</p>
+    <p className="mt-2 text-xs leading-[1.6] text-gris">La boutique a signalé que vous n’êtes pas venu(e). Si c’est une erreur, contestez dans les {DELAI_CONTESTATION_JOURS} jours : la commande ne compte plus tant qu’OranPromo n’a pas décidé (un compte déjà bloqué le reste jusqu’à cette décision). Une seule contestation à la fois.</p>
     <ul>{noShows.map(n => <li key={n.id}><LigneNoShow noShow={n} delaiDepasse={delaiContestationDepasse(n, maintenant)} autreEnAttente={enAttente} /></li>)}</ul>
   </section>;
 }
