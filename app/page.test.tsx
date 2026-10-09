@@ -50,3 +50,15 @@ describe("US-24.3 : lien vers la carte sur l'accueil", () => {
     expect(html).toContain("شوف الخريطة");
   });
 });
+
+describe("US-27.3 : bloc « Parraine tes amis » sur l'accueil", () => {
+  it("absent tant que le parrainage est fermé (ou base illisible)", async () => {
+    expect(renderToStaticMarkup(await Accueil())).not.toContain('href="/parrainage"');
+  });
+  it("présent quand il est ouvert : « Parraine tes amis · 300 DA chacun » vers /parrainage", async () => {
+    const serveur = await import("@/lib/supabase/server");
+    vi.spyOn(serveur, "creerClientServeur").mockResolvedValueOnce({ rpc: async (nom: string) => ({ data: nom === "parrainage_ouvert", error: null }) } as never);
+    const html = renderToStaticMarkup(await Accueil());
+    expect(html).toContain('href="/parrainage"'); expect(html).toContain("Parraine tes amis"); expect(html).toContain("300 DA chacun");
+  });
+});

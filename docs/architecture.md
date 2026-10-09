@@ -510,6 +510,15 @@ Coût : 600 DA par parrainage complet (300 + 300), au plus 1 500 DA de bons de p
 - **Lecture admin** : pas de fonctions `releves_bons_admin`, `lignes_releve_admin`, `parrainages_admin` ; l'admin lit `parrainages`, `bons`, `releves_bons`, `lignes_releve` par la RLS (`prive.est_admin()`), les signaux sont calculés dans `lib/` (US-27.5). `budget_parrainage(mois)` renvoie budget, émis, utilisé, nombre en file, reste.
 - **Modifié dans l'existant** (seulement ce que la conception demandait) : `retrait_par_lien` et `prive.resume_retrait` (donc `retrait_boutique` / `remettre_commande`) renvoient aussi `remise_bon`. `passer_commande`, `changer_statut_commande`, `declarer_no_show`, `prive.recalculer_no_shows`, `prive.no_shows_actifs`, `bloquer_client`, `debloquer_client`, `prive.proteger_profil`, les contestations, l'expiration, `remettre_commande` et `prive.poser_mode_remise` : **inchangées** (empreintes vérifiées dans le test SQL et en production).
 
+### Ce qui a été codé côté client (US-27.2 à US-27.4) — précisions
+
+- **`parrainage_ouvert()`** (migration `20261012100000_parrainage_ouvert.sql`) : renvoie seulement l'interrupteur, lisible par `anon` ; sert à la page publique et au bloc d'accueil (rien n'est annoncé tant que le parrainage est fermé ; une erreur vaut « fermé »).
+- **`/p/[code]`** : redirection 303 vers `/parrainage?invite=1`, cookie posé seulement si le code est bien formé ; la page de connexion ne renvoie qu'à `/compte` ou `/panier` (règle de `cheminSuiteClient` inchangée) : un invité qui se connecte retrouve le champ pré-rempli dans `/compte`. Le cookie est effacé après un choix enregistré.
+- **Saisie du parrain** : `components/ChoixParrain.tsx` dans `/compte`, `/panier` (au-dessus du bouton « Commander ») et `/parrainage?invite=1`, affiché seulement si `mon_parrainage().peut_choisir`. Action `app/compte/parrainage/actions.ts` (normalisation dans `lib/parrainage.ts`, erreurs de la base traduites en arabe).
+- **Bon au panier** : la case est gardée dans l'état du panier ; `commanderPanier(…, avecBon)` appelle `utiliser_bon` après `passer_commande` et `definir_langue_commande`, **avant** de programmer l'envoi WhatsApp (le message « nouvelle commande » porte donc le montant à encaisser). Si le bon n'est pas posé, le suivi s'ouvre avec `?bon=<raison>` (`aucun_bon`, `minimum`, `boutique_exclue`, `erreur`) : message affiché seulement sur une commande `demandee` sans bon.
+- **Affichage** : `aEncaisser()` partout (panier, suivi, QR code du client, page du proche via `retrait_par_lien.remise_bon`). « Mes bons » lit `mes_bons()` ; un bon « disponible » dont la date est passée s'affiche expiré en attendant la tâche du soir.
+- **Textes** : section `parrainage` de `lib/textes/fr.ts` et `ar.ts` (n° de la story en commentaire) ; message de partage `lib/parrainage.ts` (« Je t'invite sur OranPromo, les promos des boutiques d'Oran : <lien> », arabe à relire).
+
 ### Fonctions (toutes `security definer`, `search_path` fixé)
 
 - `choisir_parrain(saisie)` : inchangé par rapport à la conception (PR #67) : interrupteur ; filleul client, numéro vérifié, ≤ 7 jours, aucune commande, < 3 saisies, numéro jamais filleul ; son propre numéro / code → erreur ; puis recherche **silencieuse** d'un parrain possible (client, numéro vérifié ou code égal, non bloqué, non exclu, inscrit avant le filleul, pas filleul du filleul). Réponse `enregistre` dans tous les cas.
@@ -569,6 +578,7 @@ Inchangé (PR #67) : même message que le numéro soit inscrit ou non ; un numé
 app/parrainage/page.tsx                    page publique (US-27.3)
 app/p/[code]/route.ts                      lien d'invitation : cookie `parrain` (code seul, httpOnly, SameSite=Lax, 30 jours), redirection /parrainage?invite=1 (US-27.2)
 app/compte/parrainage/actions.ts           choisirParrain(saisie) (US-27.2)
+components/ContenuParrainage.tsx, PartageParrainage.tsx, MerciParrainage.tsx  rendu de /parrainage, partage du lien, encadré « Merci ! » (US-27.3)
 app/admin/parrainages/page.tsx             parrainages, signaux, budget (US-27.5)
 app/admin/remboursements/page.tsx          relevés par boutique et par mois (US-27.5)
 app/admin/remboursements/export/route.ts   export CSV, admin seulement (US-27.5)

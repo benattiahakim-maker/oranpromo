@@ -358,6 +358,93 @@ export const fr = {
     accueilTexte: "Trouvez les promos près de chez vous.",
     accueilLien: "Voir la carte",
   },
+  parrainage: {
+    // US-27 : parrainage (tutoiement, décision 9 du 9/10). Numéros = textes de la story US-27 (module 14).
+    metaTitre: "Parrainage",
+    etiquette: "Parrainage",
+    titre: "Parraine tes amis", // 1
+    intro: "Fais découvrir les promos des boutiques d’Oran. Quand ton ami récupère sa première commande en boutique, vous recevez chacun un bon de 300 DA.",
+    commentCaMarche: "Comment ça marche",
+    etape1: "Partage ton lien sur WhatsApp.", // 2
+    etape2: "Ton ami s’inscrit avec son numéro et te choisit comme parrain.", // 3
+    etape3: "Quand il récupère sa première commande en boutique, vous gagnez tous les deux.", // 4
+    recompense: "Un bon de 300 DA chacun, à déduire en boutique.", // 5
+    tonCode: "Ton code",
+    partagerWhatsApp: "Partager sur WhatsApp", // 6
+    copierLien: "Copier le lien", // 7
+    lienCopie: "Lien copié.",
+    copieImpossible: "Copie impossible : partage le lien par WhatsApp.",
+    qrAlt: "QR code de ton lien de parrainage",
+    qrTexte: "Ton ami peut scanner ce QR code avec son téléphone. Le lien ne montre ni ton nom ni ton numéro.",
+    connecteToi: "Connecte-toi pour avoir ton lien",
+    seConnecter: "Se connecter",
+    reserveClients: "Le parrainage est réservé aux clients avec un numéro WhatsApp vérifié par code.",
+    ferme: "Le parrainage n’est pas encore ouvert. Reviens bientôt !",
+    bonTitre: "Ton bon de 300 DA",
+    bonTexte: "Au panier, coche « Utiliser mon bon » : tu paies 300 DA de moins en boutique. C’est OranPromo qui paie ces 300 DA à la boutique.",
+    voirMesBons: "Voir mes bons et mes filleuls",
+    reglesTitre: "Les règles",
+    regle1: "Parrain et filleul ont un numéro vérifié par code WhatsApp.",
+    regle2: "Pas de parrainage de soi-même. Un seul parrain par compte.",
+    regle3: "Le filleul choisit son parrain dans les 7 jours, avant sa première commande.",
+    regle4: "Les bons arrivent après sa première commande d’au moins 2 000 DA, récupérée avec son QR code, pas à l’inscription.",
+    regle5: "Bon valable 60 jours, un par commande, dès 1 000 DA d’achat.",
+    regle6: "5 amis récompensés par mois au plus.",
+    regle7: "OranPromo n’écrit jamais à tes amis : c’est toi qui partages.",
+    invite: "Un ami t’invite sur OranPromo", // 12
+    inviteConnexion: "Connecte-toi avec ton numéro WhatsApp, puis valide le code de ton ami.",
+    // Saisie du parrain (US-27.2)
+    tonParrain: "Ton parrain",
+    champ: "Ton parrain (facultatif) : son numéro WhatsApp ou son code", // 8
+    rappel: "Ton bon et celui de ton parrain arrivent après ta première commande d’au moins 2 000 DA, récupérée en boutique avec ton QR code.", // 24
+    valider: "Valider",
+    envoi: "Envoi…",
+    enregistre: "C’est noté. Si ce numéro est celui d’un client OranPromo, il deviendra ton parrain après ton premier retrait en boutique.", // 9
+    impossible: "Impossible d’enregistrer ton parrain. Réessaie.",
+    parrainEnregistre: "Parrain enregistré",
+    modifier: "Modifier",
+    modificationsRestantes: "Tu peux encore le modifier {n} fois, avant ta première commande.",
+    // Compte (US-27.3)
+    monParrainage: "Mon parrainage",
+    valides: "amis ont fait leur premier retrait", // 11 (le nombre est affiché à côté)
+    valideUn: "ami a fait son premier retrait",
+    enAttente: "en attente de leur premier retrait", // 11
+    filleul: "{prenom} · {date}",
+    bonFilleul: "bon de 300 DA",
+    bonEnFile: "bon en attente (budget)",
+    plafond: "Plafond du mois atteint : 5 amis récompensés. Les suivants reçoivent leur bon, pas toi, jusqu’à la fin du mois.",
+    discretion: "Les amis en attente ne sont pas nommés. Aucun numéro n’est affiché.",
+    aucunFilleul: "Aucun ami récompensé pour le moment : partage ton lien.",
+    commentMarche: "Comment marche le parrainage ?",
+    mesBons: "Mes bons", // 15
+    nomBon: "Bon parrainage",
+    disponible: "Disponible · valable jusqu’au {date}", // 16
+    reserve: "Réservé pour la commande n° {n}", // 21
+    utilise: "Utilisé le {date} chez {boutique}", // 22
+    expire: "Expiré le {date}", // 23
+    enFile: "Ton bon arrive le {date} (budget du mois atteint).", // 20
+    annule: "Annulé",
+    aideBons: "À utiliser au panier : 300 DA de moins, payés par OranPromo à la boutique.",
+    // Accueil et suivi (US-27.3)
+    accueilTitre: "Parraine tes amis", // 13
+    accueilTexte: "300 DA chacun", // 13
+    accueilLien: "Voir",
+    merciTitre: "Merci !", // 14
+    merciTexte: "Fais découvrir OranPromo à un ami : 300 DA chacun après sa première commande.", // 14
+    partagerMonLien: "Partager mon lien",
+    // Panier et suivi (US-27.4)
+    utiliserBon: "Utiliser mon bon parrainage (−300 DA)", // 17
+    ligneBon: "Bon parrainage",
+    aPayerBoutique: "À payer en boutique", // 18
+    sousMinimum: "Ton bon s’utilise dès 1 000 DA d’achat.", // 19
+    noteBon: "Un bon par commande. Si la commande est annulée ou expire, le bon revient.",
+    bonNonApplique: {
+      aucun_bon: "Bon non appliqué : il a expiré ou n’est plus disponible. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
+      minimum: "Bon non appliqué : il s’utilise dès 1 000 DA d’achat. Ta commande reste au prix plein.",
+      boutique_exclue: "Bon non appliqué : cette boutique n’accepte pas les bons pour le moment. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
+      erreur: "Bon non appliqué. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
+    },
+  },
 };
 
 export type Textes = typeof fr;

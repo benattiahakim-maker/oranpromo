@@ -1089,6 +1089,7 @@ export type Database = {
       }
       mon_code_parrainage: { Args: never; Returns: string }
       mon_parrainage: { Args: never; Returns: Json }
+      parrainage_ouvert: { Args: never; Returns: boolean }
       passer_commande: {
         Args: { boutique: string; lignes: Json; note?: string }
         Returns: string

@@ -7,6 +7,7 @@ import { CLE_PANIER } from "@/lib/panier";
 const { commanderPanier, push, refresh } = vi.hoisted(() => ({ commanderPanier: vi.fn(), push: vi.fn(), refresh: vi.fn() }));
 vi.mock("@/app/panier/actions", () => ({ commanderPanier }));
 vi.mock("@/app/compte/actions", () => ({ enregistrerProfil: vi.fn(), enregistrerNom: vi.fn(), envoyerCodeVerification: vi.fn(), verifierCodeVerification: vi.fn() }));
+vi.mock("@/app/compte/parrainage/actions", () => ({ choisirParrain: vi.fn() }));
 vi.mock("@/app/compte/connexion/actions", () => ({ envoyerCodeConnexion: vi.fn(), verifierCodeConnexion: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh, replace: vi.fn() }) }));
 afterEach(cleanup);
@@ -32,7 +33,7 @@ describe("panier et commande (US-20.2)", () => {
     fireEvent.change(screen.getByLabelText("Note pour la boutique (facultative)"), { target: { value: "Samedi" } });
     fireEvent.click(screen.getByRole("button", { name: "Commander" }));
     await waitFor(() => expect(push).toHaveBeenCalledWith("/compte/commandes/c1"));
-    expect(commanderPanier).toHaveBeenCalledWith("b1", [{ article_id: "polo", taille: "M", quantite: 1 }, { article_id: "chemise", taille: "L", quantite: 1 }], "Samedi");
+    expect(commanderPanier).toHaveBeenCalledWith("b1", [{ article_id: "polo", taille: "M", quantite: 1 }, { article_id: "chemise", taille: "L", quantite: 1 }], "Samedi", false);
     expect(localStorage.getItem(CLE_PANIER)).toBeNull();
   });
   it("affiche le refus de la base sans vider le panier", async () => {
@@ -121,5 +122,40 @@ describe("US-25.4 : refus de la base pour un parfum", () => {
     fireEvent.click(screen.getByRole("button", { name: "Commander" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(refus);
     expect(localStorage.getItem(CLE_PANIER)).not.toBeNull();
+  });
+});
+
+describe("US-27 : bon et parrain au panier", () => {
+  it("bon disponible : case cochée par défaut, « À payer en boutique 8 400 DA », commande avec le bon", async () => {
+    commanderPanier.mockResolvedValue({ id: "c1" });
+    render(<PanierCommande profil={complet} parrainage={{ bonDisponible: true, choix: null }} />);
+    expect(screen.getByRole("checkbox", { name: "Utiliser mon bon parrainage (−300 DA)" })).toBeChecked();
+    expect(screen.getByText("À payer en boutique").nextSibling).toHaveTextContent(/8\s400\sDA/);
+    fireEvent.click(screen.getByRole("button", { name: "Commander" }));
+    await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", true));
+    expect(push).toHaveBeenCalledWith("/compte/commandes/c1");
+  });
+  it("case décochée : commande sans bon", async () => {
+    commanderPanier.mockResolvedValue({ id: "c1" });
+    render(<PanierCommande profil={complet} parrainage={{ bonDisponible: true, choix: null }} />);
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: "Commander" }));
+    await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", false));
+  });
+  it("bon non posé : le suivi s'ouvre avec la raison", async () => {
+    commanderPanier.mockResolvedValue({ id: "c1", bon: "aucun_bon" });
+    render(<PanierCommande profil={complet} parrainage={{ bonDisponible: true, choix: null }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Commander" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/compte/commandes/c1?bon=aucun_bon"));
+  });
+  it("pas de bon : pas de case ; parrain encore à choisir : champ « Ton parrain » pré-rempli", () => {
+    render(<PanierCommande profil={complet} parrainage={{ bonDisponible: false, choix: { initial: "K7M2QX", parrainSaisi: false, saisies: 0 } }} />);
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(screen.getByLabelText("Ton parrain (facultatif) : son numéro WhatsApp ou son code")).toHaveValue("K7M2QX");
+  });
+  it("visiteur non connecté : ni bon ni champ du parrain", () => {
+    render(<PanierCommande profil={null} parrainage={{ bonDisponible: true, choix: { initial: "", parrainSaisi: false, saisies: 0 } }} />);
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(screen.queryByLabelText(/Ton parrain/)).toBeNull();
   });
 });

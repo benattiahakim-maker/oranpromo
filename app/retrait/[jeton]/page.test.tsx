@@ -54,3 +54,16 @@ describe("US-26.2 : page du retrait (proche, sans connexion)", () => {
     expect(html).toContain("50\u00a0مل");
   });
 });
+
+describe("US-27.4 : bon parrainage sur la page du proche", () => {
+  it("« Bon parrainage −300 DA » et « À payer en espèces » réduit (6 000 DA au lieu de 6 300 DA)", async () => {
+    rpc.mockResolvedValue({ data: { ...vue("prete"), remise_bon: 300 }, error: null });
+    const html = await afficher();
+    expect(html).toContain("Bon parrainage"); expect(html).toMatch(/−300\sDA/);
+    expect(html).toMatch(/6\s000\sDA/); expect(html).not.toMatch(/6\s300\sDA/);
+  });
+  it("sans bon : montant inchangé, pas de ligne de bon", async () => {
+    const html = await afficher();
+    expect(html).not.toContain("Bon parrainage"); expect(html).toMatch(/6\s300\sDA/);
+  });
+});

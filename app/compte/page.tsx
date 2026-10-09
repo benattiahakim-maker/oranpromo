@@ -8,6 +8,12 @@ import NumeroVerifie from "@/components/NumeroVerifie";
 import { modeConnexionClient } from "@/lib/telephone";
 import { getLangue, getTextes } from "@/lib/langue-serveur";
 import { traduireMessage } from "@/lib/textes/messages";
+import { cookies } from "next/headers";
+import ChoixParrain from "@/components/ChoixParrain";
+import MonParrainage from "@/components/MonParrainage";
+import MesBons from "@/components/MesBons";
+import { afficherMonParrainage, COOKIE_PARRAIN, lireMonParrainage, normaliserCodeParrainage, preparerInvitation, type MonParrainage as DonneesParrainage } from "@/lib/parrainage";
+import { lireMesBons, type BonClient } from "@/lib/bons";
 
 export const metadata = { title: "Mon compte", robots: { index: false, follow: false } };
 
@@ -22,6 +28,14 @@ export default async function MonCompte({ searchParams }: { searchParams: Promis
   const parTelephone = modeConnexionClient() === "telephone";
   let noShows: MonNoShow[] = [];
   try { noShows = await listerMesNoShows(await creerClientServeur()); } catch { noShows = []; }
+  // US-27 : parrainage et bons (rien ne s'affiche tant que le parrainage est fermé et que le client n'a ni bon ni filleul).
+  let parrainage: DonneesParrainage | null = null, bons: BonClient[] = [];
+  if (profil.role === "client") {
+    const client = await creerClientServeur();
+    [parrainage, bons] = await Promise.all([lireMonParrainage(client).catch(() => null), lireMesBons(client).catch(() => [])]);
+  }
+  const invitation = parrainage?.actif && parrainage.peut_parrainer ? await preparerInvitation(await creerClientServeur(), await getLangue()).catch(() => null) : null;
+  const codeInvite = normaliserCodeParrainage((await cookies()).get(COOKIE_PARRAIN)?.value) ?? "";
   return <main className="mx-auto w-full max-w-lg bg-blanc px-6 pb-10 text-noir">
     <header className="border-b border-trait pb-5 pt-6 text-center"><p className="etiquette text-gris">{t.monCompte}</p><h1 dir="auto" className="font-titre text-[28px] font-normal">{profil.nom ?? t.monProfil}</h1></header>
     {avertissement && <p role="alert" className="mt-5 border border-trait p-4 text-sm leading-[1.6]">{avertissement}</p>}
@@ -29,8 +43,11 @@ export default async function MonCompte({ searchParams }: { searchParams: Promis
     {/* US-21.2 : en mode téléphone (ou numéro déjà vérifié), le numéro se vérifie par code et ne se saisit plus à la main. */}
     <NumeroVerifie telephone={profil.telephone} verifie={Boolean(profil.telephone_verifie_le)} verificationActive={parTelephone && profil.role === "client"} />
     <div className="mt-6"><FormulaireProfilClient nom={profil.nom} telephone={profil.telephone} telephoneModifiable={!parTelephone && !profil.telephone_verifie_le} /></div>
+    {parrainage?.peut_choisir && <ChoixParrain initial={parrainage.parrain_saisi ? "" : codeInvite} parrainSaisi={parrainage.parrain_saisi} saisies={parrainage.saisies} />}
     <Link href="/compte/commandes" className="etiquette mt-8 flex min-h-[44px] items-center justify-center border border-noir">{t.mesCommandes}</Link>
     {profil.boutique_id && <Link href="/espace" className="etiquette mt-3 flex min-h-[44px] items-center justify-center border border-trait">{t.monEspace}</Link>}
+    {bons.length > 0 && <MesBons bons={bons} />}
+    {parrainage && afficherMonParrainage(parrainage) && <MonParrainage parrainage={parrainage} invitation={invitation} />}
     {erreur === "deconnexion" && <p role="alert" className="mt-4">{t.deconnexionImpossible}</p>}
   </main>;
 }
