@@ -25,13 +25,14 @@ app/
   compte/connexion/page.tsx     connexion client par lien e-mail ou par numéro + code (US-20.2, US-21)
   compte/connexion/actions.ts   envoi et vérification du code de connexion (US-21)
   compte/page.tsx               profil client : nom, téléphone, no-shows (US-20.2, 20.4)
-  compte/commandes/             mes commandes et suivi avec la frise (US-20.2)
+  compte/commandes/             mes commandes et suivi avec la frise (US-20.2) ; QR code de retrait d'une commande prête (US-26.2)
   admin/...                     boutiques, modération, tableau de bord, clients bloqués (US-16, 18, 19, 20.4)
   api/ia/fiche/route.ts         photo → fiche (US-14)
   api/ia/traduire/route.ts      traduction arabe (US-15)
   api/notifications/whatsapp/route.ts  envoi des messages WhatsApp en attente, appelé par une tâche planifiée (US-20.5)
   confirmer/[jeton]/page.tsx    page du lien « Confirmer » du message WhatsApp, sans connexion, lecture seule (US-20.6)
   confirmer/actions.ts          action serveur « Confirmer la commande » du lien (US-20.6)
+  retrait/[jeton]/page.tsx      page du retrait (proche ou client), sans connexion, lecture seule : QR code, code, articles, montant (US-26.2)
   visiteurs/actions.ts          actions serveur des visiteurs : mesures (vues, clics, partages) et signalements, limités par visiteur
 components/                     composants d'affichage réutilisables
 lib/
@@ -45,6 +46,7 @@ lib/
   telephone.ts                  numéro mobile algérien, mode de connexion client (US-21, testé)
   codes-telephone.ts            envoi et vérification des codes, limites d'envoi (US-21, serveur seulement, testé)
   confirmation.ts               lien signé « Confirmer » (US-20.6) : fabrication, vérification, confirmation (serveur seulement, testé)
+  retrait.ts                    retrait par QR code : formats, liens, QR code, lecture (US-26, testé)
   visiteurs.ts                  clé de visiteur (empreinte d'IP), mesures et signalements par les fonctions de la base (serveur seulement, testé)
   notifications/                messages WhatsApp : fournisseur (Meta Cloud API), envoi de la file d'attente (US-20.5, testé)
   supabase/client.ts            client navigateur ("use client")
