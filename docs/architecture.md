@@ -214,6 +214,33 @@ Stories : `docs/user-stories.md`, module 9.
 - **Bloc « Partager ma boutique »** (`components/PartagerBoutique.tsx`, sur `/espace`) : lien, « Copier le lien » (`navigator.clipboard`), « Partager sur WhatsApp » (`lienPartageWhatsApp()` → `https://wa.me/?text=…`, sans numéro : le commerçant choisit le contact ou son statut), QR code, « Télécharger le QR code » (SVG), « Imprimer l'affiche » (`/espace/affiche`). Boutique non validée : message, ni lien de partage ni QR code.
 - **QR code** : dépendance `qrcode` (MIT, génération locale, aucun service externe), appelée côté serveur seulement (`qrCodeSvg()` dans `lib/lien-boutique.ts`) ; SVG noir sur blanc, correction d'erreur `M`, marge de 4 modules (lisible imprimé en petit).
 
+## Arabe et darja (US-23) — conception, **pas encore codé**
+
+À valider par le propriétaire (les 10 textes de la story US-23) avant d'écrire du code. Rien de ce qui suit n'existe encore.
+
+**Lu avant de choisir** : le guide `node_modules/next/dist/docs/01-app/02-guides/internationalization.md` (Next.js 16). Il propose des dictionnaires chargés côté serveur (`getDictionary`) et un segment `app/[lang]` avec redirection dans le proxy. On garde les **dictionnaires** du guide, mais **pas** le segment `[lang]` :
+- les adresses restent les mêmes (`/a/…`, `/b/<slug>`…) : les liens et QR codes déjà imprimés (US-22) restent valables, aucun déplacement de toutes les pages sous `app/[lang]`, aucune redirection à ajouter dans `proxy.ts` ;
+- le propriétaire veut un choix gardé dans un cookie ;
+- les pages publiques sont déjà dynamiques (`export const dynamic = "force-dynamic"`) : lire un cookie ne coûte rien en cache ;
+- contrepartie acceptée : Google n'indexe que la version française (pas d'adresse `/ar`).
+
+**Aucune nouvelle dépendance** (pas de `next-intl`, `next-international`, `negotiator`…) : deux langues, des textes simples, un cookie ; une bibliothèque n'apporterait que du poids. À reconsidérer seulement si on ajoute une 3e langue ou des pluriels complexes.
+
+Conception proposée :
+- `lib/langue.ts` : `LANGUES = ["fr", "ar"]`, `langueDepuisCookie(valeur)` (tout ce qui n'est pas `ar` donne `fr`), `getLangue()` (lit `cookies()` de `next/headers`), `direction(langue)` (`rtl` pour `ar`).
+- `lib/dictionnaires/fr.ts` et `ar.ts` : objets TypeScript (pas de JSON, pour le typage), groupés par écran (`accueil`, `fiche`, `panier`, `commandes`, `compte`, `connexion`, `erreurs`, `listes`…). `ar.ts` est typé `satisfies Dictionnaire` (le type de `fr.ts`) : une clé manquante casse le build. `getDictionnaire()` côté serveur (`import "server-only"`), comme `getDictionary` du guide.
+- Composants client (`"use client"` : panier, tailles, contestation…) : ils reçoivent leurs textes en props depuis la page serveur, ou par un petit contexte `<Textes>` posé dans le layout avec la seule partie utile du dictionnaire (pas tout le dictionnaire dans le JavaScript du navigateur).
+- Messages d'erreur renvoyés par les actions serveur et par la base : aujourd'hui des phrases françaises. On passera à des **codes d'erreur** (ex. `code_incorrect`) traduits à l'affichage ; tant qu'un code n'est pas traduit, le français s'affiche. Les règles elles-mêmes (blocage, no-show, vérification du numéro) ne changent pas.
+- `app/layout.tsx` : `<html lang={langue} dir={direction(langue)}>`.
+- **Sélecteur** `components/ChoixLangue.tsx` dans `EntetePublic` : un `<form>` avec une **action serveur** `choisirLangue(langue)` qui écrit le cookie `langue` (`path=/`, 1 an, `SameSite=Lax`, `Secure` en production ; pas `httpOnly` nécessaire mais sans risque) puis `refresh()` (de `next/cache`) ; marche sans JavaScript. Libellés « FR » et « عربي ».
+- **Mise en page RTL** : Tailwind v4 gère `dir="rtl"` avec les variantes `rtl:`/`ltr:` et les classes logiques (`ms-`, `me-`, `ps-`, `pe-`, `start-`, `end-`, `text-start`). Lors du code, remplacer `ml-/mr-/pl-/pr-/left-/right-/text-left/text-right` par les classes logiques et retourner les flèches (`rtl:-scale-x-100`). Prix et numéros entourés de `<bdi dir="ltr">` (sinon « 3 500 » devient « 500 3 », vu sur la maquette). La description arabe (US-15) a déjà `dir="rtl" lang="ar"`.
+- **Polices** : Bodoni Moda et Jost n'ont pas de lettres arabes. Ajouter par `next/font/google`, sous-ensemble `arabic`, avec `preload: false` (téléchargées seulement si une lettre arabe s'affiche) : **Tajawal** (300, 400, 500 ; texte) et **Noto Naskh Arabic** (400, 500 ; titres). Piles de polices : `font-sans` = Jost puis Tajawal ; `font-titre` = Bodoni Moda puis Noto Naskh Arabic : les lettres latines (noms de boutiques, titres d'articles) gardent les polices actuelles, les lettres arabes prennent la police arabe, y compris dans les descriptions arabes existantes. Licences : SIL Open Font License (usage commercial autorisé).
+- `.etiquette` (capitales espacées) : en `[dir=rtl]`, `letter-spacing: 0`, `text-transform: none` et taille plus grande (13 px au lieu de 10 px), l'arabe n'ayant pas de capitales et l'espacement cassant les liaisons.
+- **Messages WhatsApp** : nouveaux modèles Meta en langue `ar` (même nom, langue `ar`, ou `…_ar`), à soumettre à **l'approbation de Meta**. Il faudra une migration (nouvelle, jamais en modifiant les anciennes) : colonne `langue` (`fr`/`ar`, défaut `fr`) sur `commandes` (langue au moment de la commande) et sur `messages_whatsapp`, et textes arabes dans les fonctions qui remplissent la file. L'envoi (`lib/notifications/meta.ts`) passe `language.code = "ar"` ; réglage `prive.reglages` « modèles arabes approuvés » : tant qu'il est faux, envoi en français. Les messages à la boutique (nouvelle commande) restent en français.
+- **Pas traduit** : contenu saisi par la boutique (nom, titre, description française), espace commerçant, administration, e-mails Supabase, aperçu Open Graph des liens partagés.
+- Dates : `Intl.DateTimeFormat("ar-DZ", { numberingSystem: "latn" })` pour garder les chiffres 0-9 ; prix : `formaterPrix` gagne une langue (`DA` → `دج`).
+- Maquette : `docs/maquettes/FicheArabe.dc.html`.
+
 ## Limites par visiteur (vues, clics, partages, signalements)
 
 Carte Trello « Sécurité · Limiter les envois en masse ». Migration `20261010180000_limites_visiteurs.sql`.

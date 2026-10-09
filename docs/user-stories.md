@@ -335,3 +335,34 @@ En tant que commerçant, je veux un lien court et lisible vers ma vitrine, à me
 - Boutique pas encore validée : le bloc affiche « Votre lien sera actif dès que votre boutique sera validée par OranPromo. » sans bouton de partage ni QR code ; boutique suspendue : « Votre boutique est suspendue : son lien affiche « Boutique indisponible ». ».
 - Tests Vitest : slug (format, suffixe, nom arabe), lien absolu, message et lien WhatsApp, description de l'aperçu, QR code, bloc de partage selon le statut, métadonnées de la vitrine ; tests SQL : format du slug refusé par la base.
 
+## Module 10 — Langues (après le MVP)
+
+### US-23 — Voir le site en arabe (parcours client) — **à valider par le propriétaire avant tout code**
+En tant que cliente d'Oran qui lit plus facilement l'arabe, je veux choisir l'arabe sur le site et que ce choix soit gardé, afin de comprendre les boutons, les erreurs et les messages WhatsApp sans effort.
+- **Français par défaut** ; l'arabe est la seconde langue. Pas de détection automatique de la langue du téléphone : tout le monde arrive en français et choisit l'arabe d'un geste.
+- Arabe **simple et lisible**, avec des mots de **darja oranaise** quand ils sont plus naturels (ex. « زيد للسلة », « الحانوت »). Les 10 textes ci-dessous sont à valider (ou à corriger) par le propriétaire avant le code ; le reste des textes suivra le même ton.
+- **Sélecteur de langue visible sur téléphone**, dans l'en-tête de toutes les pages publiques et client : « FR | عربي », chaque langue écrite dans sa propre langue, zone de toucher d'au moins 44 px. Le choix est gardé dans un **cookie `langue`** (`fr` ou `ar`, 1 an) : il est retrouvé à la visite suivante, connecté ou non. Il marche aussi sans JavaScript (formulaire).
+- En arabe, la page est **de droite à gauche** (`<html lang="ar" dir="rtl">`) : menus, grilles des tailles, flèche retour (à droite, tournée vers la droite), marges et alignements inversés. Les nombres restent en chiffres 0-9 (comme en Algérie), les prix s'écrivent « 3 500 دج », les numéros de téléphone et les références restent de gauche à droite.
+- **Polices** : les polices actuelles (Bodoni Moda pour les titres, Jost pour le texte) n'ont pas de lettres arabes. On ajoute **Noto Naskh Arabic** (titres, contraste proche de Bodoni) et **Tajawal** (texte, géométrique comme Jost), par `next/font`. En arabe, pas de capitales ni d'espacement des lettres (il casserait les liaisons) : la classe `etiquette` passe en taille normale sans espacement.
+- **Traduit** : tous les textes de l'interface du parcours client (accueil, catalogue, fiche, vitrine, panier, commandes, compte, connexion par code, no-shows et contestation, pages d'erreur), les listes fixes (catégories, genres, couleurs, quartiers, statuts de commande), les **messages d'erreur**, les dates (« السبت 18 أكتوبر »), et les **messages WhatsApp envoyés à la cliente** (commande prête, commande expirée, no-show, compte bloqué) dans la langue choisie au moment de la commande. Le message du **code de connexion** est envoyé par Supabase Auth et Twilio Verify : sa langue dépend de leurs réglages, à vérifier au moment du code (il reste en français sinon).
+- **Messages WhatsApp en arabe** : ce sont de **nouveaux modèles Meta** (langue `ar`) à créer et à faire **approuver par Meta** avant usage ; tant qu'un modèle arabe n'est pas approuvé, le message part en français (aucun message perdu).
+- **Pas traduit** : ce que saisit la boutique (nom de la boutique, titre de l'article, description) ; la **description arabe** déjà saisie par le commerçant (US-15) est montrée en premier quand la langue est l'arabe, et la description française reste en dessous. Pas traduits non plus dans cette story : l'espace commerçant, l'administration, les e-mails de connexion et l'aperçu des liens partagés (US-22), qui restent en français (story à part si besoin).
+- Les adresses ne changent pas (pas de `/ar/…`) : les liens et QR codes déjà imprimés (US-22) restent valables.
+- Maquette : `docs/maquettes/FicheArabe.dc.html` (fiche article en arabe avec le sélecteur). Conception technique : `docs/architecture.md`, « Arabe et darja (US-23) ».
+
+**Les 10 textes à valider** (les mots en gras de la colonne darja sont de la darja oranaise ; la dernière colonne donne une version en arabe standard si le propriétaire la préfère) :
+
+| # | Où | Français (texte actuel du site) | Arabe proposé | Mots en darja | Variante en arabe standard (si la darja ne convient pas) |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Accueil, bouton | Voir les promos | شوف التخفيضات | **شوف** (regarde) | اعرض التخفيضات |
+| 2 | Fiche article, bouton | Ajouter au panier | زيد للسلة | **زيد** (ajoute) | أضف إلى السلة |
+| 3 | Panier, bouton | Commander | اطلب | — | اطلب |
+| 4 | Fiche et panier, mention | Paiement en boutique | الخلاص في الحانوت | **الخلاص** (le paiement), **الحانوت** (la boutique) | الدفع في المحل |
+| 5 | Suivi de commande | Votre commande est prête | طلبك راهو واجد | **راهو** (il est), **واجد** (prêt) | طلبك جاهز |
+| 6 | Mon compte, no-show | Contester | اعترض | — | اعترض |
+| 7 | Fiche article, erreur | Article plus disponible | هاد السلعة ما بقاتش | **هاد** (cet), **السلعة** (l'article), **ما بقاتش** (n'est plus là) | هذا المنتج لم يعد متوفراً |
+| 8 | Connexion, erreur | Code incorrect ou expiré. Vérifiez les 6 chiffres ou demandez un nouveau code. | الكود غالط ولا فات وقتو. شوف الأرقام الستة ولا اطلب كود جديد. | **الكود** (le code), **غالط** (faux), **ولا** (ou), **فات وقتو** (a expiré), **شوف** (vérifie) | الرمز غير صحيح أو انتهت صلاحيته. تحقق من الأرقام الستة أو اطلب رمزاً جديداً. |
+| 9 | Erreur générale, titre et bouton | Une erreur est survenue · Réessayer | كاين مشكل · عاود جرّب | **كاين** (il y a), **عاود** (encore) | حدث خطأ · أعد المحاولة |
+| 10 | Message WhatsApp « commande prête » (modèle `oranpromo_commande_prete`) | Bonjour {{1}}, votre commande n° {{2}} est prête chez {{3}}. Vous pouvez la récupérer jusqu'au {{4}}. | السلام {{1}}، الطلب رقم {{2}} راهو واجد عند {{3}}. تقدر تجي تدّيه حتى {{4}}. | **راهو**, **واجد**, **تجي تدّيه** (venir le prendre) | مرحباً {{1}}، طلبك رقم {{2}} جاهز لدى {{3}}. يمكنك استلامه حتى {{4}}. |
+
+- Tests prévus (quand le code sera fait) : dictionnaire arabe complet (même clés que le français, vérifié par TypeScript et par un test), cookie lu et écrit, `lang`/`dir` de la page, sélecteur présent sur mobile, prix et numéros bien orientés, choix du modèle WhatsApp `ar` avec retour au français si non approuvé.
