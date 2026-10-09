@@ -57,3 +57,19 @@ export async function enregistrerProfilClient(client: SupabaseClient<Database>, 
   const { data, error: erreurMaj } = await client.from("profils").update({ nom: saisie.nom.trim(), telephone: normaliserWhatsAppAlgerien(saisie.telephone)! }).eq("id", user.id).select("id").maybeSingle();
   if (erreurMaj || !data) throw new Error("Impossible d’enregistrer votre profil. Réessayez.");
 }
+
+// --- US-20.4 : clients à surveiller (admin) ----------------------------------
+export type ClientSurveille = Pick<Tables<"profils">, "id" | "nom" | "telephone" | "no_shows" | "bloque" | "bloque_le">;
+
+/** Clients bloqués puis clients avec des no-shows (lecture réservée à l’admin par la base). */
+export async function listerClientsSurveilles(client: SupabaseClient<Database>): Promise<{ bloques: ClientSurveille[]; avecNoShows: ClientSurveille[] }> {
+  const { data, error } = await client.from("profils").select("id, nom, telephone, no_shows, bloque, bloque_le").or("bloque.eq.true,no_shows.gt.0").order("bloque", { ascending: false }).order("no_shows", { ascending: false }).limit(500);
+  if (error) throw new Error("Impossible de charger les clients. Réessayez.");
+  const lignes = data ?? [];
+  return { bloques: lignes.filter(c => c.bloque), avecNoShows: lignes.filter(c => !c.bloque && c.no_shows > 0) };
+}
+
+export async function debloquerClient(client: SupabaseClient<Database>, id: string) {
+  const { error } = await client.rpc("debloquer_client", { client: id });
+  if (error) throw new Error(error.code === "42501" || error.code === "P0002" ? error.message : "Impossible de débloquer ce client. Réessayez.");
+}
