@@ -3,7 +3,7 @@ import { contesterMonNoShow, enregistrerNom, envoyerCodeVerification, verifierCo
 const { contester, nomClient, envoyerVerif, verifierVerif, ErreurCode } = vi.hoisted(() => ({ contester: vi.fn(), nomClient: vi.fn(), envoyerVerif: vi.fn(), verifierVerif: vi.fn(), ErreurCode: class ErreurCode extends Error {} }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({}) }));
 vi.mock("@/lib/clients", () => ({ contesterNoShow: contester, enregistrerNomClient: nomClient, enregistrerProfilClient: vi.fn(), ErreurValidationProfil: class extends Error {} }));
-vi.mock("@/lib/codes-telephone", () => ({ envoyerCodeVerificationClient: envoyerVerif, verifierCodeVerificationClient: verifierVerif, ErreurCode }));
+vi.mock("@/lib/codes-telephone", () => ({ envoyerCodeVerificationClient: envoyerVerif, verifierCodeVerificationClient: verifierVerif, ErreurCode, MESSAGE_CODE_ENVOYE: "Code envoyé sur WhatsApp." }));
 vi.mock("@/lib/commandes", () => ({ annulerCommandeClient: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 beforeEach(() => { vi.clearAllMocks(); });
@@ -26,13 +26,13 @@ describe("contester un no-show (action serveur)", () => {
 
 describe("vérifier son numéro depuis /compte ou /panier (US-21.2)", () => {
   it("envoie le code au nouveau numéro", async () => {
-    envoyerVerif.mockResolvedValue({ numero: "+213555123456", canal: "whatsapp" });
-    expect(await envoyerCodeVerification("0555123456", "whatsapp")).toEqual({ succes: true, message: expect.stringContaining("WhatsApp"), numero: "+213555123456" });
-    expect(envoyerVerif).toHaveBeenCalledWith({}, "0555123456", "whatsapp");
+    envoyerVerif.mockResolvedValue({ numero: "+213555123456" });
+    expect(await envoyerCodeVerification("0555123456")).toEqual({ succes: true, message: "Code envoyé sur WhatsApp.", numero: "+213555123456" });
+    expect(envoyerVerif).toHaveBeenCalledWith({}, "0555123456");
     envoyerVerif.mockRejectedValue(new ErreurCode("Ce numéro est déjà utilisé par un autre compte : connectez-vous avec ce numéro."));
-    expect((await envoyerCodeVerification("0555123456", "sms")).message).toContain("déjà utilisé");
+    expect((await envoyerCodeVerification("0555123456")).message).toContain("déjà utilisé");
     envoyerVerif.mockRejectedValue(new Error("interne"));
-    expect((await envoyerCodeVerification("0555123456", "sms")).message).toContain("Impossible d’envoyer");
+    expect((await envoyerCodeVerification("0555123456")).message).toContain("Impossible d’envoyer");
   });
   it("vérifie le code", async () => {
     verifierVerif.mockResolvedValue(undefined);

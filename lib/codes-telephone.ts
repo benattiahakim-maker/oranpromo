@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { canalCode, MESSAGE_TELEPHONE_INVALIDE, modeConnexionClient, nettoyerCode, normaliserTelephoneClient, type CanalCode } from "./telephone";
+import { CANAL_CODE, MESSAGE_TELEPHONE_INVALIDE, modeConnexionClient, nettoyerCode, normaliserTelephoneClient } from "./telephone";
 
 // US-21.2 : envoi et vérification des codes par Supabase Auth (fournisseur Twilio Verify, configuré dans le
 // tableau de bord Supabase : aucune clé ici). Limites par numéro dans la base (controler_envoi_code /
@@ -14,6 +14,7 @@ export class ErreurCode extends Error {}
 
 export const MESSAGE_NON_ACTIVEE = "La connexion par téléphone n’est pas encore activée. Connectez-vous avec votre e-mail.";
 export const MESSAGE_NON_CONFIGUREE = "La connexion par téléphone n’est pas encore configurée. Réessayez plus tard ou connectez-vous avec votre e-mail.";
+export const MESSAGE_CODE_ENVOYE = "Code envoyé sur WhatsApp. Pas reçu ? Vérifiez le numéro, puis demandez un nouveau code dans une minute.";
 export const MESSAGE_CODE_INCORRECT = "Code incorrect ou expiré. Vérifiez les 6 chiffres ou demandez un nouveau code.";
 
 /** Erreur Supabase Auth → message en français pour le client. */
@@ -23,7 +24,7 @@ export function messageErreurAuth(erreur: ErreurAuth, etape: "envoi" | "verifica
   if (code === "phone_exists") return "Ce numéro est déjà utilisé par un autre compte : connectez-vous avec ce numéro.";
   if (code === "phone_provider_disabled") return MESSAGE_NON_CONFIGUREE;
   if (code === "over_sms_send_rate_limit" || code === "over_request_rate_limit" || erreur?.status === 429) return "Trop de demandes : attendez quelques minutes avant de redemander un code.";
-  if (code === "sms_send_failed") return "Impossible d’envoyer le code. Essayez « Recevoir par SMS » ou réessayez dans quelques minutes.";
+  if (code === "sms_send_failed") return "Impossible d’envoyer le code sur WhatsApp. Vérifiez que ce numéro utilise WhatsApp, ou réessayez dans quelques minutes.";
   if (code === "validation_failed" || code === "bad_json") return MESSAGE_TELEPHONE_INVALIDE;
   if (etape === "verification" && (code === "otp_expired" || code === "invalid_credentials" || erreur?.status === 400 || erreur?.status === 403)) return MESSAGE_CODE_INCORRECT;
   return etape === "envoi" ? "Impossible d’envoyer le code. Réessayez dans quelques instants." : "Impossible de vérifier le code. Réessayez dans quelques instants.";
@@ -59,23 +60,22 @@ async function enregistrerEnvoi(client: Client, numero: string, jeton: string) {
   try { await client.rpc("enregistrer_envoi_code", { jeton, numero }); } catch { /* le code est parti : on ne bloque pas le client */ }
 }
 
-export type EnvoiCode = { numero: string; canal: CanalCode };
+export type EnvoiCode = { numero: string };
 
 /** Connexion (ou création de compte) par numéro : captcha Turnstile obligatoire côté Supabase. */
-export async function envoyerCodeConnexionClient(client: Client, saisie: unknown, canal: unknown, jetonCaptcha: unknown): Promise<EnvoiCode> {
+export async function envoyerCodeConnexionClient(client: Client, saisie: unknown, jetonCaptcha: unknown): Promise<EnvoiCode> {
   verifierMode();
   const numero = lireNumero(saisie);
-  const choix = canalCode(canal);
   const jeton = jetonServeur();
   await controlerEnvoi(client, numero, jeton);
   const captchaToken = typeof jetonCaptcha === "string" && jetonCaptcha.length > 0 && jetonCaptcha.length <= 4096 ? jetonCaptcha : undefined;
-  const { error } = await client.auth.signInWithOtp({ phone: numero, options: { channel: choix, ...(captchaToken ? { captchaToken } : {}) } });
+  const { error } = await client.auth.signInWithOtp({ phone: numero, options: { channel: CANAL_CODE, ...(captchaToken ? { captchaToken } : {}) } });
   if (error) throw new ErreurCode(messageErreurAuth(error, "envoi"));
   await enregistrerEnvoi(client, numero, jeton);
-  return { numero, canal: choix };
+  return { numero };
 }
 
-/** Code reçu (WhatsApp ou SMS : même type « sms » pour Supabase) → session du client. */
+/** Code reçu sur WhatsApp → session du client (Supabase nomme ce type « sms » quel que soit le canal). */
 export async function verifierCodeConnexionClient(client: Client, saisie: unknown, saisieCode: unknown) {
   verifierMode();
   const numero = lireNumero(saisie);
@@ -86,21 +86,20 @@ export async function verifierCodeConnexionClient(client: Client, saisie: unknow
 }
 
 /** Client déjà connecté (compte e-mail, ou changement de numéro) : code envoyé au nouveau numéro. */
-export async function envoyerCodeVerificationClient(client: Client, saisie: unknown, canal: unknown): Promise<EnvoiCode> {
+export async function envoyerCodeVerificationClient(client: Client, saisie: unknown): Promise<EnvoiCode> {
   verifierMode();
   const numero = lireNumero(saisie);
-  const choix = canalCode(canal);
   const { data: { user }, error: erreurSession } = await client.auth.getUser();
   if (erreurSession || !user) throw new ErreurCode("Votre session a expiré. Reconnectez-vous.");
   if (user.phone && `+${user.phone}` === numero && user.phone_confirmed_at) throw new ErreurCode("Ce numéro est déjà vérifié sur votre compte.");
   const jeton = jetonServeur();
   await controlerEnvoi(client, numero, jeton);
   // Supabase Auth accepte « channel » sur PUT /user ; supabase-js transmet les attributs tels quels.
-  const attributs = { phone: numero, channel: choix } as Parameters<Client["auth"]["updateUser"]>[0];
+  const attributs = { phone: numero, channel: CANAL_CODE } as Parameters<Client["auth"]["updateUser"]>[0];
   const { error } = await client.auth.updateUser(attributs);
   if (error) throw new ErreurCode(messageErreurAuth(error, "envoi"));
   await enregistrerEnvoi(client, numero, jeton);
-  return { numero, canal: choix };
+  return { numero };
 }
 
 export async function verifierCodeVerificationClient(client: Client, saisie: unknown, saisieCode: unknown) {

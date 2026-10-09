@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { contesterNoShow, enregistrerNomClient, enregistrerProfilClient, ErreurValidationProfil, type ErreursProfilClient, type SaisieProfilClient } from "@/lib/clients";
 import { annulerCommandeClient } from "@/lib/commandes";
-import { envoyerCodeVerificationClient, ErreurCode, verifierCodeVerificationClient } from "@/lib/codes-telephone";
+import { envoyerCodeVerificationClient, ErreurCode, MESSAGE_CODE_ENVOYE, verifierCodeVerificationClient } from "@/lib/codes-telephone";
 
 export type ResultatCompte = { succes: boolean; message: string; erreurs?: ErreursProfilClient };
 
@@ -29,10 +29,10 @@ export async function enregistrerNom(nom: string): Promise<ResultatCompte> {
 }
 
 /** US-21.2 : vérifier le numéro d'un compte déjà connecté (compte e-mail, ou changement de numéro). */
-export async function envoyerCodeVerification(telephone: string, canal: string): Promise<ResultatCompte & { numero?: string }> {
+export async function envoyerCodeVerification(telephone: string): Promise<ResultatCompte & { numero?: string }> {
   try {
-    const envoi = await envoyerCodeVerificationClient(await creerClientServeur(), telephone, canal);
-    return { succes: true, message: envoi.canal === "sms" ? "Code envoyé par SMS." : "Code envoyé sur WhatsApp. Pas reçu ? Demandez-le par SMS.", numero: envoi.numero };
+    const envoi = await envoyerCodeVerificationClient(await creerClientServeur(), telephone);
+    return { succes: true, message: MESSAGE_CODE_ENVOYE, numero: envoi.numero };
   } catch (error) {
     return { succes: false, message: error instanceof ErreurCode ? error.message : "Impossible d’envoyer le code. Réessayez dans quelques instants." };
   }

@@ -18,7 +18,7 @@ export default function NumeroVerifie({ telephone, verifie, verificationActive }
   if (!verificationActive) return null;
   return <section aria-labelledby="titre-numero" className="mt-6 border border-noir p-4">
     <h2 id="titre-numero" className="etiquette m-0 text-xs">Vérifiez votre numéro pour commander</h2>
-    <p className="mb-4 mt-2 text-sm leading-[1.6]">Nous vous envoyons un code à 6 chiffres sur WhatsApp (ou par SMS). La boutique vous contactera sur ce numéro.</p>
+    <p className="mb-4 mt-2 text-sm leading-[1.6]">Nous vous envoyons un code à 6 chiffres sur WhatsApp. La boutique vous contactera sur ce numéro.</p>
     <CodeTelephone usage="verification" numeroInitial={telephone} />
   </section>;
 }

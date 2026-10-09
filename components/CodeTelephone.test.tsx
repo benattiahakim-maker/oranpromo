@@ -13,9 +13,9 @@ vi.mock("./Turnstile", () => ({ default: ({ onJeton, reinitialiser }: { onJeton:
 afterEach(() => { cleanup(); vi.unstubAllEnvs(); });
 beforeEach(() => {
   vi.clearAllMocks();
-  m.envoyerCodeConnexion.mockResolvedValue({ succes: true, message: "Code envoyé sur WhatsApp. Pas reçu ? Demandez-le par SMS.", numero: "+213555123456" });
+  m.envoyerCodeConnexion.mockResolvedValue({ succes: true, message: "Code envoyé sur WhatsApp.", numero: "+213555123456" });
   m.verifierCodeConnexion.mockResolvedValue({ succes: true, message: "Vous êtes connecté.", suite: "/panier" });
-  m.envoyerCodeVerification.mockResolvedValue({ succes: true, message: "Code envoyé par SMS.", numero: "+213661234567" });
+  m.envoyerCodeVerification.mockResolvedValue({ succes: true, message: "Code envoyé sur WhatsApp.", numero: "+213661234567" });
   m.verifierCodeVerification.mockResolvedValue({ succes: true, message: "Numéro vérifié." });
 });
 
@@ -34,7 +34,7 @@ describe("connexion par numéro (US-21.2)", () => {
     saisir("0555 12 34 56");
     fireEvent.click(screen.getByRole("button", { name: "Recevoir le code sur WhatsApp" }));
     await screen.findByLabelText("Code à 6 chiffres");
-    expect(m.envoyerCodeConnexion).toHaveBeenCalledWith("+213555123456", "whatsapp", null);
+    expect(m.envoyerCodeConnexion).toHaveBeenCalledWith("+213555123456", null);
     expect(screen.getByRole("status")).toHaveTextContent("Code envoyé sur WhatsApp");
     fireEvent.change(screen.getByLabelText("Code à 6 chiffres"), { target: { value: "12345" } });
     fireEvent.click(screen.getByRole("button", { name: "Valider le code" }));
@@ -44,12 +44,10 @@ describe("connexion par numéro (US-21.2)", () => {
     await waitFor(() => expect(m.replace).toHaveBeenCalledWith("/panier"));
     expect(m.verifierCodeConnexion).toHaveBeenCalledWith("+213555123456", "123456", "/panier");
   });
-  it("« Recevoir par SMS » en secours", async () => {
+  it("WhatsApp uniquement : pas de bouton SMS", () => {
     render(<CodeTelephone usage="connexion" />);
-    saisir("0555123456");
-    fireEvent.click(screen.getByRole("button", { name: "Recevoir par SMS" }));
-    await screen.findByLabelText("Code à 6 chiffres");
-    expect(m.envoyerCodeConnexion).toHaveBeenCalledWith("+213555123456", "sms", null);
+    expect(screen.queryByRole("button", { name: /SMS/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/SMS/i)).not.toBeInTheDocument();
   });
   it("affiche le refus du serveur (limite d’envoi) et le code faux", async () => {
     m.envoyerCodeConnexion.mockResolvedValueOnce({ succes: false, message: "Attendez une minute avant de demander un nouveau code." });
@@ -72,11 +70,10 @@ describe("connexion par numéro (US-21.2)", () => {
     render(<CodeTelephone usage="connexion" />);
     saisir("0555123456");
     expect(screen.getByRole("button", { name: "Recevoir le code sur WhatsApp" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Recevoir par SMS" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Je ne suis pas un robot" }));
     fireEvent.click(screen.getByRole("button", { name: "Recevoir le code sur WhatsApp" }));
     await screen.findByLabelText("Code à 6 chiffres");
-    expect(m.envoyerCodeConnexion).toHaveBeenCalledWith("+213555123456", "whatsapp", "jeton-captcha");
+    expect(m.envoyerCodeConnexion).toHaveBeenCalledWith("+213555123456", "jeton-captcha");
     fireEvent.click(screen.getByRole("button", { name: "Changer de numéro ou recevoir un nouveau code" }));
     expect(screen.getByRole("button", { name: "Recevoir le code sur WhatsApp" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Je ne suis pas un robot" })).toHaveAttribute("data-reinit", "1");
@@ -90,9 +87,10 @@ describe("vérifier le numéro d’un compte connecté (US-21.2)", () => {
     render(<CodeTelephone usage="verification" numeroInitial="+213661234567" onVerifie={onVerifie} />);
     expect(screen.getByLabelText("Numéro de mobile")).toHaveValue("0661 23 45 67");
     expect(screen.queryByRole("button", { name: "Je ne suis pas un robot" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Recevoir par SMS" }));
+    expect(screen.queryByRole("button", { name: /SMS/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Recevoir le code sur WhatsApp" }));
     await screen.findByLabelText("Code à 6 chiffres");
-    expect(m.envoyerCodeVerification).toHaveBeenCalledWith("+213661234567", "sms");
+    expect(m.envoyerCodeVerification).toHaveBeenCalledWith("+213661234567");
     fireEvent.change(screen.getByLabelText("Code à 6 chiffres"), { target: { value: "654 321" } });
     fireEvent.click(screen.getByRole("button", { name: "Valider le code" }));
     await waitFor(() => expect(onVerifie).toHaveBeenCalled());
