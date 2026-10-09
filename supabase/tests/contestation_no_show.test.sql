@@ -1,4 +1,5 @@
 -- Tests SQL de la migration 20261009234500_contestation_no_show.sql (contestation d'un no-show par le client).
+-- Depuis 20261009235500_contestation_regles.sql, le motif est dans la table contestations.
 -- Même mode d'emploi que corrections_relecture.test.sql :
 --   psql -v ON_ERROR_STOP=1 -f supabase/tests/contestation_no_show.test.sql
 -- Tout se passe dans une transaction annulée à la fin : aucune donnée n'est gardée.
@@ -90,7 +91,7 @@ select pg_temp.erreur(format('select contester_no_show(%L, %L)', :'n1', repeat('
 select pg_temp.erreur(format('select contester_no_show(%L, null)', :'n1'), '23514', '5 à 300', 'motif absent refusé');
 select pg_temp.ok((select no_shows from profils where id = auth.uid()) = 1, 'avant contestation : 1 no-show');
 select contester_no_show(:'n1', '  Je suis venue   samedi, la boutique était fermée  ') \g /dev/null
-select pg_temp.ok((select contestation_motif from commandes where id = :'n1') = 'Je suis venue samedi, la boutique était fermée',
+select pg_temp.ok((select motif from contestations where commande_id = :'n1') = 'Je suis venue samedi, la boutique était fermée',
   'le motif est enregistré (espaces nettoyés), lisible par le client');
 select pg_temp.ok((select no_shows from profils where id = auth.uid()) = 0, 'contestation en attente : le no-show ne compte plus (1 → 0)');
 select pg_temp.erreur(format('select contester_no_show(%L, ''Encore une fois'')', :'n1'), '23514', 'déjà contesté', 'une seule contestation par no-show');

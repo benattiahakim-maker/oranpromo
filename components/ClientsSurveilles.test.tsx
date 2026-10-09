@@ -64,7 +64,7 @@ describe("clients bloqués (US-20.4)", () => {
   it("contestation : l’admin voit le motif et valide ou annule le no-show", async () => {
     validerNoShowClient.mockResolvedValue({ succes: true, message: "No-show confirmé : il compte de nouveau." });
     annulerNoShowClient.mockResolvedValue({ succes: true, message: "No-show annulé." });
-    render(<ClientsSurveilles bloques={[]} avecNoShows={[]} contestations={[{ id: "c9", numero: 9, client_id: "k2", client_nom: "Samia B.", client_telephone: "+213555123456", no_show_le: "2026-10-09T10:00:00Z", contestee_le: "2026-10-09T12:00:00Z", contestation_motif: "La boutique était fermée", boutiques: { nom: "Boutique Amine" } }]} />);
+    render(<ClientsSurveilles bloques={[]} avecNoShows={[]} contestations={[{ id: "c9", numero: 9, client_id: "k2", client_nom: "Samia B.", client_telephone: "+213555123456", no_show_le: "2026-10-09T10:00:00Z", contestee_le: "2026-10-09T12:00:00Z", boutiques: { nom: "Boutique Amine" }, contestations: { motif: "La boutique était fermée" } }]} />);
     expect(screen.getByText("Contestations en attente (1)")).toBeInTheDocument();
     expect(screen.getByText("« La boutique était fermée »")).toBeInTheDocument();
     expect(screen.getByText("Samia B. · 0555 12 34 56")).toBeInTheDocument();

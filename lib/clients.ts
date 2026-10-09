@@ -166,7 +166,21 @@ export function erreurMotifContestation(motif: string): string | null {
     : null;
 }
 
-export type MonNoShow = Pick<Tables<"commandes">, "id" | "numero" | "no_show_le" | "contestee_le" | "contestation_motif" | "contestation_validee_le"> & { boutiques: { nom: string } | null };
+// Le motif est dans la table contestations (migration 20261009235500) : lisible par son auteur et l’admin, pas par la boutique.
+export type MotifContestation = { motif: string } | null;
+export type MonNoShow = Pick<Tables<"commandes">, "id" | "numero" | "no_show_le" | "contestee_le" | "contestation_validee_le"> & { boutiques: { nom: string } | null; contestations: MotifContestation };
+
+// Décision du propriétaire : un no-show se conteste dans les 7 jours qui suivent sa déclaration (même règle que la base).
+export const DELAI_CONTESTATION_JOURS = 7;
+export function delaiContestationDepasse(noShow: Pick<MonNoShow, "no_show_le">, maintenant: number): boolean {
+  if (!noShow.no_show_le) return true;
+  return maintenant - Date.parse(noShow.no_show_le) > DELAI_CONTESTATION_JOURS * 24 * 60 * 60 * 1000;
+}
+
+/** Une seule contestation en attente à la fois par compte (même règle que la base). */
+export function aUneContestationEnAttente(noShows: Pick<MonNoShow, "contestee_le" | "contestation_validee_le">[]): boolean {
+  return noShows.some(n => etatContestation(n) === "en_attente");
+}
 export type EtatContestation = "a_contester" | "en_attente" | "refusee";
 
 export function etatContestation(noShow: Pick<MonNoShow, "contestee_le" | "contestation_validee_le">): EtatContestation {
@@ -178,7 +192,7 @@ export function etatContestation(noShow: Pick<MonNoShow, "contestee_le" | "conte
 export async function listerMesNoShows(client: SupabaseClient<Database>): Promise<MonNoShow[]> {
   const { data: { user }, error: erreurSession } = await client.auth.getUser();
   if (erreurSession || !user) return [];
-  const { data, error } = await client.from("commandes").select("id, numero, no_show_le, contestee_le, contestation_motif, contestation_validee_le, boutiques(nom)").eq("client_id", user.id).not("no_show_le", "is", null).is("no_show_annule_le", null).order("no_show_le", { ascending: false }).limit(50);
+  const { data, error } = await client.from("commandes").select("id, numero, no_show_le, contestee_le, contestation_validee_le, boutiques(nom), contestations(motif)").eq("client_id", user.id).not("no_show_le", "is", null).is("no_show_annule_le", null).order("no_show_le", { ascending: false }).limit(50);
   if (error) throw new Error("Impossible de charger vos commandes non récupérées. Réessayez.");
   return (data ?? []) as unknown as MonNoShow[];
 }
@@ -190,11 +204,11 @@ export async function contesterNoShow(client: SupabaseClient<Database>, commande
   if (error) throw new Error(["42501", "P0002", "23514"].includes(error.code ?? "") && error.message ? error.message : "Impossible d’envoyer votre contestation. Réessayez.");
 }
 
-export type ContestationEnAttente = Pick<Tables<"commandes">, "id" | "numero" | "client_id" | "client_nom" | "client_telephone" | "no_show_le" | "contestee_le" | "contestation_motif"> & { boutiques: { nom: string } | null };
+export type ContestationEnAttente = Pick<Tables<"commandes">, "id" | "numero" | "client_id" | "client_nom" | "client_telephone" | "no_show_le" | "contestee_le"> & { boutiques: { nom: string } | null; contestations: MotifContestation };
 
 /** Contestations en attente, les plus anciennes d’abord (lecture de toutes les commandes réservée à l’admin). */
 export async function listerContestationsEnAttente(client: SupabaseClient<Database>): Promise<ContestationEnAttente[]> {
-  const { data, error } = await client.from("commandes").select("id, numero, client_id, client_nom, client_telephone, no_show_le, contestee_le, contestation_motif, boutiques(nom)").not("contestee_le", "is", null).is("contestation_validee_le", null).is("no_show_annule_le", null).order("contestee_le", { ascending: true }).limit(200);
+  const { data, error } = await client.from("commandes").select("id, numero, client_id, client_nom, client_telephone, no_show_le, contestee_le, boutiques(nom), contestations(motif)").not("contestee_le", "is", null).is("contestation_validee_le", null).is("no_show_annule_le", null).order("contestee_le", { ascending: true }).limit(200);
   if (error) throw new Error("Impossible de charger les contestations. Réessayez.");
   return (data ?? []) as unknown as ContestationEnAttente[];
 }
