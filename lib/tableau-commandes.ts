@@ -245,3 +245,30 @@ export function dateLongue(maintenant: number): string {
   const p = (t: string) => parts.find(x => x.type === t)?.value ?? "";
   return `${p("weekday")} ${p("day")}/${p("month")} à ${Number(p("hour"))} h ${p("minute")}`;
 }
+
+// --- US-28.4 : mise à jour automatique (option A, interrogation toutes les 20 s) ---------------
+export const INTERVALLE_MS = 20_000;
+export const INTERVALLE_ERREUR_MS = 60_000;
+export const DUREE_NOUVEAU_MS = 2 * 60_000;
+/** Réponse de GET /espace/commandes/etat : des compteurs et le dernier numéro, aucune donnée personnelle. */
+export type EtatCommandes = CompteursEtapes & { derniere: number | null };
+
+/** Les 4 compteurs et le numéro de la dernière commande reçue par la boutique. */
+export async function lireEtatCommandes(client: Client, boutiqueId: string, maintenant: number): Promise<EtatCommandes> {
+  const [compteurs, derniere] = await Promise.all([
+    compterEtapes(client, boutiqueId, maintenant),
+    client.from("commandes").select("numero").eq("boutique_id", boutiqueId).order("cree_le", { ascending: false }).limit(1),
+  ]);
+  if (derniere.error) throw new Error("Impossible de charger les commandes. Réessayez.");
+  return { ...compteurs, derniere: (derniere.data?.[0] as { numero: number } | undefined)?.numero ?? null };
+}
+
+/** Tout changement de statut déplace une commande d’une étape à l’autre : les compteurs + le dernier numéro suffisent à savoir s’il faut rafraîchir. */
+export function empreinteEtat(etat: EtatCommandes): string {
+  return [etat.a_confirmer, etat.a_preparer, etat.pretes, etat.terminees, etat.derniere ?? 0].join("-");
+}
+
+/** « 14 h 05 » à Oran. */
+export function heureOran(ms: number): string {
+  return heureCourte(new Date(ms).toISOString(), ms);
+}

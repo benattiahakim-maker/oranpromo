@@ -155,3 +155,16 @@ describe("US-28.2 : actions groupées", () => {
     expect(changerStatutCommandesBoutique).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("US-28.4 : l’état de la page est gardé après une mise à jour", () => {
+  it("nouvelles données (router.refresh) : cases cochées et commande dépliée restent", () => {
+    const a = commande("demandee", { id: "a", numero: 127 }), b = commande("demandee", { id: "b", numero: 129 });
+    const { rerender } = afficher([a, b]);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Cocher la commande n° 129" }));
+    fireEvent.click(screen.getByRole("button", { name: /127/ }));
+    rerender(<TableauCommandes commandes={[a, b, commande("demandee", { id: "c", numero: 134, cree_le: "2026-10-09T13:05:00Z" })]} etape="a_confirmer" boutique="Parfumerie Démo" maintenant={MAINTENANT + 20_000} />);
+    expect(screen.getByRole("checkbox", { name: "Cocher la commande n° 129" })).toBeChecked();
+    expect(screen.getByRole("button", { name: /127/ })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: /134/ })).toBeInTheDocument();
+  });
+});

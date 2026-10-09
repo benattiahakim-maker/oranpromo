@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { chercherCommandes, compterEtapes, debutJourOran, echapperMotif, ETAPES, etapeDeStatut, etapeParDefaut, formaterDuree, heureCourte, heureEtape, lireEtape, lireRecherche, listerEtape, prenom, urgence } from "./tableau-commandes";
+import { chercherCommandes, compterEtapes, debutJourOran, empreinteEtat, heureOran, lireEtatCommandes, echapperMotif, ETAPES, etapeDeStatut, etapeParDefaut, formaterDuree, heureCourte, heureEtape, lireEtape, lireRecherche, listerEtape, prenom, urgence } from "./tableau-commandes";
 
 // Référence : vendredi 9/10/2026, 14 h 05 à Oran (13 h 05 UTC).
 const MAINTENANT = Date.parse("2026-10-09T13:05:00Z");
@@ -129,5 +129,19 @@ describe("US-28.1 : lectures (client de la session, RLS inchangée)", () => {
     expect(await compterEtapes(cl, "b1", MAINTENANT)).toEqual({ a_confirmer: 2, a_preparer: 2, pretes: 2, terminees: 2 });
     expect(appels.filter(a => a[0] === "select").every(a => (a[2] as { head: boolean }).head)).toBe(true);
     expect(appels).toContainEqual(["gte", "terminee_le", "2026-10-08T23:00:00.000Z"]);
+  });
+});
+
+describe("US-28.4 : état pour la mise à jour automatique", () => {
+  it("compteurs + dernier numéro ; empreinte qui change à chaque changement de statut ou nouvelle commande", async () => {
+    const { appels, client: cl } = client({ count: 1, error: null, data: [{ numero: 134 }] });
+    const etat = await lireEtatCommandes(cl, "b1", MAINTENANT);
+    expect(etat).toEqual({ a_confirmer: 1, a_preparer: 1, pretes: 1, terminees: 1, derniere: 134 });
+    expect(appels).toContainEqual(["select", "numero"]);
+    const e = empreinteEtat(etat);
+    expect(empreinteEtat({ ...etat, a_confirmer: 0, a_preparer: 2 })).not.toBe(e); // confirmée ailleurs
+    expect(empreinteEtat({ ...etat, derniere: 135 })).not.toBe(e);
+    expect(empreinteEtat({ ...etat })).toBe(e);
+    expect(heureOran(MAINTENANT)).toBe("14 h 05");
   });
 });
