@@ -253,6 +253,25 @@ En tant que boutique et client, je veux être prévenu sur WhatsApp, afin de ne 
 - Un envoi raté est retenté (5 essais au plus), puis marqué `echec`. Une panne WhatsApp ne bloque jamais une commande.
 - Le fournisseur est isolé (`lib/notifications/`) pour pouvoir passer à Twilio sans toucher au reste.
 
+### US-20.6 — Confirmer une commande depuis WhatsApp (message « nouvelle commande », page `/confirmer/[jeton]`)
+En tant que boutique, je veux confirmer une nouvelle commande directement depuis le message WhatsApp, sans ouvrir mon espace ni me connecter, afin de répondre vite au client.
+- Le message « nouvelle commande » reçu par la boutique a un bouton **« Confirmer »** (bouton lien du modèle WhatsApp). Le texte reste le même, avec en plus : « Touchez Confirmer, ou confirmez-la dans votre espace OranPromo, rubrique Commandes. »
+- Le bouton ouvre une page du site **sans connexion** : `/confirmer/<lien>`. Elle montre la commande (numéro, prénom du client, articles avec taille et quantité, total, note du client) et **un seul gros bouton « Confirmer la commande »**, puis « Commande confirmée : le stock est mis à jour. Pensez à la préparer. » et un lien vers l'espace (« Voir mes commandes »). Pas de numéro de téléphone du client sur cette page.
+- Ouvrir la page **ne confirme rien** : seule la touche « Confirmer la commande » confirme (2 touches en tout depuis WhatsApp). Raison : des applications (aperçus de liens, antivirus, navigateur de WhatsApp) ouvrent parfois un lien toutes seules ; une confirmation à l'ouverture pourrait se faire sans la boutique.
+- **Mêmes règles que le bouton « Confirmer » du site** : seulement une commande « demandée » ; le stock baisse ; refus « Stock insuffisant pour … » si une taille ne suffit plus (la page propose alors d'ouvrir l'espace pour corriger le stock ou annuler). Le suivi de la commande indique « Confirmée depuis WhatsApp » (auteur : la boutique).
+- **Le lien** : propre à **une commande** et à **sa boutique** (il ne peut rien faire d'autre que confirmer cette commande), **signé** par le serveur (impossible à deviner ou à modifier), **valable 24 heures** après l'envoi du message, et **à usage unique** (une fois la commande confirmée, il ne sert plus à rien). Il n'est enregistré nulle part en clair.
+- Cas particuliers (message clair, jamais d'erreur technique) :
+  - commande déjà confirmée (par le lien ou dans l'espace), prête ou récupérée : « Cette commande est déjà confirmée. » ;
+  - commande annulée (par le client ou la boutique) : « Cette commande a été annulée : il n'y a rien à confirmer. » ;
+  - commande expirée : « Cette commande a expiré : il n'y a rien à confirmer. » ;
+  - lien de plus de 24 heures : « Ce lien a expiré. Confirmez la commande dans votre espace OranPromo, rubrique Commandes. » ;
+  - lien abîmé, modifié ou inconnu : « Ce lien n'est pas valide. » (même message, qu'il s'agisse d'une commande qui n'existe pas ou d'une signature fausse).
+- Si la boutique est connectée à son espace sur ce téléphone, rien ne change (le lien suffit).
+- **Avant le code** : le propriétaire valide ce choix « sans connexion » (voir l'analyse dans `docs/architecture.md`, « Confirmer depuis WhatsApp (US-20.6) »).
+- **Mise en service** : nouveau modèle WhatsApp `oranpromo_nouvelle_commande_confirmer` à **faire approuver par Meta** (bouton lien avec l'adresse définitive du site) ; tant qu'il n'est pas approuvé et activé, l'ancien message sans bouton continue de partir (aucun message perdu).
+- Maquettes : `docs/maquettes/WhatsAppConfirmer.dc.html` (message reçu) et `docs/maquettes/ConfirmerCommande.dc.html` (page du lien, avec les autres états).
+- Tests prévus : lien signé et vérifié (modifié, expiré, autre commande : refus), page sans effet à l'ouverture, confirmation qui baisse le stock comme dans l'espace, une seule confirmation (deuxième touche : « déjà confirmée »), commandes annulée, expirée, stock insuffisant, appel direct à la base sans le secret du serveur refusé, bouton ajouté au message seulement quand le nouveau modèle est activé.
+
 ## Module 8 — Numéro de téléphone vérifié (après le MVP)
 
 Source : carte Trello « V2 · Connexion par SMS » (remplacée par cette story, décisions du propriétaire du 9 octobre 2026). Conception : `docs/architecture.md`, section « Connexion des clients par téléphone (US-21) ».
