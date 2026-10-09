@@ -22,4 +22,12 @@ describe("Galerie article (US-02)", () => {
     fireEvent.keyDown(galerie, { key: "ArrowLeft" });
     expect(scrollTo).toHaveBeenLastCalledWith({ left: 0, behavior: "smooth" });
   });
+
+  it("masque la barre de défilement grise tout en gardant le défilement horizontal", () => {
+    render(<GalerieArticle titre="Polo" photos={[{ adresse: "/1.jpg", ordre: 0 }, { adresse: "/2.jpg", ordre: 1 }]} />);
+    const galerie = screen.getByLabelText("Galerie défilable");
+    expect(galerie.className).toContain("sans-barre-defilement");
+    expect(galerie.className).toContain("overflow-x-auto");
+    expect(galerie.className).toContain("snap-x");
+  });
 });

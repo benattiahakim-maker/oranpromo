@@ -34,3 +34,12 @@ body {
   letter-spacing: 0.15em;
   font-size: 0.75rem;
 }
+
+/* Défilement horizontal sans barre visible (galerie photo) : le doigt, la molette et les flèches restent actifs. */
+@utility sans-barre-defilement {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
