@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EntetePublic from "@/components/EntetePublic";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { chargerCatalogue, filtrerCatalogue } from "@/lib/catalogue";
 import CarteArticle from "@/components/CarteArticle";
@@ -22,7 +23,7 @@ export default async function Catalogue({ searchParams }: { searchParams: Promis
   };
   const select = (nom: string, libelle: string, options: string[]) => <label className="flex flex-col gap-2 text-sm">{libelle}<select name={nom} defaultValue={valeur(nom)} className="min-h-11 min-w-0 border border-trait bg-blanc px-2"><option value="">Tous</option>{options.map(option => <option key={option} value={option}>{option}</option>)}</select></label>;
   return <div className="mx-auto w-full max-w-lg pb-10">
-    <header className="flex items-center justify-between border-b border-trait p-5"><Link href="/" className="font-titre text-xl tracking-[0.2em]">ORANPROMO</Link><Link href="/" className="etiquette">Promos</Link></header>
+    <EntetePublic />
     <main>
       <h1 className="font-titre px-5 pt-6 text-3xl">Le catalogue</h1>
       <form key={JSON.stringify(params)} action="/catalogue" method="get" className="flex flex-col gap-4 p-5">

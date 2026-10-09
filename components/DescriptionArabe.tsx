@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { LONGUEUR_ARABE_MAX, texteArabeTraduction, TRADUCTION_INDISPONIBLE, validerTraductionIA } from "@/lib/ia-traduction";
-import styles from "./espace-articles.module.css";
 
 export default function DescriptionArabe({ titre, description, valeur, onChange, occupe = false }: { titre: string; description: string; valeur: string; onChange: (valeur: string) => void; occupe?: boolean }) {
   const [enCours, setEnCours] = useState(false), [message, setMessage] = useState("");
@@ -23,7 +22,7 @@ export default function DescriptionArabe({ titre, description, valeur, onChange,
     } catch { if (!controleur.signal.aborted) setMessage(TRADUCTION_INDISPONIBLE); }
     finally { if (!controleur.signal.aborted) setEnCours(false); }
   }
-  return <section aria-label="Description en arabe" className={styles.espace}>
+  return <section aria-label="Description en arabe" className="mx-auto w-full max-w-[390px] bg-blanc font-sans text-noir">
     <button type="button" disabled={occupe || enCours || !titre.trim()} onClick={() => void generer()} className="min-h-[44px] w-full border border-noir bg-blanc px-3 py-2 text-sm text-noir">{enCours ? "Traduction en cours…" : "Générer en arabe"}</button>
     <label className="mt-3 block text-sm">Texte arabe (facultatif)<textarea name="descriptionAr" value={valeur} disabled={occupe} onChange={event => { revision.current++; onChange(event.target.value); }} rows={5} maxLength={LONGUEUR_ARABE_MAX} dir="rtl" lang="ar" className="mt-2 min-h-[44px] w-full border border-trait bg-blanc px-3 py-2 text-base text-noir" /></label>
     {message && <p role="status" className="mt-3 text-sm text-gris">{message}</p>}

@@ -10,6 +10,10 @@ export function confirmerModification<T extends object>(donnees: T, maintenant =
   return { ...donnees, derniere_confirmation: maintenant.toISOString() };
 }
 
+export function verifierPrixAvecPromo(prix: number, promo: { prix_promo: number } | null | undefined) {
+  if (promo && prix <= promo.prix_promo) throw new Error("Le prix doit rester supérieur au prix promo, ou arrêtez d'abord la promo");
+}
+
 export function preparerTailles(articleId: string, existantes: TailleModifiee[], choisies: TailleModifiee[]) {
   const selection = new Map(choisies.map(t => [normaliserTailles([t.libelle])[0], t.disponible]));
   const libelles = normaliserTailles([...existantes.map(t => t.libelle), ...choisies.map(t => t.libelle)]);
@@ -56,6 +60,7 @@ export async function modifierArticle(client: SupabaseClient<Database>, id: stri
   if (Object.keys(erreurs).length) throw new Error("Vérifiez les champs du formulaire.");
   const article = await articleDeMaBoutique(client, id);
   // Confirmer d’abord l’article : même une modification partielle des tailles reste datée.
+  verifierPrixAvecPromo(Number(saisie.prix.trim()), article.promos);
   const { data, error } = await client.from("articles").update(confirmerModification(donneesArticle(saisie))).eq("id", id).eq("boutique_id", article.boutique_id).select("id").single();
   if (error || !data) throw new Error("Impossible d’enregistrer l’article. Réessayez.");
   const { error: erreurTailles } = await client.from("tailles").upsert(preparerTailles(id, article.tailles, tailles), { onConflict: "article_id,libelle" });

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { chargerStatistiques, dureeStatistiques } from "@/lib/statistiques";
-import styles from "@/components/espace-articles.module.css";
 
 export default async function Statistiques({ searchParams }: { searchParams: Promise<{ jours?: string | string[] }> }) {
   const client = await creerClientServeur();
@@ -16,7 +15,7 @@ export default async function Statistiques({ searchParams }: { searchParams: Pro
     try { statistiques = await chargerStatistiques(client, profil.boutique_id, jours); }
     catch { erreur = "Impossible de charger vos statistiques. Réessayez."; }
   }
-  return <main className={`${styles.espace} mx-auto max-w-[390px] bg-blanc p-6 text-noir`}>
+  return <main className="mx-auto w-full max-w-[390px] bg-blanc p-6 text-noir">
     <Link href="/espace" className="etiquette inline-flex min-h-[44px] items-center">← Mes articles</Link>
     <h1 className="my-6 font-titre text-[28px] font-normal">Mes statistiques</h1>
     <nav aria-label="Période des statistiques" className="flex gap-3">{([7, 30] as const).map(duree => <Link key={duree} href={`/espace/statistiques?jours=${duree}`} aria-current={jours === duree ? "page" : undefined} className={`flex min-h-[44px] flex-1 items-center justify-center border border-noir px-3 ${jours === duree ? "bg-noir text-blanc" : "bg-blanc text-noir"}`}>{duree} jours</Link>)}</nav>

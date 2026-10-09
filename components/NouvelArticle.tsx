@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import DescriptionArabe from "./DescriptionArabe";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CATEGORIES_ARTICLE, GENRES_ARTICLE, TAILLES_ARTICLE, TAILLE_UNIQUE, normaliserTailles, validerArticle, type ErreursArticle } from "@/lib/article";
 import { creerClientNavigateur } from "@/lib/supabase/client";
 import { ErreurPublicationArticle, publierArticle } from "@/lib/publication-article";
 import { compresserPhoto } from "@/lib/compression-photo";
 import { champsVidesAPreRemplir, IA_INDISPONIBLE, type ChampIA, type FicheIA } from "@/lib/ia-fiche";
 
-const champ: CSSProperties = { width: "100%", minHeight: 44, boxSizing: "border-box", border: 0, borderBottom: "1px solid #0A0A0A", borderRadius: 0, padding: "8px 0", background: "#FFFFFF", color: "#0A0A0A", font: "inherit", fontSize: 16 };
-const libelle: CSSProperties = { display: "flex", flexDirection: "column", gap: 6, fontSize: 11, letterSpacing: 1, color: "#6F6F6F" };
-const bouton: CSSProperties = { minHeight: 48, border: "1px solid #0A0A0A", borderRadius: 0, padding: "10px 12px", background: "#FFFFFF", color: "#0A0A0A", font: "inherit", fontSize: 12, cursor: "pointer" };
+const champ = "box-border min-h-11 w-full rounded-none border-0 border-b border-noir bg-blanc px-0 py-2 font-[inherit] text-base text-noir";
+const libelle = "flex flex-col gap-1.5 text-[11px] tracking-[1px] text-gris";
+const bouton = "min-h-12 cursor-pointer rounded-none border border-noir bg-blanc px-3 py-2.5 font-[inherit] text-xs text-noir";
 
 function ApercuPhoto({ fichier, index }: { fichier: File; index: number }) {
   const image = useRef<HTMLImageElement>(null);
@@ -21,7 +21,7 @@ function ApercuPhoto({ fichier, index }: { fichier: File; index: number }) {
     return () => URL.revokeObjectURL(adresse);
   }, [fichier]);
   // eslint-disable-next-line @next/next/no-img-element
-  return <img ref={image} alt={`Photo ${index + 1}`} style={{ width: 96, height: 120, objectFit: "cover", background: "#F3F2EF" }} />;
+  return <img ref={image} alt={`Photo ${index + 1}`} className="h-30 w-24 bg-fond-photo object-cover" />;
 }
 
 export default function NouvelArticle({ boutiqueId }: { boutiqueId: string }) {
@@ -117,48 +117,48 @@ export default function NouvelArticle({ boutiqueId }: { boutiqueId: string }) {
     try { await navigator.clipboard.writeText(lien); setCopie("Lien copié."); }
     catch { setCopie("La copie automatique est indisponible. Sélectionnez le lien pour le copier."); }
   }
-  const erreur = (nom: keyof ErreursArticle) => erreurs[nom] ? <p id={`erreur-${nom}`} role="alert" style={{ margin: 0, fontSize: 13, letterSpacing: 0, color: "#0A0A0A" }}>{erreurs[nom]}</p> : null;
+  const erreur = (nom: keyof ErreursArticle) => erreurs[nom] ? <p id={`erreur-${nom}`} role="alert" className="m-0 text-[13px] tracking-normal text-noir">{erreurs[nom]}</p> : null;
 
-  if (articleId) return <main style={{ maxWidth: 390, width: "100%", margin: "0 auto", padding: 24, boxSizing: "border-box" }}>
-    <h1 style={{ fontFamily: "var(--font-bodoni), serif", fontSize: 30, fontWeight: 400 }}>Article en ligne</h1>
-    <Link href={`/a/${articleId}`} style={{ display: "block", margin: "24px 0", overflowWrap: "anywhere", color: "#0A0A0A" }}>{lien}</Link>
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}><button type="button" onClick={() => void copierLien()} style={bouton}>Copier le lien</button><button type="button" onClick={recommencer} style={{ ...bouton, background: "#0A0A0A", color: "#FFFFFF" }}>Ajouter un autre article</button></div>
-    <p role="status" style={{ fontSize: 14 }}>{copie}</p>
+  if (articleId) return <main className="mx-auto box-border w-full max-w-[390px] p-6">
+    <h1 className="font-titre text-[30px] font-normal">Article en ligne</h1>
+    <Link href={`/a/${articleId}`} className="my-6 block wrap-anywhere text-noir">{lien}</Link>
+    <div className="flex flex-col gap-3"><button type="button" onClick={() => void copierLien()} className={bouton}>Copier le lien</button><button type="button" onClick={recommencer} className={`${bouton} bg-noir! text-blanc!`}>Ajouter un autre article</button></div>
+    <p role="status" className="text-sm">{copie}</p>
   </main>;
 
-  return <div style={{ maxWidth: 390, width: "100%", margin: "0 auto", background: "#FFFFFF", color: "#0A0A0A" }}>
-    <header style={{ display: "grid", gridTemplateColumns: "44px 1fr 44px", alignItems: "center", padding: "14px 12px", borderBottom: "1px solid #E6E6E6" }}><span /><h1 style={{ margin: 0, fontSize: 12, fontWeight: 500, letterSpacing: 2, textAlign: "center" }}>NOUVEL ARTICLE</h1><Link href="/espace" aria-label="Fermer" style={{ display: "flex", width: 44, height: 44, alignItems: "center", justifyContent: "center", textDecoration: "none", color: "inherit" }}>×</Link></header>
-    <form noValidate onSubmit={publier} style={{ padding: "20px 24px 24px" }}>
-      <fieldset disabled={enCours} style={{ display: "flex", flexDirection: "column", gap: 20, border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+  return <div className="mx-auto w-full max-w-[390px] bg-blanc text-noir">
+    <header className="grid grid-cols-[44px_1fr_44px] items-center border-b border-trait px-3 py-3.5"><span /><h1 className="m-0 text-center text-xs font-medium tracking-[2px]">NOUVEL ARTICLE</h1><Link href="/espace" aria-label="Fermer" className="flex h-11 w-11 items-center justify-center text-inherit no-underline">×</Link></header>
+    <form noValidate onSubmit={publier} className="px-6 pt-5 pb-6">
+      <fieldset disabled={enCours} className="m-0 flex min-w-0 flex-col gap-5 border-0 p-0">
         <section aria-label="Photos de l’article">
-          <p style={{ ...libelle, marginTop: 0 }}>PHOTOS · 1 À 5 *</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>{fichiers.map((fichier, index) => <div key={`${index}-${fichier.name}`} style={{ width: 96 }}>
+          <p className={`${libelle} mt-0`}>PHOTOS · 1 À 5 *</p>
+          <div className="flex flex-wrap gap-2.5">{fichiers.map((fichier, index) => <div key={`${index}-${fichier.name}`} className="w-24">
             <ApercuPhoto fichier={fichier} index={index} />
-            <button type="button" onClick={() => changerPhotos(fichiers.filter((_, position) => position !== index))} aria-label={`Retirer la photo ${index + 1}`} style={{ ...bouton, width: "100%", border: 0, fontSize: 11 }}>Retirer</button>
+            <button type="button" onClick={() => changerPhotos(fichiers.filter((_, position) => position !== index))} aria-label={`Retirer la photo ${index + 1}`} className={`${bouton} w-full border-0! text-[11px]!`}>Retirer</button>
           </div>)}</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
-            <label style={libelle}>Prendre une photo<input aria-label="Prendre une photo" type="file" accept="image/*" capture="environment" onChange={ajouterPhotos} disabled={enCours || fichiers.length >= 5} aria-describedby="erreur-photos" style={{ fontSize: 12, letterSpacing: 0, width: "100%" }} /></label>
-            <label style={libelle}>Choisir dans la galerie<input aria-label="Choisir dans la galerie" type="file" accept="image/*" multiple onChange={ajouterPhotos} disabled={enCours || fichiers.length >= 5} aria-describedby="erreur-photos" style={{ fontSize: 12, letterSpacing: 0, width: "100%" }} /></label>
+          <div className="mt-3 flex flex-col gap-2.5">
+            <label className={libelle}>Prendre une photo<input aria-label="Prendre une photo" type="file" accept="image/*" capture="environment" onChange={ajouterPhotos} disabled={enCours || fichiers.length >= 5} aria-describedby="erreur-photos" className="w-full text-xs tracking-normal" /></label>
+            <label className={libelle}>Choisir dans la galerie<input aria-label="Choisir dans la galerie" type="file" accept="image/*" multiple onChange={ajouterPhotos} disabled={enCours || fichiers.length >= 5} aria-describedby="erreur-photos" className="w-full text-xs tracking-normal" /></label>
           </div>{erreur("photos")}
-          <p style={{ marginBottom: 0, fontSize: 12, color: "#6F6F6F" }}>Photos JPEG, PNG ou WebP.</p>
+          <p className="mb-0 text-xs text-gris">Photos JPEG, PNG ou WebP.</p>
           {preparationIA && <p role="status" className="text-sm text-gris">L’IA prépare la fiche…</p>}
           {messageIA && <p role="status" className="text-sm text-gris">{messageIA}</p>}
         </section>
-        <label style={libelle}>TITRE *<input name="titre" value={titre} onChange={event => saisirChamp("titre", event.target.value)} required aria-invalid={Boolean(erreurs.titre)} aria-describedby="erreur-titre" style={champ} />{repereIA("titre")}{erreur("titre")}</label>
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 14 }}>
-          <label style={libelle}>CATÉGORIE *<select name="categorie" value={categorie} onChange={event => saisirChamp("categorie", event.target.value)} required aria-invalid={Boolean(erreurs.categorie)} aria-describedby="erreur-categorie" style={champ}><option value="">Choisir</option>{CATEGORIES_ARTICLE.map(c => <option key={c} value={c}>{c}</option>)}</select>{repereIA("categorie")}{erreur("categorie")}</label>
-          <label style={libelle}>GENRE<select name="genre" value={genre} onChange={event => saisirChamp("genre", event.target.value)} style={champ}><option value="">Choisir</option>{GENRES_ARTICLE.map(g => <option key={g} value={g}>{g[0].toUpperCase() + g.slice(1)}</option>)}</select>{repereIA("genre")}{erreur("genre")}</label>
+        <label className={libelle}>TITRE *<input name="titre" value={titre} onChange={event => saisirChamp("titre", event.target.value)} required aria-invalid={Boolean(erreurs.titre)} aria-describedby="erreur-titre" className={champ} />{repereIA("titre")}{erreur("titre")}</label>
+        <div className="grid grid-cols-2 gap-3.5">
+          <label className={libelle}>CATÉGORIE *<select name="categorie" value={categorie} onChange={event => saisirChamp("categorie", event.target.value)} required aria-invalid={Boolean(erreurs.categorie)} aria-describedby="erreur-categorie" className={champ}><option value="">Choisir</option>{CATEGORIES_ARTICLE.map(c => <option key={c} value={c}>{c}</option>)}</select>{repereIA("categorie")}{erreur("categorie")}</label>
+          <label className={libelle}>GENRE<select name="genre" value={genre} onChange={event => saisirChamp("genre", event.target.value)} className={champ}><option value="">Choisir</option>{GENRES_ARTICLE.map(g => <option key={g} value={g}>{g[0].toUpperCase() + g.slice(1)}</option>)}</select>{repereIA("genre")}{erreur("genre")}</label>
         </div>
-        <label style={libelle}>COULEUR (FACULTATIF)<input name="couleur" value={couleur} onChange={event => saisirChamp("couleur", event.target.value)} style={champ} />{repereIA("couleur")}</label>
-        <label style={libelle}>DESCRIPTION (FACULTATIVE)<textarea name="description" rows={3} value={description} onChange={event => saisirChamp("description", event.target.value)} style={{ ...champ, resize: "vertical", lineHeight: 1.5 }} />{repereIA("description")}</label>
+        <label className={libelle}>COULEUR (FACULTATIF)<input name="couleur" value={couleur} onChange={event => saisirChamp("couleur", event.target.value)} className={champ} />{repereIA("couleur")}</label>
+        <label className={libelle}>DESCRIPTION (FACULTATIVE)<textarea name="description" rows={3} value={description} onChange={event => saisirChamp("description", event.target.value)} className={`${champ} resize-y leading-normal`} />{repereIA("description")}</label>
         <DescriptionArabe titre={titre} description={description} valeur={descriptionAr} onChange={setDescriptionAr} occupe={enCours} />{erreur("descriptionAr")}
-        <label style={{ ...libelle, color: "#0A0A0A" }}>PRIX EN DA *<input name="prix" type="text" inputMode="numeric" value={prix} onChange={event => setPrix(event.target.value)} required aria-invalid={Boolean(erreurs.prix)} aria-describedby="erreur-prix" placeholder="Votre prix" style={{ ...champ, borderBottomWidth: 2 }} />{erreur("prix")}</label>
-        <fieldset style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}><legend style={{ ...libelle, marginBottom: 10, color: "#0A0A0A" }}>TAILLES DISPONIBLES *</legend>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>{[...TAILLES_ARTICLE, TAILLE_UNIQUE].map(t => <button key={t} type="button" aria-pressed={tailles.includes(t)} onClick={() => choisirTaille(t)} style={{ ...bouton, borderColor: "#E6E6E6", background: tailles.includes(t) ? "#0A0A0A" : "#FFFFFF", color: tailles.includes(t) ? "#FFFFFF" : "#0A0A0A" }}>{t === TAILLE_UNIQUE ? "Taille unique" : t}</button>)}</div>
-          <label style={{ ...libelle, marginTop: 14 }}>POINTURES OU AUTRES TAILLES<input name="pointures" value={pointures} onChange={event => { setPointures(event.target.value); if (event.target.value.trim()) setTailles(avant => avant.filter(t => t !== TAILLE_UNIQUE)); }} placeholder="Ex. : 38, 40, 42" aria-describedby="erreur-tailles" style={champ} /></label>{erreur("tailles")}
+        <label className={`${libelle} text-noir!`}>PRIX EN DA *<input name="prix" type="text" inputMode="numeric" value={prix} onChange={event => setPrix(event.target.value)} required aria-invalid={Boolean(erreurs.prix)} aria-describedby="erreur-prix" placeholder="Votre prix" className={`${champ} border-b-2`} />{erreur("prix")}</label>
+        <fieldset className="m-0 min-w-0 border-0 p-0"><legend className={`${libelle} mb-2.5 text-noir!`}>TAILLES DISPONIBLES *</legend>
+          <div className="grid grid-cols-3">{[...TAILLES_ARTICLE, TAILLE_UNIQUE].map(t => <button key={t} type="button" aria-pressed={tailles.includes(t)} onClick={() => choisirTaille(t)} className={`${bouton} border-trait! ${tailles.includes(t) ? "bg-noir! text-blanc!" : "bg-blanc text-noir"}`}>{t === TAILLE_UNIQUE ? "Taille unique" : t}</button>)}</div>
+          <label className={`${libelle} mt-3.5`}>POINTURES OU AUTRES TAILLES<input name="pointures" value={pointures} onChange={event => { setPointures(event.target.value); if (event.target.value.trim()) setTailles(avant => avant.filter(t => t !== TAILLE_UNIQUE)); }} placeholder="Ex. : 38, 40, 42" aria-describedby="erreur-tailles" className={champ} /></label>{erreur("tailles")}
         </fieldset>
-        {erreurEnvoi && <p role="alert" style={{ margin: 0, padding: 12, border: "1px solid #E6E6E6", fontSize: 14, lineHeight: 1.6 }}>{erreurEnvoi}</p>}
-        <button type="submit" style={{ ...bouton, width: "100%", minHeight: 54, background: "#0A0A0A", color: "#FFFFFF", letterSpacing: 2, opacity: enCours ? 0.5 : 1 }}>{enCours ? "PUBLICATION EN COURS…" : "PUBLIER L’ARTICLE"}</button>
+        {erreurEnvoi && <p role="alert" className="m-0 border border-trait p-3 text-sm leading-[1.6]">{erreurEnvoi}</p>}
+        <button type="submit" className={`${bouton} min-h-[54px]! w-full bg-noir! tracking-[2px] text-blanc! disabled:opacity-50`}>{enCours ? "PUBLICATION EN COURS…" : "PUBLIER L’ARTICLE"}</button>
       </fieldset>
     </form>
   </div>;

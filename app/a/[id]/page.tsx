@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import EntetePublic from "@/components/EntetePublic";
 import GalerieArticle from "@/components/GalerieArticle";
 import PartagerArticle from "@/components/PartagerArticle";
 import ReservationArticle from "@/components/ReservationArticle";
@@ -132,6 +133,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
     return (
       <div className="min-h-screen bg-blanc">
+        <EntetePublic />
         <div className="relative h-96 bg-fond-photo flex items-center justify-center">
           <div className="text-center">
             <div className="text-2xl font-bold text-noir mb-4">Article plus disponible</div>
@@ -196,6 +198,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
   return (
     <div className="mx-auto w-full max-w-lg min-h-screen bg-blanc">
+      <EntetePublic />
       <EnregistrerVue boutiqueId={article.boutique_id} articleId={article.id} />
       {/* Photo carousel */}
       <div className="relative bg-fond-photo">

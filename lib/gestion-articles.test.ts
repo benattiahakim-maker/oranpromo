@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { changerStatut, cheminPhotoArticle, confirmerModification, modifierArticle, preparerTailles, supprimerArticle } from "./gestion-articles";
+import { changerStatut, cheminPhotoArticle, confirmerModification, modifierArticle, preparerTailles, supprimerArticle, verifierPrixAvecPromo } from "./gestion-articles";
 
 function simulation() {
-  const article = { id: "article", boutique_id: "boutique", tailles: [{ libelle: "S", disponible: true }, { libelle: "M", disponible: true }], photos: [{ adresse: "https://iloyliuzsflzbkhpvxjt.supabase.co/storage/v1/object/public/photos/boutique/article/photo.jpg", adresse_vignette: "https://iloyliuzsflzbkhpvxjt.supabase.co/storage/v1/object/public/photos/boutique/article/vignette.webp" }] };
+  const article = { id: "article", boutique_id: "boutique", promos: null as { prix_promo: number } | null, tailles: [{ libelle: "S", disponible: true }, { libelle: "M", disponible: true }], photos: [{ adresse: "https://iloyliuzsflzbkhpvxjt.supabase.co/storage/v1/object/public/photos/boutique/article/photo.jpg", adresse_vignette: "https://iloyliuzsflzbkhpvxjt.supabase.co/storage/v1/object/public/photos/boutique/article/vignette.webp" }] };
   const profile = { maybeSingle: vi.fn().mockResolvedValue({ data: { boutique_id: "boutique" }, error: null }), eq: vi.fn() };
   profile.eq.mockReturnValue(profile);
   const requete = { eq: vi.fn(), select: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: article, error: null }), single: vi.fn().mockResolvedValue({ data: { id: "article" }, error: null }) };
@@ -19,6 +19,9 @@ function simulation() {
 const saisie = { titre: "Polo", categorie: "Polos", genre: "homme", couleur: "", description: "", prix: "3500", tailles: ["S"], photos: [] };
 
 describe("US-11 : gestion de mes articles", () => {
+  it.each([2999, 3000])("refuse un prix %s qui n’est pas supérieur à la promo", prix => { expect(() => verifierPrixAvecPromo(prix, { prix_promo: 3000 })).toThrow("Le prix doit rester supérieur au prix promo, ou arrêtez d'abord la promo"); });
+  it("autorise un prix supérieur à la promo ou un article sans promo", () => { expect(() => verifierPrixAvecPromo(3001, { prix_promo: 3000 })).not.toThrow(); expect(() => verifierPrixAvecPromo(1000, null)).not.toThrow(); });
+  it("refuse une baisse incompatible avant toute écriture d’article ou de tailles", async () => { const test = simulation(); test.requete.maybeSingle.mockResolvedValue({ data: { id: "article", boutique_id: "boutique", tailles: [], photos: [], promos: { prix_promo: 3000 } }, error: null }); await expect(modifierArticle(test.client, "article", { ...saisie, prix: "2500" }, [{ libelle: "S", disponible: true }])).rejects.toThrow("supérieur au prix promo"); expect(test.update).not.toHaveBeenCalled(); expect(test.upsert).not.toHaveBeenCalled(); });
   it("US-15 : modifie ou efface description_ar en confirmant l’article", async () => { const test = simulation(); await modifierArticle(test.client, "article", { ...saisie, descriptionAr: "قميص أزرق\nأكمام قصيرة." }, [{ libelle: "S", disponible: true }]); expect(test.update).toHaveBeenCalledWith(expect.objectContaining({ description_ar: "قميص أزرق\nأكمام قصيرة.", derniere_confirmation: expect.any(String) })); await modifierArticle(test.client, "article", { ...saisie, descriptionAr: "" }, [{ libelle: "S", disponible: true }]); expect(test.update).toHaveBeenLastCalledWith(expect.objectContaining({ description_ar: null })); });
   it("date toute modification sans altérer les données", () => {
     expect(confirmerModification({ statut: "vendu" }, new Date("2026-10-09T10:00:00Z"))).toEqual({ statut: "vendu", derniere_confirmation: "2026-10-09T10:00:00.000Z" });

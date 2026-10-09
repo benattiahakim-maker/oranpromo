@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { CATEGORIES_ARTICLE, GENRES_ARTICLE, normaliserTailles, TAILLES_ARTICLE, TAILLE_UNIQUE, validerArticle, type ErreursArticle } from "@/lib/article";
 import { modifierArticle, supprimerArticle, type ArticleGere, type TailleModifiee } from "@/lib/gestion-articles";
 import { creerClientNavigateur } from "@/lib/supabase/client";
-import styles from "./espace-articles.module.css";
 import PromoArticle from "./PromoArticle";
 import DescriptionArabe from "./DescriptionArabe";
 
@@ -55,7 +54,7 @@ export default function ModifierArticle({ article }: { article: ArticleGere }) {
     catch (error) { setErreur(error instanceof Error ? error.message : "Impossible de supprimer l’article. Réessayez."); verrou.current = false; setEnCours(false); }
   }
   const erreurChamp = (nom: keyof ErreursArticle) => erreurs[nom] ? <span id={`erreur-${nom}`} role="alert" className="mt-2 block text-sm normal-case tracking-normal">{erreurs[nom]}</span> : null;
-  return <main className={`${styles.espace} mx-auto max-w-[390px] bg-blanc p-6 text-noir`}>
+  return <main className="mx-auto w-full max-w-[390px] bg-blanc p-6 text-noir">
     <Link href="/espace" className="etiquette inline-flex min-h-[44px] items-center">← Mes articles</Link><h1 className="my-6 font-titre text-[28px] font-normal">Modifier l’article</h1>
     <form onSubmit={event => void enregistrer(event)} noValidate><fieldset disabled={enCours} className="flex min-w-0 flex-col gap-5">
       <label className="etiquette">Titre<input name="titre" className={champ} value={titre} onChange={e => setTitre(e.target.value)} aria-invalid={Boolean(erreurs.titre)} aria-describedby="erreur-titre" />{erreurChamp("titre")}</label>

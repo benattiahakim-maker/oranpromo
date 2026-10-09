@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EntetePublic from "@/components/EntetePublic";
 import Image from "next/image";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { formaterPrix, prixAffiche, promoActive } from "@/lib/prix";
@@ -26,7 +27,7 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
     .select("id, nom, quartier, adresse, horaires, whatsapp, latitude, longitude")
     .eq("slug", slug).eq("statut", "validee").maybeSingle();
   if (error) throw new Error("Impossible de charger la boutique. Réessayez dans quelques instants.");
-  if (!boutique) return <main className="mx-auto w-full max-w-lg px-6 py-16 text-center"><h1 className="font-titre text-3xl">Boutique indisponible</h1><Link href="/" className="mt-6 inline-block underline">Retour à l’accueil</Link></main>;
+  if (!boutique) return <><EntetePublic /><main className="mx-auto w-full max-w-lg px-6 py-16 text-center"><h1 className="font-titre text-3xl">Boutique indisponible</h1><Link href="/" className="mt-6 inline-block underline">Retour à l’accueil</Link></main></>;
 
   const { data: articles, error: erreurArticles } = await supabase.from("articles")
     .select("id, titre, prix, cree_le, promos(prix_promo, date_fin), photos(adresse, adresse_vignette, ordre)")
@@ -42,7 +43,7 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
 
   return <div className="mx-auto w-full max-w-lg pb-10">
     <EnregistrerVue boutiqueId={boutique.id} />
-    <header className="relative flex items-center gap-4 border-b border-trait px-4 py-3"><Link href="/" aria-label="Retour à l’accueil" className="flex h-11 w-11 items-center justify-center">←</Link><span className="font-titre text-xl tracking-[0.2em]">ORANPROMO</span><PartagerArticle titre={boutique.nom} boutiqueId={boutique.id} libelle="Partager la boutique" /></header>
+    <EntetePublic /><div className="relative h-11"><PartagerArticle titre={boutique.nom} boutiqueId={boutique.id} libelle="Partager la boutique" /></div>
     <section className="flex flex-col gap-3 px-6 py-8 text-center">
       <p className="etiquette text-gris">{boutique.quartier}</p>
       <h1 className="font-titre break-words text-3xl">{boutique.nom}</h1>
