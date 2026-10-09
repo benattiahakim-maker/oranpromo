@@ -8,7 +8,7 @@ Une seule application **Next.js 16 (App Router, TypeScript, Tailwind 4)** + **Su
 
 ```
 app/
-  page.tsx                      accueil : promos du moment (US-04)
+  page.tsx                      accueil : univers, grande photo, tuiles, promos du moment (US-04, lib/accueil.ts)
   catalogue/page.tsx            catalogue, recherche, filtres (US-05, US-06)
   a/[id]/page.tsx               fiche article + aperçu de partage (US-02, 03, 07, 17)
   b/[slug]/page.tsx             vitrine boutique + aperçu de partage (US-01, 03)
@@ -70,6 +70,7 @@ Le stockage `photos` (public, 5 Mo max, jpeg/png/webp) impose le chemin `<boutiq
 - Un article masqué par la modération (`masque_par_moderation`) ne peut pas être démasqué par le commerçant (règle dans la base, rappelée dans `lib/gestion-articles.ts`).
 - Les routes IA sont réservées aux boutiques validées et limitées par compte (`lib/acces-ia.ts`) ; leur corps de requête est lu avec une taille bornée (`lib/corps-requete.ts`).
 - Le prix promo est un entier > 0 strictement inférieur au prix normal (`lib/promo.ts` et la base) ; le prix d'un article en promo ne peut pas descendre sous le prix promo.
+- Images de l'accueil (`lib/accueil.ts`) : choisies automatiquement parmi les articles visibles du public (200 plus récents), jamais d'image externe. Grande photo = grande photo du dernier article ; tuiles univers et « pièces phares » (`PIECES_PHARES`) = miniature du dernier article de l'univers ou de la catégorie ; sans article, tuile noire unie avec le mot. Maquette : `docs/maquettes/Accueil.dc.html`.
 - Les listes publiques (accueil, catalogue) appliquent explicitement la visibilité publique (`lib/catalogue.ts`) : un admin ou un commerçant connecté y voit la même chose que le public. Le catalogue lit au plus 1 000 articles par requête.
 - Le navigateur prépare chaque photo (`lib/compression-photo.ts`, `preparerPhoto`) : une grande photo JPEG de 1200 px (qualité baissée jusqu'à ~700 Ko) et une miniature de 400 px (~30 Ko, 150 Ko au plus), rangée dans `<boutique_id>/<article_id>/<uuid>-vignette.jpg`. Les cartes (accueil, catalogue, vitrine, mes articles) affichent la miniature, la fiche affiche la grande photo.
 - Les photos et miniatures envoyées sont vérifiées côté serveur sur leur contenu réel (JPEG), pas seulement sur le type annoncé par le navigateur ; 4 Mo au total par envoi (photos + miniatures), sous la limite d'environ 4,5 Mo de Vercel (`bodySizeLimit` dans `next.config.ts`).

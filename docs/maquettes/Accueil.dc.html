@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>OranPromo — Accueil (nouvelle version avec images)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&amp;family=Jost:wght@300;400;500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0A0A0A;text-decoration:none}a:hover{color:#555555}
+</style>
+</helmet>
+<!--
+  Maquette de la nouvelle page d'accueil (carte Trello « Design · Nouvelle page d'accueil avec images »).
+  Images : aucune image externe. Chaque tuile utilise la miniature (400 px) du dernier article visible
+  de l'univers ou de la catégorie ; la grande photo d'accueil utilise la grande photo (1200 px) du dernier
+  article visible. Sans article : tuile noire unie avec le mot (exemples « Enfant » et « Pantalons et jeans »).
+  La page défile : 390 × 844 montre le haut ; les sections suivantes sont sous la ligne de flottaison.
+-->
+<div style="width: 390px; min-height: 844px; box-sizing: border-box; background: #FFFFFF; color: #0A0A0A; font-family: 'Jost', sans-serif; display: flex; flex-direction: column">
+
+<header style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #E6E6E6">
+<div style="font-family: 'Bodoni Moda', serif; font-size: 20px; letter-spacing: 4px">ORANPROMO</div>
+<a href="Catalogue.dc.html" style="font-size: 12px; letter-spacing: 2px">RECHERCHER</a>
+</header>
+
+<nav aria-label="Univers" style="display: flex; justify-content: center; gap: 24px; padding: 14px 20px; font-size: 11px; letter-spacing: 2px; border-bottom: 1px solid #E6E6E6">
+<a href="Catalogue.dc.html">FEMME</a>
+<a href="Catalogue.dc.html">HOMME</a>
+<a href="Catalogue.dc.html">ENFANT</a>
+<a href="Catalogue.dc.html">BEAUTÉ</a>
+</nav>
+
+<section style="position: relative; height: 440px; flex-shrink: 0; background: #F3F2EF; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 24px 32px 24px; gap: 14px; text-align: center">
+<span style="position: absolute; top: 16px; left: 0; right: 0; text-align: center; font-size: 11px; color: #8A8A8A; letter-spacing: 1px">[Grande photo : dernier article visible]</span>
+<div style="position: absolute; inset: 0; background: rgba(10,10,10,0.35)"></div>
+<h1 style="position: relative; margin: 0; font-family: 'Bodoni Moda', serif; font-weight: 400; font-size: 36px; color: #FFFFFF">Les promos d'Oran</h1>
+<p style="position: relative; margin: 0; font-size: 11px; letter-spacing: 2px; color: #FFFFFF">RÉSERVEZ SUR WHATSAPP · PAYEZ EN BOUTIQUE</p>
+<a href="Catalogue.dc.html" style="position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 28px; background: #FFFFFF; color: #0A0A0A; font-size: 12px; letter-spacing: 2px">VOIR LES PROMOS</a>
+</section>
+
+<h2 style="margin: 0; padding: 28px 20px 14px 20px; font-size: 12px; font-weight: 500; letter-spacing: 2.5px">LES UNIVERS</h2>
+<div style="padding: 0 20px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; row-gap: 18px">
+<a href="Catalogue.dc.html" style="display: flex; flex-direction: column; gap: 8px">
+<div style="aspect-ratio: 1 / 1; background: #F3F2EF; display: flex; align-items: center; justify-content: center; color: #8A8A8A; font-size: 10px;  text-align: center; padding: 6px; box-sizing: border-box">[Miniature : dernier article]</div>
+<span style="font-size: 11px; letter-spacing: 2px; text-align: center">FEMME</span>
+</a>
+<a href="Catalogue.dc.html" style="display: flex; flex-direction: column; gap: 8px">
+<div style="aspect-ratio: 1 / 1; background: #F3F2EF; display: flex; align-items: center; justify-content: center; color: #8A8A8A; font-size: 10px;  text-align: center; padding: 6px; box-sizing: border-box">[Miniature : dernier article]</div>
+<span style="font-size: 11px; letter-spacing: 2px; text-align: center">HOMME</span>
+</a>
+<a href="Catalogue.dc.html" style="display: flex; flex-direction: column; gap: 8px">
+<div style="aspect-ratio: 1 / 1; background: #0A0A0A; display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 18px; font-family: 'Bodoni Moda', serif; text-align: center; padding: 6px; box-sizing: border-box">Enfant</div>
+<span style="font-size: 11px; letter-spacing: 2px; text-align: center">ENFANT</span>
+</a>
+<a href="Catalogue.dc.html" style="display: flex; flex-direction: column; gap: 8px">
+<div style="aspect-ratio: 1 / 1; background: #F3F2EF; display: flex; align-items: center; justify-content: center; color: #8A8A8A; font-size: 10px;  text-align: center; padding: 6px; box-sizing: border-box">[Miniature : dernier article]</div>
+<span style="font-size: 11px; letter-spacing: 2px; text-align: center">BEAUTÉ</span>
+</a>
+</div>
+
+<h2 style="margin: 0; padding: 32px 20px 14px 20px; font-size: 12px; font-weight: 500; letter-spacing: 2.5px">PIÈCES PHARES</h2>
+<div style="padding: 0 20px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; row-gap: 18px">
+<a href="Catalogue.dc.html" style="display: flex; flex-direction: column; gap: 8px">
+<div style="aspect-ratio: 1 / 1; background: #F3F2EF; display: flex; align-items: center; justify-content: center; color: #8A8A8A; font-size: 10px;  text-align: center; padding: 6px; box-sizing: border-box">[Miniature : dernier article]</div>
+<span style="font-size: 11px; letter-spacing: 2px; text-align: center">ROBES</span>
+</a>
+<a href="Catalogue.dc.html" style="display: flex; flex-direction: column; gap: 8px">
+<div style="aspect-ratio: 1 / 1; background: #F3F2EF; display: flex; align-items: center; justify-content: center; color: #8A8A8A; font-size: 10px;  text-align: center; padding: 6px; box-sizing: border-box">[Miniature : dernier article]</div>
+<span style="font-size: 11px; letter-spacing: 2px; text-align: center">ABAYAS, DJELLABAS, KAMIS</span>
+</a>
+<a href="Catalogue.dc.html" style="display: flex; flex-direction: column; gap: 8px">
+<div style="aspect-ratio: 1 / 1; background: #F3F2EF; display: flex; align-items: center; justify-content: center; color: #8A8A8A; font-size: 10px;  text-align: center; padding: 6px; box-sizing: border-box">[Miniature : dernier article]</div>
+<span style="font-size: 11px; letter-spacing: 2px; text-align: center">T-SHIRTS ET POLOS</span>
+</a>
+<a href="Catalogue.dc.html" style="display: flex; flex-direction: column; gap: 8px">
+<div style="aspect-ratio: 1 / 1; background: #0A0A0A; display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 18px; font-family: 'Bodoni Moda', serif; text-align: center; padding: 6px; box-sizing: border-box">Pantalons et jeans</div>
+<span style="font-size: 11px; letter-spacing: 2px; text-align: center">PANTALONS ET JEANS</span>
+</a>
+<a href="Catalogue.dc.html" style="display: flex; flex-direction: column; gap: 8px">
+<div style="aspect-ratio: 1 / 1; background: #F3F2EF; display: flex; align-items: center; justify-content: center; color: #8A8A8A; font-size: 10px;  text-align: center; padding: 6px; box-sizing: border-box">[Miniature : dernier article]</div>
+<span style="font-size: 11px; letter-spacing: 2px; text-align: center">CHAUSSURES</span>
+</a>
+<a href="Catalogue.dc.html" style="display: flex; flex-direction: column; gap: 8px">
+<div style="aspect-ratio: 1 / 1; background: #F3F2EF; display: flex; align-items: center; justify-content: center; color: #8A8A8A; font-size: 10px;  text-align: center; padding: 6px; box-sizing: border-box">[Miniature : dernier article]</div>
+<span style="font-size: 11px; letter-spacing: 2px; text-align: center">PARFUMS</span>
+</a>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding: 32px 20px 14px 20px">
+<h2 style="margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 2.5px">EN CE MOMENT</h2>
+<a href="Catalogue.dc.html" style="font-size: 11px; letter-spacing: 2px; border-bottom: 1px solid #0A0A0A; padding-bottom: 2px">TOUT VOIR</a>
+</div>
+
+<main style="padding: 0 20px 24px 20px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; row-gap: 20px">
+
+<a href="Fiche.dc.html" style="display: flex; flex-direction: column; gap: 10px">
+<div style="position: relative; aspect-ratio: 4 / 5; background: #F3F2EF; display: flex; align-items: center; justify-content: center; color: #8A8A8A; font-size: 11px">[Miniature article]<span style="position: absolute; top: 8px; left: 8px; background: #0A0A0A; color: #FFFFFF; font-size: 12px; padding: 4px 8px">−22 %</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px; text-align: center">
+<span style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">BOUTIQUE AMINE · AKID LOTFI</span>
+<span style="font-size: 13px; font-weight: 300">Polo piqué bleu marine</span>
+<span style="font-size: 13px"><span style="color: #6F6F6F; text-decoration: line-through; margin-right: 6px">4 500 DA</span>3 500 DA</span>
+</div>
+</a>
+
+<a href="Fiche.dc.html" style="display: flex; flex-direction: column; gap: 10px">
+<div style="position: relative; aspect-ratio: 4 / 5; background: #F3F2EF; display: flex; align-items: center; justify-content: center; color: #8A8A8A; font-size: 11px">[Miniature article]<span style="position: absolute; top: 8px; left: 8px; background: #0A0A0A; color: #FFFFFF; font-size: 12px; padding: 4px 8px">−30 %</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px; text-align: center">
+<span style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">DAR LINA · GAMBETTA</span>
+<span style="font-size: 13px; font-weight: 300">Robe d'été fleurie</span>
+<span style="font-size: 13px"><span style="color: #6F6F6F; text-decoration: line-through; margin-right: 6px">6 000 DA</span>4 200 DA</span>
+</div>
+</a>
+
+</main>
+
+<footer style="border-top: 1px solid #E6E6E6; padding: 24px; text-align: center; font-size: 12px; letter-spacing: 2px; color: #6F6F6F">ESPACE COMMERÇANT</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
