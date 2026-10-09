@@ -6,7 +6,7 @@
 ## Où on en est
 
 - Les **19 user stories du MVP sont codées** (US-01 à US-19). Elles sont dans la colonne Trello « À vérifier » : codées, mais pas encore toutes testées en vrai.
-- **642 tests** passent (+ 43 tests SQL), `npm run lint` et `npm run build` passent.
+- **653 tests** passent (+ 66 tests SQL), `npm run lint` et `npm run build` passent.
 - Déjà testé en vrai : la page d'accueil (ancienne version), la fiche article, la réservation WhatsApp.
 - Pas encore re-testé : la connexion par lien e-mail (corrigée le 9/10), le nouveau formulaire d'article, et tout ce qui a été fait le 9/10 après-midi (voir ci-dessous).
 
@@ -29,6 +29,11 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
    - Reste à faire : compte WhatsApp Business chez Meta, 5 modèles de messages à faire approuver (voir `docs/architecture.md`), variables `WHATSAPP_*` et `CRON_SECRET` (empreinte dans `prive.reglages`), Vercel Cron déjà déclaré dans `vercel.json` (1 fois par jour en Hobby). Sans ça, les messages restent en attente.
 7. **Relecture US-20 par Claude** (PR « US-20 Corrections de la relecture ») : confirmation refusée si le stock ne suffit plus (« Stock insuffisant pour … »), article qui redevient « Disponible » après annulation de plusieurs tailles, blocage suivi par numéro de téléphone, nom du client sans chiffres ni lien, résultat d'envoi WhatsApp réservé au serveur, tâche d'envoi limitée à 5 messages et arrêtée avant 60 s, Vercel Cron dans `vercel.json`, verrous dans un ordre fixe, `search_path` fixé, `server-only`. **No-shows (option C du propriétaire)** : plus de no-show automatique à l'expiration ; la boutique signale « Client pas venu » ; l'admin peut annuler un no-show dans `/admin/clients`. Tests SQL : `supabase/tests/corrections_relecture.test.sql`.
    - Migration `corrections_relecture` **appliquée** sur Supabase le 9/10 à 14 h 23 (PR #16, types vérifiés identiques à la base). Modèles WhatsApp : 5 au lieu de 4 (`oranpromo_no_show` ajouté, `oranpromo_commande_expiree` sans compte d'essais).
+8. **Relecture n°2 de US-20 par Claude** (PR #18) :
+   - **Blocage d'un tiers corrigé** : le numéro n'étant pas vérifié, n'importe qui pouvait mettre le numéro d'une autre personne sur son compte, faire 5 no-shows et la faire bloquer. Désormais les no-shows et le blocage automatique ne concernent que le compte qui a passé les commandes. Un numéro avec des no-shows utilisé par plusieurs comptes apparaît dans `/admin/clients` (« Numéro partagé par plusieurs comptes ») : l'admin décide (Bloquer / Débloquer, sans message WhatsApp). `/compte` n'affiche plus que le compteur du compte. Le blocage par numéro est gardé dans le code, désactivé (réglage `blocage_par_numero`), à activer avec la V2 SMS.
+   - **Limite par boutique** : au plus 20 nouvelles commandes par heure et par boutique, tous clients confondus (coût WhatsApp, tranquillité de la boutique).
+   - Migration `20261009233000_numero_non_verifie` **appliquée** sur Supabase le 9/10 vers 15 h (comptes existants recalculés : aucun compte bloqué ni avec no-show en base à ce moment), types régénérés. Tests SQL : `supabase/tests/numero_non_verifie.test.sql` (23) et `corrections_relecture.test.sql` mis à jour (43). `vercel.json` non modifié.
+   - **À discuter avec le propriétaire** (non codé) : une boutique peut passer une commande « prête » tout de suite puis déclarer « Client pas venu » 24 h plus tard, sans que le client ait vraiment eu le temps de venir.
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
 
