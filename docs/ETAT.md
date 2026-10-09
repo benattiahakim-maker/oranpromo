@@ -6,7 +6,7 @@
 ## Où on en est
 
 - Les **19 user stories du MVP sont codées** (US-01 à US-19). Elles sont dans la colonne Trello « À vérifier » : codées, mais pas encore toutes testées en vrai.
-- **803 tests** passent (+ 172 tests SQL), `npm run lint` et `npm run build` passent.
+- **804 tests** passent (+ 172 tests SQL), `npm run lint` et `npm run build` passent.
 - Déjà testé en vrai : la page d'accueil (ancienne version), la fiche article, la réservation WhatsApp.
 - Pas encore re-testé : la connexion par lien e-mail (corrigée le 9/10), le nouveau formulaire d'article, et tout ce qui a été fait le 9/10 après-midi (voir ci-dessous).
 - **Connexion des clients par téléphone (US-21)** : codée, **pas encore en service**. Le site reste en mode e-mail tant que le propriétaire n'a pas fait la checklist ci-dessous (« US-21 : à configurer par le propriétaire ») ; code par WhatsApp uniquement (pas de SMS), donc rien avant l'approbation de l'expéditeur WhatsApp par Meta.
@@ -56,6 +56,12 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
    - **Dans `/espace`**, bloc « Partager ma boutique » : le lien, « Copier le lien », « Partager sur WhatsApp », le **QR code** (généré sur le serveur, sans service externe), « Télécharger le QR code » et « Imprimer l'affiche » (`/espace/affiche`, A4 à poser en boutique). Boutique en attente ou suspendue : message seulement.
    - Migration `20261010120000_slug_lisible` (format du slug vérifié par la base) **appliquée** sur Supabase le 9/10 vers 15 h 30 ; types inchangés (une contrainte de format n'apparaît pas dans les types). Tests SQL : `slug_lisible.test.sql` (14). Nouvelle dépendance : `qrcode` (MIT).
    - **À tester en vrai** : ouvrir `/espace` avec un compte commerçant d'une boutique validée, copier le lien, le coller dans WhatsApp (l'aperçu ne s'affiche qu'une fois le site en ligne avec une adresse publique), scanner le QR code avec un téléphone, imprimer l'affiche.
+13. **Images couleur d'Oran sur l'accueil** (PR #35, demande du propriétaire) :
+   - grande photo : **vraie photo** du fort de Santa Cruz au-dessus du port (Wikimedia Commons, auteur Bachounda, licence **CC BY-SA 4.0**), avec le **crédit affiché** en bas de la photo (obligatoire : ne pas le retirer) ;
+   - tuiles univers et pièces phares : 10 images **générées par IA** pour OranPromo (propriété du projet) ;
+   - images optimisées en WebP dans `public/images/accueil/` (photo 115 Ko, tuiles 39 à 59 Ko) ; l'accueil n'utilise plus les photos des articles (une requête de moins) ; plus de tuiles noires unies ;
+   - sources, auteurs et licences : `docs/architecture.md`, section « Crédits des images ». Aucune migration.
+   - **À tester en vrai** : l'accueil sur téléphone (photo, titre lisible, crédit, tuiles).
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
 
@@ -150,6 +156,7 @@ Ordre de grandeur : 1 000 vérifications par WhatsApp ≈ 54 $. Pas de SMS (déc
 4. **Catégories** : faire valider la nouvelle liste par 2 ou 3 commerçants.
 5. **Connexion par téléphone (US-21)** : suivre la checklist « US-21 : à configurer par le propriétaire », puis tester en vrai.
 6. **Lien de boutique (US-22)** : tester le bloc « Partager ma boutique » et l'affiche ; après la mise en ligne, vérifier l'aperçu dans WhatsApp et Facebook.
+7. **Accueil** : valider les nouvelles images avec le propriétaire (photo de Santa Cruz, tuiles IA).
 
 Backlog : mise en ligne (Vercel, domaine, envoi d'e-mails), environnements prod et dev (Vercel + second projet Supabase), suppression des données de test, univers Beauté, conditions d'utilisation, marketing.
 
