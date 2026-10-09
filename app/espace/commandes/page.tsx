@@ -1,33 +1,39 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { creerClientServeur } from "@/lib/supabase/server";
-import { listerCommandesBoutique, type CommandeRecue, type VueCommandes } from "@/lib/commandes";
-import CommandesRecues from "@/components/CommandesRecues";
+import type { CommandeRecue } from "@/lib/commandes";
+import { chercherCommandes, compterEtapes, etapeParDefaut, lireEtape, lireRecherche, listerEtape, RECHERCHE_MAX, type CompteursEtapes, type EtapeCommande } from "@/lib/tableau-commandes";
+import VueCommandesRecues from "@/components/VueCommandesRecues";
 
 export const metadata = { title: "Commandes reçues", robots: { index: false, follow: false } };
 
-export default async function PageCommandesRecues({ searchParams }: { searchParams: Promise<{ vue?: string }> }) {
-  const { vue: brute } = await searchParams;
-  const vue: VueCommandes = brute === "terminees" ? "terminees" : "en_cours";
+type Parametres = { etape?: string | string[]; vue?: string | string[]; q?: string | string[] };
+
+/** Lecture de la page (hors du composant : l’heure de référence est prise une fois, ici). */
+async function charger(parametres: Parametres) {
   const client = await creerClientServeur();
   const { data: { user }, error } = await client.auth.getUser();
   if (error || !user) redirect("/espace/connexion");
   const { data: profil, error: erreurProfil } = await client.from("profils").select("boutique_id, boutiques(nom)").eq("id", user.id).maybeSingle();
   const boutique = (profil?.boutiques as unknown as { nom: string } | null)?.nom ?? "votre boutique";
+  const maintenant = Date.now();
+  const recherche = lireRecherche(parametres.q);
+  let compteurs: CompteursEtapes = { a_confirmer: 0, a_preparer: 0, pretes: 0, terminees: 0 };
+  let etape: EtapeCommande = lireEtape(parametres) ?? "a_confirmer";
   let commandes: CommandeRecue[] = [], erreur = Boolean(erreurProfil);
   if (profil?.boutique_id) {
-    try { commandes = await listerCommandesBoutique(client, profil.boutique_id, vue); } catch { erreur = true; }
+    try {
+      compteurs = await compterEtapes(client, profil.boutique_id, maintenant);
+      etape = lireEtape(parametres) ?? etapeParDefaut(compteurs);
+      commandes = recherche ? await chercherCommandes(client, profil.boutique_id, recherche) : await listerEtape(client, profil.boutique_id, etape, maintenant);
+    } catch { erreur = true; }
   }
-  const onglet = (valeur: VueCommandes, texte: string) => <Link href={valeur === "en_cours" ? "/espace/commandes" : "/espace/commandes?vue=terminees"} aria-current={vue === valeur ? "page" : undefined} className={`etiquette flex min-h-11 items-center justify-center ${vue === valeur ? "border-b border-noir" : "text-gris"}`}>{texte}</Link>;
-  return <main className="mx-auto w-full max-w-[390px] bg-blanc text-noir">
-    <header className="border-b border-trait px-6 pb-5 pt-6 text-center"><p className="etiquette text-gris">Mon espace</p><h1 className="font-titre text-[28px] font-normal">Commandes reçues</h1></header>
-    {/* US-26.3 : remise par QR code ou code à 4 chiffres. */}
-    <div className="px-6 pt-4"><Link href="/espace/scanner" className="etiquette flex min-h-12 items-center justify-center gap-2 bg-noir text-blanc"><span aria-hidden="true">▣</span>Scanner un QR code client</Link></div>
-    <nav aria-label="Filtrer les commandes" className="mt-4 grid grid-cols-2 border-b border-trait">{onglet("en_cours", "En cours")}{onglet("terminees", "Terminées")}</nav>
-    <div className="px-6">
-      {erreur ? <p role="alert" className="py-6">Impossible de charger les commandes. Réessayez.</p>
-        : !profil?.boutique_id ? <p className="py-6">Votre compte n&apos;est rattaché à aucune boutique</p>
-        : <CommandesRecues commandes={commandes} boutique={boutique} />}
-    </div>
-  </main>;
+  return { boutiqueId: profil?.boutique_id ?? null, boutique, maintenant, recherche, compteurs, etape, commandes, erreur };
+}
+
+// US-28.1 : étapes avec compteurs, la plus urgente d’abord, recherche par n° ou prénom.
+export default async function PageCommandesRecues({ searchParams }: { searchParams: Promise<Parametres> }) {
+  const parametres = await searchParams;
+  const { boutiqueId, boutique, maintenant, recherche, compteurs, etape, commandes, erreur } = await charger(parametres);
+  const texteRecherche = typeof parametres.q === "string" ? parametres.q.trim().slice(0, RECHERCHE_MAX) : "";
+  return <VueCommandesRecues {...{ boutiqueId, boutique, maintenant, recherche: Boolean(recherche), texteRecherche, compteurs, etape, commandes, erreur }} />;
 }
