@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import { commanderPanier } from "@/app/panier/actions";
 import FormulaireProfilClient from "./FormulaireProfilClient";
 import CodeTelephone from "./CodeTelephone";
+import BonPanier from "./BonPanier";
+import ChoixParrain from "./ChoixParrain";
+import { bonApplicable } from "@/lib/bons";
 import { formaterPrix } from "@/lib/prix";
 import { abonnerPanier, changerQuantitePanier, lignesCommande, lirePanier, NOTE_COMMANDE_MAX, panierBrut, QUANTITE_LIGNE_MAX, retirerDuPanier, sauverPanierLocal, totalPanier } from "@/lib/panier";
 import { messageNoShows } from "@/lib/clients";
@@ -17,9 +20,11 @@ import { traduireMessage } from "@/lib/textes/messages";
 
 // US-21.2 : verificationRequise = mode téléphone (CONNEXION_CLIENT=telephone) ; telephoneVerifie = numéro vérifié par code.
 export type ProfilPanier = { nom: string | null; telephone: string | null; complet: boolean; bloque: boolean; noShows: number; telephoneVerifie?: boolean; verificationRequise?: boolean } | null;
+/** US-27 : bon disponible et saisie du parrain (avant la première commande), lus par la page. */
+export type ParrainagePanier = { bonDisponible: boolean; choix: { initial: string; parrainSaisi: boolean; saisies: number } | null };
 
 // US-20.2 : panier d’une boutique → « Commander ».
-export default function PanierCommande({ profil }: { profil: ProfilPanier }) {
+export default function PanierCommande({ profil, parrainage = { bonDisponible: false, choix: null } }: { profil: ProfilPanier; parrainage?: ParrainagePanier }) {
   const router = useRouter();
   const t = useTextes().panier;
   const tailleUnique = useTextes().listes.tailleUnique;
@@ -29,6 +34,7 @@ export default function PanierCommande({ profil }: { profil: ProfilPanier }) {
   const [note, setNote] = useState("");
   const [erreur, setErreur] = useState("");
   const [enCours, setEnCours] = useState(false);
+  const [avecBon, setAvecBon] = useState(true);
   const verrou = useRef(false);
 
   if (!panier) return <div className="px-6 py-10 text-center"><p>{t.vide}</p><Link href="/catalogue" className="etiquette mt-6 flex min-h-[54px] items-center justify-center bg-noir text-blanc">{t.voirArticles}</Link></div>;
@@ -38,8 +44,9 @@ export default function PanierCommande({ profil }: { profil: ProfilPanier }) {
     if (note.trim().length > NOTE_COMMANDE_MAX) { setErreur(remplir(t.noteTropLongue, { max: NOTE_COMMANDE_MAX })); return; }
     verrou.current = true; setEnCours(true); setErreur("");
     try {
-      const resultat = await commanderPanier(panier.boutiqueId, lignesCommande(panier), note);
-      if (resultat.id) { sauverPanierLocal(null); router.push(`/compte/commandes/${resultat.id}`); return; }
+      const bon = Boolean(profil && parrainage.bonDisponible && avecBon && bonApplicable(totalPanier(panier), true));
+      const resultat = await commanderPanier(panier.boutiqueId, lignesCommande(panier), note, bon);
+      if (resultat.id) { sauverPanierLocal(null); router.push(`/compte/commandes/${resultat.id}${resultat.bon ? `?bon=${resultat.bon}` : ""}`); return; }
       if (resultat.connexion) { router.push("/compte/connexion?suite=/panier"); return; }
       setErreur(resultat.erreur ?? t.envoiImpossible);
     } catch { setErreur(t.connexionPerdue); }
@@ -68,7 +75,9 @@ export default function PanierCommande({ profil }: { profil: ProfilPanier }) {
     <label htmlFor="note-commande" className="etiquette mt-4 block text-xs">{t.note}</label>
     <textarea id="note-commande" rows={2} maxLength={NOTE_COMMANDE_MAX} value={note} disabled={enCours} onChange={e => setNote(e.target.value)} className="mt-2 box-border w-full resize-none rounded-none border border-trait p-3 font-[inherit] text-base" />
     <p className="flex justify-between py-4"><span className="etiquette self-center">{t.total}</span><span>{formaterPrix(totalPanier(panier), langue)}</span></p>
+    {profil && parrainage.bonDisponible && <BonPanier total={totalPanier(panier)} utiliser={avecBon} onChange={setAvecBon} desactive={enCours} />}
     {avertissement && <p role="alert" className="mb-4 border border-trait p-3 text-sm leading-[1.6]">{avertissement}</p>}
+    {profil && parrainage.choix && <div className="mb-4"><ChoixParrain initial={parrainage.choix.initial} parrainSaisi={parrainage.choix.parrainSaisi} saisies={parrainage.choix.saisies} /></div>}
     {!profil ? <Link href="/compte/connexion?suite=/panier" className="etiquette flex min-h-[54px] items-center justify-center bg-noir text-blanc">{t.seConnecter}</Link>
       : profil.verificationRequise && !profil.telephoneVerifie ? <div className="border border-noir p-4"><p className="etiquette mb-2 text-xs">{t.verifierTitre}</p><p className="mb-3 text-sm leading-[1.6]">{t.verifierTexte}</p><CodeTelephone usage="verification" numeroInitial={profil.telephone} onVerifie={() => router.refresh()} /></div>
       : !profil.complet ? <div className="border border-trait p-4"><p className="mb-3 text-sm">{profil.telephoneVerifie ? t.profilNom : t.profilNomTelephone}</p><FormulaireProfilClient nom={profil.nom} telephone={profil.telephone} telephoneModifiable={!profil.telephoneVerifie && !profil.verificationRequise} bouton={t.enregistrerContinuer} onEnregistre={() => router.refresh()} /></div>

@@ -9,6 +9,7 @@ import { formaterPrix } from "@/lib/prix";
 import { afficherTaille } from "@/lib/article";
 import { lireRetraitParLien, qrCodeRetrait, type RetraitParLien } from "@/lib/retrait";
 import BlocRetrait from "@/components/BlocRetrait";
+import { aEncaisser } from "@/lib/bons";
 
 // US-26.2 : page du retrait, sans connexion (lien « Envoyer à un proche » et bouton « Mon QR code » du message WhatsApp).
 // Lecture seule : boutique, numéro, articles, montant, QR code et code ; jamais le nom ni le téléphone du client.
@@ -44,12 +45,13 @@ export default async function PageRetrait({ params }: { params: Promise<{ jeton:
     {etat && <p role="status" className="mx-4 mt-4 border border-trait p-3 text-sm">{etat}</p>}
     {vue.etat === "prete" && vue.code && <div className="px-4 pt-3">
       <p className="mb-2 text-center text-sm">{t.consigneProche}</p>
-      <BlocRetrait qr={await qrCodeRetrait(jeton)} code={vue.code} numero={vue.numero} total={vue.total} />
+      <BlocRetrait qr={await qrCodeRetrait(jeton)} code={vue.code} numero={vue.numero} total={vue.total} remise={vue.remise_bon ?? 0} />
     </div>}
     <div className="px-6 pt-4">
       <ul aria-label={t.articles} className="border-t border-trait pt-3 text-[13px] font-light">{vue.lignes.map((l, i) =>
         <li key={i} className="flex justify-between gap-3 py-1"><span><bdi>{l.titre}</bdi> · <bdi>{afficherTaille(l.taille, langue)}</bdi> × {l.quantite}</span><span className="whitespace-nowrap">{formaterPrix(l.prix_unitaire * l.quantite, langue)}</span></li>)}</ul>
-      <p className="flex justify-between pt-2"><span className="etiquette self-center">{t.aPayer}</span><span>{formaterPrix(vue.total, langue)}</span></p>
+      {(vue.remise_bon ?? 0) > 0 && <p className="flex justify-between pt-2 text-sm"><span>{textesDe(langue).parrainage.ligneBon}</span><span dir="ltr">−{formaterPrix(vue.remise_bon!, langue)}</span></p>}
+      <p className="flex justify-between pt-2"><span className="etiquette self-center">{t.aPayer}</span><span>{formaterPrix(aEncaisser(vue.total, vue.remise_bon), langue)}</span></p>
     </div>
   </Cadre>;
 }

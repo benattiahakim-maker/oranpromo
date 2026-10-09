@@ -12,11 +12,15 @@ import FriseCommande from "@/components/FriseCommande";
 import AnnulerCommande from "@/components/AnnulerCommande";
 import BlocRetrait from "@/components/BlocRetrait";
 import { lienPartageRetrait, lienRetrait, lireRetraitClient, qrCodeRetrait } from "@/lib/retrait";
+import MerciParrainage from "@/components/MerciParrainage";
+import { aEncaisser, raisonBonNonApplique } from "@/lib/bons";
+import { lireMonParrainage, preparerInvitation } from "@/lib/parrainage";
 
 export const metadata = { title: "Suivi de commande", robots: { index: false, follow: false } };
 
-export default async function SuiviCommande({ params }: { params: Promise<{ id: string }> }) {
+export default async function SuiviCommande({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ bon?: string }> }) {
   const { id } = await params;
+  const raisonBon = raisonBonNonApplique((await searchParams)?.bon);
   const client = await creerClientServeur();
   const langue = await getLangue();
   const t = textesDe(langue).commandes;
@@ -35,18 +39,32 @@ export default async function SuiviCommande({ params }: { params: Promise<{ id: 
       if (r) retrait = { qr: await qrCodeRetrait(r.jeton), code: r.code, lien: lienRetrait(r.jeton) };
     } catch { retrait = null; } // sans QR code, la commande reste remise par la boutique (« Remis sans QR code »)
   }
+  // US-27.3 : après un retrait, invitation à parrainer (seulement si le parrainage est ouvert et le client peut parrainer).
+  let merci: { whatsapp: string | null } | null = null;
+  if (commande.statut === "recuperee") {
+    const mon = await lireMonParrainage(client).catch(() => null);
+    if (mon?.actif && mon.peut_parrainer) merci = { whatsapp: (await preparerInvitation(client, langue).catch(() => null))?.whatsapp ?? null };
+  }
+  const tBon = textesDe(langue).parrainage;
+  const remise = commande.remise_bon ?? 0;
   const motif = commande.motif_annulation && Object.hasOwn(t.motifs, commande.motif_annulation) ? traduire(t.motifs, commande.motif_annulation) : null;
   return <main className="mx-auto w-full max-w-lg bg-blanc pb-10 text-noir">
     <header className="border-b border-trait px-6 pb-5 pt-6 text-center"><p className="etiquette text-gris">{remplir(t.numero, { n: commande.numero })}{boutique ? ` · ${boutique.nom}` : ""}</p><h1 className="font-titre text-[28px] font-normal">{t.titresSuivi[commande.statut]}</h1></header>
     {commande.statut === "prete" && commande.expire_le && <p className="border-b border-trait px-6 py-3 text-center text-sm">{t.aRecuperer} <strong className="font-medium">{formaterDateHeure(commande.expire_le, langue)}</strong>{boutique?.adresse ? ` · ${boutique.adresse}` : ""}</p>}
     {commande.statut === "annulee" && motif && <p className="border-b border-trait px-6 py-3 text-center text-sm">{remplir(t.motif, { motif })}</p>}
     {commande.statut === "expiree" && <p className="border-b border-trait px-6 py-3 text-center text-sm">{t.expiree}</p>}
-    {retrait && <div className="px-4 pt-[18px]"><BlocRetrait qr={retrait.qr} code={retrait.code} numero={commande.numero} total={commande.total}
+    {raisonBon && remise === 0 && commande.statut === "demandee" && <p role="status" className="mx-4 mt-4 border border-noir p-3 text-sm leading-[1.6]">{tBon.bonNonApplique[raisonBon]}</p>}
+    {retrait && <div className="px-4 pt-[18px]"><BlocRetrait qr={retrait.qr} code={retrait.code} numero={commande.numero} total={commande.total} remise={remise}
       partage={{ lien: retrait.lien, whatsapp: lienPartageRetrait(langue, commande.numero, boutique?.nom ?? "OranPromo", retrait.lien) }} /></div>}
     <div className="px-6 pt-5">
       <FriseCommande statut={commande.statut} suivi={commande.suivi_commandes} />
       <ul aria-label={t.articles} className="mt-2 border-t border-trait pt-3 text-[13px] font-light">{commande.lignes_commande.map(l => <li key={l.id} className="flex justify-between gap-3 py-1"><span>{l.article_id ? <Link href={`/a/${l.article_id}`} className="underline-offset-2 hover:underline">{l.titre}</Link> : l.titre} · {afficherTaille(l.taille, langue)} × {l.quantite}</span><span className="whitespace-nowrap">{formaterPrix(l.prix_unitaire * l.quantite, langue)}</span></li>)}</ul>
       <p className="flex justify-between pt-2"><span className="etiquette self-center">{t.total}</span><span>{formaterPrix(commande.total, langue)}</span></p>
+      {remise > 0 && <>
+        <p className="flex justify-between pt-1 text-sm"><span>{tBon.ligneBon}</span><span dir="ltr">−{formaterPrix(remise, langue)}</span></p>
+        <p className="flex justify-between border-t border-noir pt-2 font-medium"><span>{textesDe(langue).retrait.aPayer}</span><span>{formaterPrix(aEncaisser(commande.total, remise), langue)}</span></p>
+      </>}
+      {merci && <MerciParrainage whatsapp={merci.whatsapp} />}
       {commande.note && <p className="mt-2 text-sm text-gris">{remplir(t.note, { note: commande.note })}</p>}
       <div className="mt-6 flex flex-col gap-3">
         {boutique?.whatsapp && <a href={`https://wa.me/${numeroWhatsApp(boutique.whatsapp)}`} target="_blank" rel="noopener noreferrer" className="etiquette flex min-h-11 items-center justify-center border border-noir">{t.ecrire}</a>}

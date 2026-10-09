@@ -50,6 +50,8 @@ export type RetraitParLien = {
   etat: EtatRetraitLien; numero: number; total: number; expire_le: string | null; terminee_le: string | null;
   boutique: { nom: string; slug: string; quartier: string; adresse: string | null };
   lignes: LigneRetrait[]; code: string | null;
+  /** US-27.4 : bon parrainage déduit (0 sans bon). */
+  remise_bon?: number;
 };
 
 const ETATS_LIEN: readonly EtatRetraitLien[] = ["prete", "recuperee", "annulee", "expiree"];

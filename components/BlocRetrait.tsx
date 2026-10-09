@@ -3,15 +3,19 @@ import { useState } from "react";
 import { useLangue, useTextes } from "@/components/FournisseurTextes";
 import { remplir } from "@/lib/langue";
 import { formaterPrix } from "@/lib/prix";
+import { aEncaisser } from "@/lib/bons";
 
 // US-26.2 : QR code de retrait, code à 4 chiffres et montant à payer (page du client et page du proche).
 // Le QR code est calculé par le serveur (adresse data: d'un SVG) ; le jeton n'apparaît pas en clair ici.
-export default function BlocRetrait({ qr, code, numero, total, partage }: {
+export default function BlocRetrait({ qr, code, numero, total, remise = 0, partage }: {
   qr: string; code: string; numero: number; total: number;
+  /** US-27.4 : bon parrainage posé sur la commande (300 DA), déduit du montant à payer. */
+  remise?: number;
   /** Seulement pour le client : lien de la page du proche et lien « Envoyer à un proche » (WhatsApp). */
   partage?: { lien: string; whatsapp: string };
 }) {
   const t = useTextes().retrait;
+  const tBon = useTextes().parrainage;
   const langue = useLangue();
   const [message, setMessage] = useState("");
 
@@ -30,7 +34,8 @@ export default function BlocRetrait({ qr, code, numero, total, partage }: {
       <p className="mt-2.5 text-xs text-gris">{t.sansCamera}</p>
       <p aria-label={t.code} dir="ltr" className="mt-1 flex justify-center gap-2">{code.split("").map((chiffre, i) =>
         <span key={i} className="flex h-[52px] w-11 items-center justify-center border border-noir text-[26px]">{chiffre}</span>)}</p>
-      <p className="mt-3.5 flex justify-between border-t border-trait pt-2.5"><span className="etiquette self-center">{t.aPayer}</span><strong className="text-lg font-medium">{formaterPrix(total, langue)}</strong></p>
+      {remise > 0 && <p className="mt-3.5 flex justify-between border-t border-trait pt-2.5 text-sm"><span>{tBon.ligneBon}</span><span dir="ltr">−{formaterPrix(remise, langue)}</span></p>}
+      <p className={`flex justify-between pt-2.5 ${remise > 0 ? "mt-1" : "mt-3.5 border-t border-trait"}`}><span className="etiquette self-center">{t.aPayer}</span><strong className="text-lg font-medium">{formaterPrix(aEncaisser(total, remise), langue)}</strong></p>
       <p className="mt-2 text-xs text-gris">{t.luminosite}</p>
     </section>
     {partage && <div className="mt-3.5 flex flex-col gap-2.5">
