@@ -1,6 +1,6 @@
 "use server";
 import { creerClientServeur } from "@/lib/supabase/server";
-import { annulerNoShow, bloquerClient, debloquerClient } from "@/lib/clients";
+import { annulerNoShow, bloquerClient, debloquerClient, validerNoShow } from "@/lib/clients";
 import { verifierAdministrateur } from "@/lib/moderation";
 
 export async function debloquerCompteClient(id: string) {
@@ -33,4 +33,15 @@ export async function bloquerCompteClient(id: string) {
     await bloquerClient(client, id);
     return { succes: true, message: "Client bloqué : il ne peut plus commander." };
   } catch (error) { return { succes: false, message: error instanceof Error ? error.message : "Impossible de bloquer ce client. Réessayez." }; }
+}
+
+/** Contestation : l’admin confirme le no-show, qui compte de nouveau. */
+export async function validerNoShowClient(commandeId: string) {
+  try {
+    if (typeof commandeId !== "string") throw new Error("Commande invalide.");
+    const client = await creerClientServeur();
+    await verifierAdministrateur(client);
+    await validerNoShow(client, commandeId);
+    return { succes: true, message: "No-show confirmé : il compte de nouveau." };
+  } catch (error) { return { succes: false, message: error instanceof Error ? error.message : "Impossible de valider ce no-show. Réessayez." }; }
 }

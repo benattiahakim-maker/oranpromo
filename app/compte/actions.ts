@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { creerClientServeur } from "@/lib/supabase/server";
-import { enregistrerProfilClient, ErreurValidationProfil, type ErreursProfilClient, type SaisieProfilClient } from "@/lib/clients";
+import { contesterNoShow, enregistrerProfilClient, ErreurValidationProfil, type ErreursProfilClient, type SaisieProfilClient } from "@/lib/clients";
 import { annulerCommandeClient } from "@/lib/commandes";
 
 export type ResultatCompte = { succes: boolean; message: string; erreurs?: ErreursProfilClient };
@@ -22,6 +22,15 @@ export async function annulerMaCommande(id: string, note: string): Promise<Resul
     await annulerCommandeClient(await creerClientServeur(), id, note);
     return { succes: true, message: "Commande annulée." };
   } catch (error) { return { succes: false, message: error instanceof Error ? error.message : "Impossible d’annuler la commande. Réessayez." }; }
+}
+
+/** Contester un no-show déclaré par la boutique (motif court, une fois par no-show). */
+export async function contesterMonNoShow(id: string, motif: string): Promise<ResultatCompte> {
+  try {
+    if (typeof id !== "string" || typeof motif !== "string") throw new Error("Contestation invalide.");
+    await contesterNoShow(await creerClientServeur(), id, motif);
+    return { succes: true, message: "Contestation envoyée : OranPromo va l’examiner. En attendant, cette commande ne compte pas dans vos commandes non récupérées." };
+  } catch (error) { return { succes: false, message: error instanceof Error ? error.message : "Impossible d’envoyer votre contestation. Réessayez." }; }
 }
 
 export async function deconnecterClient() {

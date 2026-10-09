@@ -146,3 +146,61 @@ export async function listerNumerosPartages(client: SupabaseClient<Database>): P
   if (error) throw new Error("Impossible de charger les numéros partagés. Réessayez.");
   return grouperNumerosPartages(data ?? []);
 }
+
+// --- Contestation d’un no-show (décision du propriétaire, migration 20261009234500) --------
+// Le client conteste depuis /compte avec un motif court, une fois par no-show. Tant que la contestation est en
+// attente, le no-show ne compte pas pour le blocage. L’admin valide le no-show (il compte de nouveau) ou l’annule.
+export const MOTIF_CONTESTATION_MIN = 5;
+export const MOTIF_CONTESTATION_MAX = 300;
+
+/** Motif nettoyé comme dans la base (espaces et retours à la ligne réduits à un espace). */
+export function nettoyerMotifContestation(motif: string): string {
+  return motif.trim().replace(/\s+/g, " ");
+}
+
+/** Message d’erreur, ou null si le motif est accepté (même règle que contester_no_show). */
+export function erreurMotifContestation(motif: string): string | null {
+  const longueur = nettoyerMotifContestation(motif).length;
+  return longueur < MOTIF_CONTESTATION_MIN || longueur > MOTIF_CONTESTATION_MAX
+    ? `Expliquez en quelques mots pourquoi vous contestez (${MOTIF_CONTESTATION_MIN} à ${MOTIF_CONTESTATION_MAX} caractères).`
+    : null;
+}
+
+export type MonNoShow = Pick<Tables<"commandes">, "id" | "numero" | "no_show_le" | "contestee_le" | "contestation_motif" | "contestation_validee_le"> & { boutiques: { nom: string } | null };
+export type EtatContestation = "a_contester" | "en_attente" | "refusee";
+
+export function etatContestation(noShow: Pick<MonNoShow, "contestee_le" | "contestation_validee_le">): EtatContestation {
+  if (!noShow.contestee_le) return "a_contester";
+  return noShow.contestation_validee_le ? "refusee" : "en_attente";
+}
+
+/** No-shows non annulés du compte connecté (lecture de ses propres commandes, RLS). */
+export async function listerMesNoShows(client: SupabaseClient<Database>): Promise<MonNoShow[]> {
+  const { data: { user }, error: erreurSession } = await client.auth.getUser();
+  if (erreurSession || !user) return [];
+  const { data, error } = await client.from("commandes").select("id, numero, no_show_le, contestee_le, contestation_motif, contestation_validee_le, boutiques(nom)").eq("client_id", user.id).not("no_show_le", "is", null).is("no_show_annule_le", null).order("no_show_le", { ascending: false }).limit(50);
+  if (error) throw new Error("Impossible de charger vos commandes non récupérées. Réessayez.");
+  return (data ?? []) as unknown as MonNoShow[];
+}
+
+export async function contesterNoShow(client: SupabaseClient<Database>, commandeId: string, motif: string) {
+  const erreur = erreurMotifContestation(motif);
+  if (erreur) throw new Error(erreur);
+  const { error } = await client.rpc("contester_no_show", { commande: commandeId, motif: nettoyerMotifContestation(motif) });
+  if (error) throw new Error(["42501", "P0002", "23514"].includes(error.code ?? "") && error.message ? error.message : "Impossible d’envoyer votre contestation. Réessayez.");
+}
+
+export type ContestationEnAttente = Pick<Tables<"commandes">, "id" | "numero" | "client_id" | "client_nom" | "client_telephone" | "no_show_le" | "contestee_le" | "contestation_motif"> & { boutiques: { nom: string } | null };
+
+/** Contestations en attente, les plus anciennes d’abord (lecture de toutes les commandes réservée à l’admin). */
+export async function listerContestationsEnAttente(client: SupabaseClient<Database>): Promise<ContestationEnAttente[]> {
+  const { data, error } = await client.from("commandes").select("id, numero, client_id, client_nom, client_telephone, no_show_le, contestee_le, contestation_motif, boutiques(nom)").not("contestee_le", "is", null).is("contestation_validee_le", null).is("no_show_annule_le", null).order("contestee_le", { ascending: true }).limit(200);
+  if (error) throw new Error("Impossible de charger les contestations. Réessayez.");
+  return (data ?? []) as unknown as ContestationEnAttente[];
+}
+
+/** L’admin confirme un no-show contesté : il compte de nouveau (blocage au 5e possible). */
+export async function validerNoShow(client: SupabaseClient<Database>, commandeId: string) {
+  const { error } = await client.rpc("valider_no_show", { commande: commandeId });
+  if (error) throw new Error(error.code === "42501" || error.code === "P0002" ? error.message : "Impossible de valider ce no-show. Réessayez.");
+}

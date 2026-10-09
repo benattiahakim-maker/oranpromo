@@ -1,14 +1,19 @@
 "use client";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { annulerNoShowClient, bloquerCompteClient, debloquerCompteClient } from "@/app/admin/clients/actions";
-import { essaisRestants, noShowsDuClient, telephoneLisible, type ClientSurveille, type CompteNumeroPartage, type NoShowDeclare, type NumeroPartage } from "@/lib/clients";
+import { annulerNoShowClient, bloquerCompteClient, debloquerCompteClient, validerNoShowClient } from "@/app/admin/clients/actions";
+import { essaisRestants, noShowsDuClient, telephoneLisible, type ClientSurveille, type CompteNumeroPartage, type ContestationEnAttente, type NoShowDeclare, type NumeroPartage } from "@/lib/clients";
 import { formaterDateHeure } from "@/lib/commandes";
 
 // US-20.4 : clients bloqués (bouton Débloquer), clients avec des no-shows, et (relecture n°2) numéros partagés
 // par plusieurs comptes : le numéro n’est pas vérifié, l’admin décide de bloquer ou non.
-export default function ClientsSurveilles({ bloques, avecNoShows, noShows = [], numerosPartages = [] }: { bloques: ClientSurveille[]; avecNoShows: ClientSurveille[]; noShows?: NoShowDeclare[]; numerosPartages?: NumeroPartage[] }) {
+export default function ClientsSurveilles({ bloques, avecNoShows, noShows = [], numerosPartages = [], contestations = [] }: { bloques: ClientSurveille[]; avecNoShows: ClientSurveille[]; noShows?: NoShowDeclare[]; numerosPartages?: NumeroPartage[]; contestations?: ContestationEnAttente[] }) {
   return <>
+    <section aria-labelledby="contestations">
+      <h2 id="contestations" className="etiquette mt-6">Contestations en attente ({contestations.length})</h2>
+      {contestations.length ? <ul>{contestations.map(c => <li key={c.id}><LigneContestation contestation={c} /></li>)}</ul> : <p className="py-3 text-sm text-gris">Aucune contestation en attente.</p>}
+      <p className="mt-2 text-xs leading-[1.6] text-gris">Tant que la contestation est en attente, le no-show ne compte pas pour le blocage. Valider : il compte de nouveau. Annuler : il est retiré.</p>
+    </section>
     {numerosPartages.length > 0 && <section aria-labelledby="numeros-partages">
       <h2 id="numeros-partages" className="etiquette mt-6">Numéro partagé par plusieurs comptes ({numerosPartages.length})</h2>
       <p className="mt-2 text-xs leading-[1.6] text-gris">Ce numéro a des no-shows et il est utilisé par plusieurs comptes. Le numéro n’est pas vérifié : n’importe qui peut saisir celui d’une autre personne. Les autres comptes ne sont donc pas bloqués automatiquement. Vérifiez (appel, historique) puis décidez.</p>
@@ -66,5 +71,28 @@ function LigneComptePartage({ compte }: { compte: CompteNumeroPartage }) {
   return <div className="flex items-center justify-between gap-3">
     <div className="flex min-w-0 flex-col gap-1"><span className="break-words text-sm font-light">{nom}</span><span className="text-xs text-gris">{compte.noShows} no-show{compte.noShows > 1 ? "s" : ""} sur ce compte · {compte.telephoneActuel ? `numéro actuel ${telephoneLisible(compte.telephoneActuel)}` : "sans numéro"}</span><span className="etiquette">{compte.bloque ? "Bloqué" : "Non bloqué"}</span>{message && <span role="status" className="text-sm">{message}</span>}</div>
     <button type="button" disabled={enCours} onClick={() => void agir()} aria-label={`${compte.bloque ? "Débloquer" : "Bloquer"} ${nom}`} className="etiquette min-h-11 shrink-0 border border-noir px-3">{compte.bloque ? "Débloquer" : "Bloquer"}</button>
+  </div>;
+}
+
+function LigneContestation({ contestation: c }: { contestation: ContestationEnAttente }) {
+  const router = useRouter();
+  const [message, setMessage] = useState("");
+  const [enCours, setEnCours] = useState(false);
+  const verrou = useRef(false);
+  async function agir(action: "valider" | "annuler") {
+    if (verrou.current) return;
+    verrou.current = true; setEnCours(true); setMessage("");
+    try { const resultat = action === "valider" ? await validerNoShowClient(c.id) : await annulerNoShowClient(c.id); setMessage(resultat.message); if (resultat.succes) router.refresh(); }
+    finally { verrou.current = false; setEnCours(false); }
+  }
+  return <div className="border-b border-trait py-3.5">
+    <p className="text-sm font-light">{c.client_nom} · {telephoneLisible(c.client_telephone)}</p>
+    <p className="text-xs text-gris">Commande n° {c.numero}{c.boutiques ? ` · ${c.boutiques.nom}` : ""}{c.no_show_le ? ` · no-show du ${formaterDateHeure(c.no_show_le)}` : ""}{c.contestee_le ? ` · contesté le ${formaterDateHeure(c.contestee_le)}` : ""}</p>
+    <p className="mt-1 break-words text-sm">« {c.contestation_motif} »</p>
+    <div className="mt-2 flex gap-2">
+      <button type="button" disabled={enCours} onClick={() => void agir("valider")} aria-label={`Valider le no-show de la commande n° ${c.numero}`} className="etiquette min-h-11 flex-1 border border-noir px-3">Valider le no-show</button>
+      <button type="button" disabled={enCours} onClick={() => void agir("annuler")} aria-label={`Annuler le no-show contesté de la commande n° ${c.numero}`} className="etiquette min-h-11 flex-1 border border-trait px-3">Annuler le no-show</button>
+    </div>
+    {message && <p role="status" className="mt-2 text-sm">{message}</p>}
   </div>;
 }
