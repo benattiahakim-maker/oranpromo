@@ -25,6 +25,12 @@ describe("action serveur de la boutique (US-20.3)", () => {
     expect((await changerStatutCommandeBoutique(id, "annulee", null, "")).message).toBe("Choisissez le motif de l’annulation.");
     expect(rpc).not.toHaveBeenCalled();
   });
+  it("US-26.3 : « Remis sans QR code » met toujours la note « Remise sans QR code »", async () => {
+    commande.valeur = { id, boutique_id: "b1", statut: "prete" };
+    expect(await changerStatutCommandeBoutique(id, "recuperee", null, "autre texte")).toEqual({ succes: true, message: "Commande mise à jour." });
+    expect(rpc).toHaveBeenCalledWith("changer_statut_commande", { commande: id, statut: "recuperee", motif: undefined, note: "Remise sans QR code" });
+    expect(envoyer).not.toHaveBeenCalled();
+  });
   it("transmet le motif et la note d’une annulation", async () => {
     await changerStatutCommandeBoutique(id, "annulee", "plus_en_stock", " Désolé ");
     expect(rpc).toHaveBeenCalledWith("changer_statut_commande", { commande: id, statut: "annulee", motif: "plus_en_stock", note: "Désolé" });

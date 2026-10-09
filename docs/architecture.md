@@ -20,7 +20,10 @@ app/
   espace/articles/[id]/         modification, promo (US-11, 12)
   espace/statistiques/          mes chiffres (US-13)
   espace/affiche/page.tsx       affiche à imprimer avec le QR code de la boutique (US-22)
-  espace/commandes/             commandes reçues par la boutique (US-20.3)
+  espace/commandes/             commandes reçues par la boutique (US-20.3) ; « Scanner un QR code client », « Remis sans QR code » avec confirmation (US-26.3)
+  espace/scanner/page.tsx       scanner du QR code de retrait et saisie du code à 4 chiffres (US-26.3)
+  espace/retrait/[jeton]/       résumé d'une commande à remettre (ouvert par le scanner ou l'appareil photo), « Remis au client » (US-26.3)
+  espace/retrait/actions.ts     actions serveur du retrait : lecture par code, remise par QR code ou code (US-26.3)
   panier/page.tsx               panier d'une boutique, « Commander » (US-20.2)
   compte/connexion/page.tsx     connexion client par lien e-mail ou par numéro + code (US-20.2, US-21)
   compte/connexion/actions.ts   envoi et vérification du code de connexion (US-21)
@@ -426,7 +429,10 @@ Story : `docs/user-stories.md`, module 13. Maquette : `docs/maquettes/RetraitQR.
 - **`/compte/commandes/[id]`** (page existante) : si la commande est `prete`, appel `retrait_client`, bloc « Mon QR code de retrait » (QR code, code à 4 chiffres, montant, luminosité), « Envoyer à un proche » (`https://wa.me/?text=` + texte + lien `/retrait/<jeton>`, sans numéro : le client choisit le contact, comme US-22) et « Copier le lien » (`navigator.clipboard`). Textes dans `lib/textes/fr.ts` et `ar.ts` (US-23).
 - **`/retrait/[jeton]`** (nouvelle page publique, sans connexion) : `retrait_par_lien`, `metadata` `robots: { index: false, follow: false }` et `referrer: "no-referrer"` (comme `/confirmer/[jeton]`, doc Next.js 16 `generate-metadata.md` lue), français ou arabe selon le cookie de langue. Lecture seule. États : prête (QR code + code), déjà récupérée, annulée, expirée, lien non valide.
 
-### Côté boutique : le scanner (US-26.3)
+### Côté boutique : le scanner (US-26.3) — codé
+
+Fichiers : `components/ScannerRetrait.tsx` (caméra, lecteur intégré ou `jsqr`, code à 4 chiffres), `components/RetraitBoutique.tsx` (résumé, « Remis au client », « Commande remise »), `app/espace/retrait/actions.ts`, fonctions côté boutique de `lib/retrait.ts` (`jetonDepuisQr`, `lireRetraitBoutique`, `remettreRetrait`, `messageRetraitBoutique`). Dépendance **`jsqr` 1.4.0** (version exacte) : chargée à part, seulement par `import("jsqr")` quand le lecteur intégré manque (vérifié dans le build : morceau séparé de 130 Ko, absent des morceaux de la page). Formulaire du code en `noValidate` : le message français « Tapez les 4 chiffres du code. » remplace la bulle du navigateur.
+
 
 - **`/espace/commandes`** : bouton « Scanner un QR code client » en haut ; sur une commande prête, texte « Remise : scannez le QR code du client » et lien « Remis sans QR code » (confirmation).
 - **`/espace/scanner`** (page de l'espace, connexion de la boutique comme le reste de `/espace`) : composant client chargé seulement sur cette page.

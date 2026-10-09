@@ -23,6 +23,7 @@ function CarteCommande({ commande, boutique }: { commande: CommandeRecue; boutiq
   const [stockACorriger, setStockACorriger] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [pasVenu, setPasVenu] = useState(false);
+  const [sansQr, setSansQr] = useState(false);
   const [maintenant] = useState(() => Date.now());
   const verrou = useRef(false);
   const action = ACTION_BOUTIQUE[commande.statut];
@@ -34,7 +35,7 @@ function CarteCommande({ commande, boutique }: { commande: CommandeRecue; boutiq
     try {
       const resultat = await changerStatutCommandeBoutique(commande.id, statut, statut === "annulee" ? motif : null, note);
       setMessage(resultat.message);
-      if (resultat.succes) { setStockACorriger(statut === "annulee" && motif === "plus_en_stock"); setAnnulation(false); setNote(""); router.refresh(); }
+      if (resultat.succes) { setSansQr(false); setStockACorriger(statut === "annulee" && motif === "plus_en_stock"); setAnnulation(false); setNote(""); router.refresh(); }
       // Confirmation refusée : le stock ne suffit plus (vente en direct) → corriger le stock ou annuler.
       else setStockACorriger(estStockInsuffisant(resultat.message));
     } catch { setMessage("Impossible de modifier la commande. Vérifiez votre connexion."); }
@@ -61,10 +62,15 @@ function CarteCommande({ commande, boutique }: { commande: CommandeRecue; boutiq
     {commande.note && <p className="text-sm text-gris">Note du client : « {commande.note} »</p>}
     {motifAffiche && <p className="text-sm text-gris">Motif : {motifAffiche}</p>}
     {commande.no_show_le && <p className="text-sm text-gris">Client pas venu · signalé le {formaterDateHeure(commande.no_show_le)}{commande.no_show_annule_le ? " (annulé par OranPromo)" : ""}</p>}
+    {commande.statut === "prete" && !annulation && <p className="text-sm">Remise : scannez le QR code du client. <Link href="/espace/scanner" className="underline">Scanner</Link></p>}
     {(action || annulableParBoutique(commande.statut)) && !annulation && <div className="mt-1 flex gap-2">
-      {action && <button type="button" disabled={enCours} onClick={() => void changer(action.statut)} className="etiquette min-h-11 flex-1 bg-noir text-blanc">{action.libelle}</button>}
+      {action && commande.statut !== "prete" && <button type="button" disabled={enCours} onClick={() => void changer(action.statut)} className="etiquette min-h-11 flex-1 bg-noir text-blanc">{action.libelle}</button>}
       <button type="button" disabled={enCours} onClick={() => { setAnnulation(true); setMessage(""); }} className="etiquette min-h-11 border border-noir px-3">Annuler</button>
     </div>}
+    {/* US-26.3, décision 2 : remise manuelle gardée, derrière une confirmation. */}
+    {commande.statut === "prete" && !annulation && (sansQr
+      ? <div className="mt-1 flex flex-col gap-2 border border-trait p-3"><p className="text-sm">Le client n’a ni QR code ni code ? Remettez la commande seulement si vous le reconnaissez.</p><div className="flex gap-2"><button type="button" disabled={enCours} onClick={() => void changer("recuperee")} className="etiquette min-h-11 flex-1 bg-noir text-blanc">Confirmer la remise</button><button type="button" disabled={enCours} onClick={() => setSansQr(false)} className="etiquette min-h-11 border border-trait px-3">Retour</button></div></div>
+      : <button type="button" disabled={enCours} onClick={() => { setSansQr(true); setMessage(""); }} className="min-h-11 self-start text-sm underline">Remis sans QR code</button>)}
     {annulation && <fieldset className="mt-1 border border-trait p-3">
       <legend className="etiquette px-1">Motif de l’annulation</legend>
       <div className="flex flex-wrap gap-1.5">{MOTIFS_BOUTIQUE.map(m => <button key={m} type="button" aria-pressed={motif === m} onClick={() => setMotif(m)} className={`min-h-11 border px-2.5 text-sm ${motif === m ? "border-noir bg-noir text-blanc" : "border-trait"}`}>{MOTIFS_ANNULATION[m]}</button>)}</div>
