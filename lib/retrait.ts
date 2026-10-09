@@ -94,6 +94,8 @@ export type EtatRetraitBoutique = "ok" | "remise" | "invalide" | "deja_remise" |
 export type ResumeRetrait = {
   etat: EtatRetraitBoutique; commande?: string; numero?: number; prenom?: string; total?: number;
   expire_le?: string | null; terminee_le?: string | null; mode_remise?: string | null; lignes?: LigneRetrait[];
+  /** US-27.4 : bon parrainage posé sur la commande (0 sans bon). */
+  remise_bon?: number;
 };
 export type CleRetrait = { jeton: string } | { code: string };
 

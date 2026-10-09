@@ -71,6 +71,12 @@ export function nomMois(mois: string, langue: Langue = "fr"): string {
   return new Intl.DateTimeFormat(locale(langue), { timeZone: FUSEAU, month: "long" }).format(new Date(`${mois.slice(0, 7)}-15T12:00:00Z`));
 }
 
+/** « relevé de novembre », « relevé d’octobre » (espace commerçant, en français). */
+export function releveDuMois(mois: string): string {
+  const nom = nomMois(mois, "fr");
+  return /^[aeiouâéèêhy]/i.test(nom) ? `relevé d’${nom}` : `relevé de ${nom}`;
+}
+
 /** Un bon tel que le renvoie mes_bons() (jamais d'autre compte). */
 export type BonClient = {
   id: string; montant: number; statut: StatutBon; origine: "parrainage_filleul" | "parrainage_parrain";

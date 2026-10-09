@@ -728,7 +728,7 @@ En tant que client, je veux comprendre le parrainage en 10 secondes, partager mo
 - En arabe (US-23) : textes du tableau ci-dessous, de droite à gauche.
 - Tests Vitest : lien et message de partage, code seulement pour un numéro vérifié, compteurs, liste sans numéro, « Mes bons » (états, dates), bloc d'accueil, encadré seulement sur une commande récupérée, textes fr / ar (mêmes clés).
 
-### US-27.4 — Utiliser mon bon et le faire déduire en boutique (pages `/panier`, `/compte/commandes/[id]`, `/retrait/[jeton]`, `/espace/commandes`, `/espace/retrait/[jeton]`, `/espace/scanner`) — **côté client codé**
+### US-27.4 — Utiliser mon bon et le faire déduire en boutique (pages `/panier`, `/compte/commandes/[id]`, `/retrait/[jeton]`, `/espace/commandes`, `/espace/retrait/[jeton]`, `/espace/scanner`) — **codée** (client et boutique)
 En tant que client, je veux que mon bon soit déduit sans rien avoir à dire en caisse ; en tant que commerçant, je veux voir clairement combien encaisser et savoir que les 300 DA me seront remboursés.
 - **Panier** : case « Utiliser mon bon parrainage (−300 DA) » (cochée par défaut si un bon est disponible et le total ≥ 1 000 DA ; absente sinon, avec « Ton bon s'utilise dès 1 000 DA d'achat. » si le total est plus bas). Lignes « Total », « Bon parrainage −300 DA », « **À payer en boutique** ». À la commande, l'action serveur appelle `passer_commande` puis `utiliser_bon` ; si le bon n'a pas pu être appliqué (expiré entre-temps…), la commande reste valable au prix plein et le suivi l'affiche (« Bon non appliqué : il a expiré. ») — le client peut annuler s'il le souhaite.
 - **Suivi de commande et QR code** (client et proche, US-26) : « Bon parrainage −300 DA » et « À payer en espèces : 3 200 DA ».
