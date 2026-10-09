@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { annulerNoShow, bloquerClient, debloquerClient, grouperNumerosPartages, listerNumerosPartages, listerClientsSurveilles, listerNoShowsDeclares, nettoyerNom, nomValide, noShowsDuClient, enregistrerProfilClient, ErreurValidationProfil, essaisRestants, messageNoShows, profilComplet, telephoneLisible, validerProfilClient } from "./clients";
+import { annulerNoShow, bloquerClient, contesterNoShow, erreurMotifContestation, etatContestation, listerContestationsEnAttente, listerMesNoShows, nettoyerMotifContestation, validerNoShow, debloquerClient, grouperNumerosPartages, listerNumerosPartages, listerClientsSurveilles, listerNoShowsDeclares, nettoyerNom, nomValide, noShowsDuClient, enregistrerProfilClient, ErreurValidationProfil, essaisRestants, messageNoShows, profilComplet, telephoneLisible, validerProfilClient } from "./clients";
 
 describe("profil client (US-20.2, US-20.4)", () => {
   it("compte les essais restants avant le blocage au 5e no-show", () => {
@@ -130,5 +130,62 @@ describe("relecture n°2 US-20 : numéro non vérifié", () => {
     await expect(bloquerClient({ rpc } as unknown as SupabaseClient<Database>, "k2")).rejects.toThrow("Client introuvable.");
     rpc.mockResolvedValue({ error: { code: "XX000", message: "interne" } });
     await expect(bloquerClient({ rpc } as unknown as SupabaseClient<Database>, "k2")).rejects.toThrow("Impossible de bloquer");
+  });
+});
+
+describe("contestation d’un no-show (migration 20261009234500)", () => {
+  it("motif court nettoyé, 5 à 300 caractères (même règle que la base)", () => {
+    expect(nettoyerMotifContestation("  Je suis   venue\n samedi ")).toBe("Je suis venue samedi");
+    expect(erreurMotifContestation("Je suis venue samedi")).toBeNull();
+    expect(erreurMotifContestation("  ok  ")).toContain("5 à 300 caractères");
+    expect(erreurMotifContestation("a".repeat(301))).toContain("5 à 300 caractères");
+    expect(erreurMotifContestation("a".repeat(300))).toBeNull();
+  });
+  it("donne l’état de la contestation", () => {
+    expect(etatContestation({ contestee_le: null, contestation_validee_le: null })).toBe("a_contester");
+    expect(etatContestation({ contestee_le: "2026-10-09T10:00:00Z", contestation_validee_le: null })).toBe("en_attente");
+    expect(etatContestation({ contestee_le: "2026-10-09T10:00:00Z", contestation_validee_le: "2026-10-10T10:00:00Z" })).toBe("refusee");
+  });
+  it("liste les no-shows non annulés du compte connecté", async () => {
+    const appels: unknown[][] = [];
+    const chaine: Record<string, unknown> = {};
+    for (const m of ["select", "eq", "not", "is", "order"]) chaine[m] = (...a: unknown[]) => { appels.push([m, ...a]); return chaine; };
+    chaine.limit = async () => ({ data: [{ id: "c1" }], error: null });
+    const client = { auth: { getUser: async () => ({ data: { user: { id: "moi" } }, error: null }) }, from: (t: string) => { appels.push(["from", t]); return chaine; } } as unknown as SupabaseClient<Database>;
+    expect((await listerMesNoShows(client)).map(n => n.id)).toEqual(["c1"]);
+    expect(appels).toContainEqual(["eq", "client_id", "moi"]);
+    expect(appels).toContainEqual(["not", "no_show_le", "is", null]);
+    expect(appels).toContainEqual(["is", "no_show_annule_le", null]);
+    const sansCompte = { auth: { getUser: async () => ({ data: { user: null }, error: null }) } } as unknown as SupabaseClient<Database>;
+    expect(await listerMesNoShows(sansCompte)).toEqual([]);
+  });
+  it("conteste par la fonction de la base, refuse un motif invalide sans appeler la base, relaie les refus", async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    const client = { rpc } as unknown as SupabaseClient<Database>;
+    await contesterNoShow(client, "c1", "  La boutique   était fermée ");
+    expect(rpc).toHaveBeenCalledWith("contester_no_show", { commande: "c1", motif: "La boutique était fermée" });
+    rpc.mockClear();
+    await expect(contesterNoShow(client, "c1", "ok")).rejects.toThrow("5 à 300 caractères");
+    expect(rpc).not.toHaveBeenCalled();
+    rpc.mockResolvedValue({ error: { code: "23514", message: "Vous avez déjà contesté ce no-show." } });
+    await expect(contesterNoShow(client, "c1", "Encore une fois")).rejects.toThrow("déjà contesté");
+    rpc.mockResolvedValue({ error: { code: "XX000", message: "interne" } });
+    await expect(contesterNoShow(client, "c1", "Encore une fois")).rejects.toThrow("Impossible d’envoyer votre contestation");
+  });
+  it("liste les contestations en attente pour l’admin et valide un no-show", async () => {
+    const appels: unknown[][] = [];
+    const chaine: Record<string, unknown> = {};
+    for (const m of ["select", "not", "is", "order"]) chaine[m] = (...a: unknown[]) => { appels.push([m, ...a]); return chaine; };
+    chaine.limit = async () => ({ data: [{ id: "c1" }], error: null });
+    const liste = await listerContestationsEnAttente({ from: () => chaine } as unknown as SupabaseClient<Database>);
+    expect(liste.map(c => c.id)).toEqual(["c1"]);
+    expect(appels).toContainEqual(["not", "contestee_le", "is", null]);
+    expect(appels).toContainEqual(["is", "contestation_validee_le", null]);
+    expect(appels).toContainEqual(["is", "no_show_annule_le", null]);
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    await validerNoShow({ rpc } as unknown as SupabaseClient<Database>, "c1");
+    expect(rpc).toHaveBeenCalledWith("valider_no_show", { commande: "c1" });
+    rpc.mockResolvedValue({ error: { code: "P0002", message: "Aucune contestation en attente sur cette commande." } });
+    await expect(validerNoShow({ rpc } as unknown as SupabaseClient<Database>, "c1")).rejects.toThrow("Aucune contestation");
   });
 });

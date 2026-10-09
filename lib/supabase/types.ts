@@ -146,6 +146,9 @@ export type Database = {
           client_nom: string
           client_telephone: string
           confirmee_le: string | null
+          contestation_motif: string | null
+          contestation_validee_le: string | null
+          contestee_le: string | null
           cree_le: string
           expire_le: string | null
           id: string
@@ -165,6 +168,9 @@ export type Database = {
           client_nom: string
           client_telephone: string
           confirmee_le?: string | null
+          contestation_motif?: string | null
+          contestation_validee_le?: string | null
+          contestee_le?: string | null
           cree_le?: string
           expire_le?: string | null
           id?: string
@@ -184,6 +190,9 @@ export type Database = {
           client_nom?: string
           client_telephone?: string
           confirmee_le?: string | null
+          contestation_motif?: string | null
+          contestation_validee_le?: string | null
+          contestee_le?: string | null
           cree_le?: string
           expire_le?: string | null
           id?: string
@@ -435,6 +444,7 @@ export type Database = {
         Row: {
           bloque: boolean
           bloque_le: string | null
+          bloque_par_admin: boolean
           boutique_id: string | null
           cree_le: string
           id: string
@@ -446,6 +456,7 @@ export type Database = {
         Insert: {
           bloque?: boolean
           bloque_le?: string | null
+          bloque_par_admin?: boolean
           boutique_id?: string | null
           cree_le?: string
           id: string
@@ -457,6 +468,7 @@ export type Database = {
         Update: {
           bloque?: boolean
           bloque_le?: string | null
+          bloque_par_admin?: boolean
           boutique_id?: string | null
           cree_le?: string
           id?: string
@@ -633,6 +645,10 @@ export type Database = {
         Returns: undefined
       }
       consommer_quota_ia: { Args: never; Returns: boolean }
+      contester_no_show: {
+        Args: { commande: string; motif: string }
+        Returns: undefined
+      }
       debloquer_client: { Args: { client: string }; Returns: undefined }
       declarer_no_show: { Args: { commande: string }; Returns: undefined }
       messages_whatsapp_commande: {
@@ -689,6 +705,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      valider_no_show: { Args: { commande: string }; Returns: undefined }
     }
     Enums: {
       genre_article: "homme" | "femme" | "enfant" | "mixte"
