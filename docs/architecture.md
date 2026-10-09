@@ -48,6 +48,7 @@ lib/
 supabase/migrations/            schéma SQL et règles de sécurité (déjà appliqués)
 supabase/tests/                 tests SQL des règles de la base (transaction annulée, psql)
 docs/                           user stories, architecture, maquettes
+public/images/accueil/          images fixes de l'accueil (WebP), voir « Crédits des images »
 ```
 
 ## Lecture et écriture des données
@@ -96,7 +97,7 @@ Le stockage `photos` (public, 5 Mo max, jpeg/png/webp) impose le chemin `<boutiq
 - Un article masqué par la modération (`masque_par_moderation`) ne peut pas être démasqué par le commerçant (règle dans la base, rappelée dans `lib/gestion-articles.ts`).
 - Les routes IA sont réservées aux boutiques validées et limitées par compte (`lib/acces-ia.ts`) ; leur corps de requête est lu avec une taille bornée (`lib/corps-requete.ts`).
 - Le prix promo est un entier > 0 strictement inférieur au prix normal (`lib/promo.ts` et la base) ; le prix d'un article en promo ne peut pas descendre sous le prix promo.
-- Images de l'accueil (`lib/accueil.ts`) : choisies automatiquement parmi les articles visibles du public (200 plus récents), jamais d'image externe. Grande photo = grande photo du dernier article ; tuiles univers et « pièces phares » (`PIECES_PHARES`) = miniature du dernier article de l'univers ou de la catégorie ; sans article, tuile noire unie avec le mot. Maquette : `docs/maquettes/Accueil.dc.html`.
+- Images de l'accueil (`lib/accueil.ts`, décision du propriétaire du 9/10 : visuels couleur inspirés d'Oran) : images fixes de la marque dans `public/images/accueil/` (WebP), affichées avec `next/image` ; plus de lecture d'articles pour l'accueil. Grande photo = `accueil-santa-cruz.webp` (800 × 960, ≤ 120 Ko, cadrée sur le fort, `objectPosition` 50 % 20 %, voile dégradé noir pour la lisibilité du titre, `alt` vide car décorative) avec son **crédit affiché** en bas à droite (`CREDIT_GRANDE_PHOTO`) ; tuiles univers et « pièces phares » (`PIECES_PHARES`) = `univers-<clé>.webp` / `cat-<catégorie>.webp` (600 × 600, ≤ 60 Ko, `alt` en français), mot en dessous sur fond blanc. Ajouter ou changer une image : même format et même poids, crédit dans la section « Crédits des images ». Maquette (mise en page) : `docs/maquettes/Accueil.dc.html`.
 - Les listes publiques (accueil, catalogue) appliquent explicitement la visibilité publique (`lib/catalogue.ts`) : un admin ou un commerçant connecté y voit la même chose que le public. Le catalogue lit au plus 1 000 articles par requête.
 - Le navigateur prépare chaque photo (`lib/compression-photo.ts`, `preparerPhoto`) : une grande photo JPEG de 1200 px (qualité baissée jusqu'à ~700 Ko) et une miniature de 400 px (~30 Ko, 150 Ko au plus), rangée dans `<boutique_id>/<article_id>/<uuid>-vignette.jpg`. Les cartes (accueil, catalogue, vitrine, mes articles) affichent la miniature, la fiche affiche la grande photo.
 - Les photos et miniatures envoyées sont vérifiées côté serveur sur leur contenu réel (JPEG), pas seulement sur le type annoncé par le navigateur ; 4 Mo au total par envoi (photos + miniatures), sous la limite d'environ 4,5 Mo de Vercel (`bodySizeLimit` dans `next.config.ts`).
@@ -207,6 +208,18 @@ Stories : `docs/user-stories.md`, module 9.
 - **Aperçu** (`generateMetadata` de `app/b/[slug]/page.tsx`) : `title` = nom, `description` = `descriptionBoutique()` (quartier, nombre d'articles disponibles), `alternates.canonical`, Open Graph (`type: website`, `siteName: OranPromo`, `locale: fr_FR`) et Twitter (`summary_large_image`) ; image = grande photo (`photos.adresse`) du dernier article disponible, sinon `/b/<slug>/apercu` (1200 × 630, PNG, `ImageResponse` de `next/og`, inclus dans Next.js : nom de la boutique, quartier, « OranPromo », noir sur blanc). Pas de logo de boutique (aucune colonne prévue).
 - **Bloc « Partager ma boutique »** (`components/PartagerBoutique.tsx`, sur `/espace`) : lien, « Copier le lien » (`navigator.clipboard`), « Partager sur WhatsApp » (`lienPartageWhatsApp()` → `https://wa.me/?text=…`, sans numéro : le commerçant choisit le contact ou son statut), QR code, « Télécharger le QR code » (SVG), « Imprimer l'affiche » (`/espace/affiche`). Boutique non validée : message, ni lien de partage ni QR code.
 - **QR code** : dépendance `qrcode` (MIT, génération locale, aucun service externe), appelée côté serveur seulement (`qrCodeSvg()` dans `lib/lien-boutique.ts`) ; SVG noir sur blanc, correction d'erreur `M`, marge de 4 modules (lisible imprimé en petit).
+
+## Crédits des images
+
+| Fichier (`public/images/accueil/`) | Origine | Auteur | Licence | Source |
+| --- | --- | --- | --- | --- |
+| `accueil-santa-cruz.webp` | photo réelle (fort de Santa Cruz sur le Murdjadjo, au-dessus du port d'Oran, 8 juillet 2017), **recadrée (5:6), redimensionnée, saturation +10 % et compressée en WebP** par OranPromo | Bachounda | **CC BY-SA 4.0** (https://creativecommons.org/licenses/by-sa/4.0/) | https://commons.wikimedia.org/wiki/File:Santa_cruz_Oran.jpg |
+| `univers-femme.webp`, `univers-homme.webp`, `univers-enfant.webp`, `univers-beaute.webp`, `cat-robes.webp`, `cat-abayas-djellabas-kamis.webp`, `cat-tshirts-polos.webp`, `cat-pantalons-jeans.webp`, `cat-chaussures.webp`, `cat-parfums.webp` | images **générées par IA pour OranPromo** (octobre 2026), recadrées en carré | OranPromo | propriété du projet, aucun droit de tiers | originaux 1280 × 720 hors dépôt (`visuels-oranpromo`) |
+
+Règles :
+- **CC BY-SA 4.0** : le crédit (auteur, licence avec lien, source avec lien) doit rester visible à côté de la photo (`CREDIT_GRANDE_PHOTO` dans `lib/accueil.ts`, affiché sur l'accueil). La photo modifiée (`accueil-santa-cruz.webp`) reste sous CC BY-SA 4.0 ; cela ne concerne pas le reste du site. Ne pas retirer le crédit, ne pas utiliser cette photo dans une publicité qui laisserait croire que l'auteur soutient OranPromo.
+- Images IA : pas de crédit obligatoire ; ne pas les présenter comme des photos de vraies boutiques ou de vrais articles.
+- Toute nouvelle image : licence libre autorisant l'usage commercial (CC0, CC BY, CC BY-SA, domaine public ; jamais NC ni ND), ajoutée à ce tableau.
 
 ## Variables d'environnement
 
