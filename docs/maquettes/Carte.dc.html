@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=375">
+<title>OranPromo — Carte des boutiques /carte (US-24, à valider)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&amp;family=Jost:wght@300;400;500&amp;family=Noto+Naskh+Arabic:wght@400;500&amp;family=Tajawal:wght@300;400;500&amp;display=swap">
+<style>
+body{margin:0;background:#EDEDED}
+a{color:#0A0A0A;text-decoration:none}a:hover{color:#555555}
+</style>
+</helmet>
+<!-- US-24.3 : page publique /carte, 375 px de large. Trois vues l'une sous l'autre :
+     ① français, « Autour de moi » accepté et une épingle touchée ; ② autres états et lien depuis l'accueil ; ③ arabe (US-23, RTL).
+     Le fond de carte est dessiné à la main pour la maquette : en vrai, tuiles CARTO Positron (gris clair) via Leaflet.
+     Épingle noire = boutique avec son nombre de promos en cours ; petit carré = aucune promo ; épingle blanche = touchée ; rond = « Vous » (jamais envoyé au serveur). -->
+<div style="width: 375px; display: flex; flex-direction: column">
+<div style="width: 375px; box-sizing: border-box; padding: 18px 16px 10px 16px; background: #EDEDED; font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: #3A3A3A">① /CARTE · FRANÇAIS · AUTOUR DE MOI ACTIF</div>
+
+<!-- ① /carte en français : « Autour de moi » accepté, épingle « Boutique Amine » touchée. -->
+<div lang="fr" dir="ltr" style="width: 375px; box-sizing: border-box; background: #FFFFFF; color: #0A0A0A; font-family: 'Jost', 'Tajawal', sans-serif; overflow: hidden">
+<header style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 6px 16px; border-bottom: 1px solid #E6E6E6">
+<a href="Accueil.dc.html" style="font-family: 'Bodoni Moda', serif; font-size: 15px; letter-spacing: 2.5px">ORANPROMO</a>
+<nav aria-label="Navigation du site" style="display: flex; align-items: center">
+<a href="Catalogue.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 5px; font-size: 10px; letter-spacing: 1.2px">RECHERCHER</a>
+<!-- Nouveau lien « Carte » dans l'en-tête public (US-24.3) -->
+<a href="Carte.dc.html" aria-current="page" style="min-height: 44px; display: flex; align-items: center; padding: 0 5px; font-size: 10px; letter-spacing: 1.2px; text-decoration: underline; text-underline-offset: 4px">CARTE</a>
+<a href="Panier.dc.html" aria-label="Panier" style="min-width: 40px; min-height: 44px; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="1.3" aria-hidden="true"><path d="M5 8h14l-1 13H6z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2"></path></svg></a>
+<!-- Sélecteur de langue de US-23 -->
+<div role="group" aria-label="Langue · اللغة" style="display: flex; border: 1px solid #0A0A0A; margin-left: 2px"><span aria-current="true" style="min-width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 10px; background: #0A0A0A; color: #FFFFFF">FR</span><a href="#ar" lang="ar" style="min-width: 34px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 12px">عربي</a></div>
+</nav>
+</header>
+
+<section style="padding: 18px 16px 12px 16px; text-align: center">
+<div style="font-size: 10px; letter-spacing: 2.5px; color: #6F6F6F">12 BOUTIQUES À ORAN</div>
+<h1 style="margin: 6px 0 0 0; font-family: 'Bodoni Moda', serif; font-weight: 400; font-size: 26px">Les boutiques sur la carte</h1>
+</section>
+
+<!-- Filtre par univers : gardé dans l'adresse (/carte?univers=femme) -->
+<div role="group" aria-label="Univers" style="display: flex; gap: 6px; padding: 0 16px 12px 16px">
+<span aria-pressed="true" style="flex: 1; height: 36px; display: flex; align-items: center; justify-content: center; background: #0A0A0A; color: #FFFFFF; font-size: 10px; letter-spacing: 1.2px">TOUS</span>
+<span style="flex: 1; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid #E6E6E6; font-size: 10px; letter-spacing: 1.2px">FEMME</span>
+<span style="flex: 1; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid #E6E6E6; font-size: 10px; letter-spacing: 1.2px">HOMME</span>
+<span style="flex: 1; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid #E6E6E6; font-size: 10px; letter-spacing: 1.2px">ENFANT</span>
+<span style="flex: 1; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid #E6E6E6; font-size: 10px; letter-spacing: 1.2px">BEAUTÉ</span>
+</div>
+
+<div style="padding: 0 16px 10px 16px">
+<!-- La localisation n'est demandée qu'au toucher de ce bouton. Ici : acceptée (bouton actif). -->
+<button aria-pressed="true" style="width: 100%; height: 44px; border: 1px solid #0A0A0A; background: #FFFFFF; color: #0A0A0A; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; font-size: 11px; letter-spacing: 2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2" fill="currentColor"></circle><path d="M12 1v4M12 19v4M1 12h4M19 12h4"></path></svg> AUTOUR DE MOI · ACTIF</button>
+<p style="margin: 6px 0 0 0; font-size: 11px; color: #6F6F6F; text-align: center">Votre position reste sur votre téléphone : elle n'est ni envoyée ni enregistrée.</p>
+</div>
+
+<!-- Carte Leaflet (chargée seulement sur /carte, dir="ltr" même en arabe). L'attribution reste toujours visible : rien ne la recouvre. -->
+<div role="region" aria-label="Carte des boutiques" dir="ltr" style="position: relative; width: 375px; height: 300px; overflow: hidden; border-top: 1px solid #E6E6E6; border-bottom: 1px solid #E6E6E6">
+<svg width="375" height="300" viewBox="0 0 375 300" style="position: absolute; inset: 0" aria-hidden="true">
+<rect width="375" height="300" fill="#F4F3F1"></rect>
+<path d="M0 0 H375 V58 C330 74 300 52 262 70 C220 90 180 66 140 84 C96 104 52 86 0 104 Z" fill="#DDE3E6"></path>
+<path d="M0 104 C52 86 96 104 140 84 C180 66 220 90 262 70 C300 52 330 74 375 58" fill="none" stroke="#CBD3D7" stroke-width="1"></path>
+<g fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="square">
+<path d="M10 150 C90 130 160 120 240 128 C300 134 340 120 375 112"></path>
+<path d="M60 300 C80 240 120 190 150 120"></path>
+<path d="M200 300 C210 240 230 180 250 120"></path>
+<path d="M0 230 C100 220 220 236 375 214"></path>
+</g>
+<g fill="none" stroke="#E6E6E6" stroke-width="2">
+<path d="M30 190 L340 176"></path><path d="M110 120 L120 290"></path><path d="M290 110 L300 290"></path><path d="M20 268 L360 258"></path><path d="M170 140 L330 200"></path>
+</g>
+<rect x="18" y="200" width="60" height="40" fill="#E9EDE6"></rect>
+<text x="150" y="40" font-size="9" fill="#9A9A9A" font-family="Jost, Tajawal, sans-serif" letter-spacing="0.5">MER MÉDITERRANÉE</text><text x="168" y="106" font-size="9" fill="#9A9A9A" font-family="Jost, Tajawal, sans-serif" letter-spacing="0.5">FRONT DE MER</text><text x="284" y="170" font-size="9" fill="#9A9A9A" font-family="Jost, Tajawal, sans-serif" letter-spacing="0.5">AKID LOTFI</text><text x="60" y="216" font-size="9" fill="#9A9A9A" font-family="Jost, Tajawal, sans-serif" letter-spacing="0.5">M'DINA JDIDA</text><text x="236" y="250" font-size="9" fill="#9A9A9A" font-family="Jost, Tajawal, sans-serif" letter-spacing="0.5">HAI ES-SALEM</text><text x="20" y="252" font-size="9" fill="#9A9A9A" font-family="Jost, Tajawal, sans-serif" letter-spacing="0.5">PLACE D'ARMES</text>
+</svg>
+<div dir="ltr" style="position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; border: 1px solid #0A0A0A; background: #FFFFFF">
+<span style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-size: 18px; border-bottom: 1px solid #E6E6E6">+</span>
+<span style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-size: 18px">−</span></div>
+<div title="Maison Ilyes" style="position: absolute; left: 136px; top: 86px; display: flex; flex-direction: column; align-items: center">
+<div style="width: 28px; height: 28px; background: #0A0A0A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Jost', sans-serif; font-size: 13px">2</div>
+<div style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid #0A0A0A"></div></div>
+<div title="Boutique Amine" style="position: absolute; left: 244px; top: 136px; display: flex; flex-direction: column; align-items: center">
+<div style="width: 36px; height: 36px; background: #FFFFFF; border: 2px solid #0A0A0A; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: 'Jost', sans-serif; font-size: 15px; font-weight: 500; color: #0A0A0A">3</div>
+<div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 7px solid #0A0A0A"></div></div>
+<div title="Dar El Hana" style="position: absolute; left: 82px; top: 166px; display: flex; flex-direction: column; align-items: center">
+<div style="width: 28px; height: 28px; background: #0A0A0A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Jost', sans-serif; font-size: 13px">1</div>
+<div style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid #0A0A0A"></div></div>
+<div title="Boutique sans promo" style="position: absolute; left: 311px; top: 125px; width: 14px; height: 14px; background: #0A0A0A; border: 2px solid #FFFFFF; box-sizing: border-box"></div>
+<div title="Kenza Mode" style="position: absolute; left: 196px; top: 228px; display: flex; flex-direction: column; align-items: center">
+<div style="width: 28px; height: 28px; background: #0A0A0A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Jost', sans-serif; font-size: 13px">5</div>
+<div style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid #0A0A0A"></div></div>
+<div style="position: absolute; left: 198px; top: 178px; width: 68px; height: 68px; border-radius: 50%; background: rgba(10,10,10,0.07); border: 1px solid rgba(10,10,10,0.25); box-sizing: border-box"></div>
+<div style="position: absolute; left: 224px; top: 204px; width: 16px; height: 16px; border-radius: 50%; background: #0A0A0A; border: 3px solid #FFFFFF; box-sizing: border-box"></div>
+<span style="position: absolute; left: 244px; top: 206px; font-size: 10px; background: #FFFFFF; padding: 0 3px">Vous</span>
+<div dir="ltr" lang="en" style="position: absolute; right: 0; bottom: 0; background: rgba(255,255,255,0.85); padding: 2px 6px; font-family: 'Jost', sans-serif; font-size: 10px; color: #3A3A3A">Leaflet | © <span style="text-decoration: underline">OpenStreetMap</span> contributors © <span style="text-decoration: underline">CARTO</span></div>
+</div>
+
+<!-- Mini-fiche : sous la carte (pas par-dessus : l'attribution doit rester visible). Fermée par ×. -->
+<section aria-label="Boutique choisie" style="position: relative; padding: 16px 16px 16px 16px; border-bottom: 1px solid #0A0A0A">
+<button aria-label="Fermer" style="position: absolute; top: 4px; right: 4px; width: 44px; height: 44px; border: none; background: transparent; font-size: 20px; color: #0A0A0A">×</button>
+<div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">AKID LOTFI · À 850 M</div>
+<h2 style="margin: 4px 0 2px 0; font-family: 'Bodoni Moda', serif; font-weight: 400; font-size: 22px">Boutique Amine</h2>
+<div style="font-size: 13px; margin-bottom: 12px">3 promos en cours</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+<a href="Vitrine.dc.html" style="height: 46px; background: #0A0A0A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 10px; letter-spacing: 1.8px">VOIR LA BOUTIQUE</a>
+<a href="#itineraire" style="height: 46px; border: 1px solid #0A0A0A; display: flex; align-items: center; justify-content: center; font-size: 10px; letter-spacing: 1.8px">ITINÉRAIRE</a>
+</div>
+</section>
+
+<!-- Liste : rendue par le serveur (marche sans JavaScript) ; triée par nom, ou par distance après « Autour de moi ». -->
+<section style="padding: 14px 16px 0 16px">
+<div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F; padding-bottom: 6px">12 BOUTIQUES · LES PLUS PROCHES D'ABORD</div>
+<a href="Vitrine.dc.html" style="display: flex; justify-content: space-between; align-items: center; min-height: 56px; border-top: 1px solid #E6E6E6"><span><span style="display: block; font-family: 'Bodoni Moda', serif; font-size: 16px">Boutique Amine</span><span style="font-size: 12px; color: #6F6F6F">Akid Lotfi · 3 promos en cours</span></span><span style="font-size: 13px">850 m</span></a>
+<a href="Vitrine.dc.html" style="display: flex; justify-content: space-between; align-items: center; min-height: 56px; border-top: 1px solid #E6E6E6"><span><span style="display: block; font-family: 'Bodoni Moda', serif; font-size: 16px">Kenza Mode</span><span style="font-size: 12px; color: #6F6F6F">Hai Es-Salem · 5 promos en cours</span></span><span style="font-size: 13px">1,1 km</span></a>
+<a href="Vitrine.dc.html" style="display: flex; justify-content: space-between; align-items: center; min-height: 56px; border-top: 1px solid #E6E6E6"><span><span style="display: block; font-family: 'Bodoni Moda', serif; font-size: 16px">Maison Ilyes</span><span style="font-size: 12px; color: #6F6F6F">Front de Mer · 2 promos en cours</span></span><span style="font-size: 13px">2,4 km</span></a>
+<a href="Vitrine.dc.html" style="display: flex; justify-content: space-between; align-items: center; min-height: 56px; border-top: 1px solid #E6E6E6; border-bottom: 1px solid #E6E6E6"><span><span style="display: block; font-family: 'Bodoni Moda', serif; font-size: 16px">Dar El Hana</span><span style="font-size: 12px; color: #6F6F6F">M'dina Jdida · 1 promo en cours</span></span><span style="font-size: 13px">3,0 km</span></a>
+<div style="font-size: 12px; color: #6F6F6F; text-align: center; padding: 10px 0">… 8 autres</div>
+</section>
+
+<!-- Boutiques validées sans position : jamais d'épingle, mais toujours listées. -->
+<section style="padding: 8px 16px 22px 16px">
+<div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F; padding-bottom: 6px">SANS POSITION SUR LA CARTE (2)</div>
+<a href="Vitrine.dc.html" style="display: flex; justify-content: space-between; align-items: center; min-height: 52px; border-top: 1px solid #E6E6E6"><span><span style="display: block; font-family: 'Bodoni Moda', serif; font-size: 16px">Atelier Sarah</span><span style="font-size: 12px; color: #6F6F6F">Gambetta · Aucune promo en cours</span></span><span aria-hidden="true">›</span></a>
+<a href="Vitrine.dc.html" style="display: flex; justify-content: space-between; align-items: center; min-height: 52px; border-top: 1px solid #E6E6E6; border-bottom: 1px solid #E6E6E6"><span><span style="display: block; font-family: 'Bodoni Moda', serif; font-size: 16px">Le Dressing</span><span style="font-size: 12px; color: #6F6F6F">Bir El Djir · 4 promos en cours</span></span><span aria-hidden="true">›</span></a>
+</section>
+</div>
+
+<div style="width: 375px; box-sizing: border-box; padding: 18px 16px 10px 16px; background: #EDEDED; font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: #3A3A3A">② AUTRES ÉTATS · LIEN DEPUIS L'ACCUEIL</div>
+
+<!-- ② Autres états de /carte, et liens vers /carte -->
+<div lang="fr" style="width: 375px; box-sizing: border-box; background: #FFFFFF; color: #0A0A0A; font-family: 'Jost', sans-serif; padding: 4px 16px 18px 16px">
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">AVANT LE TOUCHER (PAR DÉFAUT)</div><p role="status" style="margin: 6px 0 0 0; font-size: 13px; line-height: 1.5">Liste triée par nom, aucune demande de localisation à l'ouverture de la page.</p><div style="margin-top: 8px; height: 40px; border: 1px solid #0A0A0A; display: flex; align-items: center; justify-content: center; font-size: 10px; letter-spacing: 1.8px">⌖ AUTOUR DE MOI</div></div>
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">PENDANT LA RECHERCHE</div><p role="status" style="margin: 6px 0 0 0; font-size: 13px; line-height: 1.5">Recherche de votre position…</p></div>
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">LOCALISATION REFUSÉE</div><p role="status" style="margin: 6px 0 0 0; font-size: 13px; line-height: 1.5">Localisation refusée : la liste reste triée par nom. Vous pouvez l'autoriser dans les réglages du navigateur.</p></div>
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">POSITION INTROUVABLE (15 S)</div><p role="status" style="margin: 6px 0 0 0; font-size: 13px; line-height: 1.5">Position introuvable pour le moment. Réessayez dehors ou près d'une fenêtre.</p><div style="margin-top: 8px; height: 40px; border: 1px solid #0A0A0A; display: flex; align-items: center; justify-content: center; font-size: 10px; letter-spacing: 1.8px">RÉESSAYER</div></div>
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">FILTRE SANS RÉSULTAT</div><p role="status" style="margin: 6px 0 0 0; font-size: 13px; line-height: 1.5">Aucune boutique de cet univers pour le moment.</p><div style="margin-top: 8px; height: 40px; border: 1px solid #0A0A0A; display: flex; align-items: center; justify-content: center; font-size: 10px; letter-spacing: 1.8px">VOIR TOUTES LES BOUTIQUES</div></div>
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">MINI-FICHE, BOUTIQUE SANS PROMO</div><p role="status" style="margin: 6px 0 0 0; font-size: 13px; line-height: 1.5"><b style='font-family: Bodoni Moda, serif; font-weight: 400; font-size: 17px'>Boutique sans promo</b><br>Gambetta · Aucune promo en cours</p></div>
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">CARTE INDISPONIBLE (TUILES OU JAVASCRIPT)</div><p role="status" style="margin: 6px 0 0 0; font-size: 13px; line-height: 1.5">La carte ne peut pas s'afficher. La liste des boutiques reste ci-dessous.</p></div>
+<!-- Lien depuis l'accueil : un bloc texte, sans carte ni image de tuile (rien de plus à télécharger sur l'accueil). -->
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0 0 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">ACCUEIL, SOUS LES UNIVERS</div>
+<a href="Carte.dc.html" style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 1px solid #0A0A0A"><span><span style="display: block; font-family: 'Bodoni Moda', serif; font-size: 19px; white-space: nowrap">Les boutiques sur la carte</span><span style="font-size: 12px; color: #6F6F6F">Trouvez les promos près de chez vous.</span></span><span style="font-size: 18px">→</span></a></div>
+</div>
+
+<div style="width: 375px; box-sizing: border-box; padding: 18px 16px 10px 16px; background: #EDEDED; font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: #3A3A3A">③ /CARTE · ARABE (US-23, DE DROITE À GAUCHE)</div>
+
+<!-- ③ /carte en arabe (US-23) : page de droite à gauche ; la carte reste dir="ltr" (le nord en haut, contrôles et attribution à leur place). -->
+<div id="ar" lang="ar" dir="rtl" style="width: 375px; box-sizing: border-box; background: #FFFFFF; color: #0A0A0A; font-family: 'Jost', 'Tajawal', sans-serif; overflow: hidden">
+<header style="display: flex; justify-content: space-between; align-items: center; padding: 6px 16px 6px 8px; border-bottom: 1px solid #E6E6E6">
+<a href="Accueil.dc.html" dir="ltr" style="font-family: 'Bodoni Moda', serif; font-size: 15px; letter-spacing: 2.5px">ORANPROMO</a>
+<nav aria-label="تصفح الموقع" style="display: flex; align-items: center">
+<a href="Catalogue.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 6px; font-size: 13px">بحث</a>
+<a href="Carte.dc.html" aria-current="page" style="min-height: 44px; display: flex; align-items: center; padding: 0 6px; font-size: 13px; text-decoration: underline; text-underline-offset: 6px">الخريطة</a>
+<a href="Panier.dc.html" aria-label="السلة" style="min-width: 40px; min-height: 44px; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="1.3" aria-hidden="true"><path d="M5 8h14l-1 13H6z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2"></path></svg></a>
+<div role="group" aria-label="اللغة · Langue" style="display: flex; border: 1px solid #0A0A0A; margin-right: 2px"><a href="#" lang="fr" dir="ltr" style="min-width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 10px">FR</a><span aria-current="true" style="min-width: 34px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 12px; background: #0A0A0A; color: #FFFFFF">عربي</span></div>
+</nav>
+</header>
+
+<section style="padding: 16px 16px 10px 16px; text-align: center">
+<div style="font-size: 13px; color: #6F6F6F">12 حانوت في وهران</div>
+<h1 style="margin: 4px 0 0 0; font-family: 'Bodoni Moda', 'Noto Naskh Arabic', serif; font-weight: 400; font-size: 26px">الحوانت في الخريطة</h1>
+</section>
+
+<div role="group" aria-label="القسم" style="display: flex; gap: 6px; padding: 0 16px 12px 16px">
+<span aria-pressed="true" style="flex: 1; height: 36px; display: flex; align-items: center; justify-content: center; background: #0A0A0A; color: #FFFFFF; font-size: 13px">الكل</span>
+<span style="flex: 1; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid #E6E6E6; font-size: 13px">نسا</span>
+<span style="flex: 1; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid #E6E6E6; font-size: 13px">رجال</span>
+<span style="flex: 1; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid #E6E6E6; font-size: 13px">ذراري</span>
+<span style="flex: 1; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid #E6E6E6; font-size: 13px">تجميل</span>
+</div>
+
+<div style="padding: 0 16px 10px 16px">
+<button aria-pressed="true" style="width: 100%; height: 44px; border: 1px solid #0A0A0A; background: #FFFFFF; color: #0A0A0A; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; font-size: 15px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2" fill="currentColor"></circle><path d="M12 1v4M12 19v4M1 12h4M19 12h4"></path></svg> قريب ليّا · مفعّل</button>
+<p style="margin: 6px 0 0 0; font-size: 12px; color: #6F6F6F; text-align: center">البلاصة نتاعك تبقى في التيليفون نتاعك: ما تتبعثش وما تتسجّلش.</p>
+</div>
+
+<div role="region" aria-label="خريطة الحوانت" dir="ltr" style="position: relative; width: 375px; height: 300px; overflow: hidden; border-top: 1px solid #E6E6E6; border-bottom: 1px solid #E6E6E6">
+<svg width="375" height="300" viewBox="0 0 375 300" style="position: absolute; inset: 0" aria-hidden="true">
+<rect width="375" height="300" fill="#F4F3F1"></rect>
+<path d="M0 0 H375 V58 C330 74 300 52 262 70 C220 90 180 66 140 84 C96 104 52 86 0 104 Z" fill="#DDE3E6"></path>
+<path d="M0 104 C52 86 96 104 140 84 C180 66 220 90 262 70 C300 52 330 74 375 58" fill="none" stroke="#CBD3D7" stroke-width="1"></path>
+<g fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="square">
+<path d="M10 150 C90 130 160 120 240 128 C300 134 340 120 375 112"></path>
+<path d="M60 300 C80 240 120 190 150 120"></path>
+<path d="M200 300 C210 240 230 180 250 120"></path>
+<path d="M0 230 C100 220 220 236 375 214"></path>
+</g>
+<g fill="none" stroke="#E6E6E6" stroke-width="2">
+<path d="M30 190 L340 176"></path><path d="M110 120 L120 290"></path><path d="M290 110 L300 290"></path><path d="M20 268 L360 258"></path><path d="M170 140 L330 200"></path>
+</g>
+<rect x="18" y="200" width="60" height="40" fill="#E9EDE6"></rect>
+<text x="150" y="40" font-size="9" fill="#9A9A9A" font-family="Jost, Tajawal, sans-serif" letter-spacing="0.5">MER MÉDITERRANÉE</text><text x="168" y="106" font-size="9" fill="#9A9A9A" font-family="Jost, Tajawal, sans-serif" letter-spacing="0.5">FRONT DE MER</text><text x="284" y="170" font-size="9" fill="#9A9A9A" font-family="Jost, Tajawal, sans-serif" letter-spacing="0.5">AKID LOTFI</text><text x="60" y="216" font-size="9" fill="#9A9A9A" font-family="Jost, Tajawal, sans-serif" letter-spacing="0.5">M'DINA JDIDA</text><text x="236" y="250" font-size="9" fill="#9A9A9A" font-family="Jost, Tajawal, sans-serif" letter-spacing="0.5">HAI ES-SALEM</text>
+</svg>
+<div dir="ltr" style="position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; border: 1px solid #0A0A0A; background: #FFFFFF">
+<span style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-size: 18px; border-bottom: 1px solid #E6E6E6">+</span>
+<span style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-size: 18px">−</span></div>
+<div title="Maison Ilyes" style="position: absolute; left: 136px; top: 86px; display: flex; flex-direction: column; align-items: center">
+<div style="width: 28px; height: 28px; background: #0A0A0A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Jost', sans-serif; font-size: 13px">2</div>
+<div style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid #0A0A0A"></div></div>
+<div title="Boutique Amine" style="position: absolute; left: 244px; top: 136px; display: flex; flex-direction: column; align-items: center">
+<div style="width: 36px; height: 36px; background: #FFFFFF; border: 2px solid #0A0A0A; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: 'Jost', sans-serif; font-size: 15px; font-weight: 500; color: #0A0A0A">3</div>
+<div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 7px solid #0A0A0A"></div></div>
+<div title="Dar El Hana" style="position: absolute; left: 82px; top: 166px; display: flex; flex-direction: column; align-items: center">
+<div style="width: 28px; height: 28px; background: #0A0A0A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Jost', sans-serif; font-size: 13px">1</div>
+<div style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid #0A0A0A"></div></div>
+<div title="" style="position: absolute; left: 311px; top: 125px; width: 14px; height: 14px; background: #0A0A0A; border: 2px solid #FFFFFF; box-sizing: border-box"></div>
+<div title="Kenza Mode" style="position: absolute; left: 196px; top: 228px; display: flex; flex-direction: column; align-items: center">
+<div style="width: 28px; height: 28px; background: #0A0A0A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Jost', sans-serif; font-size: 13px">5</div>
+<div style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid #0A0A0A"></div></div>
+<div style="position: absolute; left: 198px; top: 178px; width: 68px; height: 68px; border-radius: 50%; background: rgba(10,10,10,0.07); border: 1px solid rgba(10,10,10,0.25); box-sizing: border-box"></div>
+<div style="position: absolute; left: 224px; top: 204px; width: 16px; height: 16px; border-radius: 50%; background: #0A0A0A; border: 3px solid #FFFFFF; box-sizing: border-box"></div>
+<span style="position: absolute; left: 244px; top: 206px; font-size: 10px; background: #FFFFFF; padding: 0 3px">أنت</span>
+<div dir="ltr" lang="en" style="position: absolute; right: 0; bottom: 0; background: rgba(255,255,255,0.85); padding: 2px 6px; font-family: 'Jost', sans-serif; font-size: 10px; color: #3A3A3A">Leaflet | © <span style="text-decoration: underline">OpenStreetMap</span> contributors © <span style="text-decoration: underline">CARTO</span></div>
+</div>
+
+<section aria-label="الحانوت المختار" style="position: relative; padding: 14px 16px 16px 16px; border-bottom: 1px solid #0A0A0A">
+<button aria-label="سكّر" style="position: absolute; top: 4px; left: 4px; width: 44px; height: 44px; border: none; background: transparent; font-size: 20px">×</button>
+<div style="font-size: 13px; color: #6F6F6F">عقيد لطفي · على بعد <bdi dir="ltr">850</bdi> م</div>
+<!-- Nom de la boutique : jamais traduit -->
+<h2 dir="auto" style="margin: 4px 0 2px 0; font-family: 'Bodoni Moda', 'Noto Naskh Arabic', serif; font-weight: 400; font-size: 22px; text-align: right">Boutique Amine</h2>
+<div style="font-size: 14px; margin-bottom: 12px"><bdi dir="ltr">3</bdi> تخفيضات دابا</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+<a href="Vitrine.dc.html" style="height: 46px; background: #0A0A0A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 15px">شوف الحانوت</a>
+<a href="#itineraire" style="height: 46px; border: 1px solid #0A0A0A; display: flex; align-items: center; justify-content: center; font-size: 15px">الطريق</a>
+</div>
+</section>
+
+<section style="padding: 12px 16px 0 16px">
+<div style="font-size: 13px; color: #6F6F6F; padding-bottom: 6px">12 حانوت · الأقرب في اللول</div>
+<a href="Vitrine.dc.html" style="display: flex; justify-content: space-between; align-items: center; min-height: 56px; border-top: 1px solid #E6E6E6"><span><span dir="auto" style="display: block; font-family: 'Bodoni Moda', serif; font-size: 16px">Boutique Amine</span><span style="font-size: 13px; color: #6F6F6F">عقيد لطفي · <bdi dir="ltr">3</bdi> تخفيضات دابا</span></span><span style="font-size: 14px"><bdi dir="ltr">850</bdi> م</span></a>
+<a href="Vitrine.dc.html" style="display: flex; justify-content: space-between; align-items: center; min-height: 56px; border-top: 1px solid #E6E6E6; border-bottom: 1px solid #E6E6E6"><span><span dir="auto" style="display: block; font-family: 'Bodoni Moda', serif; font-size: 16px">Kenza Mode</span><span style="font-size: 13px; color: #6F6F6F">حي السلام · <bdi dir="ltr">5</bdi> تخفيضات دابا</span></span><span style="font-size: 14px"><bdi dir="ltr">1,1</bdi> كم</span></a>
+</section>
+<section style="padding: 14px 16px 22px 16px">
+<div style="font-size: 13px; color: #6F6F6F; padding-bottom: 6px">ما عندهمش بلاصة في الخريطة (<bdi dir="ltr">2</bdi>)</div>
+<a href="Vitrine.dc.html" style="display: flex; justify-content: space-between; align-items: center; min-height: 52px; border-top: 1px solid #E6E6E6; border-bottom: 1px solid #E6E6E6"><span><span dir="auto" style="display: block; font-family: 'Bodoni Moda', serif; font-size: 16px">Atelier Sarah</span><span style="font-size: 13px; color: #6F6F6F">قمبيطة · ما كاين حتى تخفيض</span></span><span aria-hidden="true">‹</span></a>
+</section>
+<div style="padding: 0 16px 18px 16px; font-size: 12px; color: #6F6F6F">ما عطيتش الإذن بالموقع: القائمة تبقى مرتّبة بالاسم. <span style="color: #9A9A9A">(رسالة الرفض)</span></div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":375,"height":2600}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

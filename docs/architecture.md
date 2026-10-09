@@ -268,6 +268,83 @@ Story : `docs/user-stories.md`, US-20.6. Maquettes : `WhatsAppConfirmer.dc.html`
 - Interrupteur : réglage `bouton_confirmer` (`prive.reglages`, `on` après l'approbation de Meta). Quand il est `on`, la base crée le message `oranpromo_nouvelle_commande_confirmer` (les 4 paramètres du texte + un 5e, l'identifiant de la commande) au lieu de `oranpromo_nouvelle_commande` ; au moment de l'envoi, le serveur retire le 5e paramètre et en fait le lien signé du bouton ; sans `CONFIRMATION_SECRET`, il envoie l'ancien modèle sans bouton (aucun message perdu).
 - Modèle à faire approuver (catégorie « Utilitaire », langue `fr`) : `oranpromo_nouvelle_commande_confirmer` : « Nouvelle commande n° {{1}} sur OranPromo : {{2}}, {{3}} article(s), {{4}}. Touchez Confirmer, ou confirmez-la dans votre espace OranPromo, rubrique Commandes. » + bouton lien « Confirmer » → `https://<domaine>/confirmer/{{1}}`.
 
+## Carte des boutiques (US-24) — conception, **pas encore codé**
+
+Stories : `docs/user-stories.md`, module 11. Maquettes : `Carte.dc.html`, `PositionBoutique.dc.html`. À coder après l'arabe (US-23) et après validation du propriétaire. Rien de ce qui suit n'existe encore.
+
+**Lu avant de choisir** : `node_modules/next/dist/docs/01-app/02-guides/lazy-loading.md` (Next.js 16) : `next/dynamic` avec `{ ssr: false }` n'est permis **que dans un composant client** (erreur dans un composant serveur) ; `01-app/01-getting-started/11-css.md` : une feuille de style d'un paquet (`leaflet/dist/leaflet.css`) peut être importée dans un composant de `app/`, mais elle n'est pas retirée quand on change de page (sans gêne ici : toutes ses classes commencent par `.leaflet-`).
+
+### Fonds de carte : comparaison (conditions lues le 9 octobre 2026)
+
+OranPromo est un **usage commercial** (site d'entreprise, même gratuit pour les clientes). Ordre de grandeur : une visite de `/carte` sur téléphone ≈ 30 à 50 tuiles (vue de départ, un ou deux zooms, « Autour de moi ») ; 1 million de tuiles ≈ 20 000 à 30 000 visites de la carte par mois.
+
+| Fournisseur | Gratuit | Usage commercial gratuit ? | Au-delà | Attribution | Pour la carte (Leaflet) | Source |
+| --- | --- | --- | --- | --- | --- | --- |
+| **OSMF** `tile.openstreetmap.org` | sans quota annoncé, « best-effort », sans garantie | pas interdit, mais la politique dit qu'un usage lourd est bloqué sans préavis et que les **services commerciaux** doivent s'attendre à perdre l'accès à tout moment ; elle renvoie vers d'autres fournisseurs | — | « © OpenStreetMap contributors », visible sur la carte | tuiles PNG standard ; ni préchargement ni hors-ligne | operations.osmfoundation.org/policies/tiles/ |
+| **CARTO** Positron (`light_all`) | 5 M tuiles/mois non commercial | **oui, jusqu'à 1 M de tuiles/mois** avec une clé gratuite (obligatoire depuis septembre 2026 ; sans clé, filigrane) | 500 $/mois (10 M) ; accès gratuit révocable à tout moment | « © OpenStreetMap contributors, © CARTO », visible | tuiles PNG, `@2x` pour écrans Retina (1 requête par tuile) ; style **gris clair** qui va avec le noir et blanc du site | carto.com/basemaps/apikey/, carto.com/legal/basemap-terms/ (version du 29/09/2026, sections 3, 9, 12, 13), github.com/CartoDB/basemap-styles |
+| **Stadia Maps** (Alidade Smooth) | 200 000 crédits/mois | **non** (plan gratuit : « Commercial use not allowed ») | Starter 20 $/mois : 1 M crédits, puis 0,03 $ les 1 000 ; 1 tuile = 1 crédit | © Stadia Maps, © OpenMapTiles, © OpenStreetMap | tuiles PNG | stadiamaps.com/pricing/ |
+| **MapTiler** | 100 000 requêtes/mois | **non** (plan Free : « testing, PoC, personal, or non-commercial use ») ; logo MapTiler sur la carte | Flex 30 $/mois : 500 000 requêtes, puis 0,15 $ les 1 000 | © MapTiler, © OpenStreetMap + logo | tuiles PNG | maptiler.com/cloud/pricing/ |
+| OpenFreeMap | illimité, sans clé | oui | dons | « OpenFreeMap © OpenMapTiles Data from OpenStreetMap » | **tuiles vectorielles seulement** : il faut MapLibre GL (bien plus lourd que Leaflet, WebGL) — écarté | openfreemap.org |
+
+**Recommandation : CARTO Positron**, tuiles raster avec **Leaflet** :
+- seul fournisseur trouvé dont l'offre **gratuite autorise l'usage commercial** (jusqu'à 1 M de tuiles par mois), et dont le style gris clair va avec le site ;
+- clé gratuite à demander par le propriétaire (carto.com/basemaps/apikey/, déclarer un **usage commercial**) ; elle est **publique** par nature (elle part dans l'adresse de chaque tuile) : la restreindre au domaine du site dans le tableau de bord CARTO et suivre la consommation ; variable `NEXT_PUBLIC_CARTO_CLE` ;
+- URL : `https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=<clé>` (sous-domaines `a`–`d`, `{r}` = `@2x` sur écran Retina), zoom 11 à 19 ;
+- règles CARTO à respecter : attribution « © OpenStreetMap contributors, © CARTO » toujours visible (section 13) ; pas de mise en cache ni de relais des tuiles par notre serveur (9.c.iii) ; pas de téléchargement en masse (9.c.i) ; navigateur : cache ≤ 30 jours (comportement normal) ; l'accès gratuit peut être coupé sans préavis (3.c) ;
+- **sans clé** (développement sur le PC, essais) : tuiles OSMF `https://tile.openstreetmap.org/{z}/{x}/{y}.png` avec « © OpenStreetMap contributors » ; usage interactif normal, permis par la politique OSMF ; **pas en production** ;
+- plan B si on dépasse 1 M de tuiles par mois ou si CARTO coupe l'accès gratuit : **Stadia Maps Starter** (20 $/mois pour 1 M, puis 0,03 $ les 1 000), bien moins cher que CARTO payant (500 $/mois). Le fournisseur est choisi dans une seule fonction (`fondDeCarte()` dans `lib/carte.ts`, testée) : en changer = changer cette fonction et l'attribution, rien d'autre ;
+- vie privée : le navigateur de la cliente demande les tuiles directement à CARTO (adresse IP tronquée, journaux gardés 30 jours aux États-Unis, section 10 des conditions) ; CARTO voit donc quelle zone de la carte est affichée, comme pour toute carte en ligne, mais **jamais les coordonnées** de la cliente. Après « Autour de moi », le recadrage ne dépasse pas le zoom 15 (une tuile ≈ 1 km de côté à Oran).
+
+### Dépendance : `leaflet` 1.9.4 (justification, règle « ne rien inventer »)
+
+- **Leaflet 1.9.4** (dernière version stable ; la 2.0 est en alpha), licence **BSD-2-Clause** (usage commercial libre), **aucune dépendance** ; `leaflet.js` 147 Ko, **≈ 42 Ko compressé** (gzip), `leaflet.css` ≈ 4 Ko compressé (mesuré sur le paquet npm). + `@types/leaflet` en dépendance de développement.
+- Pourquoi : carte tactile (zoom à deux doigts, épingle déplaçable `draggable`, `fitBounds`) éprouvée sur téléphone ; écrire tout cela à la main serait plus long et moins fiable.
+- **Pas de `react-leaflet`** (une dépendance de plus pour peu de chose) : un composant client crée la carte dans un `useEffect` et la détruit (`map.remove()`) en le quittant. Pas de `leaflet.markercluster` tant qu'il y a moins de 200 boutiques.
+- Épingles en `L.divIcon` (carré noir, chiffre blanc des promos, angles droits, sans ombre) : pas d'image d'épingle par défaut de Leaflet (elle se casse avec les outils de build et ne suit pas le style).
+- **Chargée seulement où elle sert** : `components/CarteBoutiques.tsx` (`"use client"`) importe `components/CarteLeaflet.tsx` avec `next/dynamic(…, { ssr: false })` ; `CarteLeaflet` importe `leaflet` et `leaflet/dist/leaflet.css`. Même chose pour le bloc de position (`components/ChoixPosition.tsx` → `CartePosition.tsx`). Rien de Leaflet côté serveur (Leaflet touche `window`). L'accueil et le catalogue n'importent rien de cela : un test vérifie qu'aucun fichier de `app/page.tsx`, `app/catalogue/` ni `components/EntetePublic.tsx` n'importe `leaflet`, et le rapport de `npm run build` est comparé avant / après.
+- Le conteneur de la carte a `dir="ltr"` même quand la page est en arabe (la carte ne se retourne pas ; Leaflet gère mal un conteneur `rtl`) ; tout le reste de la page suit `dir`.
+
+### Données
+
+- **Pas de nouvelle colonne** : `boutiques.latitude` et `boutiques.longitude` existent déjà (`double precision`, schéma initial), sont déjà saisies (formulaire de création) et lues (vitrine). Les 2 boutiques actuelles ont une position dans les bornes (lecture du 9/10 : Akid Lotfi 35,7303 / −0,5784 ; Front de Mer 35,7034 / −0,6436).
+- **Pas de PostGIS** (extension non installée sur le projet) : quelques centaines de boutiques au plus, distances calculées **dans le navigateur** (formule de haversine, `distanceMetres()` dans `lib/carte.ts`) ; une règle de bornes simple suffit. PostGIS ne servirait que pour une recherche par rayon côté serveur — justement ce qu'on ne veut pas (la position de la cliente n'y va jamais) — ou pour la vraie frontière de la wilaya (polygone), jugée inutile : l'admin valide chaque boutique.
+- **Migration US-24.1** (nouveau fichier, jamais en modifiant les anciens) :
+  - `boutiques_position_complete` : `check ((latitude is null) = (longitude is null))` ;
+  - `boutiques_position_oran` : `check (latitude is null or (latitude between 35.33 and 35.92 and longitude between -1.15 and -0.10))` (`NaN` et l'infini ne sont pas « entre » : refusés) ;
+  - `prive.proteger_coordonnees_boutique()` réécrite par `create or replace` : `latitude` et `longitude` rejoignent la liste réservée à l'admin quand `old.statut <> 'en_attente'` ; message « Boutique publiée : seul un administrateur peut modifier le nom, le WhatsApp, la position ou les liens. » ; et message clair « La position doit être dans la wilaya d'Oran. » (`23514`) avant que la contrainte ne réponde par son nom technique ;
+  - fonction `public.boutiques_carte(limite integer default 500)` : `language sql stable security invoker`, `set search_path = public`, `execute` pour `anon` et `authenticated`. Renvoie `id, slug, nom, quartier, latitude, longitude, promos_en_cours integer, rayons jsonb` (liste des couples `{categorie, genre}` distincts de ses articles visibles), pour les boutiques `statut = 'validee'` seulement, triées par nom, `limit least(greatest(limite, 1), 500)`. Articles comptés avec les **mêmes filtres explicites que `lib/catalogue.ts`** : statut `disponible` ou `reserve`, `derniere_confirmation > now() - 21 jours` (un admin connecté ne voit donc rien de plus que le public) ; promo en cours = `promos.date_fin >= now()`. Ni photo, ni WhatsApp, ni adresse, ni horaires. L'univers est calculé côté site à partir de `rayons` avec `articleDansUnivers()` (`lib/catalogue.ts`) : la liste des catégories beauté reste à un seul endroit (`lib/article.ts`).
+- **Droits (RLS)** : inchangés. Le public lit déjà les boutiques validées, position comprise (politique « public voit les boutiques validées ») ; la fonction est `security invoker` et filtre en plus `statut = 'validee'`. Écriture de la position : politique existante « commerçant modifie sa boutique » (sa boutique, ou admin) + déclencheur ci-dessus ; l'ambassadeur ne modifie pas une boutique après sa création (politique existante) : il la place **à la création**, sur place.
+
+### Page `/carte` (US-24.3)
+
+- `app/carte/page.tsx` (composant serveur, `force-dynamic` comme les autres pages publiques) : `await searchParams` (`univers`), un seul appel `supabase.rpc("boutiques_carte")` avec `creerClientServeur()`, puis rend la **liste** (HTML serveur : utilisable sans JavaScript) et `<CarteBoutiques boutiques={…} />`. `metadata` : titre « Carte des boutiques ».
+- `lib/carte.ts` (testé) : `distanceMetres(a, b)`, `trierParDistance()`, `formaterDistance(m, langue)` (« 850 m », « 2,4 km » ; « 850 م », « 2,4 كم »), `universBoutique(rayons)`, `avecPosition()` / `sansPosition()`, `fondDeCarte()` (URL et attribution), `BORNES_ORAN`, `dansOran(lat, lng)`, `lienItineraire()` (sorti de `app/b/[slug]/page.tsx`, réutilise `positionBoutique()` de `lib/vitrine.ts` ; la vitrine l'utilise aussi).
+- `components/CarteBoutiques.tsx` (`"use client"`) : filtre univers (synchronisé avec l'adresse par `router.replace`, sans nouvel appel à la base), bouton « Autour de moi », mini-fiche, liste triée ; charge `CarteLeaflet` en `ssr: false`.
+- **Autour de moi** : `navigator.geolocation.getCurrentPosition` **seulement au toucher**, `{ enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }` (la précision du quartier suffit). La position reste dans l'état React du composant : **jamais** dans une action serveur, un `fetch`, l'adresse, un cookie, `localStorage` ni `enregistrerMesure`. Elle est oubliée en quittant la page. La géolocalisation n'existe qu'en contexte sécurisé (HTTPS, `localhost`, `127.0.0.1`).
+- Liens : « Carte » dans `EntetePublic` ; bloc « Les boutiques sur la carte » sur l'accueil (texte et lien seulement, aucune carte, aucune image de tuile).
+
+### Saisie de la position (US-24.2)
+
+- `components/ChoixPosition.tsx` (`"use client"`) dans `NouvelleBoutique` (création), dans `/admin/boutiques` (« Position » sur chaque boutique) et dans `/espace` (boutique en attente seulement).
+- « Je suis dans la boutique » : `getCurrentPosition` avec `{ enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }` ; `coords.accuracy` affichée arrondie (« ± 12 m ») ; avertissement au-delà de 100 m.
+- Lien Google Maps : `coordonneesDepuisTexte(texte)` dans `lib/position.ts` (testé, **sans aucun accès réseau**) : `!3d<lat>!4d<lng>` d'abord, puis `@<lat>,<lng>`, puis les paramètres `q`, `ll`, `query`, `destination`, puis deux nombres seuls ; hôtes reconnus : `google.<domaine>/maps`, `maps.google.<domaine>` ; liens courts (`maps.app.goo.gl`, `goo.gl/maps`) → message dédié, rien n'est suivi. Le serveur ne reçoit que deux nombres (jamais le lien), valide (`validerPosition()` dans `lib/boutique.ts` : bornes d'Oran, les deux ou aucune, arrondi à 6 décimales) et la base revérifie.
+- Actions serveur : `modifierPositionBoutique(id, latitude, longitude)` dans `app/admin/boutiques/actions.ts` et `app/espace/actions.ts` (sa boutique seulement ; la base refuse une boutique publiée) ; erreurs de la base traduites en messages (`23514` → « La position doit être dans la wilaya d'Oran. », `42501` → « Pour déplacer votre boutique sur la carte, contactez OranPromo. »).
+
+### Bornes de la wilaya d'Oran
+
+| | Minimum | Maximum |
+| --- | --- | --- |
+| Latitude | **35,33** | **35,92** |
+| Longitude | **−1,15** | **−0,10** |
+
+- Source : limite administrative de la wilaya d'Oran dans **OpenStreetMap**, relation **1259187** (`admin_level` 4, Wikidata Q231331), rectangle englobant lu par Nominatim le 9 octobre 2026 : latitude 35,3335035 à 35,9093713, longitude −1,1396429 à −0,1136930 (données © contributeurs OpenStreetMap, ODbL) ; https://www.openstreetmap.org/relation/1259187. Le rectangle va jusqu'aux **îles Habibas** (ouest), rattachées à la wilaya.
+- Arrondi vers l'extérieur (≈ 1 km de marge) pour ne jamais refuser une vraie boutique d'Oran.
+- C'est un **rectangle**, pas la frontière exacte : il laisse passer quelques km² des wilayas voisines (Aïn Témouchent, Sidi Bel Abbès, Mascara, Mostaganem) et de la mer. Suffisant contre les erreurs (signe de la longitude oublié, coordonnées d'une autre ville, inversion latitude / longitude) ; l'admin valide chaque boutique.
+
+### Variable d'environnement prévue
+
+`NEXT_PUBLIC_CARTO_CLE` (navigateur) : clé CARTO Basemaps (publique, restreinte au domaine dans le tableau de bord CARTO) ; vide = tuiles OSMF (développement seulement).
+
 ## Limites par visiteur (vues, clics, partages, signalements)
 
 Carte Trello « Sécurité · Limiter les envois en masse ». Migration `20261010180000_limites_visiteurs.sql`.

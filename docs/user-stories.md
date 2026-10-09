@@ -385,3 +385,68 @@ En tant que cliente d'Oran qui lit plus facilement l'arabe, je veux choisir l'ar
 | 10 | Message WhatsApp « commande prête » (modèle `oranpromo_commande_prete`) | Bonjour {{1}}, votre commande n° {{2}} est prête chez {{3}}. Vous pouvez la récupérer jusqu'au {{4}}. | السلام {{1}}، الطلب رقم {{2}} راهو واجد عند {{3}}. تقدر تجي تدّيه حتى {{4}}. | **راهو**, **واجد**, **تجي تدّيه** (venir le prendre) | مرحباً {{1}}، طلبك رقم {{2}} جاهز لدى {{3}}. يمكنك استلامه حتى {{4}}. |
 
 - Tests prévus (quand le code sera fait) : dictionnaire arabe complet (même clés que le français, vérifié par TypeScript et par un test), cookie lu et écrit, `lang`/`dir` de la page, sélecteur présent sur mobile, prix et numéros bien orientés, choix du modèle WhatsApp `ar` avec retour au français si non approuvé.
+
+## Module 11 — Carte des boutiques (après le MVP)
+
+Source : carte Trello « Carte · Carte des boutiques » (demande du propriétaire du 9 octobre 2026). À coder **après l'arabe (US-23)**, et seulement après validation des maquettes par le propriétaire. Conception : `docs/architecture.md`, section « Carte des boutiques (US-24) ». Maquettes : `docs/maquettes/Carte.dc.html` et `docs/maquettes/PositionBoutique.dc.html`.
+
+### US-24 — Trouver les boutiques sur une carte (vue d'ensemble) — **à valider par le propriétaire avant tout code**
+En tant que cliente à Oran, je veux voir sur une carte où sont les boutiques OranPromo, et lesquelles sont près de moi, afin d'aller essayer sans chercher l'adresse.
+Livrée en 3 sous-stories, dans cet ordre (une PR chacune) :
+
+| Story | Contenu | Écrans |
+| --- | --- | --- |
+| US-24.1 | Base : position limitée à la wilaya d'Oran, position protégée après validation, fonction de lecture des épingles `boutiques_carte()` | aucun écran |
+| US-24.2 | Saisie de la position : « Je suis dans la boutique », lien Google Maps, épingle déplaçable | `/admin/boutiques`, `/espace` |
+| US-24.3 | Page publique `/carte` : épingles, mini-fiche, « Autour de moi », filtre par univers, liste « sans position », liens depuis l'en-tête et l'accueil | `/carte`, `/` |
+
+### US-24.1 — Position de la boutique dans la base (aucun écran)
+En tant que propriétaire, je veux que la base refuse une position fausse ou déplacée sans accord, afin que la carte reste fiable.
+- La position reste dans les colonnes existantes `boutiques.latitude` et `boutiques.longitude` (degrés décimaux, déjà lues par la vitrine). **Les deux ou aucune** : une latitude sans longitude (ou l'inverse) est refusée.
+- La base refuse une position **hors de la wilaya d'Oran** : latitude entre **35,33** et **35,92**, longitude entre **−1,15** et **−0,10** (rectangle qui englobe la wilaya, source et limites dans `docs/architecture.md`). Message : « La position doit être dans la wilaya d'Oran. » (même message à l'écran, sur le serveur et dans la base). Les 2 boutiques actuelles sont dedans (vérifié en lecture le 9/10).
+- Une fois la boutique **publiée** (validée ou suspendue), seul un **admin** change ou retire sa position : même règle que le nom, le WhatsApp, le slug et les liens (`prive.proteger_coordonnees_boutique`, message « Boutique publiée : seul un administrateur peut modifier le nom, le WhatsApp, la position ou les liens. »). Tant qu'elle est « en attente », le commerçant rattaché peut la régler.
+- Une seule lecture légère pour la carte : la fonction `boutiques_carte()` renvoie, pour chaque boutique **validée** (mêmes règles que le catalogue), l'identifiant, le slug, le nom, le quartier, la position (vide si aucune), le **nombre de promos en cours** et les couples catégorie / genre de ses articles visibles (pour le filtre par univers). Ni photo, ni WhatsApp, ni adresse, ni rien sur les commandes. Au plus 500 boutiques, triées par nom.
+- Tests SQL : position hors d'Oran refusée (y compris `NaN` et l'infini), une seule coordonnée refusée, positions limites acceptées, commerçant d'une boutique en attente : position modifiable, boutique validée : refus pour le commerçant et l'ambassadeur, accepté pour l'admin ; `boutiques_carte()` : boutique en attente ou suspendue absente (même pour un admin connecté), article masqué, vendu ou non confirmé depuis 21 jours non compté, promo expirée non comptée, boutique sans position présente avec une position vide, limite de 500 ; appel anonyme permis.
+
+### US-24.2 — Placer ma boutique sur la carte (pages `/admin/boutiques`, `/espace`)
+En tant qu'admin, ambassadeur ou commerçant, je veux placer la boutique sur la carte en quelques secondes depuis la boutique, afin que les clientes la trouvent.
+- Le bloc « Position sur la carte » apparaît **à la création** d'une boutique (`/admin/boutiques`, admin et ambassadeur) et **en modification** : admin sur chaque boutique de `/admin/boutiques` (bouton « Position ») ; commerçant dans `/espace` tant que sa boutique est en attente. Il remplace les deux champs « Latitude / Longitude » actuels (gardés dans « Saisir les coordonnées à la main », pour qui n'a pas de carte).
+- Bouton **« Je suis dans la boutique : utiliser ma position »** : le navigateur demande l'autorisation ; la position trouvée s'affiche avec sa **précision** (« Position trouvée · précision ± 12 m »). Au-delà de 100 m : avertissement « Position peu précise (± 350 m) : activez la localisation précise ou le GPS, approchez-vous de la porte, ou déplacez l'épingle. ». Refus : « Vous avez refusé la localisation. Collez un lien Google Maps ou placez l'épingle. ». Rien n'est enregistré avant la touche « Enregistrer la position » (ou « Créer la boutique »).
+- Ou **coller un lien Google Maps** : le navigateur lit les coordonnées dans les liens longs (`…/@35.69712,-0.63375,17z…`, `…!3d35.69712!4d-0.63375…` — priorité à ce dernier, qui est l'épingle du lieu, `@` n'étant que le centre de la vue —, `?q=35.69712,-0.63375`, `?ll=`, `query=`, `destination=`) ou des coordonnées collées seules (`35.69712, -0.63375`). Aucun lien n'est ouvert, ni par le site ni par le serveur.
+- **Liens courts** (`maps.app.goo.gl/…`, `goo.gl/maps/…`) : **jamais suivis**, ni côté serveur (un serveur qui suit un lien envoyé par un utilisateur peut être dirigé vers n'importe quelle adresse : risque SSRF), ni dans le navigateur. Message : « Ce lien court ne contient pas la position. Ouvrez-le dans Google Maps, puis copiez l'adresse complète depuis la barre du navigateur (elle contient « @35,… »), ou utilisez « Je suis dans la boutique ». ». Lien non reconnu : « Coordonnées introuvables dans ce lien. ».
+- Une **petite carte** (environ 200 px de haut) montre l'épingle ; on la **déplace du doigt** pour ajuster ; les coordonnées s'affichent sous la carte (6 décimales, environ 10 cm). « Retirer la position » vide les deux champs (la boutique passe dans « sans position »).
+- Position hors de la wilaya d'Oran : refusée tout de suite à l'écran, puis par le serveur et la base, avec « La position doit être dans la wilaya d'Oran. ».
+- Boutique publiée, côté commerçant : position en lecture seule, avec « Pour déplacer votre boutique sur la carte, contactez OranPromo. ».
+- Textes en français seulement : l'espace commerçant et l'administration ne sont pas traduits (US-23). La maquette montre quand même le bloc en arabe, prêt pour une future story.
+- Tests Vitest : lecture des liens Google Maps (formats longs, `!3d!4d` prioritaire sur `@`, liens courts refusés sans aucun appel réseau, texte quelconque, coordonnées hors d'Oran), validation de la position (`lib/boutique.ts`), messages, bloc de position (géolocalisation acceptée, précision affichée, avertissement > 100 m, refus), actions serveur (position enregistrée, retirée, refus de la base traduit en message).
+
+### US-24.3 — Voir les boutiques sur la carte (pages `/carte`, `/`)
+En tant que cliente, je veux une carte des boutiques avec celles qui sont près de moi, afin de choisir où aller.
+- Page publique **`/carte`** : une **épingle par boutique validée ayant une position** (même visibilité que le catalogue : une boutique en attente ou suspendue n'apparaît jamais, même pour un admin connecté). L'épingle porte le nombre de promos en cours (vide s'il n'y en a pas). Au départ, la carte montre toutes les épingles (sinon le centre d'Oran).
+- **Toucher une épingle** ouvre une **mini-fiche** en bas de la carte : nom, quartier, « 3 promos en cours » (« Aucune promo en cours » sinon), la distance si « Autour de moi » est actif, et deux boutons : **« Voir la boutique »** (`/b/<slug>`) et **« Itinéraire »** (lien Google Maps existant de la vitrine, construit avec `positionBoutique()` de `lib/vitrine.ts`, sans la position de la cliente).
+- **« Autour de moi »** : la localisation n'est demandée **qu'au toucher du bouton**, jamais à l'ouverture de la page. Si la cliente accepte : un point « Vous » sur la carte, la carte se recadre sur elle et les boutiques les plus proches, et la **liste sous la carte est triée par distance** (« 850 m », « 2,4 km »). Si elle refuse : « Localisation refusée : la liste reste triée par nom. Vous pouvez l'autoriser dans les réglages du navigateur. ». Position introuvable ou trop lente (15 s) : « Position introuvable pour le moment. Réessayez dehors ou près d'une fenêtre. ».
+- **La position de la cliente n'est jamais envoyée au serveur ni enregistrée** : distances calculées dans le téléphone, rien dans l'adresse de la page, ni dans un cookie, ni dans le stockage du navigateur, ni dans les statistiques. Une phrase le dit sous le bouton : « Votre position reste sur votre téléphone : elle n'est ni envoyée ni enregistrée. ».
+- **Filtre par univers** : Tous · Femme · Homme · Enfant · Beauté (mêmes règles que le catalogue : une boutique est dans un univers si elle a au moins un article visible de cet univers ; une boutique sans article n'apparaît que dans « Tous »). Le choix est gardé dans l'adresse (`/carte?univers=femme`) pour être partagé. Aucun résultat : « Aucune boutique de cet univers pour le moment. ».
+- **Liste sous la carte** : toutes les boutiques du filtre (nom, quartier, promos en cours, distance si connue), chacune vers `/b/<slug>` ; elle s'affiche aussi sans JavaScript et sans carte (lecteurs d'écran, connexions lentes).
+- **Boutique sans position** : pas d'épingle, mais elle reste dans la section « Sans position sur la carte » en bas de la liste.
+- **Attribution** obligatoire toujours visible sur la carte : « © OpenStreetMap contributors » (lien vers openstreetmap.org/copyright), et celle du fournisseur de fonds de carte choisi (« © CARTO »).
+- **Liens vers `/carte`** : dans l'en-tête public (« Carte », à côté de « Rechercher » ; pour que tout tienne sur 375 px avec le sélecteur « FR | عربي » de US-23, « Panier (2) » devient une icône de sac avec le nombre d'articles, `aria-label` « Panier, 2 articles » — à valider) et sur l'accueil (bloc « Les boutiques sur la carte » sous les univers). La carte n'est chargée que sur `/carte` (et dans le bloc de position) : l'accueil et le catalogue ne téléchargent rien de plus.
+- En arabe (US-23) : page de droite à gauche (en-tête, filtres, liste, mini-fiche) ; la carte elle-même ne se retourne pas (le nord reste en haut) ; distances « 850 م », « 2,4 كم » en chiffres 0-9 ; nom des boutiques jamais traduit ; univers et quartiers traduits.
+- Tests Vitest : distance entre deux points (valeurs connues), tri par distance, format des distances (fr, ar), univers d'une boutique (réutilise `articleDansUnivers`), lien d'itinéraire, page `/carte` (épingles seulement pour les boutiques avec position, liste « sans position », filtre dans l'adresse), bouton « Autour de moi » (aucune demande de localisation avant le toucher, refus, erreur, aucun appel réseau ni action serveur avec la position — `fetch` et actions espionnés), attribution présente, lien « Carte » dans l'en-tête et sur l'accueil, aucune importation de `leaflet` depuis l'accueil ou le catalogue.
+
+**Textes de la carte en français et en arabe** (même ton que US-23 ; darja en gras ; à valider avec les 10 textes de US-23) :
+
+| # | Où | Français | Arabe proposé | Variante en arabe standard |
+| --- | --- | --- | --- | --- |
+| 1 | En-tête, lien | Carte | الخريطة | الخريطة |
+| 2 | `/carte`, titre | Les boutiques sur la carte | **الحوانت** في الخريطة | المحلات على الخريطة |
+| 3 | `/carte`, bouton | Autour de moi | **قريب ليّا** | بالقرب مني |
+| 4 | `/carte`, sous le bouton | Votre position reste sur votre téléphone : elle n'est ni envoyée ni enregistrée. | **البلاصة** نتاعك تبقى في التيليفون نتاعك: **ما تتبعثش** و**ما تتسجّلش**. | موقعك يبقى في هاتفك: لا يُرسَل ولا يُحفَظ. |
+| 5 | Mini-fiche | 3 promos en cours | 3 تخفيضات **دابا** | 3 تخفيضات جارية |
+| 6 | Mini-fiche, bouton | Voir la boutique | **شوف الحانوت** | اعرض المحل |
+| 7 | Mini-fiche, bouton | Itinéraire | الطريق | الاتجاهات |
+| 8 | Liste, distance | à 850 m · à 2,4 km | على بعد 850 م · على بعد 2,4 كم | (identique) |
+| 9 | Liste, section | Sans position sur la carte | **ما عندهمش بلاصة** في الخريطة | بدون موقع على الخريطة |
+| 10 | Erreur | Localisation refusée : la liste reste triée par nom. | **ما عطيتش** الإذن بالموقع: القائمة تبقى مرتّبة بالاسم. | تم رفض تحديد الموقع: تبقى القائمة مرتبة حسب الاسم. |
+| 11 | Filtre | Tous · Femme · Homme · Enfant · Beauté | الكل · نسا · رجال · **ذراري** · تجميل | الكل · نساء · رجال · أطفال · تجميل |
+| 12 | Accueil, bloc | Les boutiques sur la carte · Voir la carte | **الحوانت** في الخريطة · **شوف** الخريطة | المحلات على الخريطة · اعرض الخريطة |
