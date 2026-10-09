@@ -22,6 +22,12 @@
 --   - les 5 articles de démonstration a0000000-0000-0000-0000-00000000000[1-5]
 --     (3 de Maison Ilyes, 2 de Boutique Nour), leurs photos, tailles, promos, statistiques,
 --     signalements ;
+--   - si supabase/scripts/demo_parfumerie.sql a été lancé (US-25) : la boutique « Parfumerie Démo »
+--     (33333333-3333-3333-3333-333333333333, slug parfumerie-demo, WhatsApp de test +213000000003),
+--     ses 5 articles a0000000-0000-0000-0000-000000000006 à …010 (parfums), leurs 5 photos
+--     placehold.co, 6 contenances, 4 promos, et tout ce qui en dépend (commandes reçues et
+--     leurs messages, statistiques, signalements) ;
+--   - plus généralement, tout article dont l'identifiant commence par a0000000-0000-0000-0000- ;
 --   - toute photo dont l'adresse est sur placehold.co ;
 --   - les messages WhatsApp liés à ces commandes ou envoyés aux numéros de test.
 -- Ce qui est GARDÉ :
@@ -45,7 +51,8 @@ declare
   appliquer constant boolean := false or coalesce(current_setting('oranpromo.retirer_demo', true), '') = 'oui';
 
   comptes_demo constant uuid[] := array['da9f4aa4-9bfa-4312-9a8f-05c3eefffc99']::uuid[];
-  boutiques_demo constant uuid[] := array['22222222-2222-2222-2222-222222222222']::uuid[];
+  -- Boutique Nour ; Parfumerie Démo (US-25, présente seulement si demo_parfumerie.sql a été lancé).
+  boutiques_demo constant uuid[] := array['22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333']::uuid[];
 
   articles_demo uuid[];
   commandes_demo uuid[];
