@@ -4,7 +4,7 @@ const { boutique, publier, modifier, charger } = vi.hoisted(() => ({ boutique: v
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({}) }));
 vi.mock("@/lib/gestion-articles", () => ({ boutiqueDuCompte: boutique, modifierArticle: modifier, articleDeMaBoutique: charger }));
 vi.mock("@/lib/publication-article", () => ({ publierArticle: publier }));
-const saisie = { titre: "Polo", categorie: "Polos", genre: "homme", couleur: "Bleu", description: "", prix: "3500", tailles: ["M"] };
+const saisie = { titre: "Polo", categorie: "T-shirts et polos", genre: "homme", couleur: "Bleu", description: "", prix: "3500", tailles: ["M"] };
 const jpeg = (taille = 4) => new Blob([new Uint8Array([0xff, 0xd8, 0xff, ...new Array(Math.max(0, taille - 3)).fill(0)])], { type: "image/jpeg" });
 function corps(changements = {}) { const c = new FormData(); c.set("saisie", JSON.stringify({ ...saisie, ...changements })); c.set("boutiqueId", "boutique"); c.set("id", "article"); c.set("tailles", JSON.stringify([{ libelle: "M", disponible: true }])); c.append("photos", jpeg(), "photo.jpg"); c.append("vignettes", jpeg(), "vignette.jpg"); return c; }
 beforeEach(() => { vi.clearAllMocks(); boutique.mockResolvedValue("boutique"); publier.mockResolvedValue("article"); modifier.mockResolvedValue(undefined); charger.mockResolvedValue({ photos: [] }); });

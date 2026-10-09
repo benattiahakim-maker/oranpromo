@@ -6,7 +6,7 @@ import { IA_INDISPONIBLE, PHOTO_A_REPRENDRE } from "@/lib/ia-fiche";
 const { creer, construire, getUser, profil, boutique, quota } = vi.hoisted(() => ({ creer: vi.fn(), construire: vi.fn(), getUser: vi.fn(), profil: vi.fn(), boutique: vi.fn(), quota: vi.fn() }));
 vi.mock("@anthropic-ai/sdk", () => ({ default: class { messages = { create: creer }; constructor(options: unknown) { construire(options); } } }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ auth: { getUser }, from: (table: string) => ({ select: () => ({ eq: () => ({ maybeSingle: table === "profils" ? profil : boutique }) }) }), rpc: quota }) }));
-const fiche = { estVetement: true, nette: true, titre: "Polo bleu", description: "Polo bleu à manches courtes.", categorie: "Polos", genre: "homme", couleur: "bleu" };
+const fiche = { estVetement: true, nette: true, titre: "Polo bleu", description: "Polo bleu à manches courtes.", categorie: "T-shirts et polos", genre: "homme", couleur: "bleu" };
 const resultat = (valeur: unknown = fiche) => ({ stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify(valeur) }] });
 function demande(photos = [new File([new Uint8Array([255, 216, 255, 217])], "photo.jpg", { type: "image/jpeg" })]) {
   const body = new FormData(); photos.forEach(photo => body.append("photo", photo));
@@ -33,7 +33,7 @@ describe("POST fiche IA, API entièrement simulée", () => {
     expect(parametres.model).toBe("claude-haiku-5-5");
     expect(parametres.output_config.format.schema.additionalProperties).toBe(false);
     expect(parametres.messages[0].content[0].source.media_type).toBe("image/jpeg");
-    expect(parametres.system).toContain("aucun prix ni aucune taille");
+    expect(parametres.system).toContain("aucun prix, aucune taille ni aucune contenance"); expect(parametres.system).toContain("produit de beauté"); expect(parametres.output_config.format.schema.properties.categorie.enum).toContain("Parfums");
   });
   it("respecte le modèle configuré", async () => { vi.stubEnv("ANTHROPIC_MODELE", "modele-test"); await POST(demande()); expect(creer.mock.calls[0][0].model).toBe("modele-test"); });
   it.each([{ photos: [] }, { photos: [new File(["png"], "p.png", { type: "image/png" })] }, { photos: [new File(["pas un jpeg"], "p.jpg", { type: "image/jpeg" })] }])("refuse une photo absente ou invalide", async ({ photos }) => { expect((await POST(demande(photos))).status).toBe(400); expect(creer).not.toHaveBeenCalled(); });

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
 import { prixAffiche, promoActive, type Promo } from "./prix";
+import { CATEGORIES_ARTICLE, CATEGORIES_BEAUTE, CATEGORIES_MODE, UNIVERS, type CleUnivers } from "./article";
 
 export type CarteArticle = { id: string; titre: string; description: string | null; categorie: string; genre: string; prix: number; cree_le: string; boutique: { nom: string; quartier: string }; photo: string | null; tailles: string[]; promo: Promo | null };
 
@@ -39,13 +40,36 @@ export function normaliserRecherche(texte: string): string {
   return texte.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("fr").trim();
 }
 
-export type FiltresCatalogue = { q?: string; categorie?: string; taille?: string; genre?: string; min?: number; max?: number; quartier?: string; promo?: boolean };
+export type FiltresCatalogue = { q?: string; univers?: string; categorie?: string; taille?: string; genre?: string; min?: number; max?: number; quartier?: string; promo?: boolean };
+
+export function estUnivers(valeur: string | undefined): valeur is CleUnivers {
+  return UNIVERS.some(u => u.cle === valeur);
+}
+
+// Un univers regroupe des catégories et des genres : Femme / Homme = mode du genre ou mixte,
+// Enfant = mode enfant, Beauté = les 5 catégories beauté (tous genres).
+export function critereUnivers(univers: CleUnivers): { categories: readonly string[]; genres: string[] | null } {
+  if (univers === "beaute") return { categories: CATEGORIES_BEAUTE, genres: null };
+  return { categories: CATEGORIES_MODE, genres: univers === "enfant" ? ["enfant"] : [univers, "mixte"] };
+}
+
+export function articleDansUnivers(article: { categorie: string; genre: string }, univers: CleUnivers): boolean {
+  const { categories, genres } = critereUnivers(univers);
+  return categories.includes(article.categorie) && (!genres || genres.includes(article.genre));
+}
+
+// Ordre de la liste officielle (mode puis beauté), les valeurs inconnues à la fin par ordre alphabétique.
+export function trierCategories(categories: string[]): string[] {
+  const rang = (c: string) => { const i = CATEGORIES_ARTICLE.findIndex(x => x === c); return i < 0 ? CATEGORIES_ARTICLE.length : i; };
+  return [...new Set(categories)].sort((a, b) => rang(a) - rang(b) || a.localeCompare(b, "fr"));
+}
 
 export function filtrerCatalogue(articles: CarteArticle[], filtres: FiltresCatalogue, maintenant = new Date()): CarteArticle[] {
   const recherche = normaliserRecherche(filtres.q ?? "");
   return articles.filter(article => {
     const prix = prixAffiche(article.prix, article.promo, maintenant);
-    return (!recherche || normaliserRecherche(`${article.titre} ${article.description ?? ""} ${article.categorie}`).includes(recherche))
+    return (!estUnivers(filtres.univers) || articleDansUnivers(article, filtres.univers))
+      && (!recherche || normaliserRecherche(`${article.titre} ${article.description ?? ""} ${article.categorie}`).includes(recherche))
       && (!filtres.categorie || article.categorie === filtres.categorie)
       && (!filtres.taille || article.tailles.includes(filtres.taille))
       && (!filtres.genre || article.genre === filtres.genre)
@@ -64,6 +88,11 @@ export async function chargerCatalogue(client: SupabaseClient<Database>, filtres
   let requete = client.from("articles").select(colonnes)
     .in("statut", [...STATUTS_LISTES]).eq("boutiques.statut", "validee").gt("derniere_confirmation", limiteConfirmation(maintenant));
   if (filtres.categorie) requete = requete.eq("categorie", filtres.categorie);
+  if (estUnivers(filtres.univers)) {
+    const { categories, genres } = critereUnivers(filtres.univers);
+    requete = requete.in("categorie", [...categories]);
+    if (genres) requete = requete.in("genre", genres as Database["public"]["Enums"]["genre_article"][]);
+  }
   if (filtres.genre) requete = requete.eq("genre", filtres.genre as Database["public"]["Enums"]["genre_article"]);
   if (filtres.quartier) requete = requete.eq("boutiques.quartier", filtres.quartier);
   if (filtres.taille) requete = requete.eq("filtre_taille.libelle", filtres.taille).eq("filtre_taille.disponible", true);
@@ -83,5 +112,5 @@ export async function chargerOptionsCatalogue(client: SupabaseClient<Database>, 
   if (error) throw new Error("Impossible de charger le catalogue.");
   const lignes = (data ?? []) as unknown as { categorie: string; boutiques: { quartier: string }; tailles: { libelle: string; disponible: boolean }[] }[];
   const trier = (valeurs: string[]) => [...new Set(valeurs)].sort();
-  return { categories: trier(lignes.map(l => l.categorie)), tailles: trier(lignes.flatMap(l => l.tailles.filter(t => t.disponible).map(t => t.libelle))), quartiers: trier(lignes.map(l => l.boutiques.quartier)) };
+  return { categories: trierCategories(lignes.map(l => l.categorie)), tailles: trier(lignes.flatMap(l => l.tailles.filter(t => t.disponible).map(t => t.libelle))), quartiers: trier(lignes.map(l => l.boutiques.quartier)) };
 }

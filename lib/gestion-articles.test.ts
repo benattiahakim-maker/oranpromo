@@ -16,7 +16,7 @@ function simulation() {
   const client = { auth: { getUser }, from: vi.fn((table: string) => table === "profils" ? { select: () => profile } : table === "tailles" ? { upsert } : { select: () => requete, update, delete: suppression }), storage: { from: vi.fn().mockReturnValue({ list, remove }) } } as unknown as SupabaseClient<Database>;
   return { client, profile, requete, update, suppression, upsert, list, remove, getUser };
 }
-const saisie = { titre: "Polo", categorie: "Polos", genre: "homme", couleur: "", description: "", prix: "3500", tailles: ["S"], photos: [] };
+const saisie = { titre: "Polo", categorie: "T-shirts et polos", genre: "homme", couleur: "", description: "", prix: "3500", tailles: ["S"], photos: [] };
 
 describe("US-11 : gestion de mes articles", () => {
   it.each([2999, 3000])("refuse un prix %s qui n’est pas supérieur à la promo", prix => { expect(() => verifierPrixAvecPromo(prix, { prix_promo: 3000 })).toThrow("Le prix doit rester supérieur au prix promo, ou arrêtez d'abord la promo"); });

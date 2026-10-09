@@ -4,7 +4,7 @@ import FormulaireArticle, { CHAMPS_ARTICLE_VIDES } from "./FormulaireArticle";
 const enregistrer = vi.fn().mockResolvedValue(undefined);
 beforeEach(() => { localStorage.clear(); enregistrer.mockClear(); vi.stubGlobal("URL", class extends URL { static createObjectURL() { return "blob:photo"; } static revokeObjectURL() {} }); vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, json: async () => ({ message: "IA indisponible" }) })); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
-const initial = { ...CHAMPS_ARTICLE_VIDES, titre: "Polo bleu", categorie: "Polos", genre: "homme", prix: "3500", tailles: ["M"] };
+const initial = { ...CHAMPS_ARTICLE_VIDES, titre: "Polo bleu", categorie: "T-shirts et polos", genre: "homme", prix: "3500", tailles: ["M"] };
 const afficher = (ajout = false) => render(<FormulaireArticle initial={initial} cleBrouillon="test:brouillon" ajout={ajout} onEnregistrer={enregistrer} />);
 describe("formulaire partagé ajout et modification", () => {
   it("sélectionne une seule couleur, conservée par son nom", async () => { afficher(); await act(async () => {}); fireEvent.click(screen.getByRole("button", { name: "Bleu" })); fireEvent.click(screen.getByRole("button", { name: "Rouge" })); expect(screen.getByRole("button", { name: "Bleu" }).getAttribute("aria-pressed")).toBe("false"); fireEvent.click(screen.getByRole("button", { name: "Enregistrer" })); await waitFor(() => expect(enregistrer).toHaveBeenCalledWith(expect.objectContaining({ couleur: "Rouge" }), [], false)); });

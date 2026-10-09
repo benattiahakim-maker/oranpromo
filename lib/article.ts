@@ -1,18 +1,39 @@
 import type { Enums } from "./supabase/types";
 
-export const CATEGORIES_ARTICLE = ["Polos", "T-shirts", "Chemises", "Pulls", "Vestes", "Pantalons", "Jeans", "Robes", "Jupes", "Chaussures", "Accessoires"] as const;
+// Catégories organisées en 4 univers (Femme · Homme · Enfant · Beauté), sans sous-catégories.
+// Mode : le genre (femme, homme, enfant, mixte) précise l'univers. Beauté : genre facultatif.
+export const CATEGORIES_MODE = ["T-shirts et polos", "Chemises", "Pulls et sweats", "Vestes et manteaux", "Pantalons et jeans", "Survêtements et ensembles", "Robes", "Jupes", "Abayas, djellabas, kamis", "Tenues traditionnelles", "Hijabs et foulards", "Chaussures", "Sacs", "Accessoires"] as const;
+export const CATEGORIES_BEAUTE = ["Parfums", "Maquillage", "Soins visage et corps", "Cheveux", "Hammam et traditionnel"] as const;
+export const CATEGORIES_ARTICLE = [...CATEGORIES_MODE, ...CATEGORIES_BEAUTE] as const;
 export const GENRES_ARTICLE = ["homme", "femme", "enfant", "mixte"] as const;
+// Univers affichés en haut du site : un genre pour la mode, ou toutes les catégories beauté.
+export const UNIVERS = [{ cle: "femme", nom: "Femme" }, { cle: "homme", nom: "Homme" }, { cle: "enfant", nom: "Enfant" }, { cle: "beaute", nom: "Beauté" }] as const;
+export type CleUnivers = typeof UNIVERS[number]["cle"];
 export const TAILLES_ARTICLE = ["XS", "S", "M", "L", "XL", "XXL", "3XL"] as const;
 export const TAILLE_UNIQUE = "Unique";
+// Beauté : contenance en millilitres au lieu d'une taille (ou « Unique » pour un produit sans contenance).
+export const CONTENANCES_BEAUTE = ["5 ml", "10 ml", "15 ml", "30 ml", "50 ml", "75 ml", "100 ml", "150 ml", "200 ml", "250 ml", "500 ml", "1000 ml"] as const;
 export const COULEURS_ARTICLE = ["Noir", "Blanc", "Gris", "Beige", "Marron", "Bleu marine", "Bleu", "Vert", "Kaki", "Rouge", "Bordeaux", "Rose", "Jaune", "Orange", "Violet", "Multicolore"] as const;
+
+export function estCategorieBeaute(categorie: string): boolean {
+  return CATEGORIES_BEAUTE.some(c => c === categorie);
+}
+
+// Libellé du choix de taille : « Contenance » pour la beauté, « Taille » sinon.
+export function libelleTaille(categorie: string): "Contenance" | "Taille" {
+  return estCategorieBeaute(categorie) ? "Contenance" : "Taille";
+}
 
 export function taillesPourArticle(categorie: string, genre: string): string[] {
   if (!CATEGORIES_ARTICLE.some(c => c === categorie)) return [];
-  if (categorie === "Accessoires") return [TAILLE_UNIQUE];
-  if (genre === "enfant") return categorie === "Chaussures" ? Array.from({ length: 11 }, (_, i) => String(24 + i)) : [2, 4, 6, 8, 10, 12, 14].map(age => `${age} ans`);
+  if (estCategorieBeaute(categorie)) return [...CONTENANCES_BEAUTE, TAILLE_UNIQUE];
+  if (["Accessoires", "Sacs", "Hijabs et foulards"].includes(categorie)) return [TAILLE_UNIQUE];
+  const enfant = [2, 4, 6, 8, 10, 12, 14].map(age => `${age} ans`);
+  const avecUnique = ["Abayas, djellabas, kamis", "Tenues traditionnelles"].includes(categorie) ? [TAILLE_UNIQUE] : [];
+  if (genre === "enfant") return categorie === "Chaussures" ? Array.from({ length: 11 }, (_, i) => String(24 + i)) : [...enfant, ...avecUnique];
   if (categorie === "Chaussures") return Array.from({ length: 12 }, (_, i) => String(35 + i));
-  if (["Pantalons", "Jeans"].includes(categorie)) return [...[36, 38, 40, 42, 44, 46, 48, 50].map(String), ...TAILLES_ARTICLE.slice(0, -1)];
-  return [...TAILLES_ARTICLE];
+  if (categorie === "Pantalons et jeans") return [...[36, 38, 40, 42, 44, 46, 48, 50].map(String), ...TAILLES_ARTICLE.slice(0, -1)];
+  return [...TAILLES_ARTICLE, ...avecUnique];
 }
 
 export function filtrerTailles(tailles: string[], categorie: string, genre: string) {
@@ -57,7 +78,7 @@ export type SaisieArticle = { titre: string; categorie: string; genre: string; c
 export type ErreursArticle = Partial<Record<"photos" | "titre" | "categorie" | "genre" | "couleur" | "prix" | "tailles" | "descriptionAr", string>>;
 
 export function normaliserTailles(tailles: string[]): string[] {
-  return [...new Set(tailles.map(taille => taille.trim().toUpperCase()).filter(Boolean))].map(taille => taille === "UNIQUE" ? TAILLE_UNIQUE : taille.replace(/ ANS$/, " ans"));
+  return [...new Set(tailles.map(taille => taille.trim().toUpperCase()).filter(Boolean).map(taille => taille === "UNIQUE" ? TAILLE_UNIQUE : taille.replace(/ ANS$/, " ans").replace(/^(\d+) ?ML$/, "$1 ml")))];
 }
 
 export function validerArticle(saisie: SaisieArticle, options: { verifierPhotos?: boolean } = {}): ErreursArticle {
@@ -71,18 +92,19 @@ export function validerArticle(saisie: SaisieArticle, options: { verifierPhotos?
   const longueur = Array.from(saisie.titre.trim()).length;
   if (longueur < 2 || longueur > 120) erreurs.titre = "Le titre doit contenir entre 2 et 120 caractères.";
   if (!CATEGORIES_ARTICLE.some(categorie => categorie === saisie.categorie)) erreurs.categorie = "Choisissez une catégorie.";
-  if (!GENRES_ARTICLE.some(genre => genre === saisie.genre)) erreurs.genre = "Choisissez un genre.";
+  // Genre facultatif pour la beauté (enregistré « mixte »), obligatoire pour la mode.
+  if (!(saisie.genre === "" && estCategorieBeaute(saisie.categorie)) && !GENRES_ARTICLE.some(genre => genre === saisie.genre)) erreurs.genre = "Choisissez un genre.";
   if (saisie.couleur && !COULEURS_ARTICLE.some(c => c === saisie.couleur)) erreurs.couleur = "Choisissez une couleur dans la liste.";
   const prix = saisie.prix.trim();
   if (!/^\d+$/.test(prix) || Number(prix) <= 0) erreurs.prix = "Saisissez un prix entier en DA, supérieur à 0.";
   else if (Number(prix) > 2147483647) erreurs.prix = "Ce prix est trop élevé.";
   const tailles = normaliserTailles(saisie.tailles);
-  if (!tailles.length) erreurs.tailles = "Choisissez au moins une taille.";
+  if (!tailles.length) erreurs.tailles = estCategorieBeaute(saisie.categorie) ? "Choisissez au moins une contenance (ou « Unique »)." : "Choisissez au moins une taille.";
   else if (tailles.includes(TAILLE_UNIQUE) && tailles.length > 1) erreurs.tailles = "La taille unique ne se combine pas avec d’autres tailles.";
-  else if (tailles.some(t => !taillesPourArticle(saisie.categorie, saisie.genre).includes(t))) erreurs.tailles = "Choisissez uniquement les tailles proposées pour cette catégorie et ce genre.";
+  else if (tailles.some(t => !taillesPourArticle(saisie.categorie, saisie.genre).includes(t))) erreurs.tailles = estCategorieBeaute(saisie.categorie) ? "Choisissez uniquement les contenances proposées." : "Choisissez uniquement les tailles proposées pour cette catégorie et ce genre.";
   return erreurs;
 }
 
 export function donneesArticle(saisie: SaisieArticle) {
-  return { titre: saisie.titre.trim(), categorie: saisie.categorie, genre: saisie.genre as Enums<"genre_article">, couleur: saisie.couleur.trim() || null, description: saisie.description.trim() || null, ...(saisie.descriptionAr !== undefined ? { description_ar: saisie.descriptionAr.trim() || null } : {}), prix: Number(saisie.prix.trim()) };
+  return { titre: saisie.titre.trim(), categorie: saisie.categorie, genre: (saisie.genre || "mixte") as Enums<"genre_article">, couleur: saisie.couleur.trim() || null, description: saisie.description.trim() || null, ...(saisie.descriptionAr !== undefined ? { description_ar: saisie.descriptionAr.trim() || null } : {}), prix: Number(saisie.prix.trim()) };
 }

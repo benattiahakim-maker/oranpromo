@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
-const proposition = { titre: "Polo bleu", description: "Polo bleu à manches courtes.", categorie: "Polos", genre: "homme", couleur: "bleu" };
+const proposition = { titre: "Polo bleu", description: "Polo bleu à manches courtes.", categorie: "T-shirts et polos", genre: "homme", couleur: "bleu" };
 const choisirPhoto = () => fireEvent.change(screen.getByLabelText("Choisir dans la galerie"), { target: { files: [new File(["photo"], "photo.png", { type: "image/png" })] } });
 describe("US-14 : assistance IA facultative", () => {
   it("compresse uniquement la première photo et propose des champs modifiables, sans prix ni taille ni publication", async () => {
@@ -63,7 +63,7 @@ describe("US-14 : assistance IA facultative", () => {
     publierArticle.mockResolvedValue("article-manuel"); render(<NouvelArticle boutiqueId="boutique" />); choisirPhoto();
     await waitFor(() => expect(screen.getByText("L’IA est indisponible, remplissez la fiche à la main")).toBeTruthy());
     fireEvent.change(screen.getByRole("textbox", { name: "TITRE *" }), { target: { value: "Polo manuel" } });
-    fireEvent.change(screen.getByRole("combobox", { name: "CATÉGORIE *" }), { target: { value: "Polos" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "CATÉGORIE *" }), { target: { value: "T-shirts et polos" } });
     fireEvent.change(screen.getByRole("combobox", { name: "GENRE" }), { target: { value: "mixte" } });
     fireEvent.change(screen.getByRole("textbox", { name: "PRIX EN DA *" }), { target: { value: "2500" } });
     fireEvent.click(screen.getByRole("button", { name: "S" })); fireEvent.click(screen.getByRole("button", { name: "PUBLIER L’ARTICLE" }));
@@ -75,7 +75,7 @@ describe("US-10 : formulaire mobile", () => {
   it("US-15 : saisit le texte arabe à la main et le transmet à la publication", async () => {
     publierArticle.mockResolvedValue("article-arabe"); render(<NouvelArticle boutiqueId="boutique" />); choisirPhoto();
     fireEvent.change(screen.getByRole("textbox", { name: "TITRE *" }), { target: { value: "Polo bleu" } });
-    fireEvent.change(screen.getByRole("combobox", { name: "CATÉGORIE *" }), { target: { value: "Polos" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "CATÉGORIE *" }), { target: { value: "T-shirts et polos" } });
     fireEvent.change(screen.getByRole("combobox", { name: "GENRE" }), { target: { value: "mixte" } });
     fireEvent.change(screen.getByRole("textbox", { name: "PRIX EN DA *" }), { target: { value: "3500" } });
     fireEvent.change(screen.getByRole("textbox", { name: "Texte arabe (facultatif)" }), { target: { value: "قميص أزرق" } });
@@ -97,7 +97,7 @@ describe("US-10 : formulaire mobile", () => {
     render(<NouvelArticle boutiqueId="boutique" />);
     fireEvent.change(screen.getByLabelText("Choisir dans la galerie"), { target: { files: [new File(["photo"], "photo.png", { type: "image/png" })] } });
     fireEvent.change(screen.getByRole("textbox", { name: "TITRE *" }), { target: { value: "Polo bleu" } });
-    fireEvent.change(screen.getByRole("combobox", { name: "CATÉGORIE *" }), { target: { value: "Polos" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "CATÉGORIE *" }), { target: { value: "T-shirts et polos" } });
     fireEvent.change(screen.getByRole("combobox", { name: "GENRE" }), { target: { value: "mixte" } });
     fireEvent.change(screen.getByRole("textbox", { name: "PRIX EN DA *" }), { target: { value: "3500" } });
     fireEvent.click(screen.getByRole("button", { name: "M" }));
