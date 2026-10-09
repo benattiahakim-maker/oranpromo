@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=375">
+<title>OranPromo — Position de la boutique (US-24.2, à valider)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&amp;family=Jost:wght@300;400;500&amp;family=Noto+Naskh+Arabic:wght@400;500&amp;family=Tajawal:wght@300;400;500&amp;display=swap">
+<style>
+body{margin:0;background:#EDEDED}
+a{color:#0A0A0A;text-decoration:none}a:hover{color:#555555}
+summary::-webkit-details-marker{display:none}
+</style>
+</helmet>
+<!-- US-24.2 : bloc « Position sur la carte » (création et modification d'une boutique, /admin/boutiques et /espace), 375 px de large.
+     ① création, position trouvée ; ② messages ; ③ /espace en attente puis validée ; ④ le même bloc en arabe (hors US-23, pour une future story).
+     Petite carte = Leaflet (chargé seulement dans ce bloc), épingle déplaçable ; fond dessiné à la main pour la maquette. -->
+<div style="width: 375px; display: flex; flex-direction: column">
+<div style="width: 375px; box-sizing: border-box; padding: 18px 16px 10px 16px; background: #EDEDED; font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: #3A3A3A">① CRÉATION (/ADMIN/BOUTIQUES) · POSITION TROUVÉE</div>
+
+<!-- ① Création d'une boutique (/admin/boutiques, admin ou ambassadeur, sur place) : « Je suis dans la boutique » accepté, précision ± 12 m. -->
+<div lang="fr" dir="ltr" style="width: 375px; box-sizing: border-box; background: #FFFFFF; color: #0A0A0A; font-family: 'Jost', sans-serif; padding: 18px 16px 22px 16px">
+<div style="font-size: 10px; letter-spacing: 2.5px; color: #6F6F6F">ADMINISTRATION · BOUTIQUES</div>
+<h1 style="margin: 4px 0 14px 0; font-family: 'Bodoni Moda', serif; font-weight: 400; font-size: 24px">Nouvelle boutique</h1>
+<div style="display: flex; flex-direction: column; gap: 14px">
+<label style="display: block; font-size: 10px; letter-spacing: 2px">NOM *<div style="margin-top: 6px; min-height: 44px; width: 100%; box-sizing: border-box; border: 1px solid #E6E6E6; background: #FFFFFF; padding: 10px 12px; font-family: 'Jost', sans-serif; font-size: 15px; color: #0A0A0A; letter-spacing: 0">Boutique Amine</div></label>
+<label style="display: block; font-size: 10px; letter-spacing: 2px">QUARTIER *<div style="margin-top: 6px; min-height: 44px; width: 100%; box-sizing: border-box; border: 1px solid #E6E6E6; background: #FFFFFF; padding: 10px 12px; font-family: 'Jost', sans-serif; font-size: 15px; color: #0A0A0A; letter-spacing: 0">Akid Lotfi</div></label>
+<label style="display: block; font-size: 10px; letter-spacing: 2px">ADRESSE *<div style="margin-top: 6px; min-height: 44px; width: 100%; box-sizing: border-box; border: 1px solid #E6E6E6; background: #FFFFFF; padding: 10px 12px; font-family: 'Jost', sans-serif; font-size: 15px; color: #0A0A0A; letter-spacing: 0">12 rue des Oliviers</div></label>
+</div>
+
+<fieldset style="min-width: 0; margin: 20px 0 0 0; padding: 16px 0 0 0; border: none; border-top: 1px solid #0A0A0A">
+<legend style="padding: 0 8px 0 0; font-size: 10px; letter-spacing: 2px">POSITION SUR LA CARTE</legend>
+<p style="margin: 0 0 10px 0; font-size: 12px; color: #6F6F6F">Facultative, mais sans position la boutique n'a pas d'épingle sur la carte.</p>
+<!-- Seul ce bouton déclenche la demande de localisation du navigateur. -->
+<button style="width: 100%; min-height: 48px; border: none; background: #0A0A0A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 6px 10px; font-family: inherit; font-size: 10px; letter-spacing: 1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2" fill="currentColor"></circle><path d="M12 1v4M12 19v4M1 12h4M19 12h4"></path></svg> JE SUIS DANS LA BOUTIQUE : UTILISER MA POSITION</button>
+<p role="status" style="margin: 10px 0; font-size: 13px">✓ Position trouvée · précision <b style="font-weight: 500">± 12 m</b></p>
+<div role="application" aria-label="Petite carte : position de la boutique" dir="ltr" style="position: relative; width: 343px; height: 200px; overflow: hidden; border: 1px solid #E6E6E6">
+<svg width="343" height="200" viewBox="0 0 343 200" style="position: absolute; inset: 0" aria-hidden="true">
+<rect width="343" height="200" fill="#F4F3F1"></rect>
+<g fill="none" stroke="#FFFFFF" stroke-width="7"><path d="M0 120 C100 110 220 130 343 100"></path><path d="M120 200 C140 140 160 80 190 0"></path></g>
+<g fill="none" stroke="#E6E6E6" stroke-width="2"><path d="M0 60 L343 40"></path><path d="M40 0 L70 200"></path><path d="M260 0 L280 200"></path><path d="M0 170 L343 160"></path></g>
+<rect x="210" y="60" width="40" height="30" fill="#ECEAE6"></rect><rect x="80" y="130" width="34" height="24" fill="#ECEAE6"></rect>
+<text x="200" y="138" font-size="9" fill="#9A9A9A" font-family="Jost, sans-serif">BD DE L'ALN</text>
+<text x="20" y="52" font-size="9" fill="#9A9A9A" font-family="Jost, sans-serif">RUE LARBI BEN M'HIDI</text>
+</svg>
+<div style="position: absolute; left: 141px; top: 54px; width: 60px; height: 60px; border-radius: 50%; background: rgba(10,10,10,0.07); border: 1px solid rgba(10,10,10,0.25); box-sizing: border-box"></div>
+<div style="position: absolute; left: 157px; top: 44px; display: flex; flex-direction: column; align-items: center">
+<div style="width: 28px; height: 28px; background: #0A0A0A; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2" fill="#FFFFFF"></circle><path d="M12 1v4M12 19v4M1 12h4M19 12h4"></path></svg></div>
+<div style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid #0A0A0A"></div></div>
+<div style="position: absolute; left: 186px; top: 48px; font-size: 10px; background: #FFFFFF; border: 1px solid #0A0A0A; padding: 1px 4px">⇕ ⇔</div>
+<div dir="ltr" style="position: absolute; top: 8px; left: 8px; display: flex; flex-direction: column; border: 1px solid #0A0A0A; background: #FFFFFF"><span style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; border-bottom: 1px solid #E6E6E6">+</span><span style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px">−</span></div>
+<div dir="ltr" lang="en" style="position: absolute; right: 0; bottom: 0; background: rgba(255,255,255,0.85); padding: 2px 6px; font-family: 'Jost', sans-serif; font-size: 10px; color: #3A3A3A">© <span style="text-decoration: underline">OpenStreetMap</span> contributors © <span style="text-decoration: underline">CARTO</span></div>
+</div>
+<p style="margin: 6px 0 0 0; font-size: 12px; color: #6F6F6F">Déplacez l'épingle du doigt pour la mettre sur l'entrée de la boutique.</p>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 13px"><span dir="ltr" style="font-variant-numeric: tabular-nums">35,697120 · −0,633750</span><a href="#" style="text-decoration: underline; color: #6F6F6F; padding: 10px 0">Retirer la position</a></div>
+
+<div style="display: flex; align-items: center; gap: 10px; margin: 14px 0; font-size: 11px; letter-spacing: 2px; color: #6F6F6F"><span style="flex: 1; height: 1px; background: #E6E6E6"></span>OU<span style="flex: 1; height: 1px; background: #E6E6E6"></span></div>
+
+<label style="display: block; font-size: 10px; letter-spacing: 2px">COLLER UN LIEN GOOGLE MAPS
+<div style="display: flex; gap: 6px; margin-top: 6px"><div style="flex: 1; min-height: 44px; box-sizing: border-box; border: 1px solid #E6E6E6; padding: 12px 10px; font-size: 13px; letter-spacing: 0; color: #8A8A8A; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">https://www.google.com/maps/place/…/@35.69…</div><span style="min-width: 64px; min-height: 44px; border: 1px solid #0A0A0A; display: flex; align-items: center; justify-content: center; font-size: 10px; letter-spacing: 1.5px">LIRE</span></div></label>
+<p style="margin: 6px 0 0 0; font-size: 12px; color: #6F6F6F">Dans Google Maps : Partager › Copier le lien, puis ouvrez-le et copiez l'adresse complète (avec « @35,… »). Le lien n'est jamais ouvert par OranPromo.</p>
+
+<details style="margin-top: 12px"><summary style="min-height: 44px; display: flex; align-items: center; font-size: 13px; text-decoration: underline; color: #6F6F6F">Saisir les coordonnées à la main</summary></details>
+</fieldset>
+
+<div style="display: flex; flex-direction: column; gap: 14px; margin-top: 6px">
+<label style="display: block; font-size: 10px; letter-spacing: 2px">NUMÉRO WHATSAPP *<div style="margin-top: 6px; min-height: 44px; width: 100%; box-sizing: border-box; border: 1px solid #E6E6E6; background: #FFFFFF; padding: 10px 12px; font-family: 'Jost', sans-serif; font-size: 15px; color: #0A0A0A; letter-spacing: 0">0555 12 34 56</div></label>
+</div>
+<div style="margin-top: 18px; min-height: 48px; background: #0A0A0A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 11px; letter-spacing: 2px">CRÉER LA BOUTIQUE</div>
+</div>
+
+<div style="width: 375px; box-sizing: border-box; padding: 18px 16px 10px 16px; background: #EDEDED; font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: #3A3A3A">② MESSAGES DU BLOC</div>
+
+<!-- ② Messages du bloc de position -->
+<div lang="fr" style="width: 375px; box-sizing: border-box; background: #FFFFFF; color: #0A0A0A; font-family: 'Jost', sans-serif; padding: 4px 16px 18px 16px">
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">PENDANT LA RECHERCHE</div><div role="status" style="margin-top: 6px; font-size: 13px; line-height: 1.5; ">Recherche de la position… (20 s au plus)</div></div>
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">PRÉCISION FAIBLE (> 100 M)</div><div role="alert" style="margin-top: 6px; font-size: 13px; line-height: 1.5; border: 1px solid #0A0A0A; padding: 10px 12px;">⚠ Position peu précise (± 350 m) : activez la localisation précise ou le GPS, approchez-vous de la porte, ou déplacez l'épingle.</div></div>
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">LOCALISATION REFUSÉE</div><div role="alert" style="margin-top: 6px; font-size: 13px; line-height: 1.5; border: 1px solid #0A0A0A; padding: 10px 12px;">Vous avez refusé la localisation. Collez un lien Google Maps ou placez l'épingle.</div></div>
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">LIEN LONG LU</div><div role="status" style="margin-top: 6px; font-size: 13px; line-height: 1.5; ">✓ Coordonnées lues dans le lien : <span dir='ltr'>35,697120 · −0,633750</span>. Vérifiez l'épingle sur la carte.</div></div>
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">LIEN COURT (MAPS.APP.GOO.GL)</div><div role="alert" style="margin-top: 6px; font-size: 13px; line-height: 1.5; border: 1px solid #0A0A0A; padding: 10px 12px;"><div style='font-size: 12px; color: #8A8A8A; margin-bottom: 6px'>https://maps.app.goo.gl/Ab12Cd34</div>Ce lien court ne contient pas la position. Ouvrez-le dans Google Maps, puis copiez l'adresse complète depuis la barre du navigateur (elle contient « @35,… »), ou utilisez « Je suis dans la boutique ».</div></div>
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">LIEN NON RECONNU</div><div role="alert" style="margin-top: 6px; font-size: 13px; line-height: 1.5; border: 1px solid #0A0A0A; padding: 10px 12px;">Coordonnées introuvables dans ce lien.</div></div>
+<div style="border-top: 1px solid #E6E6E6; padding: 12px 0"><div style="font-size: 10px; letter-spacing: 2px; color: #6F6F6F">HORS DE LA WILAYA D'ORAN (ÉCRAN, SERVEUR ET BASE)</div><div role="alert" style="margin-top: 6px; font-size: 13px; line-height: 1.5; border: 1px solid #0A0A0A; padding: 10px 12px;">La position doit être dans la wilaya d'Oran.</div></div>
+</div>
+
+<div style="width: 375px; box-sizing: border-box; padding: 18px 16px 10px 16px; background: #EDEDED; font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: #3A3A3A">③ /ESPACE · EN ATTENTE, PUIS VALIDÉE</div>
+
+<!-- ③ /espace, commerçant : boutique en attente (modifiable) puis boutique validée (lecture seule). -->
+<div lang="fr" style="width: 375px; box-sizing: border-box; background: #FFFFFF; color: #0A0A0A; font-family: 'Jost', sans-serif; padding: 18px 16px 22px 16px">
+<div style="font-size: 10px; letter-spacing: 2.5px; color: #6F6F6F">MON ESPACE · BOUTIQUE EN ATTENTE</div>
+<h2 style="margin: 4px 0 10px 0; font-family: 'Bodoni Moda', serif; font-weight: 400; font-size: 20px">Position sur la carte</h2>
+<p style="margin: 0 0 10px 0; font-size: 13px">Réglez-la avant la validation : ensuite, seul OranPromo pourra la changer.</p>
+<div style="min-height: 44px; border: 1px solid #0A0A0A; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 6px 10px; font-size: 10px; letter-spacing: 1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2" fill="currentColor"></circle><path d="M12 1v4M12 19v4M1 12h4M19 12h4"></path></svg> JE SUIS DANS LA BOUTIQUE : UTILISER MA POSITION</div>
+<p style="margin: 8px 0 12px 0; font-size: 12px; color: #6F6F6F">ou collez un lien Google Maps · ou déplacez l'épingle</p>
+<div style="min-height: 48px; background: #0A0A0A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 11px; letter-spacing: 2px">ENREGISTRER LA POSITION</div>
+
+<div style="margin-top: 26px; padding-top: 16px; border-top: 1px solid #0A0A0A">
+<div style="font-size: 10px; letter-spacing: 2.5px; color: #6F6F6F">MON ESPACE · BOUTIQUE VALIDÉE</div>
+<h2 style="margin: 4px 0 10px 0; font-family: 'Bodoni Moda', serif; font-weight: 400; font-size: 20px">Position sur la carte</h2>
+<div role="application" aria-label="Petite carte : position de la boutique" dir="ltr" style="position: relative; width: 343px; height: 200px; overflow: hidden; border: 1px solid #E6E6E6">
+<svg width="343" height="200" viewBox="0 0 343 200" style="position: absolute; inset: 0" aria-hidden="true">
+<rect width="343" height="200" fill="#F4F3F1"></rect>
+<g fill="none" stroke="#FFFFFF" stroke-width="7"><path d="M0 120 C100 110 220 130 343 100"></path><path d="M120 200 C140 140 160 80 190 0"></path></g>
+<g fill="none" stroke="#E6E6E6" stroke-width="2"><path d="M0 60 L343 40"></path><path d="M40 0 L70 200"></path><path d="M260 0 L280 200"></path><path d="M0 170 L343 160"></path></g>
+<rect x="210" y="60" width="40" height="30" fill="#ECEAE6"></rect><rect x="80" y="130" width="34" height="24" fill="#ECEAE6"></rect>
+<text x="200" y="138" font-size="9" fill="#9A9A9A" font-family="Jost, sans-serif">BD DE L'ALN</text>
+<text x="20" y="52" font-size="9" fill="#9A9A9A" font-family="Jost, sans-serif">RUE LARBI BEN M'HIDI</text>
+</svg>
+
+<div style="position: absolute; left: 157px; top: 44px; display: flex; flex-direction: column; align-items: center">
+<div style="width: 28px; height: 28px; background: #0A0A0A; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2" fill="#FFFFFF"></circle><path d="M12 1v4M12 19v4M1 12h4M19 12h4"></path></svg></div>
+<div style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid #0A0A0A"></div></div>
+
+<div dir="ltr" style="position: absolute; top: 8px; left: 8px; display: flex; flex-direction: column; border: 1px solid #0A0A0A; background: #FFFFFF"><span style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; border-bottom: 1px solid #E6E6E6">+</span><span style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px">−</span></div>
+<div dir="ltr" lang="en" style="position: absolute; right: 0; bottom: 0; background: rgba(255,255,255,0.85); padding: 2px 6px; font-family: 'Jost', sans-serif; font-size: 10px; color: #3A3A3A">© <span style="text-decoration: underline">OpenStreetMap</span> contributors © <span style="text-decoration: underline">CARTO</span></div>
+</div>
+<p style="margin: 10px 0 0 0; font-size: 13px">Pour déplacer votre boutique sur la carte, contactez OranPromo.</p>
+<p style="margin: 6px 0 0 0; font-size: 12px; color: #6F6F6F">Côté admin (/admin/boutiques) : bouton « Position » sur chaque boutique, même bloc qu'à la création, toujours modifiable.</p>
+</div>
+</div>
+
+<div style="width: 375px; box-sizing: border-box; padding: 18px 16px 10px 16px; background: #EDEDED; font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: #3A3A3A">④ ARABE, DE DROITE À GAUCHE (HORS US-23)</div>
+
+<!-- ④ Le même bloc en arabe, de droite à gauche : HORS US-23 (l'espace commerçant reste en français). Montré pour vérifier que la mise en page tient en RTL, et pour une future story. -->
+<div lang="ar" dir="rtl" style="width: 375px; box-sizing: border-box; background: #FFFFFF; color: #0A0A0A; font-family: 'Jost', 'Tajawal', sans-serif; padding: 18px 16px 22px 16px">
+<fieldset style="min-width: 0; margin: 0; padding: 14px 0 0 0; border: none; border-top: 1px solid #0A0A0A">
+<legend style="padding: 0 0 0 8px; font-size: 14px">بلاصة الحانوت في الخريطة</legend>
+<button style="width: 100%; min-height: 48px; border: none; background: #0A0A0A; color: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; font-size: 15px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2" fill="currentColor"></circle><path d="M12 1v4M12 19v4M1 12h4M19 12h4"></path></svg> راني في الحانوت: خذ البلاصة نتاعي</button>
+<p role="status" style="margin: 10px 0; font-size: 14px">✓ لقينا البلاصة · الدقة <bdi dir="ltr">± 12</bdi> م</p>
+<div role="application" aria-label="Petite carte : position de la boutique" dir="ltr" style="position: relative; width: 343px; height: 200px; overflow: hidden; border: 1px solid #E6E6E6">
+<svg width="343" height="200" viewBox="0 0 343 200" style="position: absolute; inset: 0" aria-hidden="true">
+<rect width="343" height="200" fill="#F4F3F1"></rect>
+<g fill="none" stroke="#FFFFFF" stroke-width="7"><path d="M0 120 C100 110 220 130 343 100"></path><path d="M120 200 C140 140 160 80 190 0"></path></g>
+<g fill="none" stroke="#E6E6E6" stroke-width="2"><path d="M0 60 L343 40"></path><path d="M40 0 L70 200"></path><path d="M260 0 L280 200"></path><path d="M0 170 L343 160"></path></g>
+<rect x="210" y="60" width="40" height="30" fill="#ECEAE6"></rect><rect x="80" y="130" width="34" height="24" fill="#ECEAE6"></rect>
+<text x="200" y="138" font-size="9" fill="#9A9A9A" font-family="Jost, sans-serif">BD DE L'ALN</text>
+<text x="20" y="52" font-size="9" fill="#9A9A9A" font-family="Jost, sans-serif">RUE LARBI BEN M'HIDI</text>
+</svg>
+<div style="position: absolute; left: 141px; top: 54px; width: 60px; height: 60px; border-radius: 50%; background: rgba(10,10,10,0.07); border: 1px solid rgba(10,10,10,0.25); box-sizing: border-box"></div>
+<div style="position: absolute; left: 157px; top: 44px; display: flex; flex-direction: column; align-items: center">
+<div style="width: 28px; height: 28px; background: #0A0A0A; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2" fill="#FFFFFF"></circle><path d="M12 1v4M12 19v4M1 12h4M19 12h4"></path></svg></div>
+<div style="width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid #0A0A0A"></div></div>
+<div style="position: absolute; left: 186px; top: 48px; font-size: 10px; background: #FFFFFF; border: 1px solid #0A0A0A; padding: 1px 4px">⇕ ⇔</div>
+<div dir="ltr" style="position: absolute; top: 8px; left: 8px; display: flex; flex-direction: column; border: 1px solid #0A0A0A; background: #FFFFFF"><span style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; border-bottom: 1px solid #E6E6E6">+</span><span style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px">−</span></div>
+<div dir="ltr" lang="en" style="position: absolute; right: 0; bottom: 0; background: rgba(255,255,255,0.85); padding: 2px 6px; font-family: 'Jost', sans-serif; font-size: 10px; color: #3A3A3A">© <span style="text-decoration: underline">OpenStreetMap</span> contributors © <span style="text-decoration: underline">CARTO</span></div>
+</div>
+<p style="margin: 6px 0 0 0; font-size: 13px; color: #6F6F6F">حرّك الدبوس بصبعك باش تحطّو على باب الحانوت.</p>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 13px"><bdi dir="ltr">35,697120 · −0,633750</bdi><a href="#" style="text-decoration: underline; color: #6F6F6F; padding: 10px 0">نحّي البلاصة</a></div>
+<label style="display: block; margin-top: 12px; font-size: 14px">ولا لصق رابط Google Maps
+<div style="display: flex; gap: 6px; margin-top: 6px"><div dir="ltr" style="flex: 1; min-height: 44px; box-sizing: border-box; border: 1px solid #E6E6E6; padding: 12px 10px; font-size: 13px; color: #8A8A8A; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: left">https://www.google.com/maps/…/@35.69…</div><span style="min-width: 64px; min-height: 44px; border: 1px solid #0A0A0A; display: flex; align-items: center; justify-content: center; font-size: 14px">اقرا</span></div></label>
+<p role="alert" style="margin: 10px 0 0 0; font-size: 13px; border: 1px solid #0A0A0A; padding: 10px 12px">لازم البلاصة تكون في ولاية وهران.</p>
+</fieldset>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":375,"height":2900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
