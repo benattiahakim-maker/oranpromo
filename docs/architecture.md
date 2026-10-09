@@ -456,6 +456,91 @@ Story : `docs/user-stories.md`, module 13. Maquette : `docs/maquettes/RetraitQR.
 - Effet indirect : la note du suivi (« Remise par QR code / par code / sans QR code ») est une information de plus pour l'admin dans `/admin/clients` lors d'une contestation ; aucune décision automatique n'en dépend.
 - Risques connus : un lien partagé ou une capture d'écran du QR code permet à quelqu'un d'autre de récupérer la commande (il paie sur place) ; c'est le client qui partage, et l'avertissement est affiché. Une boutique peut toujours remettre sans QR code ou ne pas scanner : le QR code aide, il ne prouve pas tout.
 
+## Parrainage (US-27) — conception, à valider par le propriétaire
+
+Stories : `docs/user-stories.md`, module 14. Maquette : `docs/maquettes/Parrainage.dc.html`. **Rien n'est codé, aucune migration.** Tout ce qui suit est une proposition (tables, fonctions, routes) : rien ne sera ajouté avant la validation, conformément à la règle « ne rien inventer ».
+
+**Principes** : le parrainage s'appuie sur ce qui existe déjà et ne le modifie pas — numéro vérifié par code (US-21 : un numéro vérifié = un seul compte, numéros algériens seulement), statut `recuperee` donné par la boutique (US-20.3), lien `wa.me` sans numéro (US-22), textes fr / ar (US-23). **Aucune règle de blocage, de no-show, de contestation ni de vérification du numéro ne change** : les fonctions `passer_commande` (sauf le prix d'une « Promo Club », option C), `declarer_no_show`, `prive.recalculer_no_shows`, `prive.no_shows_actifs`, `bloquer_client`, `debloquer_client` et les déclencheurs sur `auth.users` restent tels quels.
+
+### Récompense : 3 options (le paiement se fait en boutique, il n'y a pas de paiement en ligne)
+
+| | A. Bon OranPromo en DA | B. Bon offert par la boutique | C. Club Parrainage (recommandé) |
+| --- | --- | --- | --- |
+| Ce que gagne le client | ex. 300 DA au parrain et 300 DA au filleul, à déduire d'une commande suivante (1 bon par commande, valable 60 jours) | l'« offre parrainage » d'une boutique (ex. −10 % ou −500 DA sur la 1re commande du filleul chez elle, et sur une commande suivante du parrain) | 30 jours de **Club** au parrain et au filleul à chaque parrainage validé : accès aux **« Promos Club »** (promos réservées que les boutiques ouvrent) + badge « Parrain » |
+| Qui paie | **OranPromo** : la boutique fait la remise en caisse ; OranPromo la **rembourse** chaque mois (virement CCP / BaridiMob) d'après les commandes `recuperee` portant un bon | la **boutique**, comme une promo (coût d'acquisition d'un client) | la **boutique**, seulement si elle choisit d'ouvrir une Promo Club ; OranPromo : rien |
+| Coût pour OranPromo | 600 DA par parrainage validé + frais et temps de virement ; avec le plafond de 5 / mois, jusqu'à 3 000 DA par parrain et par mois | 0 | 0 |
+| À construire | colonne « bon » sur la commande, règle « 1 bon par commande », relevé mensuel par boutique, écran admin des remboursements, preuve de remboursement | réglage « offre parrainage » par boutique dans `/espace`, affichage sur la vitrine, contrôle à la commande | colonne `promos.reservee_club`, date de fin de Club sur le profil, prix Club appliqué par `passer_commande` seulement aux membres |
+| Pour | le plus motivant et le plus simple à comprendre (« 300 DA offerts ») ; marche dans toutes les boutiques | gratuit pour OranPromo ; la boutique gagne un client et décide de son offre | gratuit, **aucun flux d'argent** ni remboursement ; colle à « gagner des promos » ; peu d'intérêt à tricher (on ne gagne qu'un accès, il faut encore acheter et payer) ; le Club fait aussi venir les boutiques (visibilité) |
+| Contre | vraie dépense et trésorerie ; la boutique doit **faire confiance** au remboursement ; comptabilité et facture ; **plus grand risque de triche** (une boutique et des amis peuvent simuler des retraits pour se faire rembourser) ; litiges en caisse | dépend des boutiques (peu au lancement) ; offre différente d'une boutique à l'autre, plus dure à expliquer ; refus possible en caisse | moins motivant qu'un bon en DA ; **vide** si aucune boutique n'ouvre de Promo Club (il faut en convaincre 3 ou 4 au lancement) ; une règle de prix de plus dans la base |
+
+**Recommandation : C pour démarrer** (aucun argent, peu de triche, rapide à expliquer : « Parraine, débloque les Promos Club »), avec le badge « Parrain ». Prévoir A plus tard, seulement avec un **budget mensuel fixé** (ex. 30 000 DA / mois, au-delà : plus de bons ce mois-ci), le plafond par parrain et la validation par QR code (US-26). B peut s'ajouter à C sans rien casser (une Promo Club est déjà une offre de la boutique).
+
+**Option C, détail** : la boutique coche « Promo Club » sur une promo (`/espace/articles/[id]`) ; tout le monde voit l'article avec le badge « Promo Club » et le prix normal, plus « Prix Club : 2 900 DA · Parraine un ami pour en profiter » (ce qui fait aussi connaître le parrainage) ; un membre voit et paie le prix Club ; `passer_commande` n'applique ce prix qu'à un compte dont `club_jusqu_au` n'est pas passé (sinon prix normal, comme une promo expirée). Membre = 30 jours par parrainage validé, cumulables, 6 mois au plus d'avance.
+
+### Données (proposées, une migration en US-27.1)
+
+| Élément | Rôle | Points clés |
+| --- | --- | --- |
+| `profils.code_parrainage` | code du parrain | 6 caractères parmi `23456789ABCDEFGHJKMNPQRSTUVWXYZ` (≈ 887 millions de codes), unique, créé par la base à la première demande (`mon_code_parrainage()`), non modifiable par le client ; ne contient ni numéro ni nom |
+| `profils.club_jusqu_au` (option C) | fin du Club | écrite seulement par la base (déclencheur de validation, annulation par l'admin) ; protégée comme `no_shows` dans `prive.proteger_profil` |
+| `profils.parrainage_exclu` | exclusion par l'admin | ne touche ni `bloque` ni les no-shows |
+| `parrainages` | un parrainage par filleul | `filleul_id` (clé : **un seul parrain**), `parrain_id` (vide = saisie sans parrain possible : l'utilisateur ne le sait pas), `saisies` (1 à 3), `cree_le`, `statut` : `en_attente`, `valide`, `plafond`, `expire`, `refuse`, `annule` ; `commande_id`, `boutique_id`, `valide_le`, `annule_motif` ; **aucun numéro** stocké ; RLS : aucune lecture directe sauf admin ; écriture seulement par les fonctions |
+| `prive.numeros_parraines` | anti-recyclage | empreinte SHA-256 du numéro vérifié de chaque filleul validé ou en attente ; gardée même si le compte disparaît : un numéro n'est filleul qu'une fois |
+| `prive.reglages` | réglages | `parrainage` (`on` / absent), et si besoin `parrainage_plafond_mois` (5), `parrainage_jours_saisie` (7), `parrainage_jours_retrait` (60), `parrainage_jours_club` (30) |
+| `promos.reservee_club` (option C) | promo réservée au Club | booléen, défaut faux |
+
+**Fonctions** (`security definer`, `search_path` fixé, comme les autres) :
+- `choisir_parrain(saisie text)` → `enregistre` ou erreur sur le filleul lui-même. Ordre : interrupteur ; compte client, numéro vérifié, inscrit depuis ≤ 7 jours, aucune commande, < 3 saisies, numéro jamais filleul (`prive.numeros_parraines`) ; normalisation (numéro algérien, sinon code) ; son propre numéro ou code → erreur claire (il le connaît déjà) ; **puis**, sans rien dire : recherche d'un parrain possible (client, numéro vérifié **égal** à la saisie ou code égal, non bloqué, non exclu, inscrit avant le filleul, pas filleul de ce filleul) → `parrain_id` rempli, sinon vide. Même réponse et même chemin de code dans les deux cas (pas d'écart de temps notable : une seule requête indexée).
+- `mon_parrainage()` (filleul) : parrain enregistré oui / non, statut, peut-il encore modifier ; jamais l'identité du parrain (il l'a saisie lui-même).
+- `mes_filleuls()` (parrain) : nombre en attente, liste des validés (prénom + initiale, date, récompense), fin du Club.
+- Déclencheur sur `suivi_commandes` (insertion d'une ligne `recuperee`) : si c'est la première commande récupérée du filleul, parrainage `en_attente` avec parrain, ≤ 60 jours → `valide` (ou `plafond` si le parrain a déjà 5 récompenses ce mois civil, heure d'Alger ; `refuse` si le parrain est bloqué ou exclu) ; récompense donnée (option C : `club_jusqu_au` des deux comptes). Tâche `pg_cron` quotidienne : `en_attente` de plus de 60 jours → `expire`.
+- Admin : `annuler_parrainage(filleul, motif)` (retire la récompense si elle n'a pas servi ; option C : recalcule `club_jusqu_au`), `exclure_parrainage(profil, oui/non)`, `parrainages_admin()` avec les signaux (US-27.4).
+
+### Pas d'énumération (vie privée)
+
+- Le filleul ne sait jamais si le numéro saisi est inscrit : même message, même écran, pas de nom affiché, pas de délai différent ; un numéro sans parrain possible n'est **pas stocké** (pas de fichier de numéros de tiers, loi algérienne 18-07 sur les données personnelles).
+- Les codes ne disent rien (aléatoires) ; `/p/<code>` répond la même page pour un code inconnu.
+- Le parrain ne voit un filleul nommé (prénom + initiale) qu'après un parrainage **validé** ; avant, seulement un nombre. Jamais de numéro, ni d'un côté ni de l'autre.
+- Limite des essais : 3 saisies par compte au total, sur un compte qui a déjà dû vérifier un vrai numéro algérien par code WhatsApp (US-21) : énumérer coûterait un numéro vérifié pour 3 essais, sans jamais de réponse.
+- OranPromo **n'écrit jamais** au numéro saisi par le filleul (ni WhatsApp, ni SMS) : seul le parrain lui-même, une fois validé, peut recevoir un message (option, voir plus bas).
+
+### Anti-triche
+
+| Risque | Parade |
+| --- | --- |
+| Faux comptes (filleuls inventés) | chaque filleul doit **vérifier un vrai numéro algérien par code WhatsApp** (US-21, un numéro = un compte) ; un numéro n'est filleul **qu'une fois** (`prive.numeros_parraines`) ; récompense seulement après une commande **récupérée en boutique** |
+| Se parrainer soi-même | son numéro et son code refusés ; deux comptes de la même personne demandent deux numéros vérifiés (deux puces WhatsApp) : limité par le plafond et les signaux |
+| Boucles A ↔ B | refus silencieux (un parrain ne peut pas être le filleul de son filleul) ; le parrain doit être inscrit avant le filleul |
+| Changer de parrain pour « vendre » sa place | un seul parrain, 3 saisies au plus, figé dès la première commande |
+| Même téléphone, deux comptes | pas d'empreinte d'appareil (choix de vie privée, aucune nouvelle dépendance) ; numéros vérifiés distincts obligatoires ; signal admin si les deux comptes commandent toujours ensemble dans la même boutique |
+| Boutique complice (faux « Récupérée ») | avec C, la boutique n'y gagne rien ; signaux admin (même boutique pour 3 filleuls ou plus d'un même parrain dans le mois, retrait < 30 min après la commande, petit montant, filleul qui ne revient jamais) ; validation par **QR code ou code à 4 chiffres** dès US-26 (question 8) ; avec A, remboursement mensuel seulement après revue admin |
+| Volume | 5 parrainages récompensés par parrain et par mois ; avec A, budget mensuel global |
+| Parrain bloqué (no-shows) | pas de récompense (`refuse`) ; mais le parrainage ne change rien au blocage, et le blocage ne change rien au filleul |
+
+**Vue admin** `/admin/parrainages` (US-27.4) : liste filtrable par statut, signaux en clair, « Annuler la récompense » (motif), « Exclure du parrainage » ; chiffres du mois (inscrits avec parrain, validés, plafonds, annulés).
+
+### Messages WhatsApp
+
+- **Aucun message n'est nécessaire** au départ : le parrain partage son lien lui-même avec `wa.me/?text=…` (son propre WhatsApp, gratuit pour OranPromo) ; les compteurs sont dans `/compte`.
+- **Option (question 7)** : un message au parrain quand un parrainage est validé, ex. `oranpromo_parrainage_valide` : « Bonjour {{1}}, {{2}} a récupéré sa première commande sur OranPromo grâce à toi : ton Club est ouvert jusqu'au {{3}}. » (+ version `…_ar`). C'est une récompense, donc un message promotionnel : catégorie **Marketing** selon les règles de Meta (« Template category guidelines », developers.facebook.com/docs/whatsapp/updates-to-pricing/new-template-guidelines : un message utilitaire ne doit avoir aucun contenu promotionnel ; un modèle « Utilitaire » jugé promotionnel passe en Marketing, et des abus répétés **restreignent tous les modèles utilitaires du compte**, donc nos messages de commande). Prix vers l'Algérie (zone « Rest of Africa », grille Meta du 1er octobre 2026) : **Marketing ≈ 0,0225 $** par message remis, Utilitaire ≈ 0,004 $ (sources : faslacloud.com/en/eg/whatsapp-pricing-calculator/algeria, whautomate.com/whatsapp-pricing-updates ; non vérifié sur la grille officielle de Meta). Il faut l'**accord** du client pour recevoir du marketing (case à cocher, non cochée par défaut, dans `/compte`).
+- **Interdit** : ajouter le parrainage dans les messages de commande existants (prête, expirée…) : ils deviendraient « Marketing ».
+
+### Écrans et routes (proposés)
+
+```
+app/parrainage/page.tsx         page publique : 3 étapes, récompense, règles ; lien et partage si connecté (US-27.3)
+app/p/[code]/route.ts           lien d'invitation : cookie `parrain` (code seul, httpOnly, SameSite=Lax, 30 jours) puis redirection vers /parrainage?invite=1 (US-27.2)
+app/compte/parrainage/actions.ts  choisirParrain(saisie), monLien() (US-27.2, US-27.3)
+app/admin/parrainages/page.tsx  suivi admin (US-27.4)
+lib/parrainage.ts               normalisation numéro / code, lien /p/<code>, message de partage, textes de statut (testé)
+components/MonParrainage.tsx    bloc de /compte ; components/ChoixParrain.tsx  champ du parrain
+```
+
+- Lien de partage : `NEXT_PUBLIC_SITE_URL` + `/p/<code>` ; message pré-rempli « Je t'invite sur OranPromo, les promos des boutiques d'Oran : <lien> » (fr) / « نعرّضك لـ OranPromo، تخفيضات حوانت وهران: <lien> » (ar), via `wa.me/?text=` comme `lienPartageWhatsApp` (US-22).
+- QR code du lien : `qrCodeSvg()` existant (dépendance `qrcode`, déjà là).
+- **Aucune nouvelle dépendance.** Aucune nouvelle variable d'environnement (pas de secret : tout passe par la session du client et les fonctions de la base).
+- Accueil : bloc texte sous « Les boutiques sur la carte » (comme US-24.3 : pas d'image ni de script en plus).
+
 ## Limites par visiteur (vues, clics, partages, signalements)
 
 Carte Trello « Sécurité · Limiter les envois en masse ». Migration `20261010180000_limites_visiteurs.sql`.
