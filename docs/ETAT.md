@@ -6,7 +6,7 @@
 ## Où on en est
 
 - Les **19 user stories du MVP sont codées** (US-01 à US-19). Elles sont dans la colonne Trello « À vérifier » : codées, mais pas encore toutes testées en vrai.
-- **622 tests** passent, `npm run lint` et `npm run build` passent.
+- **642 tests** passent (+ 43 tests SQL), `npm run lint` et `npm run build` passent.
 - Déjà testé en vrai : la page d'accueil (ancienne version), la fiche article, la réservation WhatsApp.
 - Pas encore re-testé : la connexion par lien e-mail (corrigée le 9/10), le nouveau formulaire d'article, et tout ce qui a été fait le 9/10 après-midi (voir ci-dessous).
 
@@ -28,7 +28,7 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
    - Migrations appliquées : `activer_pg_cron`, `stock_par_taille`, `role_client`, `commandes`, `commandes_boutique`, `expiration_no_shows`, `messages_whatsapp`. Tâche pg_cron `expirer-commandes` toutes les 15 min.
    - Reste à faire : compte WhatsApp Business chez Meta, 5 modèles de messages à faire approuver (voir `docs/architecture.md`), variables `WHATSAPP_*` et `CRON_SECRET` (empreinte dans `prive.reglages`), Vercel Cron déjà déclaré dans `vercel.json` (1 fois par jour en Hobby). Sans ça, les messages restent en attente.
 7. **Relecture US-20 par Claude** (PR « US-20 Corrections de la relecture ») : confirmation refusée si le stock ne suffit plus (« Stock insuffisant pour … »), article qui redevient « Disponible » après annulation de plusieurs tailles, blocage suivi par numéro de téléphone, nom du client sans chiffres ni lien, résultat d'envoi WhatsApp réservé au serveur, tâche d'envoi limitée à 5 messages et arrêtée avant 60 s, Vercel Cron dans `vercel.json`, verrous dans un ordre fixe, `search_path` fixé, `server-only`. **No-shows (option C du propriétaire)** : plus de no-show automatique à l'expiration ; la boutique signale « Client pas venu » ; l'admin peut annuler un no-show dans `/admin/clients`. Tests SQL : `supabase/tests/corrections_relecture.test.sql`.
-   - Migration **à appliquer** (après accord) : `20261009230000_corrections_relecture.sql`. Modèles WhatsApp : 5 au lieu de 4 (`oranpromo_no_show` ajouté, `oranpromo_commande_expiree` sans compte d'essais).
+   - Migration `corrections_relecture` **appliquée** sur Supabase le 9/10 à 14 h 23 (PR #16, types vérifiés identiques à la base). Modèles WhatsApp : 5 au lieu de 4 (`oranpromo_no_show` ajouté, `oranpromo_commande_expiree` sans compte d'essais).
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
 
