@@ -80,7 +80,7 @@ describe("modération et droits administrateur", () => {
     expect(m.filtreCloture).toHaveBeenCalledWith("id", ["1", "2"]);
     expect(m.updateArticle).toHaveBeenCalledTimes(action === "masquer" ? 1 : 0);
     expect(m.updateBoutique).toHaveBeenCalledTimes(action === "suspendre" ? 1 : 0);
-    if (action === "masquer") expect(m.updateArticle).toHaveBeenCalledWith({ statut: "masque" });
+    if (action === "masquer") expect(m.updateArticle).toHaveBeenCalledWith({ statut: "masque", masque_par_moderation: true });
     if (action === "suspendre") expect(m.updateBoutique).toHaveBeenCalledWith({ statut: "suspendue" });
   });
   it("refuse une sélection périmée avant d’appliquer une action", async () => {

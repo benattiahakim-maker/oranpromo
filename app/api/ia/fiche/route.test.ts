@@ -1,17 +1,18 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
+import { BOUTIQUE_NON_VALIDEE, QUOTA_IA_ATTEINT } from "@/lib/acces-ia";
 import { IA_INDISPONIBLE, PHOTO_A_REPRENDRE } from "@/lib/ia-fiche";
-const { creer, construire, getUser, profil } = vi.hoisted(() => ({ creer: vi.fn(), construire: vi.fn(), getUser: vi.fn(), profil: vi.fn() }));
+const { creer, construire, getUser, profil, boutique, quota } = vi.hoisted(() => ({ creer: vi.fn(), construire: vi.fn(), getUser: vi.fn(), profil: vi.fn(), boutique: vi.fn(), quota: vi.fn() }));
 vi.mock("@anthropic-ai/sdk", () => ({ default: class { messages = { create: creer }; constructor(options: unknown) { construire(options); } } }));
-vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ auth: { getUser }, from: () => ({ select: () => ({ eq: () => ({ maybeSingle: profil }) }) }) }) }));
+vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ auth: { getUser }, from: (table: string) => ({ select: () => ({ eq: () => ({ maybeSingle: table === "profils" ? profil : boutique }) }) }), rpc: quota }) }));
 const fiche = { estVetement: true, nette: true, titre: "Polo bleu", description: "Polo bleu à manches courtes.", categorie: "Polos", genre: "homme", couleur: "bleu" };
 const resultat = (valeur: unknown = fiche) => ({ stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify(valeur) }] });
 function demande(photos = [new File([new Uint8Array([255, 216, 255, 217])], "photo.jpg", { type: "image/jpeg" })]) {
   const body = new FormData(); photos.forEach(photo => body.append("photo", photo));
   return new Request("http://localhost/api/ia/fiche", { method: "POST", body });
 }
-beforeEach(() => { vi.clearAllMocks(); vi.stubEnv("ANTHROPIC_API_KEY", "cle-factice-tests"); vi.stubEnv("ANTHROPIC_MODELE", ""); getUser.mockResolvedValue({ data: { user: { id: "compte" } }, error: null }); profil.mockResolvedValue({ data: { boutique_id: "boutique" }, error: null }); creer.mockResolvedValue(resultat()); });
+beforeEach(() => { vi.clearAllMocks(); vi.stubEnv("ANTHROPIC_API_KEY", "cle-factice-tests"); vi.stubEnv("ANTHROPIC_MODELE", ""); getUser.mockResolvedValue({ data: { user: { id: "compte" } }, error: null }); profil.mockResolvedValue({ data: { boutique_id: "boutique" }, error: null }); boutique.mockResolvedValue({ data: { statut: "validee" }, error: null }); quota.mockResolvedValue({ data: true, error: null }); creer.mockResolvedValue(resultat()); });
 afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
 describe("POST fiche IA, API entièrement simulée", () => {
   it("sans clé : répond exactement 503 et ne construit jamais de client Claude", async () => {
@@ -55,4 +56,8 @@ describe("POST fiche IA, API entièrement simulée", () => {
     await vi.advanceTimersByTimeAsync(15000); const reponse = await reponsePromise;
     expect(reponse.status).toBe(503); expect(creer.mock.calls[0][1].signal.aborted).toBe(true);
   });
+  it.each(["en_attente", "suspendue", null])("refuse une boutique %s (non validée) avant le quota et l’appel IA", async statut => { boutique.mockResolvedValue({ data: statut ? { statut } : null, error: null }); const r = await POST(demande()); expect(r.status).toBe(403); expect(await r.json()).toEqual({ message: BOUTIQUE_NON_VALIDEE }); expect(quota).not.toHaveBeenCalled(); expect(creer).not.toHaveBeenCalled(); });
+  it("consomme le quota une fois par appel autorisé", async () => { expect((await POST(demande())).status).toBe(200); expect(quota).toHaveBeenCalledTimes(1); expect(quota).toHaveBeenCalledWith("consommer_quota_ia"); });
+  it("répond 429 quand le quota est atteint, sans appeler l’IA", async () => { quota.mockResolvedValue({ data: false, error: null }); const r = await POST(demande()); expect(r.status).toBe(429); expect(await r.json()).toEqual({ message: QUOTA_IA_ATTEINT }); expect(construire).not.toHaveBeenCalled(); expect(creer).not.toHaveBeenCalled(); });
+  it("répond 503 si le quota ne peut pas être vérifié", async () => { quota.mockResolvedValue({ data: null, error: { message: "erreur" } }); const r = await POST(demande()); expect(r.status).toBe(503); expect(await r.json()).toEqual({ message: IA_INDISPONIBLE }); expect(creer).not.toHaveBeenCalled(); });
 });
