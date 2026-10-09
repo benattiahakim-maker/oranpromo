@@ -6,6 +6,7 @@ import { creerClientServeur } from "@/lib/supabase/server";
 import { formaterPrix, prixAffiche, promoActive } from "@/lib/prix";
 import { numeroWhatsApp } from "@/lib/whatsapp";
 import { positionBoutique, trierArticlesVitrine } from "@/lib/vitrine";
+import { lienItineraire } from "@/lib/carte";
 import PartagerArticle from "@/components/PartagerArticle";
 import EnregistrerVue from "@/components/EnregistrerVue";
 import { getLangue } from "@/lib/langue-serveur";
@@ -43,7 +44,7 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
     return { ...article, promo: promotion ? { prixPromo: promotion.prix_promo, dateFin: promotion.date_fin } : null };
   }), maintenant);
   const position = positionBoutique(boutique.latitude, boutique.longitude, boutique.adresse, boutique.quartier);
-  const itineraire = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(position)}`;
+  const itineraire = lienItineraire(boutique); // US-24.3 : même lien que la mini-fiche de /carte
 
   return <div className="mx-auto w-full max-w-lg pb-10">
     <EnregistrerVue boutiqueId={boutique.id} />

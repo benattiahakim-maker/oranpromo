@@ -8,7 +8,9 @@ export const ar: Textes = {
     navigation: "تصفح الموقع",
     rechercher: "ابحث",
     panier: "السلة",
-    panierAvecNombre: "السلة ({n})",
+    carte: "الخريطة", // US-24, texte 1
+    panierUnArticle: "السلة (1)",
+    panierArticles: "السلة ({n})",
   },
   langue: {
     groupe: "اللغة",
@@ -279,5 +281,42 @@ export const ar: Textes = {
     envoi: "راهو يتبعث…",
     envoyer: "ابعث الاعتراض",
     fermer: "سكّر",
+  },
+  carteBoutiques: {
+    // US-24.3 : textes de la carte proposés dans US-24 (gardés tels quels, relecture du propriétaire à venir).
+    metaTitre: "خريطة الحوانت",
+    titre: "الحوانت في الخريطة", // 2
+    nombreUn: "{n} حانوت في وهران",
+    nombre: "{n} حانوت في وهران",
+    filtre: "اختار القسم",
+    tous: "الكل", // 11
+    univers: { femme: "نسا", homme: "رجال", enfant: "ذراري", beaute: "تجميل" }, // 11
+    autourDeMoi: "قريب ليّا", // 3
+    autourActif: "قريب ليّا · مفعّل",
+    recherche: "راهو يقلّب على البلاصة نتاعك…",
+    confidentialite: "البلاصة نتاعك تبقى في التيليفون نتاعك: ما تتبعثش وما تتسجّلش.", // 4
+    refus: "ما عطيتش الإذن بالموقع: القائمة تبقى مرتّبة بالاسم.", // 10
+    introuvable: "ما لقيناش البلاصة نتاعك دابا. عاود جرّب برّا ولا قريب من طاقة.",
+    reessayer: "عاود جرّب",
+    region: "خريطة حوانت وهران",
+    vous: "أنت",
+    indisponible: "الخريطة ما قدرتش تبان. قائمة الحوانت راهي لتحت.",
+    promosUne: "{n} تخفيض دابا",
+    promos: "{n} تخفيضات دابا", // 5
+    aucunePromo: "ما كاين حتى تخفيض دابا",
+    distance: "على بعد {d}", // 8
+    voirBoutique: "شوف الحانوت", // 6
+    itineraire: "الطريق", // 7
+    fermer: "سكّر",
+    listeParNom: "الحوانت · بالاسم",
+    listeProches: "الحوانت · الأقرب هوما الأولين",
+    sansPosition: "ما عندهمش بلاصة في الخريطة ({n})", // 9
+    aucuneUnivers: "ما كاين حتى حانوت في هاد القسم دابا.",
+    voirToutes: "شوف كل الحوانت",
+    aucune: "ما كاين حتى حانوت في الخريطة دابا.",
+    erreur: "ما قدرناش نحمّلو الحوانت. عاود جرّب.",
+    accueilTitre: "الحوانت في الخريطة", // 12
+    accueilTexte: "لقى التخفيضات قريب منك.",
+    accueilLien: "شوف الخريطة", // 12
   },
 };

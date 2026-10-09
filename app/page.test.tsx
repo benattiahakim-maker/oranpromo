@@ -33,3 +33,20 @@ describe("US-23 : accueil en arabe", () => {
     expect(html).not.toContain("Voir les promos");
   });
 });
+
+describe("US-24.3 : lien vers la carte sur l'accueil", () => {
+  it("bloc « Les boutiques sur la carte » vers /carte, sans carte ni tuile chargée", async () => {
+    const html = renderToStaticMarkup(await Accueil());
+    expect(html).toContain('href="/carte"');
+    expect(html).toContain("Les boutiques sur la carte");
+    expect(html).toContain("Trouvez les promos près de chez vous.");
+    expect(html).not.toMatch(/leaflet|basemaps|tile\.openstreetmap/);
+  });
+  it("en arabe : « الحوانت في الخريطة · شوف الخريطة »", async () => {
+    langue.valeur = "ar";
+    const html = renderToStaticMarkup(await Accueil());
+    langue.valeur = "fr";
+    expect(html).toContain("الحوانت في الخريطة");
+    expect(html).toContain("شوف الخريطة");
+  });
+});

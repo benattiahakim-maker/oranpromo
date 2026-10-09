@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 // US-24 : Leaflet (≈ 42 Ko) n'est chargé que là où une carte s'affiche, jamais côté serveur.
 const racine = join(__dirname, "..");
-const AVEC_LEAFLET = new Set(["components/CartePosition.tsx"]);
+const AVEC_LEAFLET = new Set(["components/CartePosition.tsx", "components/CarteLeaflet.tsx"]);
 function fichiers(dossier: string): string[] {
   return readdirSync(join(racine, dossier)).flatMap(nom => {
     const chemin = join(dossier, nom);
@@ -38,5 +38,15 @@ describe("US-24 : chargement de Leaflet", () => {
     const legers = sources.filter(({ chemin }) => chemin === "app/page.tsx" || chemin.startsWith("app/catalogue/") || chemin === "components/EntetePublic.tsx");
     expect(legers.length).toBeGreaterThan(0);
     for (const { chemin, texte } of legers) expect(texte, chemin).not.toMatch(/leaflet|CartePosition|ChoixPosition|CarteLeaflet/);
+  });
+
+  it("US-24.3 : la carte publique n'a aucun moyen d'envoyer la position (ni action serveur, ni fetch, ni mesure, ni stockage)", () => {
+    for (const fichier of ["components/CarteBoutiques.tsx", "components/CarteLeaflet.tsx", "app/carte/page.tsx"]) {
+      const { texte } = sources.find(({ chemin }) => chemin === fichier)!;
+      expect(texte, fichier).not.toMatch(/\/actions"|enregistrerMesure|EnregistrerVue|fetch\(|localStorage|sessionStorage|document\.cookie|XMLHttpRequest|sendBeacon/);
+    }
+    // La position ne passe jamais par l'adresse : seul l'univers y est écrit.
+    const carte = sources.find(({ chemin }) => chemin === "components/CarteBoutiques.tsx")!.texte;
+    expect(carte.match(/replaceState\([^)]*\)/g)).toEqual(['replaceState(null, "", cle ? `/carte?univers=${cle}` : "/carte")']);
   });
 });

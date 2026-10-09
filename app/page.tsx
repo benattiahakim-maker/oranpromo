@@ -32,6 +32,11 @@ export default async function Accueil() {
       <p className="absolute bottom-1.5 end-2 text-[10px] text-blanc/85">{t.accueil.creditPhoto} <a href={CREDIT_GRANDE_PHOTO.lienSource} target="_blank" rel="noopener noreferrer" className="underline">{CREDIT_GRANDE_PHOTO.auteur}</a>, <a href={CREDIT_GRANDE_PHOTO.lienLicence} target="_blank" rel="noopener noreferrer license" className="underline">{CREDIT_GRANDE_PHOTO.licence}</a>, {CREDIT_GRANDE_PHOTO.source}</p>
     </section>
     <TuilesAccueil titre={t.accueil.lesUnivers} tuiles={univers} />
+    {/* US-24.3 : lien vers la carte (texte seulement : ni carte ni tuile chargée sur l'accueil). */}
+    <section className="px-5 pt-8"><Link href="/carte" className="flex min-h-[72px] items-center justify-between gap-4 border border-noir px-5 py-4">
+      <span><span className="block font-titre text-2xl">{t.carteBoutiques.accueilTitre}</span><span className="block text-sm text-gris">{t.carteBoutiques.accueilTexte}</span></span>
+      <span className="etiquette shrink-0">{t.carteBoutiques.accueilLien} <span aria-hidden="true" className="inline-block rtl:rotate-180">→</span></span>
+    </Link></section>
     <TuilesAccueil titre={t.accueil.piecesPhares} tuiles={piecesPhares} />
     <main><div className="flex items-center justify-between px-5 pb-4 pt-8"><h2 className="etiquette">{t.accueil.enCeMoment}</h2><Link href="/catalogue" className="etiquette underline">{t.accueil.toutVoir}</Link></div><Promos initiales={promos} /></main>
     <footer className="border-t border-trait px-6 py-6 text-center"><Link href="/espace/connexion" className="etiquette text-gris">{t.accueil.espaceCommercant}</Link></footer>
