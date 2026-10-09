@@ -1,11 +1,22 @@
 import { redirect } from "next/navigation";
 import { creerClientServeur } from "@/lib/supabase/server";
+import Link from "next/link";
+import MesArticles from "@/components/MesArticles";
+import styles from "@/components/espace-articles.module.css";
 
 export default async function Espace({ searchParams }: { searchParams: Promise<{ erreur?: string }> }) {
   const supabase = await creerClientServeur();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) redirect("/espace/connexion");
   const { erreur } = await searchParams;
+  const { data: profil, error: erreurProfil } = await supabase.from("profils").select("boutique_id").eq("id", user.id).maybeSingle();
+  let articles = null;
+  let erreurListe = Boolean(erreurProfil);
+  if (profil?.boutique_id) {
+    const resultat = await supabase.from("articles").select("*, photos(*), tailles(*), promos(*)").eq("boutique_id", profil.boutique_id).order("cree_le", { ascending: false });
+    articles = resultat.data;
+    erreurListe = Boolean(resultat.error);
+  }
 
   async function deconnecter() {
     "use server";
@@ -15,10 +26,13 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
     redirect("/espace/connexion");
   }
 
-  return <main style={{ width: "100%", maxWidth: 390, margin: "0 auto", boxSizing: "border-box", padding: 24 }}>
-    <h1 style={{ fontFamily: "var(--font-bodoni), serif", fontSize: 30, fontWeight: 400, margin: "24px 0" }}>Mon espace</h1>
-    <p style={{ overflowWrap: "anywhere", fontSize: 16 }}>Connecté : {user.email}</p>
-    {erreur === "deconnexion" && <p role="alert" style={{ fontSize: 14 }}>Impossible de vous déconnecter. Réessayez.</p>}
-    <form action={deconnecter}><button type="submit" style={{ width: "100%", minHeight: 54, marginTop: 24, border: 0, borderRadius: 0, background: "#0A0A0A", color: "#FFFFFF", font: "inherit", fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>Se déconnecter</button></form>
+  return <main className={`${styles.espace} mx-auto w-full max-w-[390px] bg-blanc text-noir`}>
+    <header className="border-b border-trait px-6 pb-5 pt-6 text-center"><p className="etiquette text-gris">Mon espace</p><h1 className="font-titre text-[28px] font-normal">Mes articles</h1></header>
+    <div className="px-6">
+      {erreurListe ? <p role="alert" className="py-6">Impossible de charger vos articles. Réessayez.</p> : !profil?.boutique_id ? <p className="py-6">Votre compte n&apos;est rattaché à aucune boutique</p> : <MesArticles articles={articles ?? []} />}
+      {profil?.boutique_id && <Link href="/espace/articles/nouveau" className="etiquette mt-6 flex min-h-[54px] items-center justify-center bg-noir px-4 text-blanc">+ Ajouter un article</Link>}
+      {erreur === "deconnexion" && <p role="alert" className="mt-4">Impossible de vous déconnecter. Réessayez.</p>}
+      <form action={deconnecter}><button type="submit" className="etiquette my-6 min-h-[44px] w-full border border-noir px-4">Se déconnecter</button></form>
+    </div>
   </main>;
 }

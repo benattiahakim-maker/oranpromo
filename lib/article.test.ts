@@ -3,6 +3,11 @@ import { donneesArticle, normaliserTailles, validerArticle, type SaisieArticle }
 
 const valide: SaisieArticle = { titre: "Polo bleu", categorie: "Polos", genre: "homme", couleur: "", description: "", prix: "3500", tailles: ["M"], photos: [{ type: "image/jpeg", size: 8000000 }] };
 describe("US-10 : validation article", () => {
+  it("valide une modification sans réenvoyer les photos, en conservant les autres règles", () => {
+    expect(validerArticle({ ...valide, photos: [] }, { verifierPhotos: false })).toEqual({});
+    expect(validerArticle({ ...valide, photos: [], titre: "", tailles: [] }, { verifierPhotos: false })).toMatchObject({ titre: expect.any(String), tailles: expect.any(String) });
+    expect(validerArticle({ ...valide, photos: [] }).photos).toBeDefined();
+  });
   it("accepte un article et une photo originale de plus de 5 Mo à compresser", () => { expect(validerArticle(valide)).toEqual({}); });
   it("renvoie une erreur par champ obligatoire", () => {
     const erreurs = validerArticle({ ...valide, photos: [], titre: "", categorie: "", prix: "", tailles: [] });

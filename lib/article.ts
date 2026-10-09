@@ -14,11 +14,13 @@ export function normaliserTailles(tailles: string[]): string[] {
   return [...new Set(tailles.map(taille => taille.trim().toUpperCase()).filter(Boolean))].map(taille => taille === "UNIQUE" ? TAILLE_UNIQUE : taille);
 }
 
-export function validerArticle(saisie: SaisieArticle): ErreursArticle {
+export function validerArticle(saisie: SaisieArticle, options: { verifierPhotos?: boolean } = {}): ErreursArticle {
   const erreurs: ErreursArticle = {};
-  if (!saisie.photos.length) erreurs.photos = "Ajoutez au moins une photo.";
-  else if (saisie.photos.length > 5) erreurs.photos = "Vous pouvez ajouter au maximum 5 photos.";
-  else if (saisie.photos.some(photo => !TYPES_PHOTO.includes(photo.type) || photo.size <= 0)) erreurs.photos = "Choisissez des photos JPEG, PNG ou WebP non vides.";
+  if (options.verifierPhotos !== false) {
+    if (!saisie.photos.length) erreurs.photos = "Ajoutez au moins une photo.";
+    else if (saisie.photos.length > 5) erreurs.photos = "Vous pouvez ajouter au maximum 5 photos.";
+    else if (saisie.photos.some(photo => !TYPES_PHOTO.includes(photo.type) || photo.size <= 0)) erreurs.photos = "Choisissez des photos JPEG, PNG ou WebP non vides.";
+  }
   const longueur = Array.from(saisie.titre.trim()).length;
   if (longueur < 2 || longueur > 120) erreurs.titre = "Le titre doit contenir entre 2 et 120 caractères.";
   if (!CATEGORIES_ARTICLE.some(categorie => categorie === saisie.categorie)) erreurs.categorie = "Choisissez une catégorie.";
