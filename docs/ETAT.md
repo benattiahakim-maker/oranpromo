@@ -6,7 +6,7 @@
 ## Où on en est
 
 - Les **19 user stories du MVP sont codées** (US-01 à US-19). Elles sont dans la colonne Trello « À vérifier » : codées, mais pas encore toutes testées en vrai.
-- **653 tests** passent (+ 66 tests SQL), `npm run lint` et `npm run build` passent.
+- **667 tests** passent (+ 94 tests SQL), `npm run lint` et `npm run build` passent.
 - Déjà testé en vrai : la page d'accueil (ancienne version), la fiche article, la réservation WhatsApp.
 - Pas encore re-testé : la connexion par lien e-mail (corrigée le 9/10), le nouveau formulaire d'article, et tout ce qui a été fait le 9/10 après-midi (voir ci-dessous).
 
@@ -33,7 +33,10 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
    - **Blocage d'un tiers corrigé** : le numéro n'étant pas vérifié, n'importe qui pouvait mettre le numéro d'une autre personne sur son compte, faire 5 no-shows et la faire bloquer. Désormais les no-shows et le blocage automatique ne concernent que le compte qui a passé les commandes. Un numéro avec des no-shows utilisé par plusieurs comptes apparaît dans `/admin/clients` (« Numéro partagé par plusieurs comptes ») : l'admin décide (Bloquer / Débloquer, sans message WhatsApp). `/compte` n'affiche plus que le compteur du compte. Le blocage par numéro est gardé dans le code, désactivé (réglage `blocage_par_numero`), à activer avec la V2 SMS.
    - **Limite par boutique** : au plus 20 nouvelles commandes par heure et par boutique, tous clients confondus (coût WhatsApp, tranquillité de la boutique).
    - Migration `20261009233000_numero_non_verifie` **appliquée** sur Supabase le 9/10 vers 15 h (comptes existants recalculés : aucun compte bloqué ni avec no-show en base à ce moment), types régénérés. Tests SQL : `supabase/tests/numero_non_verifie.test.sql` (23) et `corrections_relecture.test.sql` mis à jour (43). `vercel.json` non modifié.
-   - **À discuter avec le propriétaire** (non codé) : une boutique peut passer une commande « prête » tout de suite puis déclarer « Client pas venu » 24 h plus tard, sans que le client ait vraiment eu le temps de venir.
+   - **À discuter avec le propriétaire** : une boutique peut passer une commande « prête » tout de suite puis déclarer « Client pas venu » 24 h plus tard, sans que le client ait vraiment eu le temps de venir. → Décision : le client peut contester (point 9).
+9. **Contestation d'un no-show** (PR #20, décision du propriétaire) : dans `/compte`, rubrique « Commandes non récupérées », le client conteste un no-show avec un motif court (5 à 300 caractères), une seule fois, seulement pour ses propres commandes. Tant que la contestation est en attente, le no-show ne compte pas (compteur recalculé, compte débloqué s'il repasse sous 5) ; un blocage décidé par l'admin reste en place (nouvelle colonne `profils.bloque_par_admin`). Dans `/admin/clients`, « Contestations en attente » : **Valider le no-show** (il compte de nouveau, blocage possible au 5e) ou **Annuler le no-show**. Aucun nouveau message WhatsApp.
+   - Migration `20261009234500_contestation_no_show` **appliquée** sur Supabase le 9/10 vers 15 h, types régénérés. Tests SQL : `supabase/tests/contestation_no_show.test.sql` (28).
+   - À noter : le motif est aussi lisible par la boutique (elle lit ses commandes en entier) ; il n'y a pas de délai limite pour contester.
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
 
