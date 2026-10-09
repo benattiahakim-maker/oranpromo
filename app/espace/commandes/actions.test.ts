@@ -13,7 +13,7 @@ beforeEach(() => { after.mockClear(); envoyer.mockReset(); rpc.mockReset(); rpc.
 describe("action serveur de la boutique (US-20.3)", () => {
   it("confirme une commande de sa boutique", async () => {
     expect(await changerStatutCommandeBoutique(id, "confirmee", null, "")).toEqual({ succes: true, message: "Commande mise à jour." });
-    expect(rpc).toHaveBeenCalledWith("changer_statut_commande", { commande: id, statut: "confirmee", motif: null, note: null });
+    expect(rpc).toHaveBeenCalledWith("changer_statut_commande", { commande: id, statut: "confirmee", motif: undefined, note: undefined });
   });
   it("refuse une commande d’une autre boutique sans appeler la base", async () => {
     boutique.valeur = "b2";

@@ -51,7 +51,7 @@ export function messageErreurCommande(error: ErreurBase, defaut: string): string
 export type LigneEnvoyee = { article_id: string; taille: string; quantite: number };
 export async function passerCommande(client: SupabaseClient<Database>, boutiqueId: string, lignes: LigneEnvoyee[], note: string): Promise<string> {
   if (!lignes.length) throw new Error("Votre panier est vide.");
-  const { data, error } = await client.rpc("passer_commande", { boutique: boutiqueId, lignes, note: note.trim() || null });
+  const { data, error } = await client.rpc("passer_commande", { boutique: boutiqueId, lignes, note: note.trim() || undefined });
   if (error || typeof data !== "string") throw new Error(messageErreurCommande(error, "Impossible d’envoyer la commande. Réessayez."));
   return data;
 }
@@ -59,7 +59,7 @@ export async function passerCommande(client: SupabaseClient<Database>, boutiqueI
 export async function changerStatutCommande(client: SupabaseClient<Database>, id: string, statut: StatutCommande, options: { motif?: MotifAnnulation | null; note?: string } = {}) {
   const note = options.note?.trim() ?? "";
   if (note.length > NOTE_SUIVI_MAX) throw new Error(`La note doit faire ${NOTE_SUIVI_MAX} caractères au plus.`);
-  const { error } = await client.rpc("changer_statut_commande", { commande: id, statut, motif: options.motif ?? null, note: note || null });
+  const { error } = await client.rpc("changer_statut_commande", { commande: id, statut, motif: options.motif ?? undefined, note: note || undefined });
   if (error) throw new Error(messageErreurCommande(error, "Impossible de modifier la commande. Réessayez."));
 }
 
