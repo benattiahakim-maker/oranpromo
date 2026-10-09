@@ -784,3 +784,110 @@ L'espace commerçant et l'administration restent en français (US-23).
 2. Budget mensuel de départ : combien ? (proposé : **30 000 DA**, soit 50 parrainages complets par mois ; à 0, aucun bon n'est créé)
 3. Coordonnées de virement des boutiques (CCP, RIB, BaridiMob) : gardées **hors du site** par le propriétaire au lancement (proposé : aucune donnée bancaire dans la base) ?
 4. Accord écrit avec chaque boutique (elle accepte les bons, OranPromo rembourse avant le 10 du mois suivant, OranPromo peut refuser une ligne suspecte) : à préparer par le propriétaire avant d'activer `parrainage` (proposé).
+
+## Module 15 — Tableau des commandes de la boutique (après le MVP)
+
+Source : demande du propriétaire du 9 octobre 2026 (20 h 42) : « un vrai tableau de gestion des commandes pour les commerçants dans `/espace/commandes` ». Contenu **validé par le propriétaire** (points 1 à 7 ci-dessous) ; **conception seulement, rien n'est codé** : la mise en œuvre attend sa validation des maquettes et ses réponses aux questions. Conception technique : `docs/architecture.md`, section « Tableau des commandes (US-28) ». Maquette : `docs/maquettes/TableauCommandes.dc.html` (375 px et ordinateur 1 024 px).
+
+**Aujourd'hui** : deux onglets « En cours » / « Terminées », une grande carte par commande (US-20.3), bouton « Scanner un QR code client » et « Remis sans QR code » (US-26.3), bon parrainage affiché (US-27.4). Une boutique qui reçoit 15 commandes dans la journée doit faire défiler 15 grandes cartes et toucher chaque bouton un par un.
+
+**Contenu validé par le propriétaire (9/10, 20 h 42)** :
+1. **Étapes avec compteurs** : « À confirmer », « À préparer » (commandes confirmées), « Prêtes », « Terminées ».
+2. **Tableau compact** sur ordinateur (n°, prénom, nombre d'articles, montant, heure, échéance en rouge quand elle approche, indicateur de bon) et **lignes serrées** sur téléphone au lieu des grandes cartes.
+3. **Le plus urgent d'abord** (commande « demandée » qui attend depuis longtemps, commande « prête » proche de l'expiration).
+4. **Recherche** par numéro de commande ou prénom.
+5. **Actions groupées** : cocher plusieurs commandes, puis « Confirmer » ou « Marquer prêtes » en une touche ; chaque commande passe quand même, une par une, par la même règle de la base (`changer_statut_commande`) ; les échecs sont signalés commande par commande (ex. stock insuffisant).
+6. **Liste de préparation** : tous les articles à sortir pour les commandes confirmées, regroupés par article et taille / contenance, imprimable.
+7. **Mise à jour automatique** avec un petit signal (son et visuel) à l'arrivée d'une commande, sans recharger la page ; Supabase Realtime ou interrogation régulière à comparer (justifier, sûr vis-à-vis des règles RLS, pas de nouvelle dépendance lourde).
+
+Ordre des modules : US-28 peut se coder tout de suite (US-26 et US-27 sont fusionnées).
+
+Restent tels quels : bouton « Scanner un QR code client », « Remis sans QR code » derrière sa confirmation, « Client pas venu », « Annuler » avec motif, bon parrainage. **Aucune règle ne change** : statuts et transitions (`changer_statut_commande`, `prive.confirmer_commande`), expiration à 24 h, no-shows, contestation, blocage, numéro vérifié, bons. L'espace commerçant reste **en français** ; l'arabe viendra avec tout l'espace (même décision que US-26, point 4) : les textes sont dans un seul fichier pour être traduits plus tard.
+
+Livrée en 4 sous-stories, dans cet ordre (une PR chacune) :
+
+| Story | Contenu | Écrans |
+| --- | --- | --- |
+| US-28.1 | Étapes avec compteurs, lignes serrées (téléphone) / tableau (ordinateur), tri par urgence, détail d'une commande, recherche | `/espace/commandes` |
+| US-28.2 | Actions groupées « Confirmer » et « Marquer prêtes », compte rendu commande par commande | `/espace/commandes` |
+| US-28.3 | Liste de préparation imprimable | `/espace/commandes/preparation` |
+| US-28.4 | Mise à jour automatique, signal visuel et sonore d'une nouvelle commande | `/espace/commandes` (et compteur du menu) |
+
+### US-28 — Gérer ses commandes dans un tableau (vue d'ensemble) — **conception, en attente de la validation du propriétaire**
+En tant que commerçant, je veux voir d'un coup d'œil ce que je dois confirmer, préparer et remettre, traiter plusieurs commandes à la fois et savoir tout de suite qu'une commande arrive, afin de répondre vite sans rien oublier.
+
+### US-28.1 — Étapes, lignes serrées, urgence, recherche (page `/espace/commandes`)
+- **Étapes** (onglets sur téléphone, onglets-compteurs sur ordinateur), avec le **nombre** de commandes : « À confirmer (3) » = `demandee` ; « À préparer (2) » = `confirmee` ; « Prêtes (4) » = `prete` ; « Terminées » = `recuperee`, `annulee`, `expiree` (compteur : terminées **aujourd'hui**, heure d'Oran). Adresse : `/espace/commandes?etape=a_confirmer|a_preparer|pretes|terminees` ; l'ancienne adresse `?vue=terminees` mène à « Terminées », `?vue=en_cours` ou rien à l'étape par défaut.
+- **Étape ouverte par défaut** : la première non vide parmi « À confirmer », « À préparer », « Prêtes » (sinon « À confirmer ») — question 10.
+- **Téléphone (375 px), une ligne serrée par commande** (environ 64 px au lieu de 250) :
+  - à gauche, case à cocher (zone de 44 px) sur « À confirmer » et « À préparer » seulement ;
+  - ligne 1 : « N° 131 · Samia », à droite le montant « 8 700 DA » ;
+  - ligne 2 (petite, grise) : « 2 articles · reçue à 14 h 05 », à droite l'**urgence** : « attend depuis 42 min » ou « expire dans 1 h 20 », **en rouge** au-delà du seuil (voir plus bas) ; étiquette « Bon −300 » si un bon parrainage est appliqué ; « Nouveau » pendant 2 minutes pour une commande arrivée pendant que la page est ouverte ;
+  - toucher la ligne **déplie le détail** (articles, téléphone et WhatsApp du client, note, motif, suivi) et les **boutons d'aujourd'hui** (« Confirmer », « Prête », « Annuler » avec motif, « Remis sans QR code », « Client pas venu ») ; une seule commande dépliée à la fois.
+- **Ordinateur (≥ 1 024 px), tableau compact** : colonnes ☐ · N° · Prénom · Articles · Montant · Reçue · Échéance · Bon · (bouton de l'étape). Une ligne = 44 px. Le bouton de l'étape (« Confirmer » / « Prête ») est dans la ligne ; cliquer la ligne ouvre le même détail sous la ligne. La page s'élargit (jusqu'à 1 120 px) seulement sur ordinateur ; le menu de l'espace ne change pas.
+- **Le plus urgent d'abord** (même ordre sur téléphone et ordinateur) :
+  - « À confirmer » : la plus ancienne d'abord (`cree_le` croissant) ; **rouge** après **30 minutes** d'attente (« attend depuis 42 min ») — seuil : question 1 ;
+  - « À préparer » : la plus anciennement confirmée d'abord (`confirmee_le`) ; rouge après 2 heures (question 1) ;
+  - « Prêtes » : l'échéance la plus proche d'abord (`expire_le` croissant) ; **rouge à moins de 3 heures** de l'expiration (« expire dans 1 h 20 ») ; une commande prête dont l'échéance est passée affiche « expirée, en attente » (l'expiration automatique passe toutes les 15 min) ;
+  - « Terminées » : la plus récente d'abord, 7 derniers jours (question 7), bouton « Voir plus ».
+  - Le rouge est toujours accompagné du texte (« attend depuis… », « expire dans… ») : la couleur seule ne porte pas l'information.
+- **Recherche** : champ « N° ou prénom » en haut (`?q=`) : un nombre cherche le **numéro exact** ; sinon le **début du nom** saisi par le client (« sam » trouve « Samia B. »), sans tenir compte des majuscules ; résultats de **toutes les étapes**, avec l'étape affichée dans la ligne ; 50 résultats au plus ; « Aucune commande ne correspond. » ; une croix efface la recherche. Seules les commandes de la boutique sont cherchées (règles RLS actuelles).
+- Le bouton **« Scanner un QR code client »** reste en haut ; sur « Prêtes », il est aussi rappelé au-dessus de la liste.
+- Tests : répartition des statuts dans les 4 étapes, tri par urgence et seuils (heures d'Oran), compteurs, recherche (numéro, prénom, caractères spéciaux `%` `_` neutralisés, 50 au plus), ancienne adresse `?vue=`, détail déplié avec les mêmes boutons qu'aujourd'hui, « Remis sans QR code » toujours derrière sa confirmation.
+
+### US-28.2 — Actions groupées (page `/espace/commandes`)
+- Sur « À confirmer » et « À préparer », cases à cocher + « Tout cocher » (les commandes affichées). Dès qu'une case est cochée, une **barre d'action** reste en bas de l'écran (téléphone) ou au-dessus du tableau (ordinateur) : « 3 commandes cochées · **Confirmer les 3** » ou « **Marquer prêtes (3)** », et « Décocher ».
+- **20 commandes au plus** par action (question 5) ; au-delà, le bouton dit « 20 au plus à la fois ».
+- Le serveur traite les commandes **une par une, de la plus ancienne à la plus récente** (pour le stock : la première arrivée est servie d'abord), chacune avec **les mêmes contrôles** qu'aujourd'hui (commande de la boutique, transition permise) et **la même fonction** `changer_statut_commande` de la base, dans sa propre transaction : un échec n'annule pas les autres.
+- **Compte rendu** sous la barre : « 3 commandes confirmées. » puis, s'il y a des échecs, une ligne par commande : « N° 131 non confirmée : Stock insuffisant pour « Polo piqué » en taille M : il reste 1 pièce(s), la commande en demande 2. » (message de la base, tel quel) avec un lien « Voir » qui déplie la commande (pour corriger le stock ou l'annuler) ; « N° 129 : déjà confirmée » si elle a changé entre-temps. Les commandes réussies quittent l'étape ; les échouées restent cochées.
+- « Marquer prêtes » : le message WhatsApp « commande prête » part pour chaque commande réussie, après la réponse (comme aujourd'hui, US-20.5).
+- **Pas d'action groupée** pour « Annuler » (motif propre à chaque commande), « Remis » (QR code, code ou confirmation « sans QR code » une par une) ni « Client pas venu ».
+- Tests : 3 confirmées + 1 refusée pour stock (compte rendu exact, les 3 vraiment confirmées), ordre de traitement, commande d'une autre boutique refusée sans appel, plus de 20 refusé, transition impossible (« déjà confirmée »), messages WhatsApp seulement pour les commandes devenues prêtes, double touche = un seul envoi.
+
+### US-28.3 — Liste de préparation (page `/espace/commandes/preparation`)
+- Bouton « Liste de préparation » sur l'étape « À préparer » (et dans le menu de la page).
+- **Regroupée par article puis par taille / contenance** : « Polo piqué — M × 3 (n° 129 Karim, n° 131 Samia ×2) — L × 1 (n° 133 Yacine) » ; quantité totale en gras ; une case ☐ à cocher **sur le papier** devant chaque taille ; articles triés par catégorie puis par nom (même ordre que les rayons). Contenance : « 50 ml » (US-25).
+- En bas : la liste des commandes concernées (n°, prénom, nombre d'articles, montant), pour faire les sacs.
+- En-tête : nom de la boutique, « Liste de préparation · vendredi 09/10 à 14 h 05 · 4 commandes confirmées · 7 pièces ».
+- **Imprimable** (bouton « Imprimer » de l'affiche US-22) : feuille A4 noir et blanc, menu et boutons cachés à l'impression, pas de photo (question 6).
+- Seulement les commandes **confirmées** (« À préparer ») ; aucune action sur cette page.
+- Tests : regroupement (même article, deux tailles ; même taille dans deux commandes ; article supprimé depuis la commande : regroupé par titre), totaux, tri, page vide (« Rien à préparer »).
+
+### US-28.4 — Mise à jour automatique et signal (page `/espace/commandes`)
+- Page ouverte et visible : la page vérifie **toutes les 20 secondes** s'il y a du nouveau (option A, recommandée ; voir l'architecture) ; s'il y a du nouveau, la liste et les compteurs se mettent à jour **sans recharger** la page (la recherche, les cases cochées et la commande dépliée restent).
+- **Nouvelle commande** : bandeau en haut « Nouvelle commande n° 134 · Nadia · 2 articles » (lien qui la déplie), étiquette « Nouveau » sur la ligne, compteur « À confirmer » qui clignote une fois, titre de l'onglet du navigateur « (1) Commandes reçues » tant que la page n'a pas été regardée ; **son court** (deux bips, généré par le navigateur, aucun fichier) si le son est activé ; vibration courte sur Android.
+- **Son** : les navigateurs interdisent un son avant que l'utilisateur ait touché la page : bouton « Activer le son » (une fois ; choix gardé dans le navigateur), puis « Son activé · Couper ». Question 3.
+- Indication discrète « À jour · 14 h 05 » et bouton « Actualiser » ; en cas de coupure : « Connexion perdue, nouvel essai… » (l'interrogation ralentit à 1 minute puis reprend).
+- Onglet caché ou téléphone en veille : plus d'interrogation ; au retour, une vérification immédiate.
+- Une commande changée par ailleurs (confirmée depuis WhatsApp, US-20.6 ; expirée ; annulée par le client) se met aussi à jour, sans son.
+- Tests : signal seulement pour une commande plus récente que la dernière vue, pas de son sans activation, pas d'interrogation onglet caché, ralentissement après erreur, l'état de la page (recherche, cases, détail) gardé après la mise à jour, la réponse de vérification ne contient aucune donnée personnelle.
+
+**Textes (français ; l'arabe viendra avec tout l'espace commerçant)** :
+
+| # | Où | Texte |
+| --- | --- | --- |
+| 1 | Étapes | À confirmer · À préparer · Prêtes · Terminées (avec le nombre) |
+| 2 | Recherche | N° ou prénom |
+| 3 | Recherche vide | Aucune commande ne correspond. |
+| 4 | Urgence | attend depuis 42 min · confirmée il y a 2 h 10 · expire dans 1 h 20 · expirée, en attente |
+| 5 | Bon | Bon −300 (détail : « Bon parrainage −300 DA · à encaisser 3 200 DA ») |
+| 6 | Barre d'action | 3 commandes cochées · Confirmer les 3 · Marquer prêtes (3) · Décocher |
+| 7 | Compte rendu | 3 commandes confirmées. · N° 131 non confirmée : (message de la base, ex. « Stock insuffisant pour « Polo piqué » en taille M : il reste 1 pièce(s)… ») · N° 129 : déjà confirmée. |
+| 8 | Limite | 20 au plus à la fois |
+| 9 | Préparation | Liste de préparation · Rien à préparer pour le moment. · Imprimer |
+| 10 | Nouvelle commande | Nouvelle commande n° 134 · Nadia · 2 articles |
+| 11 | Son | Activer le son · Son activé · Couper |
+| 12 | Mise à jour | À jour · 14 h 05 · Actualiser · Connexion perdue, nouvel essai… |
+| 13 | Étape vide | Aucune commande à confirmer. (à préparer, prête…) |
+
+**Questions au propriétaire** :
+1. **Seuils du rouge** : « À confirmer » après 30 min d'attente, « À préparer » après 2 h, « Prêtes » à moins de 3 h de l'expiration : ça vous va ?
+2. **Mise à jour automatique** : **A** interrogation toutes les 20 s (recommandée : rien à installer, aucune migration, aucune donnée personnelle qui circule, coût négligeable pour quelques dizaines de boutiques ; délai de 20 s au pire) ou **B** Supabase Realtime (instantané, mais une migration, un réglage Supabase « canaux privés seulement » et plus de pièces à surveiller) ? On peut commencer par A et passer à B si les boutiques le demandent.
+3. **Son** : bouton « Activer le son » proposé (le navigateur l'exige). Faut-il aussi des **notifications du téléphone** quand la page est fermée (plus tard, demande une autorisation et un service à part) ?
+4. **Ordinateur** : un tableau par étape avec des onglets (proposé, maquette), ou trois colonnes côte à côte « À confirmer / À préparer / Prêtes » ?
+5. **Actions groupées** : 20 commandes au plus par touche ; pas d'annulation groupée (motif par commande). D'accord ?
+6. **Liste de préparation** : seulement les commandes confirmées (proposé), ou aussi celles « À confirmer » (pour vérifier le stock avant de confirmer) ? Avec une petite photo de chaque article (plus d'encre) ?
+7. **Terminées** : 7 derniers jours par défaut, compteur « aujourd'hui » : d'accord ?
+8. **Montant affiché** : le total de la commande avec l'étiquette « Bon −300 » (proposé), ou directement le montant à encaisser ?
+9. **Recherche** : numéro ou début du prénom (validé). Ajouter les 4 derniers chiffres du téléphone ?
+10. **Étape ouverte par défaut** : la première étape non vide (proposé) ou toujours « À confirmer » ?
