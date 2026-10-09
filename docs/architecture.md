@@ -452,7 +452,10 @@ Fichiers : `components/ScannerRetrait.tsx` (caméra, lecteur intégré ou `jsqr`
   - Aucune image de la caméra ne quitte le téléphone : seul le texte du QR code lu (le lien) est utilisé.
   - Le navigateur intégré de WhatsApp ou d'Instagram peut refuser la caméra : la page dit d'ouvrir l'espace dans le navigateur habituel (Chrome, Safari) et garde le champ du code.
 
-### Message WhatsApp (US-26.4)
+### Message WhatsApp (US-26.4) — codé
+
+Migration `20261011120000_retrait_whatsapp` (contrainte des modèles, `prive.messages_suivi_commande` et `messages_whatsapp_commande` reprises de la production avec seulement la branche « prête » et la liste des modèles changées, nouvelle fonction `jeton_retrait_envoi`) ; `preparerBoutonRetrait()` dans `lib/notifications/index.ts`, appelée par `envoyerMessages` juste avant chaque envoi (après une action et par la tâche planifiée).
+
 
 - Nouveau modèle `oranpromo_commande_prete_retrait` (catégorie « Utilitaire », `fr`) : « Bonjour {{1}}, votre commande n° {{2}} est prête chez {{3}}. Vous pouvez la récupérer jusqu'au {{4}}. Montrez votre QR code de retrait en boutique (bouton ci-dessous) et payez sur place. » + bouton lien « Mon QR code » → `https://<domaine>/retrait/{{1}}`.
 - **Le jeton ne doit pas être dans `messages_whatsapp`** : la boutique est participante de la commande et lit ses messages (`messages_whatsapp_commande()`), elle verrait le jeton avant le scan. Même méthode que US-20.6 : la base met l'**identifiant de la commande** en 5e paramètre ; au moment de l'envoi, le serveur le retire et demande le jeton à `jeton_retrait_envoi(secret, commande)` (fonction réservée au serveur : empreinte de `CRON_SECRET` dans `prive.reglages`, comme `resultat_message_whatsapp`), puis construit le bouton.
