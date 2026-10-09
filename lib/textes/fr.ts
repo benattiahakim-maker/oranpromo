@@ -29,6 +29,8 @@ export const fr = {
   listes: {
     univers: { femme: "Femme", homme: "Homme", enfant: "Enfant", beaute: "Beauté" },
     genres: { homme: "Homme", femme: "Femme", enfant: "Enfant", mixte: "Mixte" },
+    genresBeaute: { femme: "Pour elle", homme: "Pour lui", mixte: "Mixte" },
+    raccourcisBeaute: { "Parfums": "Parfums", "Maquillage": "Maquillage", "Soins visage et corps": "Soins", "Cheveux": "Cheveux", "Hammam et traditionnel": "Hammam" },
     groupesCategories: { mode: "Mode", beaute: "Beauté" },
     categories: {
       "T-shirts et polos": "T-shirts et polos",
@@ -96,6 +98,11 @@ export const fr = {
     unResultat: "{n} résultat",
     resultats: "{n} résultats",
     aucun: "Aucun article ne correspond à votre recherche. Essayez d’autres critères ou effacez les filtres.",
+    aucunBeaute: "Aucun produit de beauté pour le moment.",
+    contenance: "Contenance",
+    pour: "Pour",
+    tout: "Tout",
+    categoriesBeaute: "Catégories beauté",
     pagination: "Pagination du catalogue",
     precedent: "Précédent",
     suivant: "Suivant",

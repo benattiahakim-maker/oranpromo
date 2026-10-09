@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { articleDansUnivers, trierCategories, chargerCatalogue, chargerOptionsCatalogue, chargerPromos, filtrerCatalogue, limiteConfirmation, LIMITE_CATALOGUE, type CarteArticle } from "./catalogue";
+import { articleDansUnivers, catalogueBeaute, genresFiltres, trierContenances, trierTailles, trierCategories, chargerCatalogue, chargerOptionsCatalogue, chargerPromos, filtrerCatalogue, limiteConfirmation, LIMITE_CATALOGUE, type CarteArticle } from "./catalogue";
 
 const article: CarteArticle = { id: "1", titre: "PÔLO bleu", description: "Coton léger", categorie: "Hauts", genre: "homme", prix: 3500, cree_le: "2026-10-08", boutique: { nom: "Test", quartier: "Centre" }, photo: null, tailles: ["M"], promo: { prixPromo: 2000, dateFin: "2026-11-01" } };
 const maintenant = new Date("2026-10-08");
@@ -48,7 +48,7 @@ describe("visibilité publique des listes", () => {
     expect(appels).toContainEqual(["eq", "boutiques.statut", "validee"]);
     expect(appels).toContainEqual(["gt", "derniere_confirmation", "2026-09-18T12:00:00.000Z"]);
     expect(appels).toContainEqual(["eq", "categorie", "T-shirts et polos"]);
-    expect(appels).toContainEqual(["eq", "genre", "homme"]);
+    expect(appels).toContainEqual(["in", "genre", ["homme"]]);
     expect(appels).toContainEqual(["eq", "boutiques.quartier", "Centre"]);
     expect(appels).toContainEqual(["eq", "filtre_taille.libelle", "M"]);
     expect(appels).toContainEqual(["range", 0, LIMITE_CATALOGUE - 1]);
@@ -60,7 +60,7 @@ describe("visibilité publique des listes", () => {
   });
   it("options des filtres : valeurs publiques uniques et triées", async () => {
     const { client, appels } = clientFactice([{ categorie: "Robes", boutiques: { quartier: "Gambetta" }, tailles: [{ libelle: "S", disponible: true }] }, { categorie: "T-shirts et polos", boutiques: { quartier: "Centre" }, tailles: [{ libelle: "M", disponible: true }, { libelle: "XL", disponible: false }] }]);
-    expect(await chargerOptionsCatalogue(client, jour)).toEqual({ categories: ["T-shirts et polos", "Robes"], tailles: ["M", "S"], quartiers: ["Centre", "Gambetta"] });
+    expect(await chargerOptionsCatalogue(client, jour)).toEqual({ categories: ["T-shirts et polos", "Robes"], tailles: ["S", "M"], contenances: [], quartiers: ["Centre", "Gambetta"] });
     expect(appels).toContainEqual(["eq", "boutiques.statut", "validee"]);
   });
 });
@@ -89,5 +89,55 @@ describe("univers Femme / Homme / Enfant / Beauté", () => {
   });
   it("trie les catégories dans l’ordre de la liste, les inconnues à la fin", () => {
     expect(trierCategories(["Parfums", "Zèbre", "Robes", "T-shirts et polos", "Robes"])).toEqual(["T-shirts et polos", "Robes", "Parfums", "Zèbre"]);
+  });
+});
+
+describe("US-25.2 : catalogue Beauté", () => {
+  const carte = (categorie: string, genre: string, tailles: string[] = []): CarteArticle => ({ ...article, categorie, genre, tailles });
+  it("mode beauté : univers Beauté ou catégorie beauté", () => {
+    expect(catalogueBeaute({ univers: "beaute" })).toBe(true);
+    expect(catalogueBeaute({ categorie: "Parfums" })).toBe(true);
+    expect(catalogueBeaute({ univers: "femme" })).toBe(false);
+    expect(catalogueBeaute({ categorie: "Robes" })).toBe(false);
+    expect(catalogueBeaute({})).toBe(false);
+  });
+  it("« Pour elle » et « Pour lui » incluent les mixtes en beauté ; ailleurs, égalité stricte", () => {
+    expect(genresFiltres({ univers: "beaute", genre: "femme" })).toEqual(["femme", "mixte"]);
+    expect(genresFiltres({ categorie: "Parfums", genre: "homme" })).toEqual(["homme", "mixte"]);
+    expect(genresFiltres({ univers: "beaute", genre: "mixte" })).toEqual(["mixte"]);
+    expect(genresFiltres({ univers: "femme", genre: "femme" })).toEqual(["femme"]);
+    expect(genresFiltres({ genre: "femme" })).toEqual(["femme"]);
+    expect(genresFiltres({ univers: "beaute" })).toBeNull();
+    const parfums = [carte("Parfums", "mixte"), carte("Parfums", "femme"), carte("Parfums", "homme")];
+    expect(filtrerCatalogue(parfums, { univers: "beaute", genre: "femme" }, maintenant).map(a => a.genre)).toEqual(["mixte", "femme"]);
+    expect(filtrerCatalogue(parfums, { univers: "beaute", genre: "homme" }, maintenant).map(a => a.genre)).toEqual(["mixte", "homme"]);
+    expect(filtrerCatalogue([carte("Robes", "mixte"), carte("Robes", "femme")], { genre: "femme" }, maintenant).map(a => a.genre)).toEqual(["femme"]);
+  });
+  it("requête Supabase : in(genre, [femme, mixte]) dans Beauté, in(genre, [femme]) ailleurs", async () => {
+    const beaute = clientFactice([]);
+    await chargerCatalogue(beaute.client, { univers: "beaute", genre: "femme" }, jour);
+    expect(beaute.appels).toContainEqual(["in", "genre", ["femme", "mixte"]]);
+    const mode = clientFactice([]);
+    await chargerCatalogue(mode.client, { categorie: "Robes", genre: "femme" }, jour);
+    expect(mode.appels).toContainEqual(["in", "genre", ["femme"]]);
+    expect(mode.appels.some(a => a[0] === "in" && a[1] === "genre" && (a[2] as string[]).includes("mixte"))).toBe(false);
+  });
+  it("contenances triées par volume, valeurs inconnues gardées, « Unique » à la fin", () => {
+    expect(trierContenances(["Unique", "100 ml", "5 ml", "50 ml", "1000 ml", "10 ml", "50 ml"])).toEqual(["5 ml", "10 ml", "50 ml", "100 ml", "1000 ml", "Unique"]);
+    expect(trierContenances(["Unique", "Coffret", "75 ml"])).toEqual(["75 ml", "Coffret", "Unique"]);
+  });
+  it("tailles de vêtements XS → 3XL, puis pointures, puis le reste, « Unique » à la fin", () => {
+    expect(trierTailles(["XL", "Unique", "S", "42", "M", "38", "XS", "3XL", "XXL", "L", "Autre"])).toEqual(["XS", "S", "M", "L", "XL", "XXL", "3XL", "38", "42", "Autre", "Unique"]);
+  });
+  it("options : contenances séparées des tailles d’après la catégorie (pas d’après « ml »)", async () => {
+    const { client } = clientFactice([
+      { categorie: "Parfums", boutiques: { quartier: "Gambetta" }, tailles: [{ libelle: "100 ml", disponible: true }, { libelle: "50 ml", disponible: true }, { libelle: "10 ml", disponible: false }] },
+      { categorie: "Maquillage", boutiques: { quartier: "Gambetta" }, tailles: [{ libelle: "Unique", disponible: true }] },
+      { categorie: "T-shirts et polos", boutiques: { quartier: "Centre" }, tailles: [{ libelle: "L", disponible: true }, { libelle: "S", disponible: true }] },
+      { categorie: "Accessoires", boutiques: { quartier: "Centre" }, tailles: [{ libelle: "Unique", disponible: true }] },
+    ]);
+    const options = await chargerOptionsCatalogue(client, jour);
+    expect(options.contenances).toEqual(["50 ml", "100 ml", "Unique"]);
+    expect(options.tailles).toEqual(["S", "L", "Unique"]);
   });
 });
