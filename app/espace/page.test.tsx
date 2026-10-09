@@ -4,7 +4,7 @@ import Espace from "./page";
 import { deconnecter } from "./actions";
 const { getUser, signOut, redirect, from, eqProfil, eqArticles, eqBoutique } = vi.hoisted(() => ({ getUser: vi.fn(), signOut: vi.fn(), redirect: vi.fn((chemin: string): never => { throw new Error(`redirection:${chemin}`); }), from: vi.fn(), eqProfil: vi.fn(), eqArticles: vi.fn(), eqBoutique: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ auth: { getUser, signOut }, from }) }));
-vi.mock("next/navigation", () => ({ redirect }));
+vi.mock("next/navigation", () => ({ redirect, useRouter: () => ({ refresh: vi.fn() }) }));
 beforeEach(() => {
   vi.clearAllMocks(); getUser.mockResolvedValue({ data: { user: { id: "compte", email: "vendeur@example.com" } }, error: null });
   eqProfil.mockReturnValue({ maybeSingle: async () => ({ data: { boutique_id: "boutique" }, error: null }) }); eqArticles.mockReturnValue({ order: async () => ({ data: [], error: null }) });
