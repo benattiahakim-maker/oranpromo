@@ -10,6 +10,8 @@ import { afficherTaille } from "@/lib/article";
 import { numeroWhatsApp } from "@/lib/whatsapp";
 import FriseCommande from "@/components/FriseCommande";
 import AnnulerCommande from "@/components/AnnulerCommande";
+import BlocRetrait from "@/components/BlocRetrait";
+import { lienPartageRetrait, lienRetrait, lireRetraitClient, qrCodeRetrait } from "@/lib/retrait";
 
 export const metadata = { title: "Suivi de commande", robots: { index: false, follow: false } };
 
@@ -25,12 +27,22 @@ export default async function SuiviCommande({ params }: { params: Promise<{ id: 
   // Seul le client voit cette page (la boutique a « Commandes reçues ») ; la base filtre déjà les autres comptes.
   if (!commande || !user || commande.client_id !== user.id) notFound();
   const boutique = commande.boutiques;
+  // US-26.2 : QR code de retrait et code à 4 chiffres, seulement pour une commande prête (la base vérifie le compte et la date).
+  let retrait: { qr: string; code: string; lien: string } | null = null;
+  if (commande.statut === "prete") {
+    try {
+      const r = await lireRetraitClient(client, commande.id);
+      if (r) retrait = { qr: await qrCodeRetrait(r.jeton), code: r.code, lien: lienRetrait(r.jeton) };
+    } catch { retrait = null; } // sans QR code, la commande reste remise par la boutique (« Remis sans QR code »)
+  }
   const motif = commande.motif_annulation && Object.hasOwn(t.motifs, commande.motif_annulation) ? traduire(t.motifs, commande.motif_annulation) : null;
   return <main className="mx-auto w-full max-w-lg bg-blanc pb-10 text-noir">
     <header className="border-b border-trait px-6 pb-5 pt-6 text-center"><p className="etiquette text-gris">{remplir(t.numero, { n: commande.numero })}{boutique ? ` · ${boutique.nom}` : ""}</p><h1 className="font-titre text-[28px] font-normal">{t.titresSuivi[commande.statut]}</h1></header>
     {commande.statut === "prete" && commande.expire_le && <p className="border-b border-trait px-6 py-3 text-center text-sm">{t.aRecuperer} <strong className="font-medium">{formaterDateHeure(commande.expire_le, langue)}</strong>{boutique?.adresse ? ` · ${boutique.adresse}` : ""}</p>}
     {commande.statut === "annulee" && motif && <p className="border-b border-trait px-6 py-3 text-center text-sm">{remplir(t.motif, { motif })}</p>}
     {commande.statut === "expiree" && <p className="border-b border-trait px-6 py-3 text-center text-sm">{t.expiree}</p>}
+    {retrait && <div className="px-4 pt-[18px]"><BlocRetrait qr={retrait.qr} code={retrait.code} numero={commande.numero} total={commande.total}
+      partage={{ lien: retrait.lien, whatsapp: lienPartageRetrait(langue, commande.numero, boutique?.nom ?? "OranPromo", retrait.lien) }} /></div>}
     <div className="px-6 pt-5">
       <FriseCommande statut={commande.statut} suivi={commande.suivi_commandes} />
       <ul aria-label={t.articles} className="mt-2 border-t border-trait pt-3 text-[13px] font-light">{commande.lignes_commande.map(l => <li key={l.id} className="flex justify-between gap-3 py-1"><span>{l.article_id ? <Link href={`/a/${l.article_id}`} className="underline-offset-2 hover:underline">{l.titre}</Link> : l.titre} · {afficherTaille(l.taille, langue)} × {l.quantite}</span><span className="whitespace-nowrap">{formaterPrix(l.prix_unitaire * l.quantite, langue)}</span></li>)}</ul>

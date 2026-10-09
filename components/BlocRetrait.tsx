@@ -1,0 +1,43 @@
+"use client";
+import { useState } from "react";
+import { useLangue, useTextes } from "@/components/FournisseurTextes";
+import { remplir } from "@/lib/langue";
+import { formaterPrix } from "@/lib/prix";
+
+// US-26.2 : QR code de retrait, code à 4 chiffres et montant à payer (page du client et page du proche).
+// Le QR code est calculé par le serveur (adresse data: d'un SVG) ; le jeton n'apparaît pas en clair ici.
+export default function BlocRetrait({ qr, code, numero, total, partage }: {
+  qr: string; code: string; numero: number; total: number;
+  /** Seulement pour le client : lien de la page du proche et lien « Envoyer à un proche » (WhatsApp). */
+  partage?: { lien: string; whatsapp: string };
+}) {
+  const t = useTextes().retrait;
+  const langue = useLangue();
+  const [message, setMessage] = useState("");
+
+  async function copier() {
+    if (!partage) return;
+    try { await navigator.clipboard.writeText(partage.lien); setMessage(t.copie); }
+    catch { setMessage(t.copieImpossible); }
+  }
+
+  return <>
+    <section aria-label={t.bloc} className="border border-noir px-4 py-5 text-center">
+      <h2 className="etiquette mb-1.5 font-medium">{t.bloc}</h2>
+      <p className="mb-3 text-sm">{t.consigne}</p>
+      {/* eslint-disable-next-line @next/next/no-img-element -- SVG en adresse data:, rien à optimiser */}
+      <img src={qr} alt={remplir(t.altQr, { n: numero })} width={232} height={232} className="mx-auto h-[232px] w-[232px]" />
+      <p className="mt-2.5 text-xs text-gris">{t.sansCamera}</p>
+      <p aria-label={t.code} dir="ltr" className="mt-1 flex justify-center gap-2">{code.split("").map((chiffre, i) =>
+        <span key={i} className="flex h-[52px] w-11 items-center justify-center border border-noir text-[26px]">{chiffre}</span>)}</p>
+      <p className="mt-3.5 flex justify-between border-t border-trait pt-2.5"><span className="etiquette self-center">{t.aPayer}</span><strong className="text-lg font-medium">{formaterPrix(total, langue)}</strong></p>
+      <p className="mt-2 text-xs text-gris">{t.luminosite}</p>
+    </section>
+    {partage && <div className="mt-3.5 flex flex-col gap-2.5">
+      <a href={partage.whatsapp} target="_blank" rel="noopener noreferrer" className="etiquette flex min-h-12 items-center justify-center border border-noir px-3 text-center">{t.envoyerProche}</a>
+      <button type="button" onClick={() => void copier()} className="flex min-h-11 items-center justify-center text-sm text-gris underline">{t.copier}</button>
+      {message && <p role="status" className="text-center text-sm">{message}</p>}
+      <p className="text-center text-xs text-gris">{t.avertissement}</p>
+    </div>}
+  </>;
+}
