@@ -92,6 +92,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       categorie,
       couleur,
       genre,
+      description_ar,
       cree_le,
       derniere_confirmation,
       boutiques (nom, quartier, slug, whatsapp),
@@ -258,6 +259,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             {article.description}
           </p>
         )}
+        {article.description_ar && <p dir="rtl" lang="ar" className="whitespace-pre-line break-words text-base font-light leading-relaxed text-noir">{article.description_ar}</p>}
       </main>
 
       {boutiques?.whatsapp && <ReservationArticle articleId={article.id} boutiqueId={article.boutique_id} titre={article.titre} prix={prixAfficheValue} telephone={boutiques.whatsapp} tailles={tailles} />}

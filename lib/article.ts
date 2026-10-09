@@ -7,8 +7,8 @@ export const TAILLE_UNIQUE = "Unique";
 export const TYPES_PHOTO = ["image/jpeg", "image/png", "image/webp"];
 export const TAILLE_PHOTO_MAX = 5 * 1024 * 1024;
 
-export type SaisieArticle = { titre: string; categorie: string; genre: string; couleur: string; description: string; prix: string; tailles: string[]; photos: { type: string; size: number }[] };
-export type ErreursArticle = Partial<Record<"photos" | "titre" | "categorie" | "genre" | "prix" | "tailles", string>>;
+export type SaisieArticle = { titre: string; categorie: string; genre: string; couleur: string; description: string; descriptionAr?: string; prix: string; tailles: string[]; photos: { type: string; size: number }[] };
+export type ErreursArticle = Partial<Record<"photos" | "titre" | "categorie" | "genre" | "prix" | "tailles" | "descriptionAr", string>>;
 
 export function normaliserTailles(tailles: string[]): string[] {
   return [...new Set(tailles.map(taille => taille.trim().toUpperCase()).filter(Boolean))].map(taille => taille === "UNIQUE" ? TAILLE_UNIQUE : taille);
@@ -16,6 +16,7 @@ export function normaliserTailles(tailles: string[]): string[] {
 
 export function validerArticle(saisie: SaisieArticle, options: { verifierPhotos?: boolean } = {}): ErreursArticle {
   const erreurs: ErreursArticle = {};
+  if (saisie.descriptionAr !== undefined && Array.from(saisie.descriptionAr.trim()).length > 1121) erreurs.descriptionAr = "Le texte arabe doit contenir au maximum 1 121 caractères.";
   if (options.verifierPhotos !== false) {
     if (!saisie.photos.length) erreurs.photos = "Ajoutez au moins une photo.";
     else if (saisie.photos.length > 5) erreurs.photos = "Vous pouvez ajouter au maximum 5 photos.";
@@ -35,5 +36,5 @@ export function validerArticle(saisie: SaisieArticle, options: { verifierPhotos?
 }
 
 export function donneesArticle(saisie: SaisieArticle) {
-  return { titre: saisie.titre.trim(), categorie: saisie.categorie, genre: saisie.genre as Enums<"genre_article">, couleur: saisie.couleur.trim() || null, description: saisie.description.trim() || null, prix: Number(saisie.prix.trim()) };
+  return { titre: saisie.titre.trim(), categorie: saisie.categorie, genre: saisie.genre as Enums<"genre_article">, couleur: saisie.couleur.trim() || null, description: saisie.description.trim() || null, ...(saisie.descriptionAr !== undefined ? { description_ar: saisie.descriptionAr.trim() || null } : {}), prix: Number(saisie.prix.trim()) };
 }

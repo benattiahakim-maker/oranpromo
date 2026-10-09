@@ -26,6 +26,7 @@ function clientTest() {
 }
 
 describe("US-10 : publication et nettoyage", () => {
+  it("US-15 : publie le texte arabe dans la seule colonne description_ar", async () => { const test = clientTest(); await publierArticle(test.client, "boutique", { ...saisie, descriptionAr: "قميص أزرق\nأكمام قصيرة." }, fichiers, test.compression); expect(test.insertions.articles).toHaveBeenCalledWith(expect.objectContaining({ description_ar: "قميص أزرق\nأكمام قصيرة." })); expect(test.insertions.articles.mock.calls[0][0]).not.toHaveProperty("titre_ar"); });
   it("US-14 : enregistre l’origine IA seulement lors de la publication validée", async () => { const test = clientTest(); await publierArticle(test.client, "boutique", saisie, fichiers, test.compression, true); expect(test.insertions.articles).toHaveBeenCalledWith(expect.objectContaining({ propose_par_ia: true })); });
   it("compresse, envoie puis crée l’article, les photos et les tailles dans cet ordre", async () => {
     const test = clientTest();

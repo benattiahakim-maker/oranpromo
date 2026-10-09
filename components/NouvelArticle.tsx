@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import DescriptionArabe from "./DescriptionArabe";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { CATEGORIES_ARTICLE, GENRES_ARTICLE, TAILLES_ARTICLE, TAILLE_UNIQUE, normaliserTailles, validerArticle, type ErreursArticle } from "@/lib/article";
 import { creerClientNavigateur } from "@/lib/supabase/client";
@@ -30,6 +31,7 @@ export default function NouvelArticle({ boutiqueId }: { boutiqueId: string }) {
   const [genre, setGenre] = useState("");
   const [couleur, setCouleur] = useState("");
   const [description, setDescription] = useState("");
+  const [descriptionAr, setDescriptionAr] = useState("");
   const [prix, setPrix] = useState("");
   const [tailles, setTailles] = useState<string[]>([]);
   const [pointures, setPointures] = useState("");
@@ -93,7 +95,7 @@ export default function NouvelArticle({ boutiqueId }: { boutiqueId: string }) {
   async function publier(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (verrou.current) return;
-    const saisie = { titre, categorie, genre, couleur, description, prix, tailles: normaliserTailles([...tailles, ...pointures.split(/[,;\s]+/)]), photos: fichiers };
+    const saisie = { titre, categorie, genre, couleur, description, descriptionAr, prix, tailles: normaliserTailles([...tailles, ...pointures.split(/[,;\s]+/)]), photos: fichiers };
     const erreurs = validerArticle(saisie);
     setErreurs(erreurs); setErreurEnvoi("");
     if (Object.keys(erreurs).length) return;
@@ -107,6 +109,7 @@ export default function NouvelArticle({ boutiqueId }: { boutiqueId: string }) {
   }
 
   function recommencer() {
+    setDescriptionAr("");
     requeteIA.current?.abort(); setPreparationIA(false); setMessageIA(""); setChampsIA([]); saisieIA.current = { titre: "", categorie: "", genre: "", couleur: "", description: "" };
     setArticleId(null); setFichiers([]); setTitre(""); setCategorie(""); setGenre(""); setCouleur(""); setDescription(""); setPrix(""); setTailles([]); setPointures(""); setErreurs({}); setErreurEnvoi(""); setCopie(""); setLien("");
   }
@@ -148,6 +151,7 @@ export default function NouvelArticle({ boutiqueId }: { boutiqueId: string }) {
         </div>
         <label style={libelle}>COULEUR (FACULTATIF)<input name="couleur" value={couleur} onChange={event => saisirChamp("couleur", event.target.value)} style={champ} />{repereIA("couleur")}</label>
         <label style={libelle}>DESCRIPTION (FACULTATIVE)<textarea name="description" rows={3} value={description} onChange={event => saisirChamp("description", event.target.value)} style={{ ...champ, resize: "vertical", lineHeight: 1.5 }} />{repereIA("description")}</label>
+        <DescriptionArabe titre={titre} description={description} valeur={descriptionAr} onChange={setDescriptionAr} occupe={enCours} />{erreur("descriptionAr")}
         <label style={{ ...libelle, color: "#0A0A0A" }}>PRIX EN DA *<input name="prix" type="text" inputMode="numeric" value={prix} onChange={event => setPrix(event.target.value)} required aria-invalid={Boolean(erreurs.prix)} aria-describedby="erreur-prix" placeholder="Votre prix" style={{ ...champ, borderBottomWidth: 2 }} />{erreur("prix")}</label>
         <fieldset style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}><legend style={{ ...libelle, marginBottom: 10, color: "#0A0A0A" }}>TAILLES DISPONIBLES *</legend>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>{[...TAILLES_ARTICLE, TAILLE_UNIQUE].map(t => <button key={t} type="button" aria-pressed={tailles.includes(t)} onClick={() => choisirTaille(t)} style={{ ...bouton, borderColor: "#E6E6E6", background: tailles.includes(t) ? "#0A0A0A" : "#FFFFFF", color: tailles.includes(t) ? "#FFFFFF" : "#0A0A0A" }}>{t === TAILLE_UNIQUE ? "Taille unique" : t}</button>)}</div>

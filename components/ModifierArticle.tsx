@@ -8,6 +8,7 @@ import { modifierArticle, supprimerArticle, type ArticleGere, type TailleModifie
 import { creerClientNavigateur } from "@/lib/supabase/client";
 import styles from "./espace-articles.module.css";
 import PromoArticle from "./PromoArticle";
+import DescriptionArabe from "./DescriptionArabe";
 
 const champ = "mt-2 min-h-[44px] w-full border border-trait bg-blanc px-3 py-2 text-base text-noir";
 const bouton = "min-h-[44px] border border-noir px-3 py-2 text-sm disabled:opacity-50";
@@ -19,6 +20,7 @@ export default function ModifierArticle({ article }: { article: ArticleGere }) {
   const [genre, setGenre] = useState<string>(article.genre);
   const [couleur, setCouleur] = useState(article.couleur ?? "");
   const [description, setDescription] = useState(article.description ?? "");
+  const [descriptionAr, setDescriptionAr] = useState(article.description_ar ?? "");
   const [prix, setPrix] = useState(String(article.prix));
   const [prixEnregistre, setPrixEnregistre] = useState(article.prix);
   const [tailles, setTailles] = useState<TailleModifiee[]>(article.tailles.map(t => ({ libelle: t.libelle, disponible: t.disponible })));
@@ -37,7 +39,7 @@ export default function ModifierArticle({ article }: { article: ArticleGere }) {
     if (verrou.current) return;
     const nouvelles = normaliserTailles(pointures.split(/[,;\s]+/)).filter(libelle => !tailles.some(t => t.libelle === libelle));
     const choisies = [...tailles, ...nouvelles.map(libelle => ({ libelle, disponible: true }))];
-    const saisie = { titre, categorie, genre, couleur, description, prix, tailles: choisies.map(t => t.libelle), photos: [] };
+    const saisie = { titre, categorie, genre, couleur, description, descriptionAr, prix, tailles: choisies.map(t => t.libelle), photos: [] };
     const validation = validerArticle(saisie, { verifierPhotos: false });
     setErreurs(validation); setErreur(""); setMessage("");
     if (Object.keys(validation).length) return;
@@ -61,6 +63,7 @@ export default function ModifierArticle({ article }: { article: ArticleGere }) {
       <label className="etiquette">Genre<select name="genre" className={champ} value={genre} onChange={e => setGenre(e.target.value)} aria-invalid={Boolean(erreurs.genre)} aria-describedby="erreur-genre">{GENRES_ARTICLE.map(g => <option key={g} value={g}>{g}</option>)}</select>{erreurChamp("genre")}</label>
       <label className="etiquette">Couleur (facultative)<input name="couleur" className={champ} value={couleur} onChange={e => setCouleur(e.target.value)} /></label>
       <label className="etiquette">Description (facultative)<textarea name="description" className={champ} rows={4} value={description} onChange={e => setDescription(e.target.value)} /></label>
+      <DescriptionArabe titre={titre} description={description} valeur={descriptionAr} onChange={setDescriptionAr} occupe={enCours} />{erreurChamp("descriptionAr")}
       <label className="etiquette">Prix en DA<input name="prix" inputMode="numeric" className={champ} value={prix} onChange={e => setPrix(e.target.value)} aria-invalid={Boolean(erreurs.prix)} aria-describedby="erreur-prix" />{erreurChamp("prix")}</label>
       <fieldset className="min-w-0"><legend className="etiquette">Tailles</legend><p className="my-2 text-sm text-gris">Décochez une taille vendue pour la retirer de la vente.</p>
         {tailles.map((t, i) => <label key={t.libelle} className="flex min-h-[44px] items-center gap-3"><input type="checkbox" checked={t.disponible} onChange={e => setTailles(avant => avant.map((taille, index) => index === i ? { ...taille, disponible: e.target.checked } : taille))} />{t.libelle === TAILLE_UNIQUE ? "Taille unique" : t.libelle} disponible</label>)}

@@ -19,6 +19,7 @@ function simulation() {
 const saisie = { titre: "Polo", categorie: "Polos", genre: "homme", couleur: "", description: "", prix: "3500", tailles: ["S"], photos: [] };
 
 describe("US-11 : gestion de mes articles", () => {
+  it("US-15 : modifie ou efface description_ar en confirmant l’article", async () => { const test = simulation(); await modifierArticle(test.client, "article", { ...saisie, descriptionAr: "قميص أزرق\nأكمام قصيرة." }, [{ libelle: "S", disponible: true }]); expect(test.update).toHaveBeenCalledWith(expect.objectContaining({ description_ar: "قميص أزرق\nأكمام قصيرة.", derniere_confirmation: expect.any(String) })); await modifierArticle(test.client, "article", { ...saisie, descriptionAr: "" }, [{ libelle: "S", disponible: true }]); expect(test.update).toHaveBeenLastCalledWith(expect.objectContaining({ description_ar: null })); });
   it("date toute modification sans altérer les données", () => {
     expect(confirmerModification({ statut: "vendu" }, new Date("2026-10-09T10:00:00Z"))).toEqual({ statut: "vendu", derniere_confirmation: "2026-10-09T10:00:00.000Z" });
     expect(confirmerModification({ titre: "Polo" }, new Date("2026-10-10T12:00:00Z")).derniere_confirmation).toBe("2026-10-10T12:00:00.000Z");

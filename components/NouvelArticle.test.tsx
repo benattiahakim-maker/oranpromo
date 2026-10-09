@@ -71,6 +71,16 @@ describe("US-14 : assistance IA facultative", () => {
 });
 
 describe("US-10 : formulaire mobile", () => {
+  it("US-15 : saisit le texte arabe à la main et le transmet à la publication", async () => {
+    publierArticle.mockResolvedValue("article-arabe"); render(<NouvelArticle boutiqueId="boutique" />); choisirPhoto();
+    fireEvent.change(screen.getByRole("textbox", { name: "TITRE *" }), { target: { value: "Polo bleu" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "CATÉGORIE *" }), { target: { value: "Polos" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "GENRE" }), { target: { value: "mixte" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "PRIX EN DA *" }), { target: { value: "3500" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Texte arabe (facultatif)" }), { target: { value: "قميص أزرق" } });
+    fireEvent.click(screen.getByRole("button", { name: "M" })); fireEvent.click(screen.getByRole("button", { name: "PUBLIER L’ARTICLE" }));
+    await waitFor(() => expect(publierArticle).toHaveBeenCalledWith({}, "boutique", expect.objectContaining({ descriptionAr: "قميص أزرق" }), expect.any(Array), undefined, false));
+  });
   it("affiche les erreurs sous les champs et n’envoie pas un formulaire incomplet", () => {
     render(<NouvelArticle boutiqueId="boutique" />);
     fireEvent.click(screen.getByRole("button", { name: "PUBLIER L’ARTICLE" }));

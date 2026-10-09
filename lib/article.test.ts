@@ -3,6 +3,7 @@ import { donneesArticle, normaliserTailles, validerArticle, type SaisieArticle }
 
 const valide: SaisieArticle = { titre: "Polo bleu", categorie: "Polos", genre: "homme", couleur: "", description: "", prix: "3500", tailles: ["M"], photos: [{ type: "image/jpeg", size: 8000000 }] };
 describe("US-10 : validation article", () => {
+  it("US-15 : conserve le texte arabe et limite sa longueur sans inventer de titre arabe", () => { expect(donneesArticle({ ...valide, descriptionAr: " قميص أزرق\nأكمام قصيرة. " })).toMatchObject({ description_ar: "قميص أزرق\nأكمام قصيرة." }); expect(donneesArticle({ ...valide, descriptionAr: "" }).description_ar).toBeNull(); expect(donneesArticle(valide)).not.toHaveProperty("description_ar"); expect(validerArticle({ ...valide, descriptionAr: "ق".repeat(1122) }).descriptionAr).toBeDefined(); });
   it("valide une modification sans réenvoyer les photos, en conservant les autres règles", () => {
     expect(validerArticle({ ...valide, photos: [] }, { verifierPhotos: false })).toEqual({});
     expect(validerArticle({ ...valide, photos: [], titre: "", tailles: [] }, { verifierPhotos: false })).toMatchObject({ titre: expect.any(String), tailles: expect.any(String) });
