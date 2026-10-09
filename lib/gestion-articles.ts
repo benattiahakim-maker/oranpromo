@@ -7,6 +7,7 @@ import { TAILLE_PHOTO_MAX } from "./article";
 export const STATUTS_ARTICLE = { disponible: "Disponible", reserve: "Réservé", vendu: "Vendu", masque: "Masqué" } as const;
 export type ArticleGere = Tables<"articles"> & { photos: Tables<"photos">[]; tailles: Tables<"tailles">[]; promos: Tables<"promos"> | null };
 export type TailleModifiee = { libelle: string; disponible: boolean };
+export const MASQUE_PAR_MODERATION = "Article masqué par la modération : contactez l’administrateur pour le rendre visible.";
 
 export function confirmerModification<T extends object>(donnees: T, maintenant = new Date()) {
   return { ...donnees, derniere_confirmation: maintenant.toISOString() };
@@ -53,6 +54,8 @@ export async function articleDeMaBoutique(client: SupabaseClient<Database>, id: 
 export async function changerStatut(client: SupabaseClient<Database>, id: string, statut: Enums<"statut_article">) {
   if (!Object.hasOwn(STATUTS_ARTICLE, statut)) throw new Error("Choisissez un statut valide.");
   const article = await articleDeMaBoutique(client, id);
+  // Seul un admin lève un masquage de modération (vérifié aussi par la base).
+  if (article.masque_par_moderation) throw new Error(MASQUE_PAR_MODERATION);
   const { data, error } = await client.from("articles").update(confirmerModification({ statut })).eq("id", id).eq("boutique_id", article.boutique_id).select("id").single();
   if (error || !data) throw new Error("Impossible de changer le statut. Réessayez.");
 }
