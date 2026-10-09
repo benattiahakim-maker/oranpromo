@@ -7,7 +7,8 @@ export const LIGNES_PANIER_MAX = 10;
 export const QUANTITE_LIGNE_MAX = 10;
 export const NOTE_COMMANDE_MAX = 300;
 
-export type LignePanier = { articleId: string; titre: string; taille: string; quantite: number; prix: number; photo: string | null };
+// `beaute` (US-25.1) : la taille est une contenance (« 100 ml ») ; absent pour la mode et les paniers enregistrés avant.
+export type LignePanier = { articleId: string; titre: string; taille: string; quantite: number; prix: number; photo: string | null; beaute?: boolean };
 export type Panier = { boutiqueId: string; boutiqueNom: string; lignes: LignePanier[] };
 export type BoutiquePanier = { id: string; nom: string };
 
@@ -29,7 +30,7 @@ export function lirePanier(brut: string | null | undefined): Panier | null {
       const ligne = l as Record<string, unknown>;
       return Boolean(ligne) && texte(ligne.articleId, 64) && texte(ligne.titre, 200) && texte(ligne.taille, 40)
         && entier(ligne.quantite, 1, QUANTITE_LIGNE_MAX) && entier(ligne.prix, 1, 100_000_000)
-        && (ligne.photo === null || texte(ligne.photo, 2000));
+        && (ligne.photo === null || texte(ligne.photo, 2000)) && (ligne.beaute === undefined || typeof ligne.beaute === "boolean");
     }).slice(0, LIGNES_PANIER_MAX);
     return lignes.length ? { boutiqueId: v.boutiqueId, boutiqueNom: v.boutiqueNom, lignes } : null;
   } catch { return null; }
@@ -43,8 +44,9 @@ export function ajouterAuPanier(panier: Panier | null, boutique: BoutiquePanier,
   if (!entier(ligne.quantite, 1, QUANTITE_LIGNE_MAX)) throw new ErreurPanier(`Choisissez une quantité entre 1 et ${QUANTITE_LIGNE_MAX}.`);
   const existante = base.lignes.find(l => l.articleId === ligne.articleId && l.taille === ligne.taille);
   const quantite = (existante?.quantite ?? 0) + ligne.quantite;
-  if (maximum === 0) throw new ErreurPanier("Cette taille est épuisée.");
-  if (quantite > maximum) throw new ErreurPanier(maximum === 1 ? "Il ne reste qu’une pièce dans cette taille." : `Vous pouvez commander au plus ${maximum} pièces dans cette taille.`);
+  const mot = ligne.beaute ? "contenance" : "taille";
+  if (maximum === 0) throw new ErreurPanier(`Cette ${mot} est épuisée.`);
+  if (quantite > maximum) throw new ErreurPanier(maximum === 1 ? `Il ne reste qu’une pièce dans cette ${mot}.` : `Vous pouvez commander au plus ${maximum} pièces dans cette ${mot}.`);
   if (!existante && base.lignes.length >= LIGNES_PANIER_MAX) throw new ErreurPanier(`Un panier contient au plus ${LIGNES_PANIER_MAX} articles différents.`);
   const lignes = existante ? base.lignes.map(l => l === existante ? { ...l, quantite, prix: ligne.prix, titre: ligne.titre, photo: ligne.photo } : l) : [...base.lignes, ligne];
   return { ...base, lignes };

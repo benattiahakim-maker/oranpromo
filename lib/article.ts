@@ -19,6 +19,13 @@ export function estCategorieBeaute(categorie: string): boolean {
   return CATEGORIES_BEAUTE.some(c => c === categorie);
 }
 
+// US-25.1 : contenance affichée à la cliente. En arabe, « 100 ml » devient « 100 مل » (le nombre reste en chiffres 0-9).
+// Toute autre taille (S, 38, « Unique ») est rendue telle quelle.
+export function afficherTaille(libelle: string, langue: "fr" | "ar"): string {
+  const contenance = /^(\d+) ml$/.exec(libelle.trim());
+  return contenance && langue === "ar" ? `${contenance[1]}\u00a0مل` : libelle;
+}
+
 // Libellé du choix de taille : « Contenance » pour la beauté, « Taille » sinon.
 export function libelleTaille(categorie: string): "Contenance" | "Taille" {
   return estCategorieBeaute(categorie) ? "Contenance" : "Taille";

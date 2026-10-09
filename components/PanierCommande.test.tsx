@@ -94,3 +94,21 @@ describe("US-23 : avertissement no-show en arabe", () => {
     expect(screen.getByText(/حسابك تبلوكا من بعد 5/)).toBeInTheDocument();
   });
 });
+
+describe("US-25.1 : ligne de parfum dans le panier", () => {
+  beforeEach(() => localStorage.setItem(CLE_PANIER, JSON.stringify({ boutiqueId: "b1", boutiqueNom: "Parfumerie Démo", lignes: [{ articleId: "oud", titre: "Eau de parfum oud boisé", taille: "100 ml", quantite: 1, prix: 4900, photo: null, beaute: true }, { articleId: "polo", titre: "Polo", taille: "M", quantite: 1, prix: 3500, photo: null }] })));
+  it("français : « 100 ml · 4 900 DA » sans « Taille », le vêtement garde « Taille M »", () => {
+    render(<PanierCommande profil={complet} />);
+    expect(screen.getByText(/^100 ml · 4\s900 DA$/)).toBeInTheDocument();
+    expect(screen.getByText(/^Taille M · 3\s500 DA$/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Eau de parfum oud boisé 100 ml : une pièce de plus" })).toBeInTheDocument();
+  });
+  it("arabe : « 100 مل » sans « مقاس »", async () => {
+    const { default: FournisseurTextes } = await import("./FournisseurTextes");
+    const { textesDe } = await import("@/lib/textes");
+    render(<FournisseurTextes langue="ar" textes={textesDe("ar")}><PanierCommande profil={complet} /></FournisseurTextes>);
+    const ligne = screen.getByText(/^100 مل · /);
+    expect(ligne.textContent).not.toContain("مقاس");
+    expect(screen.getByText(/^مقاس M · /)).toBeInTheDocument();
+  });
+});

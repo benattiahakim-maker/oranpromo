@@ -70,3 +70,37 @@ describe("US-23 : erreurs du panier en arabe", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("السلة فيها سلع من Maison Ilyes. الطلب يكون من حانوت واحد برك.");
   });
 });
+
+describe("US-25.1 : parfum, « Contenance » au lieu de « Taille »", () => {
+  const parfum = { ...article, titre: "Eau de parfum rose et musc", prix: 3900, beaute: true, tailles: [{ libelle: "50 ml", quantite: 4 }, { libelle: "100 ml", quantite: 0 }] };
+  it("français : légende, boutons, épuisée, consigne, et repère beauté dans le panier", () => {
+    render(<CommandeArticle {...parfum} />);
+    expect(screen.getByText("Contenance")).toBeInTheDocument();
+    expect(screen.queryByText("Taille")).not.toBeInTheDocument();
+    expect(screen.getByText("Choisissez une contenance pour commander.")).toBeInTheDocument();
+    expect(screen.getByLabelText("100 ml, épuisée")).toBeDisabled();
+    fireEvent.click(screen.getByLabelText("Contenance 50 ml"));
+    fireEvent.click(screen.getByRole("button", { name: "Ajouter au panier" }));
+    expect(panier().lignes).toEqual([{ articleId: "1234", titre: "Eau de parfum rose et musc", taille: "50 ml", quantite: 1, prix: 3900, photo: null, beaute: true }]);
+  });
+  it("aucune contenance en stock", () => {
+    render(<CommandeArticle {...parfum} tailles={[{ libelle: "50 ml", quantite: 0 }]} />);
+    expect(screen.getByText("Aucune contenance disponible.")).toBeInTheDocument();
+  });
+  it("arabe : « الحجم », « 50 مل », « 100 مل، ما بقاش » ; la contenance enregistrée reste « 50 ml »", async () => {
+    const { default: FournisseurTextes } = await import("./FournisseurTextes");
+    const { textesDe } = await import("@/lib/textes");
+    render(<FournisseurTextes langue="ar" textes={textesDe("ar")}><CommandeArticle {...parfum} /></FournisseurTextes>);
+    expect(screen.getByText("الحجم")).toBeInTheDocument();
+    expect(screen.getByText("اختار الحجم باش تطلب.")).toBeInTheDocument();
+    expect(screen.getByLabelText("100 مل، ما بقاش")).toBeDisabled();
+    fireEvent.click(screen.getByLabelText("الحجم 50 مل"));
+    fireEvent.click(screen.getByRole("button", { name: "زيد للسلة" }));
+    expect(panier().lignes[0].taille).toBe("50 ml");
+  });
+  it("un vêtement garde « Taille »", () => {
+    render(<CommandeArticle {...article} tailles={[{ libelle: "M", quantite: 1 }]} />);
+    expect(screen.getByText("Taille")).toBeInTheDocument();
+    expect(screen.getByText("Choisissez une taille pour commander.")).toBeInTheDocument();
+  });
+});

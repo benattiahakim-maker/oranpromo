@@ -85,6 +85,8 @@ const FIXES: Record<string, string> = {
   // Panier (navigateur)
   "Cette taille est épuisée.": "هاد المقاس ما بقاش.",
   "Il ne reste qu'une pièce dans cette taille.": "بقات غير وحدة في هاد المقاس.",
+  "Cette contenance est épuisée.": "هاد الحجم ما بقاش.",
+  "Il ne reste qu'une pièce dans cette contenance.": "بقات غير وحدة في هاد الحجم.",
   // Signalement
   "Merci, nous allons vérifier.": "يعطيك الصحة، راح نشوفو.",
   "Choisissez un motif.": "اختار السبب.",
@@ -102,6 +104,7 @@ const MODELES: [RegExp, string][] = [
   [/^Votre panier contient déjà des articles de (.+)\. Une commande ne concerne qu'une boutique\.$/, "السلة فيها سلع من $1. الطلب يكون من حانوت واحد برك."],
   [/^Choisissez une quantité entre 1 et (\d+)\.$/, "اختار كمية من 1 حتى $1."],
   [/^Vous pouvez commander au plus (\d+) pièces dans cette taille\.$/, "تقدر تطلب $1 برك في هاد المقاس."],
+  [/^Vous pouvez commander au plus (\d+) pièces dans cette contenance\.$/, "تقدر تطلب $1 برك في هاد الحجم."],
   [/^Un panier contient au plus (\d+) articles différents\.$/, "السلة فيها $1 سلع مختلفة على الأكثر."],
   [/^Votre compte est bloqué après (\d+) commandes non récupérées : vous ne pouvez plus commander\. Contactez OranPromo pour le débloquer\.$/, "حسابك تبلوكا من بعد $1 طلبات ما تدّاوش: ما تقدرش تطلب. اتصل بـ OranPromo باش يحلّوه."],
   [/^Attention : (\d+) commandes? non récupérées?\. Il vous reste (\d+) essais? avant le blocage de votre compte\.$/, "رد بالك: $1 طلب ما تدّاش. بقاولك $2 فرص قبل ما يتبلوكا حسابك."],

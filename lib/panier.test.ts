@@ -65,3 +65,22 @@ describe("panier d’une boutique (US-20.2)", () => {
     desabonner(); sauverPanierLocal(panier()); expect(rappel).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("US-25.1 : ligne de beauté (contenance)", () => {
+  const parfum: LignePanier = { articleId: "oud", titre: "Eau de parfum oud boisé", taille: "100 ml", quantite: 1, prix: 4900, photo: null, beaute: true };
+  it("messages avec « contenance » au lieu de « taille »", () => {
+    expect(() => ajouterAuPanier(null, boutique, parfum, 0)).toThrow("Cette contenance est épuisée.");
+    expect(() => ajouterAuPanier(null, boutique, { ...parfum, quantite: 2 }, 1)).toThrow("Il ne reste qu’une pièce dans cette contenance.");
+    expect(() => ajouterAuPanier(null, boutique, { ...parfum, quantite: 4 }, 3)).toThrow("Vous pouvez commander au plus 3 pièces dans cette contenance.");
+    expect(() => ajouterAuPanier(null, boutique, polo, 0)).toThrow("Cette taille est épuisée.");
+  });
+  it("le repère « beauté » est gardé dans le navigateur ; un panier ancien (sans repère) reste lisible ; un repère faux est refusé", () => {
+    const p = ajouterAuPanier(null, boutique, parfum, 3);
+    expect(lirePanier(JSON.stringify(p))?.lignes[0].beaute).toBe(true);
+    expect(lirePanier(JSON.stringify(panier()))?.lignes).toHaveLength(2);
+    expect(lirePanier(JSON.stringify({ ...p, lignes: [{ ...parfum, beaute: "oui" }] }))).toBeNull();
+  });
+  it("la commande envoyée ne contient que l’article, la contenance et la quantité", () => {
+    expect(lignesCommande(ajouterAuPanier(null, boutique, parfum, 3))).toEqual([{ article_id: "oud", taille: "100 ml", quantite: 1 }]);
+  });
+});

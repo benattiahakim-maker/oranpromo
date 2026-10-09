@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { estJpegReel, typeImageReel, COULEURS_ARTICLE, CATEGORIES_ARTICLE, CATEGORIES_BEAUTE, CATEGORIES_MODE, CONTENANCES_BEAUTE, UNIVERS, estCategorieBeaute, libelleTaille, couleurDepuisIA, filtrerTailles, taillesPourArticle, donneesArticle, normaliserTailles, validerArticle, type SaisieArticle } from "./article";
+import { afficherTaille, estJpegReel, typeImageReel, COULEURS_ARTICLE, CATEGORIES_ARTICLE, CATEGORIES_BEAUTE, CATEGORIES_MODE, CONTENANCES_BEAUTE, UNIVERS, estCategorieBeaute, libelleTaille, couleurDepuisIA, filtrerTailles, taillesPourArticle, donneesArticle, normaliserTailles, validerArticle, type SaisieArticle } from "./article";
 
 const valide: SaisieArticle = { titre: "Polo bleu", categorie: "T-shirts et polos", genre: "homme", couleur: "", description: "", prix: "3500", tailles: ["M"], photos: [{ type: "image/jpeg", size: 8000000 }] };
 describe("US-10 : validation article", () => {
@@ -98,5 +98,16 @@ describe("catégories : univers Femme / Homme / Enfant / Beauté", () => {
     const sql = readFileSync(join(process.cwd(), "supabase/migrations/20261009170000_categories_univers.sql"), "utf8");
     const liste = sql.slice(sql.indexOf("not in ("), sql.indexOf(") then"));
     expect([...liste.matchAll(/'([^']+)'/g)].map(m => m[1])).toEqual([...CATEGORIES_ARTICLE]);
+  });
+});
+
+describe("US-25.1 : contenance affichée", () => {
+  it("« 100 ml » reste en français, devient « 100 مل » en arabe", () => {
+    expect(afficherTaille("100 ml", "fr")).toBe("100 ml");
+    expect(afficherTaille("100 ml", "ar")).toBe("100\u00a0مل");
+    expect(afficherTaille("5 ml", "ar")).toBe("5\u00a0مل");
+  });
+  it("tailles de vêtements, pointures et « Unique » inchangées", () => {
+    for (const taille of ["M", "XXL", "38", "Unique", "ml", "1,5 ml"]) expect(afficherTaille(taille, "ar")).toBe(taille);
   });
 });

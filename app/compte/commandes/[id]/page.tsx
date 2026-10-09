@@ -6,6 +6,7 @@ import { getLangue } from "@/lib/langue-serveur";
 import { remplir } from "@/lib/langue";
 import { textesDe, traduire } from "@/lib/textes";
 import { formaterPrix } from "@/lib/prix";
+import { afficherTaille } from "@/lib/article";
 import { numeroWhatsApp } from "@/lib/whatsapp";
 import FriseCommande from "@/components/FriseCommande";
 import AnnulerCommande from "@/components/AnnulerCommande";
@@ -32,7 +33,7 @@ export default async function SuiviCommande({ params }: { params: Promise<{ id: 
     {commande.statut === "expiree" && <p className="border-b border-trait px-6 py-3 text-center text-sm">{t.expiree}</p>}
     <div className="px-6 pt-5">
       <FriseCommande statut={commande.statut} suivi={commande.suivi_commandes} />
-      <ul aria-label={t.articles} className="mt-2 border-t border-trait pt-3 text-[13px] font-light">{commande.lignes_commande.map(l => <li key={l.id} className="flex justify-between gap-3 py-1"><span>{l.article_id ? <Link href={`/a/${l.article_id}`} className="underline-offset-2 hover:underline">{l.titre}</Link> : l.titre} · {l.taille} × {l.quantite}</span><span className="whitespace-nowrap">{formaterPrix(l.prix_unitaire * l.quantite, langue)}</span></li>)}</ul>
+      <ul aria-label={t.articles} className="mt-2 border-t border-trait pt-3 text-[13px] font-light">{commande.lignes_commande.map(l => <li key={l.id} className="flex justify-between gap-3 py-1"><span>{l.article_id ? <Link href={`/a/${l.article_id}`} className="underline-offset-2 hover:underline">{l.titre}</Link> : l.titre} · {afficherTaille(l.taille, langue)} × {l.quantite}</span><span className="whitespace-nowrap">{formaterPrix(l.prix_unitaire * l.quantite, langue)}</span></li>)}</ul>
       <p className="flex justify-between pt-2"><span className="etiquette self-center">{t.total}</span><span>{formaterPrix(commande.total, langue)}</span></p>
       {commande.note && <p className="mt-2 text-sm text-gris">{remplir(t.note, { note: commande.note })}</p>}
       <div className="mt-6 flex flex-col gap-3">

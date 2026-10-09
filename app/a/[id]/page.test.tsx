@@ -1,12 +1,12 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import ArticlePage from "./page";
-const { single, langue } = vi.hoisted(() => ({ single: vi.fn(), langue: { valeur: "fr" as "fr" | "ar" } }));
+const { single, langue, commande } = vi.hoisted(() => ({ single: vi.fn(), langue: { valeur: "fr" as "fr" | "ar" }, commande: vi.fn((props: { beaute?: boolean }) => { void props; return null; }) }));
 vi.mock("@/lib/langue-serveur", () => ({ getLangue: async () => langue.valeur }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ from: () => ({ select: () => ({ eq: () => ({ single, eq: () => ({ limit: async () => ({ data: [] }) }) }) }) }) }) }));
 vi.mock("@/components/GalerieArticle", () => ({ default: () => null }));
 vi.mock("@/components/PartagerArticle", () => ({ default: () => null }));
-vi.mock("@/components/CommandeArticle", () => ({ default: () => null }));
+vi.mock("@/components/CommandeArticle", () => ({ default: commande }));
 vi.mock("@/components/SignalerArticle", () => ({ default: () => null }));
 vi.mock("@/components/EnregistrerVue", () => ({ default: () => null }));
 describe("US-15 : affichage public", () => {
@@ -37,5 +37,15 @@ describe("US-23 : fiche en arabe", () => {
     langue.valeur = "fr";
     expect(html).toContain("هاد السلعة ما بقاتش");
     expect(html).toContain("ما كانش سلع أخرى دابا");
+  });
+});
+
+describe("US-25.1 : la fiche dit à la commande si l’article est un produit de beauté", () => {
+  it.each([["Parfums", true], ["Maquillage", true], ["T-shirts et polos", false]])("%s → beaute = %s", async (categorie, beaute) => {
+    commande.mockClear();
+    single.mockResolvedValue({ data: { id: "a", titre: "Article", prix: 3500, description: null, description_ar: null, statut: "disponible", categorie, boutique_id: "b", boutiques: { nom: "Boutique", quartier: "Centre", slug: "boutique", whatsapp: "+213555123456" }, photos: [], tailles: [{ libelle: "50 ml", disponible: true, quantite: 2 }], promos: null }, error: null });
+    renderToStaticMarkup(await ArticlePage({ params: Promise.resolve({ id: "a" }) }));
+    expect(commande).toHaveBeenCalled();
+    expect(commande.mock.calls[0][0].beaute).toBe(beaute);
   });
 });

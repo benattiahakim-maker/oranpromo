@@ -8,6 +8,7 @@ import SignalerArticle from "@/components/SignalerArticle";
 import EnregistrerVue from "@/components/EnregistrerVue";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { getLangue } from "@/lib/langue-serveur";
+import { estCategorieBeaute } from "@/lib/article";
 import { remplir, type Langue } from "@/lib/langue";
 import { textesDe } from "@/lib/textes";
 import { 
@@ -274,7 +275,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         {langue !== "ar" && article.description_ar && <p dir="rtl" lang="ar" className="whitespace-pre-line break-words text-base font-light leading-relaxed text-noir">{article.description_ar}</p>}
       </main>
 
-      {boutiques?.whatsapp && <CommandeArticle articleId={article.id} boutique={{ id: article.boutique_id, nom: boutiques.nom, whatsapp: boutiques.whatsapp }} titre={article.titre} prix={prixAfficheValue} photo={photos[0]?.adresse_vignette ?? photos[0]?.adresse ?? null} tailles={tailles} />}
+      {boutiques?.whatsapp && <CommandeArticle articleId={article.id} boutique={{ id: article.boutique_id, nom: boutiques.nom, whatsapp: boutiques.whatsapp }} titre={article.titre} prix={prixAfficheValue} photo={photos[0]?.adresse_vignette ?? photos[0]?.adresse ?? null} tailles={tailles} beaute={estCategorieBeaute(article.categorie)} />}
       <SignalerArticle articleId={article.id} />
     </div>
   );
