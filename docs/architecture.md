@@ -20,7 +20,8 @@ app/
   espace/statistiques/          mes chiffres (US-13)
   espace/commandes/             commandes reçues par la boutique (US-20.3)
   panier/page.tsx               panier d'une boutique, « Commander » (US-20.2)
-  compte/connexion/page.tsx     connexion client par lien e-mail (US-20.2)
+  compte/connexion/page.tsx     connexion client par lien e-mail ou par numéro + code (US-20.2, US-21)
+  compte/connexion/actions.ts   envoi et vérification du code de connexion (US-21)
   compte/page.tsx               profil client : nom, téléphone, no-shows (US-20.2, 20.4)
   compte/commandes/             mes commandes et suivi avec la frise (US-20.2)
   admin/...                     boutiques, modération, tableau de bord, clients bloqués (US-16, 18, 19, 20.4)
@@ -35,6 +36,8 @@ lib/
   panier.ts                     panier d'une boutique, gardé dans le navigateur (US-20.2, testé)
   commandes.ts                  statuts, transitions, frise, lecture et actions (US-20.2, 20.3, testé)
   clients.ts                    profil client, no-shows, déblocage (US-20.2, 20.4, testé)
+  telephone.ts                  numéro mobile algérien, mode de connexion client (US-21, testé)
+  codes-telephone.ts            envoi et vérification des codes, limites d'envoi (US-21, serveur seulement, testé)
   notifications/                messages WhatsApp : fournisseur (Meta Cloud API), envoi de la file d'attente (US-20.5, testé)
   supabase/client.ts            client navigateur ("use client")
   supabase/server.ts            client serveur (pages, routes, actions)
@@ -59,7 +62,7 @@ Colonnes en `snake_case` français sans accents. Prix = entiers en dinars.
 | Table | Rôle | Points clés |
 | --- | --- | --- |
 | `boutiques` | vitrines | `slug` unique ; `statut` : `en_attente`, `validee`, `suspendue` ; seul un admin change le statut |
-| `profils` | un par compte connecté | `role` : `client` (par défaut pour un nouveau compte), `commercant`, `ambassadeur`, `admin` ; `boutique_id` ; `nom`, `telephone` (format `+213XXXXXXXXX` quand l'utilisateur le saisit) ; `no_shows`, `bloque`, `bloque_le`, `bloque_par_admin` (modifiables seulement par la base et l'admin) ; créé automatiquement à l'inscription |
+| `profils` | un par compte connecté | `role` : `client` (par défaut pour un nouveau compte), `commercant`, `ambassadeur`, `admin` ; `boutique_id` ; `nom`, `telephone` (format `+213XXXXXXXXX` quand l'utilisateur le saisit) ; `telephone_verifie_le` (numéro vérifié par code, US-21, écrit par la base) ; `no_shows`, `bloque`, `bloque_le`, `bloque_par_admin` (modifiables seulement par la base et l'admin) ; créé automatiquement à l'inscription |
 | `articles` | articles | `statut` : `disponible`, `reserve`, `vendu`, `masque` ; `categorie` : liste fixe de 19 catégories (règle dans la base) ; `genre` : `homme`, `femme`, `enfant`, `mixte` ; `derniere_confirmation` ; `propose_par_ia` ; `masque_par_moderation` (seul un admin le lève) |
 | `photos` | 1 à 5 par article | `adresse` (grande photo 1200 px, fiche article), `adresse_vignette` (miniature 400 px, cartes ; vide pour les anciennes photos → repli sur `adresse`), `ordre` ; adresses limitées au stockage `photos` du projet, dossier de l'article (règle dans la base) |
 | `tailles` | tailles d'un article | `libelle`, `quantite` (stock indicatif, 0 à 999, 1 par défaut), `disponible` (calculé par la base : `quantite > 0`) ; unique par article |
@@ -67,12 +70,13 @@ Colonnes en `snake_case` français sans accents. Prix = entiers en dinars.
 | `evenements` | statistiques | `type` : `vue_article`, `vue_boutique`, `clic_reserver`, `partage` ; `date` fixée par la base ; 120 par minute et par boutique au plus |
 | `signalements` | signalements clients | `statut` : `ouvert`, `traite`, `rejete` ; `cree_le` fixée par la base ; 10 par heure et par article, 200 par heure au total |
 | `decisions` | décisions de modération | `action`, `auteur_id`, `date` |
-| `commandes` | commandes client (US-20) ; `no_show_le` (« Client pas venu » déclaré par la boutique), `no_show_annule_le` (annulé par l'admin), `contestee_le` / `contestation_validee_le` (contestation par le client, validée par l'admin ; motif dans `contestations`) | `numero` (affiché « n° 12 »), `client_id`, `boutique_id`, `statut` : `demandee`, `confirmee`, `prete`, `recuperee`, `annulee`, `expiree` ; `client_nom`, `client_telephone` (copiés du profil à la commande) ; `note` (client, 300 car.), `motif_annulation` : `plus_en_stock`, `boutique_indisponible`, `client_a_annule`, `autre` ; `total` (DA) ; dates `cree_le`, `confirmee_le`, `prete_le`, `expire_le` (= `prete_le` + 24 h), `terminee_le` |
+| `commandes` | commandes client (US-20) ; `no_show_le` (« Client pas venu » déclaré par la boutique), `no_show_annule_le` (annulé par l'admin), `contestee_le` / `contestation_validee_le` (contestation par le client, validée par l'admin ; motif dans `contestations`) | `numero` (affiché « n° 12 »), `client_id`, `boutique_id`, `statut` : `demandee`, `confirmee`, `prete`, `recuperee`, `annulee`, `expiree` ; `client_nom`, `client_telephone`, `telephone_verifie` (copiés du profil à la commande ; `telephone_verifie`, US-21) ; `note` (client, 300 car.), `motif_annulation` : `plus_en_stock`, `boutique_indisponible`, `client_a_annule`, `autre` ; `total` (DA) ; dates `cree_le`, `confirmee_le`, `prete_le`, `expire_le` (= `prete_le` + 24 h), `terminee_le` |
 | `contestations` | motif d'une contestation de no-show (une par commande) | `commande_id` (clé, = la commande), `client_id`, `motif` (5 à 300 car.), `cree_le` ; lecture par le client qui l'a écrite et par l'admin seulement (RLS) — jamais par la boutique ; écriture uniquement par `contester_no_show` |
 | `lignes_commande` | articles d'une commande | `commande_id`, `article_id` (vide si l'article est supprimé), `titre`, `taille`, `quantite` (1 à 10), `prix_unitaire` (prix affiché au moment de la commande, promo active comprise) |
 | `suivi_commandes` | frise d'une commande | `commande_id`, `statut`, `date`, `auteur_id` (vide = automatique), `auteur` : `client`, `boutique`, `admin`, `systeme` ; `note` (300 car.) |
 | `messages_whatsapp` | file d'attente des messages WhatsApp (US-20.5) | `destinataire` (`+213…`), `modele` (nom du modèle Meta), `parametres` (liste de textes), `texte` (version lisible), `commande_id`, `statut` : `a_envoyer`, `envoye`, `echec` ; `tentatives` (5 au plus), `reserve_jusqu_a`, `erreur`, `identifiant_fournisseur`, `cree_le`, `envoye_le` ; lisible par l'admin seulement, écrit par la base |
-| `prive.reglages` | réglages internes (schéma non exposé) | `cle`, `valeur` ; ex. `jeton_notifications` = empreinte SHA-256 du secret de la tâche d'envoi WhatsApp |
+| `prive.reglages` | réglages internes (schéma non exposé) | `cle`, `valeur` ; ex. `jeton_notifications` = empreinte SHA-256 du secret de la tâche d'envoi WhatsApp ; `connexion_client`, `blocage_par_numero` (US-21) |
+| `prive.envois_codes` | codes de connexion envoyés (US-21, schéma non exposé) | `telephone`, `envoye_le` ; limite 1 par minute et 5 par heure et par numéro |
 | `appels_ia` | quota des routes IA | `utilisateur_id`, `date` ; aucune lecture directe, uniquement via `consommer_quota_ia()` (30 appels par heure et par compte) |
 
 Le stockage `photos` (public, 5 Mo max, jpeg/png/webp) impose le chemin `<boutique_id>/<article_id>/<fichier>`.
@@ -148,6 +152,47 @@ Décisions du propriétaire : compte client lié au numéro de téléphone (conn
     4. appeler `GET /api/notifications/whatsapp` avec `Authorization: Bearer <CRON_SECRET>` : `vercel.json` déclare un Vercel Cron (`0 9 * * *`, une fois par jour à 10 h, heure d'Oran : c'est le maximum du plan Hobby ; Vercel ajoute l'en-tête tout seul quand `CRON_SECRET` est défini). Sur le plan Pro, passer à `*/5 * * * *` ; sinon ajouter un appel toutes les 5 minutes par un service externe (cron-job.org…). Les messages « nouvelle commande », « prête » et « client pas venu » partent tout de suite après l'action ; la tâche sert aux rappels d'expiration, aux blocages et aux nouvelles tentatives ;
     5. suivre la file dans la table `messages_whatsapp` (colonnes `statut`, `erreur`).
 
+## Connexion des clients par téléphone (US-21)
+
+Remplace la carte Trello « V2 · Connexion par SMS ». Stories : `docs/user-stories.md`, module 8.
+
+**Principe** : Supabase Auth envoie et vérifie le code ; le fournisseur est **Twilio Verify**, configuré par le propriétaire dans le tableau de bord Supabase (Authentication > Sign In / Providers > Phone). **Aucune clé** (Twilio, Turnstile secrète, Supabase service) dans le code, `.env*` ou un commit.
+
+**Deux modes** (bascule sans redéploiement de la base) :
+
+| | `email` (par défaut) | `telephone` |
+| --- | --- | --- |
+| Variable serveur `CONNEXION_CLIENT` (Vercel) | absente ou `email` : `/compte/connexion` = lien e-mail, comme avant | `telephone` : `/compte/connexion` = numéro + code ; lien vers la connexion e-mail |
+| Réglage de la base `connexion_client` (`prive.reglages`, lu par `prive.connexion_par_telephone()`) | absent : aucune vérification exigée | `telephone` : `passer_commande` exige `profils.telephone_verifie_le` |
+| Profil `/compte` | nom + numéro saisi à la main (un numéro déjà vérifié n'est plus modifiable) | nom seul ; numéro vérifié par code, « Changer de numéro » = nouvelle vérification |
+
+Les deux réglages vont ensemble : d'abord `CONNEXION_CLIENT=telephone` sur Vercel, puis le réglage de la base (`insert into prive.reglages (cle, valeur) values ('connexion_client', 'telephone') on conflict (cle) do update set valeur = excluded.valeur;`). Retour au mode e-mail : supprimer la ligne, puis la variable. Commerçants et admin : toujours le lien e-mail (`/espace/connexion`).
+
+**Parcours** (actions serveur, client Supabase serveur avec la session en cookies ; `supabase-js` 2.117) :
+- connexion (`app/compte/connexion/actions.ts`) : `envoyerCodeConnexion(telephone, canal, jetonCaptcha)` → `auth.signInWithOtp({ phone, options: { channel: 'whatsapp' | 'sms', captchaToken } })` ; `verifierCodeConnexion(telephone, code)` → `auth.verifyOtp({ phone, token, type: 'sms' })` (même `type: 'sms'` quand le code est arrivé par WhatsApp) ;
+- compte existant connecté par e-mail, ou changement de numéro (`app/compte/actions.ts`) : `envoyerCodeVerification(telephone, canal)` → `auth.updateUser({ phone, channel })` (le serveur Supabase Auth accepte `channel` sur `PUT /user` ; `supabase-js` le transmet tel quel) ; `verifierCodeVerification(telephone, code)` → `auth.verifyOtp({ phone, token, type: 'phone_change' })`. Pas de captcha sur ce parcours (Supabase ne le demande pas : l'utilisateur est déjà connecté) ; les limites par numéro s'appliquent ;
+- WhatsApp par défaut ; bouton « Recevoir par SMS » en secours. Twilio Verify garde le même code sur les deux canaux.
+
+**Format** (`lib/telephone.ts`, testé, et `prive.telephone_client_valide()` dans la base) : `+213` puis `5`, `6` ou `7`, puis 8 chiffres. Saisies acceptées : `05xx xx xx xx`, `5xxxxxxxx`, `+213…`, `00213…`, `0213…`, `+2130…` ; espaces, points, tirets et parenthèses ignorés. Supabase Auth range le numéro sans `+` dans `auth.users.phone`.
+
+**Base** (une migration par sous-story) :
+- `profils.telephone_verifie_le` (date de vérification, vide = numéro saisi à la main) ; écrite seulement par la base ;
+- `commandes.telephone_verifie` (booléen copié à la commande : le numéro de la commande était-il vérifié ?) ;
+- `prive.envois_codes(telephone, envoye_le)` : un enregistrement par code envoyé ; lignes de plus de 24 h supprimées au fil de l'eau ;
+- déclencheurs sur `auth.users` :
+  - `numero_client_algerien` (avant création ou changement de `phone` / `phone_change`) : refuse un numéro qui n'est pas mobile algérien. À la création d'un compte par numéro, l'erreur arrive **avant** l'envoi du code (aucun SMS payé vers un numéro étranger) ;
+  - `z_numero_verifie` (après création ou changement de `phone` / `phone_confirmed_at`, après `a_l_inscription`) : numéro confirmé → `profils.telephone = '+' || phone`, `telephone_verifie_le = now()` ; retire la vérification de tout autre profil qui portait ce numéro (l'index unique ne peut pas faire échouer la vérification Supabase) ; recalcule les no-shows ;
+- `prive.creer_profil()` ne recopie plus `auth.users.phone` (non vérifié, sans `+`) : le numéro arrive par `z_numero_verifie` ;
+- `prive.proteger_profil()` : `telephone_verifie_le` non modifiable par le client ; numéro vérifié non modifiable à la main (« Votre numéro est vérifié : pour en changer, vérifiez le nouveau numéro par code. ») ;
+- `passer_commande` : en mode téléphone, refus sans numéro vérifié (`23514`, « Vérifiez votre numéro de téléphone par code avant de commander. ») ; copie `telephone_verifie` ;
+- **limites d'envoi** : `controler_envoi_code(jeton, telephone)` (refus `54000` : 1 code par minute, 5 par heure et par numéro) avant l'appel à Supabase, puis `enregistrer_envoi_code(jeton, telephone)` seulement si Supabase a accepté l'envoi (un captcha raté ne consomme pas le quota d'un numéro). Les deux exigent le jeton du serveur (empreinte de `CRON_SECRET`, `prive.verifier_jeton_notifications`) : personne ne peut épuiser le quota d'un autre numéro depuis le navigateur. Sans `CRON_SECRET` configuré, l'envoi de code est refusé (« La connexion par téléphone n'est pas encore configurée. »).
+- **Blocage par numéro** (US-21.3) : réglage `blocage_par_numero` = `on` ; `prive.no_shows_actifs` compte les no-shows du numéro seulement pour les commandes `telephone_verifie` et seulement si le compte visé a ce numéro vérifié ; index unique partiel `profils(telephone) where telephone_verifie_le is not null` ; `debloquer_client` n'annule par numéro que les no-shows de commandes au numéro vérifié ; `numeros_partages()` et la section admin « Numéro partagé » sont supprimées. Choix de l'index partiel : les anciens numéros saisis à la main peuvent être en double ou appartenir à quelqu'un d'autre ; on ne les supprime pas et on ne les rend pas uniques, on les traite comme non fiables (ils ne comptent jamais pour un autre compte). L'unicité de `auth.users.phone` (Supabase) garantit déjà qu'un numéro ne se vérifie que sur un compte.
+
+**Anti-abus** :
+- captcha **Cloudflare Turnstile** avant l'envoi du code : le widget (script `https://challenges.cloudflare.com/turnstile/v0/api.js`, chargé avec `next/script`, sans nouvelle dépendance) affiche le contrôle ; le jeton part dans `captchaToken` ; Supabase le vérifie avec la clé secrète rangée dans Authentication > Attack Protection (Bot protection). Clé de site publique : `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. Une fois la protection activée dans Supabase, **toutes** les connexions la demandent : le formulaire de lien e-mail (clients et commerçants) affiche donc aussi le widget dès que `NEXT_PUBLIC_TURNSTILE_SITE_KEY` est défini ;
+- limites par numéro ci-dessus ; refus des numéros non algériens (écran, serveur, base) ;
+- risque restant : un robot qui appelle directement l'API Supabase Auth (sans passer par le site) contourne la limite par numéro, mais doit quand même réussir le captcha ; les limites de Supabase (Authentication > Rate Limits, SMS par heure) et de Twilio Verify (limites par numéro, Fraud Guard, pays autorisés = Algérie seulement) restent actives.
+
 ## Variables d'environnement
 
 | Variable | Où | Rôle |
@@ -159,7 +204,9 @@ Décisions du propriétaire : compte client lié au numéro de téléphone (conn
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` | serveur | WhatsApp Cloud API (Meta) ; vides = aucun envoi |
 | `WHATSAPP_LANGUE` | serveur | langue des modèles Meta (`fr` par défaut) |
 | `WHATSAPP_API_VERSION` | serveur | version de l'API Graph de Meta (`v23.0` par défaut) |
-| `CRON_SECRET` | serveur | secret de la tâche d'envoi des messages en attente |
+| `CRON_SECRET` | serveur | secret de la tâche d'envoi des messages en attente ; sert aussi de jeton serveur pour les limites d'envoi des codes (US-21) |
+| `CONNEXION_CLIENT` | serveur | `email` (par défaut) ou `telephone` : connexion des clients (US-21) |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | navigateur | clé de site (publique) Cloudflare Turnstile ; vide = pas de widget (la clé secrète va seulement dans Supabase) |
 
 ## IA (US-14, US-15)
 

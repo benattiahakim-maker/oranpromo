@@ -252,3 +252,60 @@ En tant que boutique et client, je veux être prévenu sur WhatsApp, afin de ne 
 - Sans configuration (`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` vides), rien n'est envoyé : les messages restent `a_envoyer`.
 - Un envoi raté est retenté (5 essais au plus), puis marqué `echec`. Une panne WhatsApp ne bloque jamais une commande.
 - Le fournisseur est isolé (`lib/notifications/`) pour pouvoir passer à Twilio sans toucher au reste.
+
+## Module 8 — Numéro de téléphone vérifié (après le MVP)
+
+Source : carte Trello « V2 · Connexion par SMS » (remplacée par cette story, décisions du propriétaire du 9 octobre 2026). Conception : `docs/architecture.md`, section « Connexion des clients par téléphone (US-21) ».
+
+### US-21 — Vérifier le numéro de téléphone du client (vue d'ensemble)
+En tant que propriétaire de la plateforme, je veux que chaque client prouve que son numéro de téléphone est bien le sien, afin que les boutiques le joignent à coup sûr et que les no-shows suivent vraiment la personne.
+Livrée en 4 sous-stories, dans cet ordre :
+
+| Story | Contenu | Écrans |
+| --- | --- | --- |
+| US-21.1 | Base : numéro vérifié, règles anti-abus, commande refusée sans numéro vérifié (mode téléphone) | aucun écran |
+| US-21.2 | Connexion du client par numéro et code à 6 chiffres (WhatsApp, puis SMS en secours) ; vérification du numéro d'un compte existant | `/compte/connexion`, `/compte`, `/panier` |
+| US-21.3 | Blocage par numéro vérifié ; un numéro vérifié = un seul compte ; fin de la section « numéro partagé » | `/admin/clients` |
+| US-21.4 | Mise en service : liste de ce que le propriétaire configure (Twilio, Supabase, Cloudflare, Vercel, Meta) | aucun écran |
+
+**Deux modes**, choisis par la variable serveur `CONNEXION_CLIENT` :
+- `email` (par défaut, tant que Twilio n'est pas configuré) : tout reste comme aujourd'hui pour le client (lien e-mail, numéro saisi à la main, pas de vérification forcée, pas de blocage par numéro sauf numéro déjà vérifié) ;
+- `telephone` : le client se connecte par son numéro et ne commande qu'avec un numéro vérifié.
+Les commerçants et l'admin se connectent toujours par lien e-mail (`/espace/connexion`), dans les deux modes.
+
+### US-21.1 — Numéro vérifié dans la base (aucun écran)
+En tant que propriétaire, je veux que la base sache quel numéro est vérifié et l'impose, afin que la règle ne dépende pas de l'écran.
+- Un numéro client valide est **algérien mobile uniquement** : `+213` puis `5`, `6` ou `7`, puis 8 chiffres. Tout autre numéro est refusé par la base (création de compte ou changement de numéro par code refusés), par le serveur et par l'écran.
+- Quand Supabase confirme un numéro par code, la base le recopie dans `profils.telephone` et date la vérification (`profils.telephone_verifie_le`). Personne ne peut écrire cette date à la main.
+- Un numéro vérifié ne se modifie plus à la main (règle dans la base) : changer de numéro = vérifier le nouveau par code.
+- En mode téléphone (réglage de la base `connexion_client` = `telephone`), la base refuse la commande d'un compte sans numéro vérifié avec un message en français ; en mode e-mail, rien ne change.
+- Chaque commande garde si le numéro était vérifié au moment de la commande (`commandes.telephone_verifie`).
+- Envoi des codes limité côté serveur : **1 code par minute et 5 par heure pour un même numéro** (table privée, vérifiée avant l'envoi). Au-delà, message clair : « Attendez une minute avant de demander un nouveau code. » / « Trop de codes demandés pour ce numéro : réessayez dans une heure. »
+- Tests SQL : format, recopie après confirmation, numéro non modifiable, commande refusée en mode téléphone, limites d'envoi.
+
+### US-21.2 — Se connecter avec son numéro (pages `/compte/connexion`, `/compte`, `/panier`)
+En tant que client, je veux me connecter avec mon numéro et un code reçu sur WhatsApp, afin de ne pas avoir besoin d'e-mail.
+- En mode téléphone, `/compte/connexion` demande le numéro. J'accepte `0555 12 34 56`, `0555123456`, `+213 555 12 34 56`, `00213…`, `0213…` (espaces, points, tirets ignorés) ; un numéro non algérien ou fixe est refusé tout de suite (« Saisissez un numéro de mobile algérien : 05, 06 ou 07 suivi de 8 chiffres. »).
+- Avant l'envoi, je passe le contrôle anti-robot Cloudflare Turnstile ; sans contrôle réussi, le bouton d'envoi reste désactivé.
+- « Recevoir le code sur WhatsApp » envoie un code à 6 chiffres sur WhatsApp ; « Recevoir par SMS » l'envoie par SMS (secours).
+- Je saisis le code (6 chiffres) : s'il est bon, je suis connecté et je reviens au panier ou à mon compte ; sinon « Code incorrect ou expiré. ». Je peux redemander un code (limites ci-dessus).
+- Un lien « Se connecter avec un e-mail » reste disponible (comptes déjà créés par e-mail, commerçants).
+- Un nouveau compte créé par numéro a le rôle `client` et son numéro déjà vérifié ; il ne saisit que son nom avant la première commande.
+- Compte existant (créé par e-mail) en mode téléphone : `/compte` et `/panier` affichent « Vérifiez votre numéro pour commander » avec le même parcours (numéro, WhatsApp ou SMS, code). Tant que le numéro n'est pas vérifié, « Commander » est remplacé par ce parcours, et la base refuse la commande de toute façon.
+- Un numéro déjà vérifié s'affiche sans champ modifiable, avec « Changer de numéro » qui relance la vérification du nouveau numéro.
+- Un numéro déjà utilisé par un autre compte est refusé : « Ce numéro est déjà utilisé par un autre compte : connectez-vous avec ce numéro. »
+- En mode e-mail : écrans inchangés.
+- Tests Vitest : normalisation du numéro, messages d'erreur, actions serveur (limites, captcha, canal, code), composants.
+
+### US-21.3 — Bloquer par numéro vérifié (page `/admin/clients`)
+En tant que propriétaire, je veux qu'un client bloqué ne puisse pas recommencer avec un autre compte sur le même numéro, afin de protéger les boutiques.
+- Le blocage par numéro est activé, mais **seulement sur les numéros vérifiés** : un no-show compte pour le numéro seulement si la commande a été passée avec ce numéro vérifié, et seulement pour le compte qui a vérifié ce numéro. Un numéro saisi à la main ne fait jamais bloquer personne d'autre.
+- Un numéro vérifié n'appartient qu'à un seul compte (index unique dans la base) ; les anciens numéros saisis à la main, même en double, restent possibles tant qu'ils ne sont pas vérifiés.
+- La section « Numéro partagé par plusieurs comptes » disparaît de `/admin/clients` (plus utile : un numéro vérifié = un compte). Le blocage et le déblocage manuels par l'admin et le traitement des contestations restent.
+- Débloquer un client annule aussi les no-shows passés avec son numéro vérifié.
+- Tests SQL et Vitest.
+
+### US-21.4 — Mise en service (aucun écran)
+En tant que propriétaire, je veux une liste claire de ce que je dois configurer, afin d'activer la connexion par téléphone sans aide.
+- `docs/ETAT.md` liste les étapes : Twilio (compte, service Verify, expéditeur WhatsApp approuvé par Meta, SMS), Supabase (fournisseur Phone = Twilio Verify, protection anti-robot Turnstile), Cloudflare Turnstile (site et clé secrète), Vercel (`NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `CONNEXION_CLIENT`), réglage de la base, et les coûts connus avec leur source.
+- **Aucune clé** Twilio, Turnstile (secrète) ou Supabase (service) dans le code, `.env.example` ou un commit : elles se saisissent dans le tableau de bord Supabase.
