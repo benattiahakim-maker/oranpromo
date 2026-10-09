@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Enums, Tables } from "./supabase/types";
 import { donneesArticle, normaliserTailles, validerArticle, type SaisieArticle } from "./article";
-import { compresserPhoto } from "./compression-photo";
-import { TAILLE_PHOTO_MAX } from "./article";
+import { lirePhotoPreparee, preparerPhoto, type PhotoPreparee } from "./compression-photo";
+import { verifierPhotoPreparee } from "./photo-preparee";
 
 export const STATUTS_ARTICLE = { disponible: "Disponible", reserve: "Réservé", vendu: "Vendu", masque: "Masqué" } as const;
 export type ArticleGere = Tables<"articles"> & { photos: Tables<"photos">[]; tailles: Tables<"tailles">[]; promos: Tables<"promos"> | null };
@@ -61,7 +61,8 @@ export async function changerStatut(client: SupabaseClient<Database>, id: string
 }
 
 export type ModificationPhotos = { garder: string[]; fichiers: File[] };
-export async function modifierArticle(client: SupabaseClient<Database>, id: string, saisie: SaisieArticle, tailles: TailleModifiee[], photos?: ModificationPhotos, compression = compresserPhoto) {
+type Compression = (fichier: File) => Promise<Blob | PhotoPreparee>;
+export async function modifierArticle(client: SupabaseClient<Database>, id: string, saisie: SaisieArticle, tailles: TailleModifiee[], photos?: ModificationPhotos, compression: Compression = preparerPhoto) {
   const erreurs = validerArticle({ ...saisie, tailles: tailles.map(t => t.libelle) }, { verifierPhotos: false });
   if (Object.keys(erreurs).length) throw new Error("Vérifiez les champs du formulaire.");
   const article = await articleDeMaBoutique(client, id);
@@ -77,19 +78,22 @@ export async function modifierArticle(client: SupabaseClient<Database>, id: stri
   if (photos) await modifierPhotosArticle(client, article, photos, compression);
 }
 
-export async function modifierPhotosArticle(client: SupabaseClient<Database>, article: ArticleGere, photos: ModificationPhotos, compression = compresserPhoto) {
+export async function modifierPhotosArticle(client: SupabaseClient<Database>, article: ArticleGere, photos: ModificationPhotos, compression: Compression = preparerPhoto) {
   const stockage = client.storage.from("photos"), envoyes: string[] = [];
   let insertionTerminee = false;
   try {
     const nouvelles = [];
     for (const fichier of photos.fichiers) {
-      const jpeg = await compression(fichier);
-      if (jpeg.type !== "image/jpeg" || !jpeg.size || jpeg.size > TAILLE_PHOTO_MAX) throw new Error("La photo compressée doit être un JPEG de moins de 5 Mo.");
-      const chemin = `${article.boutique_id}/${article.id}/${crypto.randomUUID()}.jpg`;
-      envoyes.push(chemin);
-      const { error } = await stockage.upload(chemin, jpeg, { contentType: "image/jpeg", upsert: false });
-      if (error) throw error;
-      nouvelles.push({ article_id: article.id, adresse: stockage.getPublicUrl(chemin).data.publicUrl, ordre: photos.garder.length + nouvelles.length });
+      const { photo, vignette } = verifierPhotoPreparee(lirePhotoPreparee(await compression(fichier)));
+      const envoyer = async (contenu: Blob, suffixe = "") => {
+        const chemin = `${article.boutique_id}/${article.id}/${crypto.randomUUID()}${suffixe}.jpg`;
+        envoyes.push(chemin);
+        const { error } = await stockage.upload(chemin, contenu, { contentType: "image/jpeg", upsert: false });
+        if (error) throw error;
+        return stockage.getPublicUrl(chemin).data.publicUrl;
+      };
+      const adresse = await envoyer(photo);
+      nouvelles.push({ article_id: article.id, adresse, adresse_vignette: vignette ? await envoyer(vignette, "-vignette") : null, ordre: photos.garder.length + nouvelles.length });
     }
     if (nouvelles.length) { const { error } = await client.from("photos").insert(nouvelles); if (error) throw error; }
     insertionTerminee = true;
