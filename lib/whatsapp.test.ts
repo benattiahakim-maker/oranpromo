@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lienReservation, messageReservation, numeroWhatsApp } from "./whatsapp";
+import { lienAvertissementBoutique, lienReservation, messageReservation, numeroWhatsApp } from "./whatsapp";
 
 const demande = {
   telephoneBoutique: "+213 555 12 34 56",
@@ -8,6 +8,14 @@ const demande = {
   prix: 3500,
   lien: "https://oranpromo.com/a/1234",
 };
+
+it("prépare l’avertissement WhatsApp avec le titre et le lien de l’article", () => {
+  const url = new URL(lienAvertissementBoutique("+213 555 12 34 56", "Polo bleu", "https://oranpromo.com/a/123"));
+  expect(url.pathname).toBe("/213555123456");
+  expect(url.searchParams.get("text")).toContain("Polo bleu");
+  expect(url.searchParams.get("text")).toContain("signalements sur OranPromo");
+  expect(url.searchParams.get("text")).toContain("https://oranpromo.com/a/123");
+});
 
 describe("numeroWhatsApp", () => {
   it("ne garde que les chiffres", () => {

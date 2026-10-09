@@ -6,6 +6,7 @@ vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ aut
 vi.mock("next/navigation", () => ({ redirect: (chemin: string) => { throw new Error(`redirection:${chemin}`); } }));
 beforeEach(() => { vi.clearAllMocks(); getUser.mockResolvedValue({ data: { user: { id: "compte" } }, error: null }); });
 describe("US-16 : accès administration côté serveur", () => {
+  it.each(["admin", "ambassadeur"])("navigation US-18 pour %s", async role => { maybeSingle.mockResolvedValue({ data: { role }, error: null }); const html = renderToStaticMarkup(await Administration({ children: "Boutiques" })); expect(html.includes('href="/admin/moderation"')).toBe(role === "admin"); });
   it("redirige une session absente", async () => { getUser.mockResolvedValue({ data: { user: null }, error: null }); await expect(Administration({ children: "Boutiques" })).rejects.toThrow("redirection:/espace/connexion"); });
   it("affiche Accès réservé à un commerçant et cache les enfants", async () => { maybeSingle.mockResolvedValue({ data: { role: "commercant" }, error: null }); const html = renderToStaticMarkup(await Administration({ children: "contenu privé" })); expect(html).toContain("Accès réservé"); expect(html).not.toContain("contenu privé"); });
   it.each(["admin", "ambassadeur"])("autorise le rôle %s", async role => { maybeSingle.mockResolvedValue({ data: { role }, error: null }); expect(renderToStaticMarkup(await Administration({ children: "Les boutiques" }))).toContain("Les boutiques"); });

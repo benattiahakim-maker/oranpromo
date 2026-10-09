@@ -23,3 +23,8 @@ export function messageReservation(d: DemandeReservation): string {
 export function lienReservation(d: DemandeReservation): string {
   return `https://wa.me/${numeroWhatsApp(d.telephoneBoutique)}?text=${encodeURIComponent(messageReservation(d))}`;
 }
+
+export function lienAvertissementBoutique(telephone: string, titre: string, lienArticle: string): string {
+  const message = `Bonjour, votre article « ${titre} » a fait l’objet de signalements sur OranPromo. Merci de vérifier son contenu et de le corriger si nécessaire. ${lienArticle}`;
+  return `https://wa.me/${numeroWhatsApp(telephone)}?text=${encodeURIComponent(message)}`;
+}
