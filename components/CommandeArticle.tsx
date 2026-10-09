@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { creerClientNavigateur } from "@/lib/supabase/client";
+import { enregistrerEvenement } from "@/lib/evenements";
 import { ajouterAuPanier, chargerPanierLocal, ErreurAutreBoutique, ErreurPanier, QUANTITE_LIGNE_MAX, sauverPanierLocal } from "@/lib/panier";
 import { lienQuestionArticle } from "@/lib/whatsapp";
 
@@ -31,9 +31,7 @@ export default function CommandeArticle({ articleId, boutique, titre, prix, phot
       const panier = ajouterAuPanier(chargerPanierLocal(), { id: boutique.id, nom: boutique.nom }, { articleId, titre, taille: selection, quantite, prix, photo }, stock, remplacer);
       sauverPanierLocal(panier); setConflit(null); setMessage("Ajouté au panier.");
       // Le clic est compté comme une demande de réservation (statistiques US-08 / US-13), sans donnée personnelle.
-      void creerClientNavigateur().from("evenements").insert({ type: "clic_reserver", article_id: articleId, boutique_id: boutique.id, taille: selection }).then(({ error }) => {
-        if (error) console.error("Le clic de réservation n’a pas pu être enregistré.");
-      });
+      void enregistrerEvenement("clic_reserver", boutique.id, articleId, selection);
     } catch (error) {
       if (error instanceof ErreurAutreBoutique) { setConflit(error.message); return; }
       setErreur(error instanceof ErreurPanier ? error.message : "Impossible d’ajouter l’article au panier.");

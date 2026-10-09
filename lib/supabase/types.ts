@@ -698,6 +698,17 @@ export type Database = {
         Args: { jeton: string; numero: string }
         Returns: undefined
       }
+      enregistrer_evenement: {
+        Args: {
+          article?: string
+          boutique: string
+          jeton: string
+          taille?: string
+          type: Database["public"]["Enums"]["type_evenement"]
+          visiteur: string
+        }
+        Returns: boolean
+      }
       messages_whatsapp_commande: {
         Args: { commande: string }
         Returns: {
@@ -737,6 +748,16 @@ export type Database = {
           message: string
           reservation: string
           succes: boolean
+        }
+        Returns: undefined
+      }
+      signaler_article: {
+        Args: {
+          article: string
+          commentaire?: string
+          jeton: string
+          motif: string
+          visiteur: string
         }
         Returns: undefined
       }

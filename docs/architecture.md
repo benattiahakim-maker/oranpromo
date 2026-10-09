@@ -30,6 +30,7 @@ app/
   api/ia/fiche/route.ts         photo → fiche (US-14)
   api/ia/traduire/route.ts      traduction arabe (US-15)
   api/notifications/whatsapp/route.ts  envoi des messages WhatsApp en attente, appelé par une tâche planifiée (US-20.5)
+  visiteurs/actions.ts          actions serveur des visiteurs : mesures (vues, clics, partages) et signalements, limités par visiteur
 components/                     composants d'affichage réutilisables
 lib/
   prix.ts                       règles de prix et promo (testé)
@@ -41,6 +42,7 @@ lib/
   clients.ts                    profil client, no-shows, déblocage (US-20.2, 20.4, testé)
   telephone.ts                  numéro mobile algérien, mode de connexion client (US-21, testé)
   codes-telephone.ts            envoi et vérification des codes, limites d'envoi (US-21, serveur seulement, testé)
+  visiteurs.ts                  clé de visiteur (empreinte d'IP), mesures et signalements par les fonctions de la base (serveur seulement, testé)
   notifications/                messages WhatsApp : fournisseur (Meta Cloud API), envoi de la file d'attente (US-20.5, testé)
   supabase/client.ts            client navigateur ("use client")
   supabase/server.ts            client serveur (pages, routes, actions)
@@ -56,7 +58,7 @@ public/images/accueil/          images fixes de l'accueil (WebP), voir « Crédi
 - **Lecture publique** : les pages serveur lisent directement la base avec `creerClientServeur()`. Les règles de sécurité (RLS) ne renvoient que ce que le public a le droit de voir : boutiques validées, articles disponibles ou réservés confirmés il y a moins de 21 jours.
 - **Écritures du commerçant** : actions serveur (`"use server"`) ou client navigateur avec la session du commerçant. La base refuse toute écriture hors de sa boutique, même si l'interface a un bug.
 - **Routes `app/api/`** : uniquement pour ce qui a besoin d'un secret (IA Claude). Pas de route API pour lire des données que Supabase sert déjà.
-- **Statistiques** : insertion dans `evenements` (autorisée à tout visiteur, sans donnée personnelle).
+- **Statistiques et signalements** : plus d'insertion directe dans `evenements` ni `signalements` ; le navigateur appelle les actions serveur `app/visiteurs/actions.ts`, qui appellent `enregistrer_evenement()` et `signaler_article()` avec le secret `VISITEURS_SECRET` ; la base limite par visiteur (voir « Limites par visiteur »).
 - **Commandes** : aucune écriture directe dans `commandes`, `lignes_commande`, `suivi_commandes` ; tout passe par les fonctions de la base `passer_commande()` et `changer_statut_commande()` (appelées par des actions serveur), qui vérifient les droits, les transitions et déplacent le stock.
 
 ## Base de données (déjà créée sur Supabase, projet `oranpromo`)
@@ -71,8 +73,8 @@ Colonnes en `snake_case` français sans accents. Prix = entiers en dinars.
 | `photos` | 1 à 5 par article | `adresse` (grande photo 1200 px, fiche article), `adresse_vignette` (miniature 400 px, cartes ; vide pour les anciennes photos → repli sur `adresse`), `ordre` ; adresses limitées au stockage `photos` du projet, dossier de l'article (règle dans la base) |
 | `tailles` | tailles d'un article | `libelle`, `quantite` (stock indicatif, 0 à 999, 1 par défaut), `disponible` (calculé par la base : `quantite > 0`) ; unique par article |
 | `promos` | au plus une par article | `prix_promo` (> 0 et < `articles.prix`, règle dans la base), `badge`, `date_fin` |
-| `evenements` | statistiques | `type` : `vue_article`, `vue_boutique`, `clic_reserver`, `partage` ; `date` fixée par la base ; 120 par minute et par boutique au plus |
-| `signalements` | signalements clients | `statut` : `ouvert`, `traite`, `rejete` ; `cree_le` fixée par la base ; 10 par heure et par article, 200 par heure au total |
+| `evenements` | statistiques | `type` : `vue_article`, `vue_boutique`, `clic_reserver`, `partage` ; `date` fixée par la base ; 120 par minute et par boutique au plus ; écrit seulement par `enregistrer_evenement()` (limite par visiteur) |
+| `signalements` | signalements clients | `statut` : `ouvert`, `traite`, `rejete` ; `cree_le` fixée par la base ; 10 par heure et par article, 200 par heure au total ; écrit seulement par `signaler_article()` (limite par visiteur) |
 | `decisions` | décisions de modération | `action`, `auteur_id`, `date` |
 | `commandes` | commandes client (US-20) ; `no_show_le` (« Client pas venu » déclaré par la boutique), `no_show_annule_le` (annulé par l'admin), `contestee_le` / `contestation_validee_le` (contestation par le client, validée par l'admin ; motif dans `contestations`) | `numero` (affiché « n° 12 »), `client_id`, `boutique_id`, `statut` : `demandee`, `confirmee`, `prete`, `recuperee`, `annulee`, `expiree` ; `client_nom`, `client_telephone`, `telephone_verifie` (copiés du profil à la commande ; `telephone_verifie`, US-21) ; `note` (client, 300 car.), `motif_annulation` : `plus_en_stock`, `boutique_indisponible`, `client_a_annule`, `autre` ; `total` (DA) ; dates `cree_le`, `confirmee_le`, `prete_le`, `expire_le` (= `prete_le` + 24 h), `terminee_le` |
 | `contestations` | motif d'une contestation de no-show (une par commande) | `commande_id` (clé, = la commande), `client_id`, `motif` (5 à 300 car.), `cree_le` ; lecture par le client qui l'a écrite et par l'admin seulement (RLS) — jamais par la boutique ; écriture uniquement par `contester_no_show` |
@@ -80,6 +82,7 @@ Colonnes en `snake_case` français sans accents. Prix = entiers en dinars.
 | `suivi_commandes` | frise d'une commande | `commande_id`, `statut`, `date`, `auteur_id` (vide = automatique), `auteur` : `client`, `boutique`, `admin`, `systeme` ; `note` (300 car.) |
 | `messages_whatsapp` | file d'attente des messages WhatsApp (US-20.5) | `destinataire` (`+213…`), `modele` (nom du modèle Meta), `parametres` (liste de textes), `texte` (version lisible), `commande_id`, `statut` : `a_envoyer`, `envoye`, `echec` ; `tentatives` (5 au plus), `reserve_jusqu_a`, `erreur`, `identifiant_fournisseur`, `cree_le`, `envoye_le` ; lisible par l'admin seulement, écrit par la base |
 | `prive.reglages` | réglages internes (schéma non exposé) | `cle`, `valeur` ; ex. `jeton_notifications` = empreinte SHA-256 du secret de la tâche d'envoi WhatsApp ; `connexion_client`, `blocage_par_numero` (US-21) |
+| `prive.actions_visiteurs` | limites par visiteur (schéma non exposé) | `visiteur` (`u:<compte>` ou `ip:<empreinte HMAC de l'IP>`), `action` (`evenement`, `signalement`), `cible`, `date` ; lignes de plus de 24 h supprimées au fil de l'eau |
 | `prive.envois_codes` | codes de connexion envoyés (US-21, schéma non exposé) | `telephone`, `envoye_le` ; limite 1 par minute et 5 par heure et par numéro |
 | `appels_ia` | quota des routes IA | `utilisateur_id`, `date` ; aucune lecture directe, uniquement via `consommer_quota_ia()` (30 appels par heure et par compte) |
 
@@ -211,6 +214,22 @@ Stories : `docs/user-stories.md`, module 9.
 - **Bloc « Partager ma boutique »** (`components/PartagerBoutique.tsx`, sur `/espace`) : lien, « Copier le lien » (`navigator.clipboard`), « Partager sur WhatsApp » (`lienPartageWhatsApp()` → `https://wa.me/?text=…`, sans numéro : le commerçant choisit le contact ou son statut), QR code, « Télécharger le QR code » (SVG), « Imprimer l'affiche » (`/espace/affiche`). Boutique non validée : message, ni lien de partage ni QR code.
 - **QR code** : dépendance `qrcode` (MIT, génération locale, aucun service externe), appelée côté serveur seulement (`qrCodeSvg()` dans `lib/lien-boutique.ts`) ; SVG noir sur blanc, correction d'erreur `M`, marge de 4 modules (lisible imprimé en petit).
 
+## Limites par visiteur (vues, clics, partages, signalements)
+
+Carte Trello « Sécurité · Limiter les envois en masse ». Migration `20261010180000_limites_visiteurs.sql`.
+
+- **Avant** (PR #2) : insertion directe par tout visiteur avec la clé publique ; limites globales seulement (120 événements par minute et par boutique ; 10 signalements par heure et par article, 200 par heure au total). Elles restent en place.
+- **Plus d'insertion directe** : politiques d'insertion supprimées, droit `INSERT` retiré à `anon` et `authenticated` sur `evenements` et `signalements`.
+- **Chemin unique** : composant → action serveur (`enregistrerMesure`, `envoyerSignalement`) → `lib/visiteurs.ts` → fonctions `enregistrer_evenement(jeton, visiteur, type, boutique, article, taille)` et `signaler_article(jeton, visiteur, article, motif, commentaire)`. Le `jeton` est `VISITEURS_SECRET` (empreinte SHA-256 dans `prive.reglages`, clé `jeton_visiteurs`) : un appel direct à Supabase avec la clé publique est refusé (`42501`).
+- **Clé du visiteur** :
+  - compte connecté : `u:<identifiant>`, prise par la base dans la session (`auth.uid()`), jamais dans la requête ;
+  - visiteur anonyme : `ip:<HMAC-SHA256(VISITEURS_SECRET, adresse IP)>`, calculée par le serveur ; l'IP vient de `x-real-ip` / `x-forwarded-for`, réécrits par Vercel (non falsifiables). L'IP n'est jamais enregistrée en clair, l'empreinte est gardée 24 h au plus, et elle ne peut pas être fabriquée sans le secret. Pas de cookie ni d'identifiant de suivi.
+- **Limites** :
+  - mesures : même visiteur, même type, même boutique / article / taille dans les 10 minutes → ignorée (rechargements) ; plus de 300 par heure et par visiteur → ignorées. Une mesure ignorée ou en erreur n'empêche jamais d'afficher la page ;
+  - signalements : un seul par article et par visiteur en 24 h (« Vous avez déjà signalé cet article, merci. Il sera examiné rapidement. »), 5 par heure et par visiteur (« Trop de signalements envoyés : réessayez dans une heure. »).
+- **Limite connue** : plusieurs clients derrière la même adresse IP (opérateur mobile) partagent la même clé anonyme : une vue d'un second client sur le même article dans les 10 minutes n'est pas comptée, et un second signalement du même article dans les 24 h est refusé. Un robot qui change sans cesse d'adresse IP n'est limité que par les plafonds globaux.
+- Sans `VISITEURS_SECRET` (ou sans son empreinte en base) : les mesures sont ignorées et le signalement affiche « Le signalement n’est pas disponible pour le moment. Réessayez plus tard. ».
+
 ## Crédits des images
 
 | Fichier (`public/images/accueil/`) | Origine | Auteur | Licence | Source |
@@ -235,6 +254,7 @@ Règles :
 | `WHATSAPP_LANGUE` | serveur | langue des modèles Meta (`fr` par défaut) |
 | `WHATSAPP_API_VERSION` | serveur | version de l'API Graph de Meta (`v23.0` par défaut) |
 | `CRON_SECRET` | serveur | secret de la tâche d'envoi des messages en attente (empreinte `jeton_notifications`) |
+| `VISITEURS_SECRET` | serveur | secret des mesures et signalements (limites par visiteur) ; sert aussi à l'empreinte HMAC des adresses IP ; empreinte SHA-256 dans `prive.reglages`, clé `jeton_visiteurs` ; vide = mesures ignorées, signalements refusés |
 | `CODES_TELEPHONE_SECRET` | serveur | jeton serveur des limites d'envoi des codes (US-21, relecture n°4), distinct de `CRON_SECRET` ; empreinte SHA-256 dans `prive.reglages`, clé `jeton_codes_telephone` ; vide = aucun code envoyé |
 | `CONNEXION_CLIENT` | serveur | `email` (par défaut) ou `telephone` : connexion des clients (US-21) |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | navigateur | clé de site (publique) Cloudflare Turnstile ; vide = pas de widget (la clé secrète va seulement dans Supabase) |

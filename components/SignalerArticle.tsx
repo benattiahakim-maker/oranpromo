@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { creerClientNavigateur } from "@/lib/supabase/client";
+import { envoyerSignalement } from "@/app/visiteurs/actions";
 
 export default function SignalerArticle({ articleId }: { articleId: string }) {
   const [ouvert, setOuvert] = useState(false);
@@ -17,9 +17,9 @@ export default function SignalerArticle({ articleId }: { articleId: string }) {
     if (!["contrefacon", "contenu_inapproprie", "arnaque", "autre"].includes(motif)) { setMessage("Choisissez un motif."); return; }
     setEnCours(true); setMessage("");
     try {
-      const { error } = await creerClientNavigateur().from("signalements").insert({ article_id: articleId, motif, commentaire: commentaire || null, statut: "ouvert" });
-      if (error) throw error;
-      setEnvoye(true); setOuvert(false); setMessage("Merci, nous allons vérifier.");
+      const resultat = await envoyerSignalement(articleId, motif, commentaire);
+      if (resultat.succes) { setEnvoye(true); setOuvert(false); }
+      setMessage(resultat.message);
     } catch { setMessage("Le signalement n’a pas pu être envoyé. Réessayez."); }
     finally { setEnCours(false); }
   }
