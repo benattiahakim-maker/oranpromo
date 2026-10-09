@@ -242,28 +242,28 @@ set local role authenticated;
 -- ---------------------------------------------------------------------------
 select pg_temp.compte('c0000000-0000-0000-0000-000000000001') \g /dev/null
 select pg_temp.erreur('update profils set telephone = ''+213555199999'' where id = auth.uid()', '42501', 'bloqué', 'point 3 : un compte bloqué ne change pas de numéro');
--- Un autre compte prend le numéro du compte bloqué : il ne commande pas.
+-- Un autre compte prend le numéro du compte bloqué. Règle changée par la migration 20261009233000
+-- (numéro non vérifié) : il n'est plus bloqué ni ne compte les no-shows de l'autre compte (voir numero_non_verifie.test.sql).
 select pg_temp.compte('c0000000-0000-0000-0000-000000000002') \g /dev/null
 update profils set telephone = '+213555100001' where id = auth.uid();
-select pg_temp.erreur('select passer_commande(''d0000000-0000-0000-0000-000000000001'', ''[{"article_id":"e0000000-0000-0000-0000-000000000003","taille":"L","quantite":1}]'')',
-  '42501', 'bloqué', 'point 3 : un autre compte avec le même numéro est refusé');
--- No-shows cumulés par numéro : le compte 2 a hérité des no-shows du numéro en le prenant.
+select pg_temp.ok(passer_commande('d0000000-0000-0000-0000-000000000001', '[{"article_id":"e0000000-0000-0000-0000-000000000003","taille":"L","quantite":1}]') is not null,
+  'point 3 (20261009233000) : un autre compte avec le même numéro n''est pas bloqué');
 reset role;
-select pg_temp.ok((select no_shows = 5 and bloque from profils where id = 'c0000000-0000-0000-0000-000000000002'), 'point 3 : no-shows cumulés par numéro (5 sur le 2e compte)');
+select pg_temp.ok((select no_shows = 0 and not bloque from profils where id = 'c0000000-0000-0000-0000-000000000002'), 'point 3 (20261009233000) : no-shows comptés par compte seulement (0 sur le 2e compte)');
 set local role authenticated;
--- Admin : annuler un no-show débloque le numéro (5 → 4) ; débloquer remet tout à 0.
+-- Admin : annuler un no-show débloque le compte (5 → 4) ; débloquer remet tout à 0.
 select pg_temp.compte('a0000000-0000-0000-0000-000000000001') \g /dev/null
 select annuler_no_show(:'e6') \g /dev/null
-select pg_temp.ok((select bool_and(no_shows = 4 and not bloque and bloque_le is null) from profils
-  where id in ('c0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000002')),
-  'point 11 : annuler un no-show sous 5 débloque les comptes du numéro');
+select pg_temp.ok((select no_shows = 4 and not bloque and bloque_le is null from profils where id = 'c0000000-0000-0000-0000-000000000001')
+  and (select no_shows = 0 and not bloque from profils where id = 'c0000000-0000-0000-0000-000000000002'),
+  'point 11 : annuler un no-show sous 5 débloque le compte');
 select debloquer_client('c0000000-0000-0000-0000-000000000001') \g /dev/null
 select pg_temp.ok((select bool_and(no_shows = 0 and not bloque) from profils
   where id in ('c0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000002')),
-  'point 11 : débloquer remet le compteur à 0 (compte et numéro)');
+  'point 11 : débloquer remet le compteur à 0');
 select pg_temp.compte('c0000000-0000-0000-0000-000000000002') \g /dev/null
 select pg_temp.ok(passer_commande('d0000000-0000-0000-0000-000000000001', '[{"article_id":"e0000000-0000-0000-0000-000000000003","taille":"L","quantite":1}]') is not null,
-  'point 3 : après déblocage, le numéro commande de nouveau');
+  'point 3 : le 2e compte commande toujours');
 
 -- ---------------------------------------------------------------------------
 -- Point 4 (suite) : un nom invalide n'entre jamais dans un message WhatsApp.

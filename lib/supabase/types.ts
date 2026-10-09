@@ -622,6 +622,7 @@ export type Database = {
     }
     Functions: {
       annuler_no_show: { Args: { commande: string }; Returns: undefined }
+      bloquer_client: { Args: { client: string }; Returns: undefined }
       changer_statut_commande: {
         Args: {
           commande: string
@@ -654,6 +655,18 @@ export type Database = {
           parametres: Json
           reservation: string
           texte: string
+        }[]
+      }
+      numeros_partages: {
+        Args: never
+        Returns: {
+          bloque: boolean
+          client_id: string
+          no_shows: number
+          no_shows_numero: number
+          nom: string
+          telephone: string
+          telephone_actuel: string
         }[]
       }
       passer_commande: {

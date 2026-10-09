@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { annulerNoShow, debloquerClient, listerClientsSurveilles, listerNoShowsDeclares, nettoyerNom, nomValide, noShowsDuClient, enregistrerProfilClient, ErreurValidationProfil, essaisRestants, messageNoShows, profilComplet, telephoneLisible, validerProfilClient } from "./clients";
+import { annulerNoShow, bloquerClient, debloquerClient, grouperNumerosPartages, listerNumerosPartages, listerClientsSurveilles, listerNoShowsDeclares, nettoyerNom, nomValide, noShowsDuClient, enregistrerProfilClient, ErreurValidationProfil, essaisRestants, messageNoShows, profilComplet, telephoneLisible, validerProfilClient } from "./clients";
 
 describe("profil client (US-20.2, US-20.4)", () => {
   it("compte les essais restants avant le blocage au 5e no-show", () => {
@@ -79,8 +79,9 @@ describe("relecture point 11 : no-shows déclarés (admin)", () => {
     expect(appels).toContainEqual(["from", "commandes"]);
     expect(appels).toContainEqual(["not", "no_show_le", "is", null]);
     expect(appels).toContainEqual(["is", "no_show_annule_le", null]);
-    expect(noShowsDuClient({ id: "k1", telephone: "+213555000002" }, liste).map(n => n.id)).toEqual(["c1", "c2"]);
-    expect(noShowsDuClient({ id: "k5", telephone: null }, liste)).toEqual([]);
+    // Relecture n°2 : seulement les commandes du compte, pas celles d’un autre compte avec le même numéro.
+    expect(noShowsDuClient({ id: "k1" }, liste).map(n => n.id)).toEqual(["c1"]);
+    expect(noShowsDuClient({ id: "k5" }, liste)).toEqual([]);
   });
   it("annule un no-show par la fonction de la base", async () => {
     const rpc = vi.fn().mockResolvedValue({ error: null });
@@ -88,5 +89,46 @@ describe("relecture point 11 : no-shows déclarés (admin)", () => {
     expect(rpc).toHaveBeenCalledWith("annuler_no_show", { commande: "c1" });
     rpc.mockResolvedValue({ error: { code: "42501", message: "Action réservée aux administrateurs." } });
     await expect(annulerNoShow({ rpc } as unknown as SupabaseClient<Database>, "c1")).rejects.toThrow("administrateurs");
+  });
+});
+
+describe("relecture n°2 US-20 : numéro non vérifié", () => {
+  it("n’affiche que le compteur du compte, et un message neutre pour un blocage décidé par l’admin", () => {
+    expect(messageNoShows(0, true)).toBe("Votre compte est bloqué : vous ne pouvez plus commander. Contactez OranPromo pour le débloquer.");
+    expect(messageNoShows(2, true)).not.toContain("5 commandes");
+    expect(messageNoShows(5, true)).toContain("après 5 commandes non récupérées");
+  });
+  it("regroupe les comptes par numéro partagé", () => {
+    const lignes = [
+      { telephone: "+213555000001", client_id: "k1", nom: "Fraudeur", telephone_actuel: "+213555000001", no_shows: 5, bloque: true, no_shows_numero: 5 },
+      { telephone: "+213555000001", client_id: "k2", nom: "Victime", telephone_actuel: "+213555000001", no_shows: 0, bloque: false, no_shows_numero: 5 },
+      { telephone: "+213555000001", client_id: "k2", nom: "Victime", telephone_actuel: "+213555000001", no_shows: 0, bloque: false, no_shows_numero: 5 },
+      { telephone: "+213555000009", client_id: "k9", nom: "Seul", telephone_actuel: "+213555000009", no_shows: 1, bloque: false, no_shows_numero: 1 },
+    ];
+    expect(grouperNumerosPartages(lignes)).toEqual([{ telephone: "+213555000001", noShowsNumero: 5, comptes: [
+      { id: "k1", nom: "Fraudeur", telephoneActuel: "+213555000001", noShows: 5, bloque: true },
+      { id: "k2", nom: "Victime", telephoneActuel: "+213555000001", noShows: 0, bloque: false },
+    ] }]);
+    expect(grouperNumerosPartages([])).toEqual([]);
+  });
+  it("lit les numéros partagés par la fonction de la base (admin)", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: [
+      { telephone: "+213555000001", client_id: "k1", nom: null, telephone_actuel: null, no_shows: 2, bloque: false, no_shows_numero: 3 },
+      { telephone: "+213555000001", client_id: "k2", nom: "B", telephone_actuel: "+213555000001", no_shows: 1, bloque: false, no_shows_numero: 3 },
+    ], error: null });
+    const resultat = await listerNumerosPartages({ rpc } as unknown as SupabaseClient<Database>);
+    expect(rpc).toHaveBeenCalledWith("numeros_partages");
+    expect(resultat[0].comptes.map(c => c.id)).toEqual(["k1", "k2"]);
+    rpc.mockResolvedValue({ data: null, error: { code: "42501", message: "Action réservée aux administrateurs." } });
+    await expect(listerNumerosPartages({ rpc } as unknown as SupabaseClient<Database>)).rejects.toThrow("Impossible de charger les numéros partagés");
+  });
+  it("bloque un compte par la fonction de la base et relaie le refus", async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    await bloquerClient({ rpc } as unknown as SupabaseClient<Database>, "k2");
+    expect(rpc).toHaveBeenCalledWith("bloquer_client", { client: "k2" });
+    rpc.mockResolvedValue({ error: { code: "P0002", message: "Client introuvable." } });
+    await expect(bloquerClient({ rpc } as unknown as SupabaseClient<Database>, "k2")).rejects.toThrow("Client introuvable.");
+    rpc.mockResolvedValue({ error: { code: "XX000", message: "interne" } });
+    await expect(bloquerClient({ rpc } as unknown as SupabaseClient<Database>, "k2")).rejects.toThrow("Impossible de bloquer");
   });
 });
