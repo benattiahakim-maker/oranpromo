@@ -10,6 +10,8 @@ import { formaterPrix } from "@/lib/prix";
 import { abonnerPanier, changerQuantitePanier, lignesCommande, lirePanier, NOTE_COMMANDE_MAX, panierBrut, QUANTITE_LIGNE_MAX, retirerDuPanier, sauverPanierLocal, totalPanier } from "@/lib/panier";
 import { messageNoShows } from "@/lib/clients";
 import { remplir } from "@/lib/langue";
+import { afficherTaille } from "@/lib/article";
+import { traduire } from "@/lib/textes";
 import { useLangue, useTextes } from "./FournisseurTextes";
 import { traduireMessage } from "@/lib/textes/messages";
 
@@ -20,6 +22,7 @@ export type ProfilPanier = { nom: string | null; telephone: string | null; compl
 export default function PanierCommande({ profil }: { profil: ProfilPanier }) {
   const router = useRouter();
   const t = useTextes().panier;
+  const tailleUnique = useTextes().listes.tailleUnique;
   const langue = useLangue();
   const brut = useSyncExternalStore(abonnerPanier, panierBrut, () => "");
   const panier = useMemo(() => lirePanier(brut), [brut]);
@@ -50,7 +53,7 @@ export default function PanierCommande({ profil }: { profil: ProfilPanier }) {
       <Link href={`/a/${ligne.articleId}`} className="shrink-0">{ligne.photo ? <Image src={ligne.photo} alt={ligne.titre} width={64} height={80} className="h-20 w-16 object-cover" unoptimized /> : <span className="flex h-20 w-16 items-center justify-center bg-fond-photo text-xs text-gris">{t.photo}</span>}</Link>
       <div className="min-w-0 flex-1">
         <p dir="auto" className="break-words text-sm font-light">{ligne.titre}</p>
-        <p className="text-xs text-gris">{remplir(t.tailleEtPrix, { taille: ligne.taille, prix: formaterPrix(ligne.prix, langue) })}</p>
+        <p className="text-xs text-gris">{remplir(ligne.beaute ? t.contenanceEtPrix : t.tailleEtPrix, { taille: traduire({ Unique: tailleUnique }, afficherTaille(ligne.taille, langue)), prix: formaterPrix(ligne.prix, langue) })}</p>
         <div className="mt-1 flex items-center justify-between gap-2">
           <div className="flex items-center border border-trait">
             <button type="button" aria-label={remplir(t.moins, { titre: ligne.titre, taille: ligne.taille })} disabled={enCours || ligne.quantite <= 1} onClick={() => sauverPanierLocal(changerQuantitePanier(panier, ligne.articleId, ligne.taille, ligne.quantite - 1))} className="h-11 w-11 disabled:text-gris">−</button>

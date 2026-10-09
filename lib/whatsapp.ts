@@ -4,6 +4,7 @@ export type DemandeReservation = {
   telephoneBoutique: string; // format international, ex. "+213 555 12 34 56"
   titre: string;
   taille: string | null; // null pour un article en taille unique
+  contenance?: boolean; // US-25.1 : produit de beauté, la taille est une contenance (« 100 ml ») écrite sans le mot « taille »
   prix: number; // prix affiché au client, en DA
   lien: string; // lien de la fiche, ex. "https://oranpromo.com/a/1234"
 };
@@ -19,7 +20,7 @@ export function lienRelanceBoutique(telephone: string): string {
 
 /** Message pré-rempli de la réservation (US-07). */
 export function messageReservation(d: DemandeReservation): string {
-  const taille = d.taille ? `, taille ${d.taille}` : "";
+  const taille = d.taille ? (d.contenance ? `, ${d.taille}` : `, taille ${d.taille}`) : "";
   return `Bonjour, je souhaite réserver : ${d.titre}${taille}, ${formaterPrix(d.prix)}. ${d.lien} (vu sur OranPromo)`;
 }
 

@@ -61,3 +61,12 @@ describe("liens WhatsApp des commandes (US-20)", () => {
     expect(new URL(lienContactClient("+213555111222", 14, "Boutique Amine")).searchParams.get("text")).toBe("Bonjour, ici Boutique Amine au sujet de votre commande n° 14 sur OranPromo.");
   });
 });
+
+describe("US-25.1 : message de réservation d’un produit de beauté", () => {
+  it("écrit la contenance sans le mot « taille »", () => {
+    const m = messageReservation({ ...demande, titre: "Eau de parfum oud boisé", taille: "100 ml", contenance: true, prix: 4900 });
+    expect(m).toContain("Eau de parfum oud boisé, 100 ml, 4");
+    expect(m).not.toContain("taille");
+    expect(messageReservation(demande)).toContain("taille M");
+  });
+});

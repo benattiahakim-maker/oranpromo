@@ -356,9 +356,9 @@ OranPromo est un **usage commercial** (site d'entreprise, même gratuit pour les
 
 `NEXT_PUBLIC_CARTO_CLE` (navigateur) : clé CARTO Basemaps (publique, restreinte au domaine dans le tableau de bord CARTO) ; vide = tuiles OSMF (développement seulement).
 
-## Univers Beauté (US-25) — conception, à valider par le propriétaire
+## Univers Beauté (US-25) — conception validée par le propriétaire le 9/10
 
-Story : `docs/user-stories.md`, module 12. Maquette : `docs/maquettes/Beaute.dc.html`. **Aucune migration prévue** (sauf si le propriétaire ajoute des catégories ou un prix par contenance : questions 1 et 2 de US-25).
+Story : `docs/user-stories.md`, module 12. Maquette : `docs/maquettes/Beaute.dc.html`. **Aucune migration** : décisions du propriétaire du 9/10 — 5 catégories gardées (accessoires de beauté dans « Maquillage »), un seul prix par article, « Contenance » = « الحجم » en arabe, aucune règle ni signalement « contrefaçon », décants permis s'ils sont présentés comme tels, pas de date de péremption, tuile d'accueil inchangée, genre « Pour elle / Pour lui / Mixte » avec les mixtes inclus.
 
 ### Déjà en place (audit du 9 octobre 2026)
 
@@ -384,7 +384,7 @@ Story : `docs/user-stories.md`, module 12. Maquette : `docs/maquettes/Beaute.dc.
 
 ### Boutique de démonstration (US-25.3)
 
-- Script `supabase/scripts/demo_parfumerie.sql` : **hors migrations**, jamais appliqué automatiquement, rejouable (identifiants fixes, `on conflict do nothing` / `not exists`), à lancer par le propriétaire dans l'éditeur SQL **après** validation de US-25. Il passe les contrôles de la base (catégorie, position dans la wilaya, adresse des photos : les contrôles réservés aux sessions utilisateur ne s'appliquent pas à l'éditeur SQL, comme pour la démo actuelle).
+- Script `supabase/scripts/demo_parfumerie.sql` : **hors migrations**, jamais appliqué automatiquement, rejouable (identifiants fixes, `on conflict do nothing` / `not exists`), lancé en production après la validation du propriétaire (requête SQL par le connecteur Supabase, pas une migration). Il passe les contrôles de la base (catégorie, position dans la wilaya, adresse des photos : les contrôles réservés aux sessions utilisateur ne s'appliquent pas à l'éditeur SQL, comme pour la démo actuelle).
 - Identifiants : boutique `33333333-3333-3333-3333-333333333333` (`parfumerie-demo`, Gambetta, 35,69975 / −0,61720), articles `a0000000-0000-0000-0000-000000000006` à `…010`, WhatsApp `+213000000003` (format refusé par la file `messages_whatsapp` : aucun envoi possible).
 - `supabase/scripts/retirer_donnees_demo.sql` connaît cette boutique (`boutiques_demo`) ; ses articles sont déjà couverts par le motif `a0000000-0000-0000-0000-%`. Le test `supabase/tests/retirer_donnees_demo.test.sql` lance le script de démo deux fois puis vérifie qu'il est entièrement retiré, sans rien toucher d'autre.
 

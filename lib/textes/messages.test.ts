@@ -39,3 +39,11 @@ describe("US-23 : messages du serveur et de la base en arabe", () => {
     for (const cle of MESSAGES_FIXES_TRADUITS) { expect(cle).not.toContain("’"); expect(traduireMessage(cle, "ar")).not.toBe(cle); }
   });
 });
+
+describe("US-25.1 : messages du panier pour la beauté", () => {
+  it("contenance traduite par « الحجم »", () => {
+    expect(traduireMessage("Cette contenance est épuisée.", "ar")).toBe("هاد الحجم ما بقاش.");
+    expect(traduireMessage("Il ne reste qu’une pièce dans cette contenance.", "ar")).toBe("بقات غير وحدة في هاد الحجم.");
+    expect(traduireMessage("Vous pouvez commander au plus 3 pièces dans cette contenance.", "ar")).toBe("تقدر تطلب 3 برك في هاد الحجم.");
+  });
+});

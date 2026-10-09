@@ -453,11 +453,11 @@ En tant que cliente, je veux une carte des boutiques avec celles qui sont près 
 
 ## Module 12 — Univers Beauté (après le MVP)
 
-Source : élément « Beauté » du backlog (demande du propriétaire du 9 octobre 2026, avec une boutique de démonstration de parfums). À coder **seulement après validation de la maquette par le propriétaire**. Conception : `docs/architecture.md`, section « Univers Beauté (US-25) ». Maquette : `docs/maquettes/Beaute.dc.html`. Données de démonstration : `supabase/scripts/demo_parfumerie.sql` (préparé, **pas lancé**).
+Source : élément « Beauté » du backlog (demande du propriétaire du 9 octobre 2026, avec une boutique de démonstration de parfums). Maquette **validée par le propriétaire le 9/10** (décisions en fin de module). Conception : `docs/architecture.md`, section « Univers Beauté (US-25) ». Maquette : `docs/maquettes/Beaute.dc.html`. Données de démonstration : `supabase/scripts/demo_parfumerie.sql`.
 
 **Déjà en place (audit du 9 octobre 2026)** : les 5 catégories beauté et leur contrôle dans la base (`prive.verifier_categorie_article`), l'univers « Beauté » (`critereUnivers`, `articleDansUnivers`), les contenances en ml côté commerçant (formulaire, aide à la saisie, stock par contenance), le genre facultatif (enregistré « mixte »), la tuile « Beauté » et la pièce phare « Parfums » de l'accueil, le choix « Beauté » dans le catalogue et dans le filtre de `/carte`, les noms arabes des catégories, la fiche IA qui sait décrire un produit de beauté. **Il manque** surtout le côté cliente : le mot « Contenance » à la place de « Taille », un filtre de contenance trié par volume, la place des parfums mixtes dans le filtre de genre, et la boutique de démonstration.
 
-### US-25 — Acheter des produits de beauté (parfums, maquillage, soins) — **à valider par le propriétaire avant tout code**
+### US-25 — Acheter des produits de beauté (parfums, maquillage, soins) — **validée par le propriétaire le 9/10**
 En tant que cliente, je veux trouver les parfums, le maquillage et les soins des boutiques d'Oran, choisir la contenance (50 ml, 100 ml) et commander comme pour un vêtement, afin d'acheter ma beauté au même endroit.
 Livrée en 3 sous-stories, dans cet ordre (une PR chacune) :
 
@@ -467,9 +467,9 @@ Livrée en 3 sous-stories, dans cet ordre (une PR chacune) :
 | US-25.2 | Catalogue Beauté : filtre de contenance trié par volume, genre « Pour elle / Pour lui / Mixte » avec les mixtes inclus, raccourcis de catégories | `/catalogue?univers=beaute` |
 | US-25.3 | Boutique de démonstration « Parfumerie Démo » (5 parfums), lancée par le propriétaire dans Supabase | `/carte`, `/b/parfumerie-demo`, catalogue |
 
-**Catégories** (inchangées, déjà contrôlées par la base) : Parfums · Maquillage · Soins visage et corps · Cheveux · Hammam et traditionnel. Ajouts possibles selon la réponse du propriétaire (question 1) : « Bakhour et encens », « Ongles ». Un ajout de catégorie = une **nouvelle migration** (liste de la base) + `lib/article.ts` + les noms arabes.
+**Catégories** (inchangées, déjà contrôlées par la base) : Parfums · Maquillage · Soins visage et corps · Cheveux · Hammam et traditionnel. Décision du propriétaire : pas d'autre catégorie ; les accessoires de beauté vont dans « Maquillage ».
 
-**Contenances et stock** (règle déjà en place, rappelée ici) : un produit de beauté n'a pas de S/M/L mais une **contenance en ml** (5, 10, 15, 30, 50, 75, 100, 150, 200, 250, 500, 1000 ml) ou « Unique » (rouge à lèvres, palette, savon). Chaque contenance a **son stock** (table `tailles`, colonne `libelle` = « 50 ml » : pas de nouvelle colonne) ; une contenance à 0 s'affiche « épuisée » ; l'article passe « vendu » quand toutes sont à 0, comme un vêtement. **Un seul prix par article** : un 50 ml et un 100 ml à des prix différents sont deux articles (question 2).
+**Contenances et stock** (règle déjà en place, rappelée ici) : un produit de beauté n'a pas de S/M/L mais une **contenance en ml** (5, 10, 15, 30, 50, 75, 100, 150, 200, 250, 500, 1000 ml) ou « Unique » (rouge à lèvres, palette, savon). Chaque contenance a **son stock** (table `tailles`, colonne `libelle` = « 50 ml » : pas de nouvelle colonne) ; une contenance à 0 s'affiche « épuisée » ; l'article passe « vendu » quand toutes sont à 0, comme un vêtement. **Un seul prix par article** (décision du propriétaire) : un 50 ml et un 100 ml à des prix différents sont deux articles. Les décants sont permis s'ils sont présentés comme tels ; pas de date de péremption.
 
 ### US-25.1 — « Contenance » pour les produits de beauté (aucune migration)
 - Sur la **fiche article** d'un produit de beauté : légende « Contenance » au lieu de « Taille », boutons « 50 ml », « 100 ml » ; « 100 ml, épuisée » ; « Choisissez une contenance pour commander. » ; « Aucune contenance disponible. ». Taille unique : rien ne s'affiche (comme aujourd'hui).
@@ -483,12 +483,12 @@ Livrée en 3 sous-stories, dans cet ordre (une PR chacune) :
 - **Raccourcis de catégories** sous le titre quand l'univers Beauté est choisi : Tout · Parfums · Maquillage · Soins · Cheveux · Hammam (liens vers `?univers=beaute&categorie=…`, ligne qui défile horizontalement, catégorie choisie en noir plein). Une catégorie sans article visible n'est pas affichée.
 - **Filtre « Contenance »** (au lieu de « Taille ») quand l'univers est Beauté ou la catégorie est une catégorie beauté : options **triées par volume** (5 ml, 10 ml, 50 ml, 100 ml, Unique en dernier), sans S/M/L. Dans les autres cas, le filtre « Taille » ne montre que les tailles de vêtements, triées XS → XXL puis les pointures (aujourd'hui, ordre alphabétique et ml mélangés).
 - **Genre dans Beauté** : « Pour elle », « Pour lui », « Mixte » ; **« Pour elle » inclut les mixtes** (et « Pour lui » aussi), comme les univers Femme / Homme : un parfum mixte doit sortir pour une cliente qui cherche « pour elle ». « Enfant » n'est pas proposé dans Beauté. Hors Beauté, le filtre de genre ne change pas.
-- **Tuile de l'accueil** : la tuile « Beauté » existante est gardée (photo `univers-beaute.webp`, lien `/catalogue?univers=beaute`) ; la pièce phare « Parfums » aussi. Rien à ajouter tant qu'il y a peu d'articles beauté (question 6).
+- **Tuile de l'accueil** : la tuile « Beauté » existante est gardée (photo `univers-beaute.webp`, lien `/catalogue?univers=beaute`) ; la pièce phare « Parfums » aussi. Rien à ajouter (décision du propriétaire).
 - Rien ne change pour les univers Femme, Homme, Enfant, ni pour `/carte` (le filtre Beauté y est déjà).
 - Tests Vitest : tri des contenances (numérique, « Unique » à la fin, valeurs inconnues gardées), tri des tailles de vêtements, filtre de genre Beauté avec mixtes (requête Supabase espionnée : `in("genre", ["femme", "mixte"])`), raccourcis masqués pour une catégorie vide, `?univers=femme` inchangé.
 
 ### US-25.3 — Boutique de démonstration « Parfumerie Démo » (après validation)
-- Le propriétaire lance `supabase/scripts/demo_parfumerie.sql` dans l'éditeur SQL de Supabase **après** avoir validé cette conception (si une catégorie est ajoutée ou un article change, le script est mis à jour d'abord). Grok Bot ne le lance pas sans son accord.
+- `supabase/scripts/demo_parfumerie.sql` est lancé en production (requête SQL, **pas** une migration) après la validation du propriétaire du 9/10, puis vérifié : boutique visible dans le catalogue (mêmes règles que le public) et dans `boutiques_carte()`.
 - Boutique validée « Parfumerie Démo » (`/b/parfumerie-demo`), quartier Gambetta, position dans la wilaya d'Oran (apparaît sur `/carte` avec « 4 promos en cours »), WhatsApp de test volontairement invalide `+213000000003` (aucun message ne peut partir). Aucun compte commerçant.
 - 5 parfums génériques (aucune marque, aucun nom de parfum existant), photos d'exemple placehold.co comme la démo actuelle :
 
@@ -518,12 +518,12 @@ Livrée en 3 sous-stories, dans cet ordre (une PR chacune) :
 | 10 | Panier | 100 ml · 4 900 DA | 100 مل · 4 900 دج | (identique) |
 | 11 | Catalogue Beauté, vide | Aucun produit de beauté pour le moment. | **ما كاين** حتى منتوج تجميل **دابا**. | لا توجد منتجات تجميل حاليًا. |
 
-**Questions au propriétaire** (avant le code) :
-1. Catégories : garder les 5 actuelles, ou ajouter « Bakhour et encens » et « Ongles » (vernis, faux ongles) ? Les accessoires (trousses, pinceaux) vont-ils dans « Maquillage » ?
-2. Prix par contenance : un seul prix par article (50 ml et 100 ml = deux articles, rien à changer dans la base), ou un prix par contenance (nouvelle migration, panier et commandes à revoir) ?
-3. Mot arabe pour « Contenance » : « الحجم » (proposé) ou « القد » / « السعة » ?
-4. Authenticité : faut-il une règle pour les commerçants (« pas de copie vendue comme original », signalement « contrefaçon ») et une mention sur les fiches parfum ?
-5. Décants (5 ml / 10 ml reconditionnés) et date de péremption : autorisés ? à afficher ?
-6. Accueil : la tuile « Beauté » actuelle suffit-elle, ou voulez-vous un bloc « Parfums en promo » quand il y aura assez d'articles ?
-7. Genre dans Beauté : « Pour elle / Pour lui / Mixte » avec les mixtes inclus partout (proposé), ou pas de filtre de genre dans Beauté ?
-8. Boutique de démonstration : noms, prix et quartier (Gambetta) des 5 parfums vous conviennent ? Je lance le script seulement après votre accord.
+**Décisions du propriétaire (9 octobre 2026, 18 h 46)** — maquette et boutique de démonstration validées :
+1. **Catégories** : on garde les 5 ; les accessoires de beauté (trousses, pinceaux) vont dans « Maquillage ». Aucune migration.
+2. **Prix** : un seul prix par article (un 50 ml et un 100 ml à des prix différents = deux articles). Pas de prix par contenance.
+3. **Arabe** : « Contenance » = « الحجم ».
+4. **Authenticité** : **aucune** règle, aucun motif de signalement « contrefaçon », aucune mention sur les fiches. Sujet abandonné.
+5. **Décants** (5 ml / 10 ml reconditionnés) : autorisés s'ils sont présentés comme tels dans le titre ou la description (« Décant 10 ml de… ») ; **aucune date de péremption** affichée. Rien à coder.
+6. **Accueil** : la tuile « Beauté » actuelle suffit.
+7. **Genre dans Beauté** : « Pour elle / Pour lui / Mixte », les mixtes inclus dans « Pour elle » et « Pour lui ».
+8. **Boutique de démonstration** : validée telle quelle ; script lancé en production (US-25.3).

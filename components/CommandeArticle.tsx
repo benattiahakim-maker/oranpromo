@@ -7,17 +7,20 @@ import { ajouterAuPanier, chargerPanierLocal, ErreurAutreBoutique, ErreurPanier,
 import { lienQuestionArticle } from "@/lib/whatsapp";
 import { remplir } from "@/lib/langue";
 import { traduire } from "@/lib/textes";
+import { afficherTaille } from "@/lib/article";
 import { useLangue, useTextes } from "./FournisseurTextes";
 import { traduireMessage } from "@/lib/textes/messages";
 
 // US-20.2 : la fiche ajoute l’article au panier d’une boutique (remplace « Réserver sur WhatsApp », US-07).
-type Props = { articleId: string; boutique: { id: string; nom: string; whatsapp: string }; titre: string; prix: number; photo: string | null; tailles: { libelle: string; quantite: number }[] };
+type Props = { articleId: string; boutique: { id: string; nom: string; whatsapp: string }; titre: string; prix: number; photo: string | null; tailles: { libelle: string; quantite: number }[]; beaute?: boolean };
 
-export default function CommandeArticle({ articleId, boutique, titre, prix, photo, tailles }: Props) {
+// US-25.1 : `beaute` (catégorie beauté, `estCategorieBeaute`) = « Contenance » au lieu de « Taille ».
+export default function CommandeArticle({ articleId, boutique, titre, prix, photo, tailles, beaute = false }: Props) {
   const t = useTextes().fiche;
   const langue = useLangue();
   const tailleUnique = useTextes().listes.tailleUnique;
   const disponibles = tailles.filter(t => t.quantite > 0);
+  const mots = beaute ? { legende: t.contenance, n: t.contenanceN, epuisee: t.contenanceEpuisee, choisir: t.choisirContenance, aucune: t.aucuneContenance } : { legende: t.taille, n: t.tailleN, epuisee: t.tailleEpuisee, choisir: t.choisirTaille, aucune: t.aucuneTaille };
   const unique = tailles.length === 1 && disponibles.length === 1 && /^(unique|taille unique|tu)$/i.test(disponibles[0].libelle.trim());
   const [taille, setTaille] = useState<string | null>(null);
   const [quantite, setQuantite] = useState(1);
@@ -35,7 +38,7 @@ export default function CommandeArticle({ articleId, boutique, titre, prix, phot
     if (!selection) return;
     setMessage(""); setErreur("");
     try {
-      const panier = ajouterAuPanier(chargerPanierLocal(), { id: boutique.id, nom: boutique.nom }, { articleId, titre, taille: selection, quantite, prix, photo }, stock, remplacer);
+      const panier = ajouterAuPanier(chargerPanierLocal(), { id: boutique.id, nom: boutique.nom }, { articleId, titre, taille: selection, quantite, prix, photo, ...(beaute ? { beaute: true } : {}) }, stock, remplacer);
       sauverPanierLocal(panier); setConflit(null); setMessage(t.ajoute);
       // Le clic est compté comme une demande de réservation (statistiques US-08 / US-13), sans donnée personnelle.
       void enregistrerEvenement("clic_reserver", boutique.id, articleId, selection);
@@ -47,10 +50,10 @@ export default function CommandeArticle({ articleId, boutique, titre, prix, phot
 
   return <div className="px-6 py-6 text-center">
     <fieldset className="border-none p-0">
-      <legend className="etiquette mx-auto mb-3">{t.taille}</legend>
-      <div className="grid grid-cols-4 border-t border-s border-trait">{tailles.map(x => { const libelle = traduire({ Unique: tailleUnique }, x.libelle); return <button type="button" key={x.libelle} disabled={x.quantite <= 0} aria-label={remplir(x.quantite > 0 ? t.tailleN : t.tailleEpuisee, { taille: libelle })} aria-pressed={selection === x.libelle} onClick={() => choisir(x.libelle)} className={`h-12 border-e border-b border-trait text-sm ${x.quantite <= 0 ? "text-gris line-through" : selection === x.libelle ? "bg-noir text-blanc" : "bg-blanc"}`}>{libelle}</button>; })}</div>
+      <legend className="etiquette mx-auto mb-3">{mots.legende}</legend>
+      <div className="grid grid-cols-4 border-t border-s border-trait">{tailles.map(x => { const libelle = traduire({ Unique: tailleUnique }, afficherTaille(x.libelle, langue)); return <button type="button" key={x.libelle} disabled={x.quantite <= 0} aria-label={remplir(x.quantite > 0 ? mots.n : mots.epuisee, { taille: libelle })} aria-pressed={selection === x.libelle} onClick={() => choisir(x.libelle)} className={`h-12 border-e border-b border-trait text-sm ${x.quantite <= 0 ? "text-gris line-through" : selection === x.libelle ? "bg-noir text-blanc" : "bg-blanc"}`}>{libelle}</button>; })}</div>
     </fieldset>
-    {!selection && <p className="mt-3 text-sm text-gris">{disponibles.length ? t.choisirTaille : t.aucuneTaille}</p>}
+    {!selection && <p className="mt-3 text-sm text-gris">{disponibles.length ? mots.choisir : mots.aucune}</p>}
     {selection && <div className="mt-4 flex items-center justify-center gap-3">
       <span className="etiquette">{t.quantite}</span>
       <div className="flex items-center border border-trait">
