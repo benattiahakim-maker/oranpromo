@@ -20,7 +20,7 @@ app/
   espace/articles/[id]/         modification, promo (US-11, 12)
   espace/statistiques/          mes chiffres (US-13)
   espace/affiche/page.tsx       affiche à imprimer avec le QR code de la boutique (US-22)
-  espace/commandes/             commandes reçues par la boutique (US-20.3) ; « Scanner un QR code client », « Remis sans QR code » avec confirmation (US-26.3) ; tableau par étapes, urgence, recherche `?etape=` `?q=` (US-28.1, `lib/tableau-commandes.ts`, `components/VueCommandesRecues.tsx`, `components/TableauCommandes.tsx`)
+  espace/commandes/             commandes reçues par la boutique (US-20.3) ; « Scanner un QR code client », « Remis sans QR code » avec confirmation (US-26.3) ; tableau par étapes, urgence, recherche `?etape=` `?q=` (US-28.1, `lib/tableau-commandes.ts`, `components/VueCommandesRecues.tsx`, `components/TableauCommandes.tsx`) ; actions groupées (US-28.2) ; `preparation/page.tsx` liste de préparation imprimable (US-28.3, `components/VuePreparation.tsx`)
   espace/scanner/page.tsx       scanner du QR code de retrait et saisie du code à 4 chiffres (US-26.3)
   espace/retrait/[jeton]/       résumé d'une commande à remettre (ouvert par le scanner ou l'appareil photo), « Remis au client » (US-26.3)
   espace/retrait/actions.ts     actions serveur du retrait : lecture par code, remise par QR code ou code (US-26.3)
@@ -623,8 +623,8 @@ Story : `docs/user-stories.md`, module 15 (contenu validé par le propriétaire 
 
 ### Liste de préparation (US-28.3)
 
-- Nouvelle page serveur `app/espace/commandes/preparation/page.tsx` (`robots` noindex, protégée par `proxy.ts` comme tout `/espace`). Lecture : commandes `confirmee` de la boutique avec `lignes_commande(*)` et la catégorie de l'article (`articles(categorie)` par `article_id`, lisible par la boutique pour ses articles) ; regroupement en mémoire `grouperPreparation(commandes)` (`lib/commandes.ts`, testé) : clé = `article_id` (sinon titre, si l'article a été supprimé depuis) puis taille / contenance (`afficherTaille`, US-25) ; quantités additionnées ; commandes listées par taille.
-- Impression : `components/BoutonImprimer.tsx` (US-22) ; styles `print:` de Tailwind (menu `NavigationEspace` déjà `print:hidden`) ; A4, noir et blanc, cases ☐ en caractères (pas d'image).
+- Nouvelle page serveur `app/espace/commandes/preparation/page.tsx` (`robots` noindex, protégée par `proxy.ts` comme tout `/espace`). Lecture : commandes `confirmee` de la boutique avec `lignes_commande(*)` et la catégorie de l'article (`articles(categorie)` par `article_id`, lisible par la boutique pour ses articles) ; lecture `listerAPreparer()` (une requête, `lignes_commande(article_id, titre, taille, quantite, articles(categorie))`, 100 commandes au plus) ; regroupement en mémoire `grouperPreparation(commandes, CATEGORIES_ARTICLE)` (`lib/tableau-commandes.ts`, testé) : clé = `article_id` (sinon le titre, si l'article a été supprimé depuis) puis taille / contenance telle qu'enregistrée (« 50 ml ») ; quantités additionnées ; articles triés par catégorie (ordre de `CATEGORIES_ARTICLE`, catégorie inconnue à la fin) puis par nom ; tailles S < M < L…, nombres croissants (38, 50 ml, 4 ans), « Unique » et le reste à la fin ; liste par commande avec le montant à encaisser. Affichage `components/VuePreparation.tsx` ; bouton « Liste de préparation (n commandes) » sur l'étape « À préparer ». Pas de photo (décision 6).
+- Impression : `components/BoutonImprimer.tsx` (US-22) ; `@page { size: A4; margin: 14mm; }` comme l'affiche ; styles `print:` de Tailwind (menu `NavigationEspace`, bouton et lien retour cachés ; gris passés en noir ; liste par commande sur 2 colonnes ; un article n'est pas coupé entre deux pages) ; cases ☐ en caractères (pas d'image).
 
 ### Mise à jour automatique (US-28.4) : A, interrogation, recommandée ; B, Supabase Realtime
 

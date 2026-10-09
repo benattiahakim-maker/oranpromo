@@ -31,6 +31,8 @@ export default function VueCommandesRecues({ boutiqueId, boutique, maintenant, r
       {erreur ? <p role="alert" className="px-4 py-6">Impossible de charger les commandes. Réessayez.</p>
         : !boutiqueId ? <p className="px-4 py-6">Votre compte n&apos;est rattaché à aucune boutique</p>
         : <>
+          {/* US-28.3 : liste de préparation imprimable. */}
+          {!recherche && etape === "a_preparer" && commandes.length > 0 && <div className="flex px-4 py-2.5 lg:justify-end lg:px-0"><Link href="/espace/commandes/preparation" className="etiquette flex min-h-11 flex-1 items-center justify-center gap-2 border border-noir px-4 lg:flex-none"><span aria-hidden="true">☰</span>Liste de préparation ({compteurs.a_preparer} commande{compteurs.a_preparer > 1 ? "s" : ""})</Link></div>}
           {!recherche && etape === "pretes" && commandes.length > 0 && <p className="border-b border-trait px-4 py-2 text-xs text-gris">Remise : scannez le QR code du client (bouton « Scanner » en haut), ou ouvrez la commande pour « Remis sans QR code ».</p>}
           <TableauCommandes key={recherche ? `q-${texteRecherche}` : etape} commandes={commandes} etape={recherche ? null : etape} boutique={boutique} maintenant={maintenant} />
           {!recherche && commandes.length >= LIGNES_PAR_ETAPE && <p className="px-4 py-3 text-xs text-gris">Seules les {LIGNES_PAR_ETAPE} premières sont affichées : cherchez par n° ou prénom.</p>}
