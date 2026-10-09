@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { emailValide, envoyerLienConnexion, ErreurConnexion } from "@/lib/connexion";
 
-export default function ConnexionEmail() {
+export default function ConnexionEmail({ suite = "/espace" }: { suite?: string }) {
   const [email, setEmail] = useState("");
   const [erreur, setErreur] = useState("");
   const [message, setMessage] = useState("");
@@ -17,7 +17,7 @@ export default function ConnexionEmail() {
     if (!emailValide(email)) { setErreur("Saisissez une adresse e-mail valide."); return; }
     envoi.current = true; setEnCours(true); setErreur("");
     try {
-      await envoyerLienConnexion(email, window.location.origin);
+      await envoyerLienConnexion(email, window.location.origin, suite);
       setMessage("Un lien de connexion vous a été envoyé par e-mail");
     } catch (error) { setErreur(error instanceof ErreurConnexion ? error.message : "Impossible d’envoyer le lien de connexion. Réessayez dans quelques instants."); }
     finally { envoi.current = false; setEnCours(false); }

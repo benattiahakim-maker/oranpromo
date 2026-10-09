@@ -87,6 +87,58 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["boutiques"]["Insert"]>;
         Relationships: [];
       };
+      commandes: {
+        Row: {
+          boutique_id: string;
+          client_id: string;
+          client_nom: string;
+          client_telephone: string;
+          confirmee_le: string | null;
+          cree_le: string;
+          expire_le: string | null;
+          id: string;
+          motif_annulation: string | null;
+          note: string | null;
+          numero: number;
+          prete_le: string | null;
+          statut: Database["public"]["Enums"]["statut_commande"];
+          terminee_le: string | null;
+          total: number;
+        };
+        Insert: {
+          boutique_id: string;
+          client_id: string;
+          client_nom: string;
+          client_telephone: string;
+          confirmee_le?: string | null;
+          cree_le?: string;
+          expire_le?: string | null;
+          id?: string;
+          motif_annulation?: string | null;
+          note?: string | null;
+          prete_le?: string | null;
+          statut?: Database["public"]["Enums"]["statut_commande"];
+          terminee_le?: string | null;
+          total?: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["commandes"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "commandes_boutique_id_fkey";
+            columns: ["boutique_id"];
+            isOneToOne: false;
+            referencedRelation: "boutiques";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "commandes_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "profils";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       decisions: {
         Row: { action: string; auteur_id: string; date: string; id: string; signalement_id: string };
         Insert: { action: string; auteur_id: string; date?: string; id?: string; signalement_id: string };
@@ -143,6 +195,27 @@ export type Database = {
           },
         ];
       };
+      lignes_commande: {
+        Row: { article_id: string | null; commande_id: string; id: string; prix_unitaire: number; quantite: number; taille: string; titre: string };
+        Insert: { article_id?: string | null; commande_id: string; id?: string; prix_unitaire: number; quantite: number; taille: string; titre: string };
+        Update: Partial<Database["public"]["Tables"]["lignes_commande"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "lignes_commande_article_id_fkey";
+            columns: ["article_id"];
+            isOneToOne: false;
+            referencedRelation: "articles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lignes_commande_commande_id_fkey";
+            columns: ["commande_id"];
+            isOneToOne: false;
+            referencedRelation: "commandes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       photos: {
         Row: { adresse: string; adresse_vignette: string | null; article_id: string; id: string; ordre: number };
         Insert: { adresse: string; adresse_vignette?: string | null; article_id: string; id?: string; ordre?: number };
@@ -159,16 +232,24 @@ export type Database = {
       };
       profils: {
         Row: {
+          bloque: boolean;
+          bloque_le: string | null;
           boutique_id: string | null;
           cree_le: string;
           id: string;
+          no_shows: number;
+          nom: string | null;
           role: Database["public"]["Enums"]["role_utilisateur"];
           telephone: string | null;
         };
         Insert: {
+          bloque?: boolean;
+          bloque_le?: string | null;
           boutique_id?: string | null;
           cree_le?: string;
           id: string;
+          no_shows?: number;
+          nom?: string | null;
           role?: Database["public"]["Enums"]["role_utilisateur"];
           telephone?: string | null;
         };
@@ -225,6 +306,20 @@ export type Database = {
           },
         ];
       };
+      suivi_commandes: {
+        Row: { auteur: string; auteur_id: string | null; commande_id: string; date: string; id: number; note: string | null; statut: Database["public"]["Enums"]["statut_commande"] };
+        Insert: { auteur: string; auteur_id?: string | null; commande_id: string; date?: string; id?: never; note?: string | null; statut: Database["public"]["Enums"]["statut_commande"] };
+        Update: Partial<Database["public"]["Tables"]["suivi_commandes"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "suivi_commandes_commande_id_fkey";
+            columns: ["commande_id"];
+            isOneToOne: false;
+            referencedRelation: "commandes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tailles: {
         Row: { article_id: string; disponible: boolean; id: string; libelle: string; quantite: number };
         Insert: { article_id: string; disponible?: boolean; id?: string; libelle: string; quantite?: number };
@@ -242,9 +337,17 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      changer_statut_commande: {
+        Args: { commande: string; motif?: string | null; note?: string | null; statut: Database["public"]["Enums"]["statut_commande"] };
+        Returns: undefined;
+      };
       consommer_quota_ia: {
         Args: never;
         Returns: boolean;
+      };
+      passer_commande: {
+        Args: { boutique: string; lignes: Json; note?: string | null };
+        Returns: string;
       };
       rattacher_commercant: {
         Args: { boutique: string; email_commercant: string };
@@ -253,8 +356,9 @@ export type Database = {
     };
     Enums: {
       genre_article: "homme" | "femme" | "enfant" | "mixte";
-      role_utilisateur: "commercant" | "ambassadeur" | "admin";
+      role_utilisateur: "commercant" | "ambassadeur" | "admin" | "client";
       statut_article: "disponible" | "reserve" | "vendu" | "masque";
+      statut_commande: "demandee" | "confirmee" | "prete" | "recuperee" | "annulee" | "expiree";
       statut_boutique: "en_attente" | "validee" | "suspendue";
       statut_signalement: "ouvert" | "traite" | "rejete";
       type_evenement: "vue_article" | "vue_boutique" | "clic_reserver" | "partage";

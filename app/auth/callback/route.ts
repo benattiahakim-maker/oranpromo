@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { creerClientServeur } from "@/lib/supabase/server";
-import { cheminSuite } from "@/lib/connexion";
+import { cheminSuite, pageConnexion } from "@/lib/connexion";
 import { origineRequete } from "@/lib/origine";
 
 export async function GET(request: Request) {
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       }
     } catch { /* Lien invalide ou service temporairement indisponible. */ }
   }
-  const reponse = NextResponse.redirect(new URL("/espace/connexion?erreur=lien", origine));
+  const reponse = NextResponse.redirect(new URL(`${pageConnexion(suite)}?erreur=lien`, origine));
   reponse.headers.set("Cache-Control", "private, no-store");
   return reponse;
 }

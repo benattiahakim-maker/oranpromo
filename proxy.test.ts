@@ -41,4 +41,11 @@ describe("US-09 : proxy", () => {
     expect(reponse.cookies.get("session-test")?.value).toBe("rafraichie");
     expect(reponse.headers.get("Pragma")).toBe("no-cache");
   });
+  it("protège le compte client et revient à la page demandée après connexion (US-20.2)", async () => {
+    getUser.mockResolvedValue({ data: { user: null }, error: null });
+    const reponse = await proxy(new NextRequest("http://localhost:3000/compte/commandes"));
+    expect(reponse.status).toBe(307);
+    expect(reponse.headers.get("location")).toBe("http://localhost:3000/compte/connexion?suite=%2Fcompte%2Fcommandes");
+    expect((await proxy(new NextRequest("http://localhost:3000/compte/connexion"))).status).toBe(200);
+  });
 });

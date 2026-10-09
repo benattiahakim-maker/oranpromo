@@ -1,0 +1,94 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database, Enums, Tables } from "./supabase/types";
+
+// US-20 : commandes. Les règles (droits, transitions, stock) sont dans la base :
+// passer_commande() et changer_statut_commande() (migrations 20261009190100_commandes.sql et suivantes).
+
+export type StatutCommande = Enums<"statut_commande">;
+export const STATUTS_COMMANDE: Record<StatutCommande, string> = { demandee: "Demandée", confirmee: "Confirmée", prete: "Prête", recuperee: "Récupérée", annulee: "Annulée", expiree: "Expirée" };
+/** Titre du suivi vu par le client. */
+export const TITRES_SUIVI: Record<StatutCommande, string> = { demandee: "Commande envoyée", confirmee: "Confirmée par la boutique", prete: "Prête à récupérer", recuperee: "Récupérée", annulee: "Annulée", expiree: "Expirée" };
+export const MOTIFS_ANNULATION = { plus_en_stock: "Plus en stock", boutique_indisponible: "Boutique indisponible", client_a_annule: "Annulée par le client", autre: "Autre" } as const;
+export type MotifAnnulation = keyof typeof MOTIFS_ANNULATION;
+export const ETAPES_NORMALES: StatutCommande[] = ["demandee", "confirmee", "prete", "recuperee"];
+export const STATUTS_EN_COURS: StatutCommande[] = ["demandee", "confirmee", "prete"];
+export const DELAI_RETRAIT_HEURES = 24;
+export const NOTE_SUIVI_MAX = 300;
+
+export function commandeEnCours(statut: StatutCommande): boolean { return STATUTS_EN_COURS.includes(statut); }
+export function annulableParClient(statut: StatutCommande): boolean { return statut === "demandee" || statut === "confirmee"; }
+export function libelleMotif(motif: string | null | undefined): string | null {
+  return motif && Object.hasOwn(MOTIFS_ANNULATION, motif) ? MOTIFS_ANNULATION[motif as MotifAnnulation] : null;
+}
+
+const FUSEAU = "Africa/Algiers";
+/** « jeu. 9 oct. · 14:05 » à l’heure d’Oran. */
+export function formaterDateHeure(iso: string): string {
+  const date = new Date(iso);
+  const jour = new Intl.DateTimeFormat("fr-FR", { timeZone: FUSEAU, weekday: "short", day: "numeric", month: "short" }).format(date);
+  const heure = new Intl.DateTimeFormat("fr-FR", { timeZone: FUSEAU, hour: "2-digit", minute: "2-digit" }).format(date);
+  return `${jour} · ${heure}`;
+}
+
+export type EvenementSuivi = Pick<Tables<"suivi_commandes">, "statut" | "date" | "note" | "auteur">;
+export type EtapeFrise = { statut: StatutCommande; libelle: string; date: string | null; note: string | null; auteur: string | null; faite: boolean };
+
+/** Frise du suivi : les changements enregistrés, puis les étapes normales restantes (grisées) tant que la commande est en cours. */
+export function etapesFrise(statut: StatutCommande, suivi: EvenementSuivi[]): EtapeFrise[] {
+  const faites: EtapeFrise[] = [...suivi].sort((a, b) => a.date.localeCompare(b.date)).map(e => ({ statut: e.statut, libelle: STATUTS_COMMANDE[e.statut], date: e.date, note: e.note, auteur: e.auteur, faite: true }));
+  if (!commandeEnCours(statut)) return faites;
+  const restantes = ETAPES_NORMALES.slice(ETAPES_NORMALES.indexOf(statut) + 1).map(s => ({ statut: s, libelle: STATUTS_COMMANDE[s], date: null, note: null, auteur: null, faite: false }));
+  return [...faites, ...restantes];
+}
+
+type ErreurBase = { code?: string; message?: string } | null | undefined;
+// Codes des erreurs levées volontairement par les fonctions de la base (messages déjà en français).
+const CODES_METIER = new Set(["42501", "23514", "P0002", "54000", "22023"]);
+export function messageErreurCommande(error: ErreurBase, defaut: string): string {
+  return error?.code && CODES_METIER.has(error.code) && error.message ? error.message : defaut;
+}
+
+export type LigneEnvoyee = { article_id: string; taille: string; quantite: number };
+export async function passerCommande(client: SupabaseClient<Database>, boutiqueId: string, lignes: LigneEnvoyee[], note: string): Promise<string> {
+  if (!lignes.length) throw new Error("Votre panier est vide.");
+  const { data, error } = await client.rpc("passer_commande", { boutique: boutiqueId, lignes, note: note.trim() || null });
+  if (error || typeof data !== "string") throw new Error(messageErreurCommande(error, "Impossible d’envoyer la commande. Réessayez."));
+  return data;
+}
+
+export async function changerStatutCommande(client: SupabaseClient<Database>, id: string, statut: StatutCommande, options: { motif?: MotifAnnulation | null; note?: string } = {}) {
+  const note = options.note?.trim() ?? "";
+  if (note.length > NOTE_SUIVI_MAX) throw new Error(`La note doit faire ${NOTE_SUIVI_MAX} caractères au plus.`);
+  const { error } = await client.rpc("changer_statut_commande", { commande: id, statut, motif: options.motif ?? null, note: note || null });
+  if (error) throw new Error(messageErreurCommande(error, "Impossible de modifier la commande. Réessayez."));
+}
+
+export async function annulerCommandeClient(client: SupabaseClient<Database>, id: string, note = "") {
+  await changerStatutCommande(client, id, "annulee", { motif: "client_a_annule", note });
+}
+
+export type ResumeCommande = Pick<Tables<"commandes">, "id" | "numero" | "statut" | "total" | "cree_le" | "expire_le"> & { boutiques: { nom: string } | null };
+export async function listerMesCommandes(client: SupabaseClient<Database>): Promise<ResumeCommande[]> {
+  const { data: { user }, error: erreurSession } = await client.auth.getUser();
+  if (erreurSession || !user) throw new Error("Votre session a expiré. Reconnectez-vous.");
+  const { data, error } = await client.from("commandes").select("id, numero, statut, total, cree_le, expire_le, boutiques(nom)").eq("client_id", user.id).order("cree_le", { ascending: false }).limit(100);
+  if (error) throw new Error("Impossible de charger vos commandes. Réessayez.");
+  return (data ?? []) as unknown as ResumeCommande[];
+}
+
+export type DetailCommande = Tables<"commandes"> & {
+  boutiques: Pick<Tables<"boutiques">, "nom" | "slug" | "quartier" | "adresse" | "whatsapp"> | null;
+  lignes_commande: Tables<"lignes_commande">[];
+  suivi_commandes: Tables<"suivi_commandes">[];
+};
+/** Une commande visible par le compte connecté (client, boutique ou admin : règle dans la base). */
+export async function lireCommande(client: SupabaseClient<Database>, id: string): Promise<DetailCommande | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const { data, error } = await client.from("commandes").select("*, boutiques(nom, slug, quartier, adresse, whatsapp), lignes_commande(*), suivi_commandes(*)").eq("id", id).maybeSingle();
+  if (error) throw new Error("Impossible de charger la commande. Réessayez.");
+  return data as unknown as DetailCommande | null;
+}
+
+export function quantiteTotale(lignes: { quantite: number }[]): number {
+  return lignes.reduce((total, ligne) => total + ligne.quantite, 0);
+}
