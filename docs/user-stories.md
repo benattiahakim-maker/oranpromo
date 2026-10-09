@@ -42,6 +42,9 @@ En tant que client, je veux voir sur la page d'accueil les promos en cours à Or
 - Chaque carte affiche photo, titre, prix barré, prix promo, badge de réduction et quartier de la boutique.
 - Étant donné une promo dont la date de fin est passée, alors elle n'apparaît plus et l'article revient à son prix normal.
 - Les articles s'affichent par pages de 20, avec chargement de la suite au défilement.
+- En haut : les univers Femme · Homme · Enfant · Beauté, chacun vers le catalogue filtré (`/catalogue?univers=…`).
+- Une grande photo d'accueil avec la phrase « Les promos d'Oran » et un bouton « Voir les promos » (`/catalogue?promo=1`) ; sans article, un bloc noir uni.
+- Des tuiles carrées (image + mot) pour les univers et les pièces phares ; image = miniature du dernier article visible, sinon tuile noire unie avec le mot. Aucune image externe (maquette `docs/maquettes/Accueil.dc.html`).
 
 ### US-05 — Filtrer le catalogue (page `/catalogue`)
 En tant que client, je veux filtrer les articles de toutes les boutiques, afin de trouver ce qui me correspond.
