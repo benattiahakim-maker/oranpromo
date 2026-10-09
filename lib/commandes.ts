@@ -92,3 +92,44 @@ export async function lireCommande(client: SupabaseClient<Database>, id: string)
 export function quantiteTotale(lignes: { quantite: number }[]): number {
   return lignes.reduce((total, ligne) => total + ligne.quantite, 0);
 }
+
+// --- US-20.3 : côté boutique ------------------------------------------------
+/** Bouton principal proposé à la boutique selon le statut (l’annulation est proposée à part). */
+export const ACTION_BOUTIQUE: Partial<Record<StatutCommande, { statut: StatutCommande; libelle: string }>> = {
+  demandee: { statut: "confirmee", libelle: "Confirmer" },
+  confirmee: { statut: "prete", libelle: "Prête" },
+  prete: { statut: "recuperee", libelle: "Récupérée" },
+};
+export const MOTIFS_BOUTIQUE = ["plus_en_stock", "boutique_indisponible", "autre"] as const satisfies readonly MotifAnnulation[];
+export type MotifBoutique = (typeof MOTIFS_BOUTIQUE)[number];
+
+export function annulableParBoutique(statut: StatutCommande): boolean { return commandeEnCours(statut); }
+export function motifBoutiqueValide(motif: unknown): motif is MotifBoutique { return typeof motif === "string" && (MOTIFS_BOUTIQUE as readonly string[]).includes(motif); }
+
+/** Vérifie une demande de la boutique avant l’appel à la base (qui revérifie tout). */
+export function verifierActionBoutique(actuel: StatutCommande, voulu: StatutCommande, motif: unknown): string | null {
+  if (voulu === "annulee") {
+    if (!annulableParBoutique(actuel)) return "Cette commande est terminée.";
+    return motifBoutiqueValide(motif) ? null : "Choisissez le motif de l’annulation.";
+  }
+  return ACTION_BOUTIQUE[actuel]?.statut === voulu ? null : "Changement de statut impossible.";
+}
+
+export type CommandeRecue = Tables<"commandes"> & { lignes_commande: Tables<"lignes_commande">[] };
+export type VueCommandes = "en_cours" | "terminees";
+export const COMMANDES_PAR_VUE = 100;
+
+export async function listerCommandesBoutique(client: SupabaseClient<Database>, boutiqueId: string, vue: VueCommandes): Promise<CommandeRecue[]> {
+  const enCours = vue === "en_cours";
+  let requete = client.from("commandes").select("*, lignes_commande(*)").eq("boutique_id", boutiqueId);
+  requete = enCours ? requete.in("statut", STATUTS_EN_COURS) : requete.not("statut", "in", `(${STATUTS_EN_COURS.join(",")})`);
+  // En cours : les plus anciennes d’abord (à traiter) ; terminées : les plus récentes d’abord.
+  const { data, error } = await requete.order("cree_le", { ascending: enCours }).limit(COMMANDES_PAR_VUE);
+  if (error) throw new Error("Impossible de charger les commandes. Réessayez.");
+  return (data ?? []) as unknown as CommandeRecue[];
+}
+
+export async function compterCommandesAConfirmer(client: SupabaseClient<Database>, boutiqueId: string): Promise<number> {
+  const { count, error } = await client.from("commandes").select("id", { count: "exact", head: true }).eq("boutique_id", boutiqueId).eq("statut", "demandee");
+  return error ? 0 : count ?? 0;
+}

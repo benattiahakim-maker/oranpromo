@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { annulableParClient, annulerCommandeClient, commandeEnCours, etapesFrise, formaterDateHeure, libelleMotif, lireCommande, listerMesCommandes, messageErreurCommande, passerCommande, quantiteTotale } from "./commandes";
+import { ACTION_BOUTIQUE, compterCommandesAConfirmer, listerCommandesBoutique, motifBoutiqueValide, verifierActionBoutique, annulableParClient, annulerCommandeClient, commandeEnCours, etapesFrise, formaterDateHeure, libelleMotif, lireCommande, listerMesCommandes, messageErreurCommande, passerCommande, quantiteTotale } from "./commandes";
 
 function client({ rpc = { data: "commande" as unknown, error: null as unknown }, lecture = { data: [] as unknown, error: null as unknown }, user = { id: "moi" } as { id: string } | null } = {}) {
   const appels: unknown[][] = [];
@@ -63,5 +63,43 @@ describe("commandes (US-20)", () => {
     expect(await lireCommande(test.client, "pas-un-id")).toBeNull();
     expect(await lireCommande(test.client, "11111111-1111-1111-1111-111111111111")).toEqual({ id: "11111111-1111-1111-1111-111111111111" });
     expect(quantiteTotale([{ quantite: 2 }, { quantite: 1 }])).toBe(3);
+  });
+});
+
+
+describe("commandes reçues par la boutique (US-20.3)", () => {
+  it("propose une seule étape suivante par statut", () => {
+    expect(ACTION_BOUTIQUE.demandee?.statut).toBe("confirmee");
+    expect(ACTION_BOUTIQUE.confirmee?.statut).toBe("prete");
+    expect(ACTION_BOUTIQUE.prete?.statut).toBe("recuperee");
+    expect(ACTION_BOUTIQUE.recuperee).toBeUndefined();
+  });
+  it("vérifie la transition et le motif d’annulation", () => {
+    expect(verifierActionBoutique("demandee", "confirmee", null)).toBeNull();
+    expect(verifierActionBoutique("demandee", "prete", null)).toBe("Changement de statut impossible.");
+    expect(verifierActionBoutique("prete", "annulee", "plus_en_stock")).toBeNull();
+    expect(verifierActionBoutique("prete", "annulee", "client_a_annule")).toBe("Choisissez le motif de l’annulation.");
+    expect(verifierActionBoutique("recuperee", "annulee", "autre")).toBe("Cette commande est terminée.");
+    expect(motifBoutiqueValide("boutique_indisponible")).toBe(true);
+  });
+  it("liste les commandes en cours (plus anciennes d’abord) ou terminées de la boutique", async () => {
+    const appels: unknown[][] = [];
+    const chaine: Record<string, unknown> = {};
+    for (const m of ["select", "eq", "in", "not", "order"]) chaine[m] = (...a: unknown[]) => { appels.push([m, ...a]); return chaine; };
+    chaine.limit = async () => ({ data: [{ id: "c1" }], error: null });
+    const client = { from: () => chaine } as unknown as SupabaseClient<Database>;
+    expect(await listerCommandesBoutique(client, "b1", "en_cours")).toEqual([{ id: "c1" }]);
+    expect(appels).toContainEqual(["eq", "boutique_id", "b1"]);
+    expect(appels).toContainEqual(["in", "statut", ["demandee", "confirmee", "prete"]]);
+    expect(appels).toContainEqual(["order", "cree_le", { ascending: true }]);
+    appels.length = 0;
+    await listerCommandesBoutique(client, "b1", "terminees");
+    expect(appels).toContainEqual(["not", "statut", "in", "(demandee,confirmee,prete)"]);
+    expect(appels).toContainEqual(["order", "cree_le", { ascending: false }]);
+  });
+  it("compte les commandes à confirmer (0 en cas d’erreur)", async () => {
+    const chaine = (resultat: unknown) => { const c: Record<string, unknown> = { select: () => c, eq: () => c, then: (ok: (v: unknown) => void) => ok(resultat) }; return c; };
+    expect(await compterCommandesAConfirmer({ from: () => chaine({ count: 3, error: null }) } as unknown as SupabaseClient<Database>, "b1")).toBe(3);
+    expect(await compterCommandesAConfirmer({ from: () => chaine({ count: null, error: { message: "x" } }) } as unknown as SupabaseClient<Database>, "b1")).toBe(0);
   });
 });
