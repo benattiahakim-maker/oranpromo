@@ -13,7 +13,7 @@ vi.mock("@supabase/ssr", () => ({
 beforeEach(() => { rafraichir = false; getUser.mockReset(); });
 
 describe("US-09 : proxy", () => {
-  it.each(["/espace", "/espace/articles/nouveau", "/espace/statistiques"])("protège %s sans session", async chemin => {
+  it.each(["/espace", "/espace/articles/nouveau", "/espace/statistiques", "/admin", "/admin/boutiques"])("protège %s sans session", async chemin => {
     getUser.mockResolvedValue({ data: { user: null }, error: null });
     const reponse = await proxy(new NextRequest(`http://localhost:3000${chemin}`));
     expect(reponse.status).toBe(307);

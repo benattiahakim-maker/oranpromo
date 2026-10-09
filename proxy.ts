@@ -22,7 +22,7 @@ export async function proxy(request: NextRequest) {
   // Vérifie la session auprès de Supabase et rafraîchit ses cookies si nécessaire.
   const { data: { user }, error } = await supabase.auth.getUser();
   const chemin = request.nextUrl.pathname;
-  const protege = (chemin === "/espace" || chemin.startsWith("/espace/")) && chemin !== "/espace/connexion" && chemin !== "/espace/connexion/";
+  const protege = ((chemin === "/espace" || chemin.startsWith("/espace/")) && chemin !== "/espace/connexion" && chemin !== "/espace/connexion/") || chemin === "/admin" || chemin.startsWith("/admin/");
   if (protege && (error || !user)) {
     const url = request.nextUrl.clone();
     url.pathname = "/espace/connexion"; url.search = "";
@@ -36,4 +36,4 @@ export async function proxy(request: NextRequest) {
   return reponse;
 }
 
-export const config = { matcher: ["/espace/:path*", "/auth/callback"] };
+export const config = { matcher: ["/espace/:path*", "/admin/:path*", "/auth/callback"] };
