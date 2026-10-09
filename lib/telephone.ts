@@ -34,11 +34,8 @@ export function modeConnexionClient(valeur: string | undefined = process.env.CON
   return valeur?.trim().toLowerCase() === "telephone" ? "telephone" : "email";
 }
 
-export type CanalCode = "whatsapp" | "sms";
-
-export function canalCode(valeur: unknown): CanalCode {
-  return valeur === "sms" ? "sms" : "whatsapp";
-}
+/** Décision du propriétaire (SMS trop cher) : le code part uniquement sur WhatsApp, jamais par SMS. */
+export const CANAL_CODE = "whatsapp" as const;
 
 /** Code reçu : 6 chiffres exactement (espaces ignorés). */
 export function nettoyerCode(saisie: string | null | undefined): string | null {

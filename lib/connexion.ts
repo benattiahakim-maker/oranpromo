@@ -2,7 +2,7 @@ import { creerClientNavigateur } from "./supabase/client";
 
 export class ErreurConnexion extends Error {}
 
-/** Validation commune au formulaire et à l’envoi du lien (remplaçable par SMS). */
+/** Validation commune au formulaire et à l’envoi du lien. */
 export function emailValide(email: string): boolean {
   const adresse = email.trim();
   if (adresse.length > 254) return false;

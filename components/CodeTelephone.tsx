@@ -4,10 +4,10 @@ import { useRouter } from "next/navigation";
 import { envoyerCodeConnexion, verifierCodeConnexion } from "@/app/compte/connexion/actions";
 import { envoyerCodeVerification, verifierCodeVerification } from "@/app/compte/actions";
 import { telephoneLisible } from "@/lib/clients";
-import { MESSAGE_TELEPHONE_INVALIDE, nettoyerCode, normaliserTelephoneClient, type CanalCode } from "@/lib/telephone";
+import { MESSAGE_TELEPHONE_INVALIDE, nettoyerCode, normaliserTelephoneClient } from "@/lib/telephone";
 import Turnstile from "./Turnstile";
 
-// US-21.2 : numéro → code à 6 chiffres (WhatsApp par défaut, SMS en secours).
+// US-21.2 : numéro → code à 6 chiffres (WhatsApp uniquement : pas de SMS, décision du propriétaire).
 // « connexion » : se connecter ou créer un compte (captcha Turnstile) ; « verification » : compte déjà connecté.
 export default function CodeTelephone({ usage, suite = null, numeroInitial = null, onVerifie }: { usage: "connexion" | "verification"; suite?: string | null; numeroInitial?: string | null; onVerifie?: () => void }) {
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function CodeTelephone({ usage, suite = null, numeroInitial = nul
   const [enCours, setEnCours] = useState(false);
   const verrou = useRef(false);
 
-  async function envoyer(canal: CanalCode) {
+  async function envoyer() {
     if (verrou.current) return;
     setMessage("");
     const normalise = normaliserTelephoneClient(saisie);
@@ -32,7 +32,7 @@ export default function CodeTelephone({ usage, suite = null, numeroInitial = nul
     if (captcha && !jeton) { setErreur("Cochez d’abord le contrôle anti-robot ci-dessous."); return; }
     verrou.current = true; setEnCours(true); setErreur("");
     try {
-      const resultat = usage === "connexion" ? await envoyerCodeConnexion(normalise, canal, jeton) : await envoyerCodeVerification(normalise, canal);
+      const resultat = usage === "connexion" ? await envoyerCodeConnexion(normalise, jeton) : await envoyerCodeVerification(normalise);
       if (resultat.succes) { setNumero(resultat.numero ?? normalise); setCode(""); setEtape("code"); setMessage(resultat.message); }
       else setErreur(resultat.message);
     } catch { setErreur("Impossible d’envoyer le code. Vérifiez votre connexion et réessayez."); }
@@ -76,14 +76,13 @@ export default function CodeTelephone({ usage, suite = null, numeroInitial = nul
     <button type="button" disabled={enCours} onClick={() => { setEtape("numero"); setErreur(""); setMessage(""); }} className="min-h-11 text-sm text-gris underline">Changer de numéro ou recevoir un nouveau code</button>
   </form>;
 
-  return <form noValidate onSubmit={e => { e.preventDefault(); void envoyer("whatsapp"); }} className="flex flex-col gap-3 text-left">
+  return <form noValidate onSubmit={e => { e.preventDefault(); void envoyer(); }} className="flex flex-col gap-3 text-left">
     <label htmlFor="numero-telephone" className="etiquette text-xs">Numéro de mobile</label>
     <input id="numero-telephone" type="tel" inputMode="tel" autoComplete="tel" placeholder="0555 12 34 56" value={saisie} disabled={enCours}
       onChange={e => { setSaisie(e.target.value); setErreur(""); }} aria-invalid={Boolean(erreur)} aria-describedby="aide-numero-telephone" className={champ} />
-    <p id="aide-numero-telephone" className="m-0 text-[13px] text-gris">Mobile algérien uniquement (05, 06 ou 07). Vous recevez un code à 6 chiffres.</p>
+    <p id="aide-numero-telephone" className="m-0 text-[13px] text-gris">Mobile algérien uniquement (05, 06 ou 07). Vous recevez un code à 6 chiffres sur WhatsApp.</p>
     {captcha && <Turnstile cle={cleTurnstile} onJeton={setJeton} reinitialiser={reinitialiser} />}
     {erreur && <p role="alert" className="m-0 text-sm">{erreur}</p>}
     <button type="submit" disabled={enCours || (captcha && !jeton)} className="etiquette min-h-[54px] bg-noir px-3 text-xs text-blanc disabled:opacity-50">{enCours ? "Envoi en cours…" : "Recevoir le code sur WhatsApp"}</button>
-    <button type="button" disabled={enCours || (captcha && !jeton)} onClick={() => void envoyer("sms")} className="etiquette min-h-[50px] border border-noir px-3 text-xs disabled:opacity-50">Recevoir par SMS</button>
   </form>;
 }

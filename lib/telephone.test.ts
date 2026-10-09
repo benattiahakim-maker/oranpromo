@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canalCode, modeConnexionClient, nettoyerCode, normaliserTelephoneClient, telephoneClientValide } from "./telephone";
+import { CANAL_CODE, modeConnexionClient, nettoyerCode, normaliserTelephoneClient, telephoneClientValide } from "./telephone";
 
 describe("normaliserTelephoneClient (US-21)", () => {
   it.each([
@@ -64,12 +64,9 @@ describe("modeConnexionClient", () => {
   });
 });
 
-describe("canalCode et nettoyerCode", () => {
-  it("WhatsApp par défaut, SMS sur demande", () => {
-    expect(canalCode("sms")).toBe("sms");
-    expect(canalCode("whatsapp")).toBe("whatsapp");
-    expect(canalCode("voice")).toBe("whatsapp");
-    expect(canalCode(undefined)).toBe("whatsapp");
+describe("canal et nettoyerCode", () => {
+  it("WhatsApp uniquement, jamais de SMS", () => {
+    expect(CANAL_CODE).toBe("whatsapp");
   });
   it("code à 6 chiffres", () => {
     expect(nettoyerCode("123456")).toBe("123456");
