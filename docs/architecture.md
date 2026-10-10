@@ -872,6 +872,51 @@ app/alertes/[jeton]/page.tsx                     US-31.5 seulement
 
 **Aucune nouvelle dépendance**, aucune nouvelle variable d'environnement (le jeton de désabonnement réutilise `CONFIRMATION_SECRET` avec un préfixe différent, question technique à confirmer au code).
 
+## Avis clients sur les boutiques (US-32) — conception, **à valider par le propriétaire**
+
+Stories : `docs/user-stories.md`, module 18. Maquette : `docs/maquettes/AvisBoutiques.dc.html`. Source : carte Trello « Confiance · Avis clients sur les boutiques ». **Aucun code, aucune migration** dans cette PR.
+
+**Principes** : la preuve d'achat est la **remise par QR code** (`commandes.statut = 'recuperee'` et `mode_remise = 'qr'`, comme les bons et le parrainage depuis `20261015100000_retrait_code_limite_bons_qr.sql`) ; la modération réutilise US-17 / US-18 ; la récompense est un programme de bons de US-33. Blocage, no-shows, contestation, `passer_commande`, `changer_statut_commande`, `remettre_commande` **inchangés**.
+
+### Données (une migration en US-32.1, une en US-32.4, une en US-32.5)
+
+| Élément | Rôle | Points clés |
+| --- | --- | --- |
+| `avis` | un avis par commande | `commande_id` unique (référence `commandes`), `boutique_id`, `client_id`, `note` (1–5), `criteres text[]` (sous-ensemble de `accueil`, `article_conforme`, `rapidite`), `commentaire` (≤ 300), `statut` (`publie`, `masque`), `cree_le` (fixée par la base), `reponse` (≤ 300), `reponse_le` ; RLS : le client lit ses avis ; aucune écriture directe ; lecture publique par fonctions seulement |
+| `donner_avis(commande, note, criteres, commentaire)` | écrire | `security definer`, `search_path` vide ; contrôles : propriétaire, `recuperee` + `qr`, `terminee_le` ≥ now() − 14 jours, pas déjà noté, pas sa propre boutique, filtre de contenu ; renvoie l'avis (et, après US-32.5, le bon créé) |
+| `repondre_avis(avis, texte)` | réponse | commerçant de la boutique (`prive.ma_boutique()`), une fois, même filtre |
+| `avis_boutique(boutique, depuis)`, `resume_avis(boutiques uuid[])` | lecture publique | boutique validée, ville ouverte, avis `publie` ; `{ moyenne, nombre, criteres }` ; `moyenne` vide sous le seuil (`prive.reglages`, `avis_seuil`, 3 par défaut) ; nom affiché = premier mot de `profils.nom` + initiale du dernier mot, « Client » si vide |
+| `prive.mots_interdits` | filtre | mots (minuscules, sans accents) ; tenue par l'admin (éditeur SQL au début) ; `prive.contenu_interdit(texte)` : lien, suite de 8 chiffres ou plus (espaces, points et tirets ignorés), mot de la liste ; testé en français, arabe et darja latine |
+| `signalements_avis` | signalements | `avis_id`, `motif`, `commentaire`, `statut` (`ouvert`, `traite`, `rejete`), `cree_le` ; écrit seulement par `signaler_avis()` avec la clé de visiteur (`VISITEURS_SECRET`, mêmes limites que `signaler_article`) |
+| `decisions` (existante) | traçabilité | nouvelles actions `masquer_avis`, `masquer_reponse`, `classer_signalement_avis` |
+
+Date de récupération : `commandes.terminee_le` (existante, posée au passage à `recuperee`).
+
+### Affichage
+
+- Vitrine et fiche : lecture serveur par `resume_avis` (une requête pour toutes les boutiques d'une page de catalogue ou de la carte, pas une par boutique) ; `components/AvisBoutique.tsx`, `NoteBoutique.tsx` (« ★ 4,6 · 18 avis »).
+- Tri « Mieux notées » : `chargerCatalogue` / `boutiques_carte` reçoivent la moyenne par `resume_avis` ; boutiques sous le seuil à la fin.
+
+### Récompense (US-32.5, après US-33)
+
+Programme de bons US-33 de type `avis` (montant, minimum, validité, budget du mois, plafond par numéro et par mois). Le bon est créé dans la même transaction que l'avis, si : programme actif, budget restant, numéro vérifié, plafond du numéro non atteint (empreinte du numéro, comme US-33). Remboursement : comme tous les bons (QR code seulement, relevé mensuel). Masquer un avis ne reprend pas le bon (la note n'a aucun effet sur la récompense : on ne paie pas pour une bonne note, condition de crédibilité de la mention publique).
+
+**Signaux de fraude** (dans `/admin/remboursements` ou `/admin/moderation`, jamais bloquants) : part des 5 étoiles venant de comptes de moins de 7 jours par boutique ; avis groupés (même boutique, même minute) ; même numéro qui note toujours la même boutique ; commandes récupérées moins de 30 minutes après leur création.
+
+### Fichiers prévus (au moment du code)
+
+```
+supabase/migrations/…_avis.sql                  US-32.1 (table, donner_avis, filtre, lectures, tests SQL)
+supabase/migrations/…_avis_moderation.sql       US-32.4 (repondre_avis, signalements_avis, décisions)
+lib/avis.ts (+ test)                            lecture, textes, format « Amine B. », mois
+app/compte/commandes/avis/…                     écran « Donner mon avis »
+components/AvisBoutique.tsx, NoteBoutique.tsx, FormulaireAvis.tsx, SignalerAvis.tsx
+app/espace/avis/page.tsx, actions.ts            avis et réponses de la boutique
+app/admin/moderation/…                          onglet « Avis »
+```
+
+**Aucune nouvelle dépendance**, aucune nouvelle variable d'environnement.
+
 ## Limites par visiteur (vues, clics, partages, signalements)
 
 Carte Trello « Sécurité · Limiter les envois en masse ». Migration `20261010180000_limites_visiteurs.sql`.

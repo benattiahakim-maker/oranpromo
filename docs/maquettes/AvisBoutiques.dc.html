@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=375">
+<title>BleDeal — Avis clients sur les boutiques (US-32, à valider)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&amp;family=Jost:wght@300;400;500&amp;family=Noto+Naskh+Arabic:wght@400;500&amp;family=Tajawal:wght@300;400;500&amp;display=swap">
+<style>
+body{margin:0;background:#EDEDED}
+.col{display:flex;flex-direction:column;align-items:flex-start;gap:0;padding-bottom:30px}
+.lbl{width:375px;box-sizing:border-box;padding:18px 16px 10px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1.5px;color:#3A3A3A}
+.ecran{width:375px;box-sizing:border-box;background:#FFF;color:#0A0A0A;overflow:hidden;position:relative}
+.ent{display:flex;justify-content:space-between;align-items:center;gap:4px;padding:14px 16px;border-bottom:1px solid #E6E6E6}
+.logoville{display:flex;align-items:baseline;gap:10px}
+.logo{font-family:'Bodoni Moda',serif;font-size:21px;letter-spacing:.5px}
+.ville{font-size:13px;border-bottom:1px solid #0A0A0A;min-height:28px;display:inline-flex;align-items:center;gap:3px}
+.nav{display:flex;align-items:center;gap:10px}
+.ico{font-size:16px}
+.et{font-size:10.5px;letter-spacing:1.6px;text-transform:uppercase}
+[dir=rtl] .et{letter-spacing:0;font-size:13px;text-transform:none}
+.univ{display:flex;justify-content:center;gap:24px;padding:12px;border-bottom:1px solid #E6E6E6;font-size:11px;letter-spacing:2px}
+[dir=rtl] .univ{letter-spacing:0;font-size:14px}
+.hero{height:330px;background-size:cover;background-position:50% 20%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:12px;padding:0 20px 34px;color:#FFF;text-align:center;position:relative}
+.h1{font-family:'Bodoni Moda',serif;font-weight:400;font-size:34px;margin:0}
+[dir=rtl] .h1,[dir=rtl] .h2,[dir=rtl] .bt{font-family:'Noto Naskh Arabic',serif}
+.st{margin:0}
+.btnb{background:#FFF;color:#0A0A0A;padding:14px 26px;font-size:11px;letter-spacing:2px}
+[dir=rtl] .btnb{letter-spacing:0;font-size:14px}
+.cred{position:absolute;bottom:6px;right:8px;font-size:9px;opacity:.85}
+[dir=rtl] .cred{right:auto;left:8px}
+.bloc{margin:20px 20px 0;border:1px solid #0A0A0A;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.bt{display:block;font-family:'Bodoni Moda',serif;font-size:22px}.bs{display:block;font-size:13px;color:#6B6B6B}
+.sec{display:flex;justify-content:space-between;padding:26px 20px 12px}.u{text-decoration:underline}
+.grille{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px 20px}
+.ph{height:150px;background:#F3F2EF}.t{margin:8px 0 2px;font-size:14px}.p{margin:0;font-size:13px}.p s{color:#8A8A8A;margin-right:6px}.q{margin:2px 0 0;font-size:11px;color:#6B6B6B}
+.pad{padding:18px 20px 22px}.pad2{padding:14px 20px}
+.g{color:#6B6B6B}.s{font-size:14px;line-height:1.5}.xs{font-size:12px}.s2{font-size:13px}
+.h2{font-family:'Bodoni Moda',serif;font-weight:400;font-size:28px;margin:4px 0 8px}.m0{margin:2px 0 0;font-size:24px}
+.btno{display:inline-flex;align-items:center;min-height:44px;border:1px solid #0A0A0A;padding:0 16px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;margin:6px 0 4px}
+[dir=rtl] .btno{letter-spacing:0;font-size:14px}
+.msg{border:1px solid #E6E6E6;padding:10px 12px;font-size:14px;margin:10px 0 0}
+.liste{list-style:none;margin:12px 0 10px;padding:0;border-top:1px solid #E6E6E6}
+.vl{display:flex;justify-content:space-between;align-items:center;min-height:60px;border-bottom:1px solid #E6E6E6;gap:8px}
+.vl.sel{background:#F6F6F6;padding:0 10px;margin:0 -10px}
+.vn{display:block;font-size:17px}.vc{display:block;font-size:12px;color:#6B6B6B}
+.carte{height:300px;background:#EEF0F1;position:relative;border-top:1px solid #E6E6E6;border-bottom:1px solid #E6E6E6;background-image:linear-gradient(#e3e6e8 1px,transparent 1px),linear-gradient(90deg,#e3e6e8 1px,transparent 1px);background-size:40px 40px}
+.pin{position:absolute;background:#0A0A0A;color:#FFF;font-size:11px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.cadre{position:absolute;inset:14px;border:1px dashed #8A8A8A;font-size:10px;color:#6B6B6B;padding:4px}
+.filtres{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 16px}.filtres span{border:1px solid #E6E6E6;padding:8px 10px;font-size:13px}
+label.et{display:block;margin-top:14px}.champ{display:block;border:1px solid #E6E6E6;min-height:44px;line-height:44px;padding:0 12px;font-size:15px;letter-spacing:0;text-transform:none;margin-top:6px}
+.err{font-size:14px;margin:8px 0 0;color:#A31F1F}
+.btnb2{display:inline-flex;align-items:center;min-height:44px;background:#0A0A0A;color:#FFF;padding:0 18px;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-top:16px}
+.btno2{display:inline-flex;align-items:center;min-height:44px;border:1px solid #0A0A0A;padding:0 18px;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-top:16px}
+.tog{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;border:1px solid #0A0A0A;padding:6px 10px;min-width:70px;text-align:center}.tog.on{background:#0A0A0A;color:#FFF}
+.conf{border:1px solid #0A0A0A;padding:12px 14px;font-size:14px}.conf p{margin:0}
+.wa{background:#EFEAE2}.wa .et{margin:14px 0 6px}
+.bulle{background:#FFF;padding:10px 12px;font-size:14px;line-height:1.45;max-width:300px}.bulle.moi{background:#D9FDD3;margin-left:auto}
+.bout{display:block;border-top:1px solid #E6E6E6;margin-top:8px;padding-top:8px;text-align:center;color:#0A7CFF}
+.og{background:#FFF;max-width:300px}.ogimg{height:150px;background:#F3F2EF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.ogq{font-size:10px;letter-spacing:3px;color:#6F6F6F}.ogn{font-family:'Bodoni Moda',serif;font-size:24px}.ogm{font-family:'Bodoni Moda',serif;font-size:13px}
+.ogt{padding:8px 10px;font-size:13px}
+
+.bord{border:1px solid #0A0A0A;padding:12px 14px;margin:12px 0 0}
+.ligne{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;border-bottom:1px solid #E6E6E6;font-size:14px}
+.case{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;margin:12px 0 0}
+.case i{flex:none;width:18px;height:18px;border:1px solid #0A0A0A;display:inline-block;margin-top:2px;font-style:normal;text-align:center;line-height:18px;font-size:12px}
+.case i.on{background:#0A0A0A;color:#FFF}
+.etoiles{font-size:20px;letter-spacing:4px}[dir=rtl] .etoiles{letter-spacing:4px}
+.qr{width:120px;height:120px;border:1px solid #0A0A0A;background-image:linear-gradient(45deg,#0A0A0A 25%,transparent 25%,transparent 75%,#0A0A0A 75%),linear-gradient(45deg,#0A0A0A 25%,transparent 25%,transparent 75%,#0A0A0A 75%);background-size:16px 16px;background-position:0 0,8px 8px;margin:12px auto}
+.puce{display:inline-block;border:1px solid #0A0A0A;padding:2px 8px;font-size:11px;letter-spacing:1px;text-transform:uppercase}
+[dir=rtl] .puce{letter-spacing:0;font-size:12px}
+.doc{font-size:13px;line-height:1.55}.doc h3{font-size:15px;margin:16px 0 4px;font-weight:500}.doc p{margin:0 0 8px}
+.avert{border:1px solid #0A0A0A;padding:10px 12px;font-size:13px;margin:0 0 12px}
+.ar{font-family:'Tajawal','Noto Naskh Arabic',sans-serif}
+</style>
+</helmet>
+<!-- US-32 (avis clients) : conception, à valider par le propriétaire. Téléphone, 375 px. ① à ⑥ client en français, ⑦ espace commerçant, ⑧ admin, ⑨ et ⑩ en arabe (de droite à gauche). Données de démonstration. Bon « avis » (③) : US-32.5, après US-33, montant à valider (question 1). Les commentaires restent dans la langue du client (dir="auto"). Textes arabes à valider (tableau du module 18). -->
+<div class="col">
+<div class="lbl">① /COMPTE/COMMANDES · COMMANDE RÉCUPÉRÉE PAR QR CODE (14 JOURS)</div><div class="ecran" lang="fr" dir="ltr" style="font-family:'Jost',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">Carte</span><span class="ico">👜</span><span class="et"><b>FR</b> | عربي</span></nav></header><main class="pad"><p class="et g">/ compte</p><h1 class="h2">Mes commandes</h1><ul class="liste"><li class="vl" style="align-items:flex-start;padding:12px 0"><span><span class="vn">N° 134 · Boutique Nour</span><span class="vc">Récupérée le 8/10 · 4 200 DA</span><span class="btnb2" style="margin-top:10px">Donner mon avis</span></span></li><li class="vl"><span><span class="vn">N° 121 · Dar Lebsa</span><span class="vc">Récupérée le 20/9 · avis donné ★ 4</span></span></li></ul><p class="g xs">Pas de bouton sur une commande remise par code ou « sans QR code » (question 2), ni après 14 jours.</p></main></div>
+<div class="lbl">② DONNER MON AVIS</div><div class="ecran" lang="fr" dir="ltr" style="font-family:'Jost',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">Carte</span><span class="ico">👜</span><span class="et"><b>FR</b> | عربي</span></nav></header><main class="pad"><h1 class="h2">Votre avis sur Boutique Nour</h1><p class="g s2">Commande n° 134 · Robe longue</p><p class="etoiles" style="margin:14px 0 4px">★★★★☆</p><p class="g xs" style="margin:0">Note obligatoire</p><div class="filtres" style="margin-top:14px"><span style="background:#0A0A0A;color:#FFF">Bon accueil</span><span style="background:#0A0A0A;color:#FFF">Article conforme</span><span>Rapide</span></div><label class="et">Commentaire (facultatif)<span class="champ" style="height:88px;line-height:1.4;padding-top:10px">Très bon accueil, la robe est comme sur la photo.</span></label><p class="g xs" style="text-align:right;margin:4px 0 0">50/300</p><p class="g s2">Votre avis est public avec votre prénom et l’initiale de votre nom.</p><span class="btnb2">Publier mon avis</span></main></div>
+<div class="lbl">③ FILTRE · APRÈS ENVOI</div><div class="ecran" lang="fr" dir="ltr" style="font-family:'Jost',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">Carte</span><span class="ico">👜</span><span class="et"><b>FR</b> | عربي</span></nav></header><main class="pad"><p role="alert" class="err">Votre commentaire ne peut pas contenir de lien, de numéro de téléphone ni de mot grossier.</p><div class="msg" role="status" style="margin-top:18px"><b>Merci, votre avis est publié.</b><br><span class="g s2">Votre bon de 150 DA est dans votre compte (US-32.5, après US-33 ; montant à valider).</span></div></main></div>
+<div class="lbl">④ /B/BOUTIQUE-NOUR · NOTE, CRITÈRES, DERNIERS AVIS</div><div class="ecran" lang="fr" dir="ltr" style="font-family:'Jost',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">Carte</span><span class="ico">👜</span><span class="et"><b>FR</b> | عربي</span></nav></header><main class="pad"><p class="et g">Akid Lotfi · Oran</p><h1 class="h2">Boutique Nour</h1><p class="s" style="margin:0"><b>★ 4,6</b> · 18 avis</p><p class="g s2" style="margin:4px 0 0">Bon accueil · 12 &nbsp; Article conforme · 9 &nbsp; Rapide · 6</p><ul class="liste"><li style="padding:12px 0;border-bottom:1px solid #E6E6E6"><p class="s" style="margin:0"><b>Amine B.</b> · ★★★★★ · <span class="g">octobre 2026</span></p><p class="s" style="margin:4px 0 0">Très bon accueil, la robe est comme sur la photo.</p><p class="g s2" style="margin:8px 0 0;padding-left:10px;border-left:1px solid #0A0A0A">Réponse de la boutique : Merci Amine, à bientôt !</p><p class="g xs u" style="margin:6px 0 0">Signaler</p></li><li style="padding:12px 0;border-bottom:1px solid #E6E6E6"><p class="s" style="margin:0"><b>Sara K.</b> · ★★★☆☆ · <span class="g">septembre 2026</span></p><p class="s" style="margin:4px 0 0">Un peu d’attente au retrait.</p><p class="g xs u" style="margin:6px 0 0">Signaler</p></li></ul><span class="btno2">Voir tous les avis</span><p class="g xs" style="margin-top:14px">Les clients reçoivent un petit bon pour chaque avis, quelle que soit leur note.</p></main></div>
+<div class="lbl">⑤ VITRINE SOUS LE SEUIL (MOINS DE 3 AVIS) · FICHE ARTICLE</div><div class="ecran" lang="fr" dir="ltr" style="font-family:'Jost',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">Carte</span><span class="ico">👜</span><span class="et"><b>FR</b> | عربي</span></nav></header><main class="pad"><h1 class="h2">Kids Style</h1><p class="g s">Pas encore assez d’avis</p><p class="s">1 avis : <b>Nadia M.</b> · ★★★★★ — « Vendeur très gentil. »</p><hr style="border:0;border-top:1px solid #E6E6E6;margin:18px 0"><p class="et g">Fiche article /a/…</p><p class="t">Abaya brodée</p><p class="p"><s>9 000 DA</s>6 900 DA</p><p class="s2" style="margin:6px 0 0">Boutique Nour · <span class="u">★ 4,6 (18 avis)</span></p></main></div>
+<div class="lbl">⑥ CATALOGUE · TRI « MIEUX NOTÉES »</div><div class="ecran" lang="fr" dir="ltr" style="font-family:'Jost',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">Carte</span><span class="ico">👜</span><span class="et"><b>FR</b> | عربي</span></nav></header><main class="pad"><h1 class="h2">Catalogue</h1><div class="filtres"><span>Univers ▾</span><span>Quartier ▾</span><span style="background:#0A0A0A;color:#FFF">Mieux notées</span><span>Promos</span></div><ul class="liste"><li class="vl"><span><span class="vn">Boutique Nour</span><span class="vc">★ 4,6 · 18 avis</span></span></li><li class="vl"><span><span class="vn">Dar Lebsa</span><span class="vc">★ 4,2 · 7 avis</span></span></li><li class="vl"><span><span class="vn">Kids Style</span><span class="vc">Pas encore assez d’avis</span></span></li></ul></main></div>
+<div class="lbl">⑦ /ESPACE/AVIS · RÉPONDRE UNE FOIS (PAS DE SUPPRESSION)</div><div class="ecran" lang="fr" dir="ltr" style="font-family:'Jost',sans-serif"><header class="ent"><span class="logo" dir="ltr">BleDeal</span><span class="et g">Espace</span></header><main class="pad"><h1 class="h2">Avis</h1><p class="s" style="margin:0"><b>★ 4,6</b> · 18 avis · 2 sans réponse</p><ul class="liste"><li style="padding:12px 0;border-bottom:1px solid #E6E6E6"><p class="s" style="margin:0"><b>Sara K.</b> · ★★★☆☆ · 2/10</p><p class="s" style="margin:4px 0 0">Un peu d’attente au retrait.</p><label class="et">Votre réponse publique (une seule fois)<span class="champ">Désolés pour l’attente, merci Sara.</span></label><span class="btnb2">Publier la réponse</span> <span class="btno2">Signaler</span></li></ul><p class="g xs">Vous ne pouvez pas supprimer un avis. Un avis faux ou insultant : « Signaler ».</p></main></div>
+<div class="lbl">⑧ /ADMIN/MODERATION · ONGLET AVIS · SIGNAUX</div><div class="ecran" lang="fr" dir="ltr" style="font-family:'Jost',sans-serif"><header class="ent"><span class="logo" dir="ltr">BleDeal</span><span class="et g">Admin</span></header><main class="pad"><h1 class="h2">Modération · Avis</h1><div class="bord" style="margin-top:0"><p class="s" style="margin:0"><b>Boutique Nour</b> · ★★★★★ · Amine B. · 8/10</p><p class="s2" style="margin:4px 0 0">« Très bon accueil… »</p><p class="g s2" style="margin:6px 0 0">2 signalements : Faux avis</p><span class="btnb2">Masquer l’avis</span> <span class="btno2">Classer</span></div><div class="bord"><p class="et" style="margin:0 0 4px">Signal (jamais automatique)</p><p class="s2" style="margin:0">Dar Lebsa : 6 avis 5 étoiles sur 7 jours venant de comptes de moins de 7 jours.</p></div></main></div>
+<div class="lbl">⑨ DONNER MON AVIS EN ARABE</div><div class="ecran" lang="ar" dir="rtl" style="font-family:'Tajawal','Noto Naskh Arabic',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">خريطة</span><span class="ico">👜</span><span class="et">FR | <b>عربي</b></span></nav></header><main class="pad"><h1 class="h2">رايك في Boutique Nour</h1><p class="etoiles" style="margin:14px 0 4px">★★★★☆</p><div class="filtres" style="margin-top:14px"><span style="background:#0A0A0A;color:#FFF">استقبال مليح</span><span style="background:#0A0A0A;color:#FFF">السلعة كيما في الصورة</span><span>زربان</span></div><label class="et">كلمة (ماشي لازم)<span class="champ"></span></label><p class="g s2">رايك يبان للناس بإسمك والحرف الأول من لقبك.</p><span class="btnb2">انشر رايي</span><p role="alert" class="err">ما تقدرش تكتب لينك، ولا نمرة تيليفون، ولا كلام خايب.</p><p class="msg">يعطيك الصحة، رايك تنشر.</p></main></div>
+<div class="lbl">⑩ VITRINE EN ARABE · AVIS</div><div class="ecran" lang="ar" dir="rtl" style="font-family:'Tajawal','Noto Naskh Arabic',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">خريطة</span><span class="ico">👜</span><span class="et">FR | <b>عربي</b></span></nav></header><main class="pad"><p class="et g">Akid Lotfi · وهران</p><h1 class="h2" dir="ltr" style="text-align:right">Boutique Nour</h1><p class="s" style="margin:0"><b>★ 4,6</b> · 18 راي</p><ul class="liste"><li style="padding:12px 0;border-bottom:1px solid #E6E6E6"><p class="s" style="margin:0"><b>Amine B.</b> · ★★★★★</p><p class="s" dir="auto" style="margin:4px 0 0">Très bon accueil, la robe est comme sur la photo.</p><p class="g xs u" style="margin:6px 0 0">بلّغ</p></li></ul><p class="g s">مازال ما كاينش بزاف تاع الآراء <span class="xs">(تحت 3 آراء)</span></p><p class="g xs">الكليان ياخذو بون صغير على كل راي، مهما كانت النقطة.</p><div class="filtres"><span style="background:#0A0A0A;color:#FFF">الأحسن في النقاط</span></div></main></div>
+</div>
+</x-dc>
+</body>
+</html>
