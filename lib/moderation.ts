@@ -9,6 +9,38 @@ export type SignalementModeration = Tables<"signalements"> & { articles: Article
 export type GroupeSignalements = { articleId: string; article: ArticleSignale | null; signalements: SignalementModeration[]; nombre: number; derniereDate: string; motifs: { motif: string; nombre: number }[] };
 export type DecisionHistorique = { id: string; date: string; action: string; articleId: string | null; titre: string };
 
+// US-32.4 : signalements d'avis (onglet « Avis » de /admin/moderation), traités par la fonction moderer_avis.
+export const ACTIONS_MODERATION_AVIS = { masquer_avis: "Masquer l’avis", masquer_reponse: "Masquer la réponse", classer_signalement_avis: "Classer" } as const;
+export const MOTIFS_SIGNALEMENT_AVIS: Record<string, string> = { faux_avis: "Faux avis", insulte: "Insulte ou propos déplacés", informations_personnelles: "Informations personnelles", autre: "Autre" };
+export const LIBELLES_DECISIONS: Record<string, string> = { ...ACTIONS_MODERATION, masquer_avis: "Masquer l’avis", masquer_reponse: "Masquer la réponse", classer_signalement_avis: "Classer (avis)" };
+export type ActionModerationAvis = keyof typeof ACTIONS_MODERATION_AVIS;
+export type AvisSignale = { id: string; note: number; commentaire: string | null; reponse: string | null; reponse_masquee: boolean; statut: string; cree_le: string; boutiques: { nom: string } | null; profils: { nom: string | null } | null };
+export type SignalementAvisModeration = Tables<"signalements_avis"> & { avis: AvisSignale | null };
+export type GroupeSignalementsAvis = { avisId: string; avis: AvisSignale | null; auteur: string; signalements: SignalementAvisModeration[]; nombre: number; derniereDate: string; motifs: { motif: string; nombre: number }[] };
+export type SignalAvis = { boutiqueId: string; boutique: string; nombre: number };
+
+/** « Amine B. » (même règle que prive.prenom_initiale dans la base). */
+export function prenomInitiale(nom: string | null | undefined): string {
+  const mots = (nom ?? "").trim().split(/\s+/).filter(Boolean);
+  if (!mots.length) return "Client";
+  return mots.length > 1 ? `${mots[0]} ${Array.from(mots[1])[0].toUpperCase()}.` : mots[0];
+}
+
+export function regrouperSignalementsAvis(signalements: SignalementAvisModeration[]): GroupeSignalementsAvis[] {
+  const groupes = new Map<string, SignalementAvisModeration[]>();
+  for (const signalement of signalements) {
+    if (signalement.statut !== "ouvert") continue;
+    groupes.set(signalement.avis_id, [...(groupes.get(signalement.avis_id) ?? []), signalement]);
+  }
+  return [...groupes].map(([avisId, liste]) => {
+    const tries = [...liste].sort((a, b) => Date.parse(b.cree_le) - Date.parse(a.cree_le) || a.id.localeCompare(b.id));
+    const motifs = new Map<string, number>();
+    for (const signalement of tries) motifs.set(signalement.motif, (motifs.get(signalement.motif) ?? 0) + 1);
+    const avis = tries.find(s => s.avis)?.avis ?? null;
+    return { avisId, avis, auteur: prenomInitiale(avis?.profils?.nom), signalements: tries, nombre: tries.length, derniereDate: tries[0].cree_le, motifs: [...motifs].map(([motif, nombre]) => ({ motif, nombre })).sort((a, b) => b.nombre - a.nombre || a.motif.localeCompare(b.motif)) };
+  }).sort((a, b) => b.nombre - a.nombre || Date.parse(b.derniereDate) - Date.parse(a.derniereDate) || a.avisId.localeCompare(b.avisId));
+}
+
 export function regrouperSignalements(signalements: SignalementModeration[]): GroupeSignalements[] {
   const groupes = new Map<string, SignalementModeration[]>();
   for (const signalement of signalements) {
@@ -43,9 +75,41 @@ export async function chargerSignalements(client: SupabaseClient<Database>) {
 }
 
 export async function chargerHistoriqueModeration(client: SupabaseClient<Database>): Promise<DecisionHistorique[]> {
-  const { data, error } = await client.from("decisions").select("id, date, action, signalements(article_id, articles(titre))").order("date", { ascending: false }).order("id", { ascending: false }).limit(50);
+  const { data, error } = await client.from("decisions").select("id, date, action, signalements(article_id, articles(titre)), signalements_avis(avis_id, avis(boutiques(nom), profils(nom)))").order("date", { ascending: false }).order("id", { ascending: false }).limit(50);
   if (error || !data) throw new Error("Impossible de charger l’historique. Réessayez.");
-  return data.map(decision => ({ id: decision.id, date: decision.date, action: decision.action, articleId: decision.signalements?.article_id ?? null, titre: decision.signalements?.articles?.titre ?? "Article indisponible" }));
+  return data.map(decision => {
+    // US-32.4 : une décision vise un article signalé ou un avis signalé.
+    const avis = decision.signalements_avis?.avis;
+    const titre = decision.signalements_avis ? (avis ? `Avis de ${prenomInitiale(avis.profils?.nom)} · ${avis.boutiques?.nom ?? "Boutique indisponible"}` : "Avis indisponible") : decision.signalements?.articles?.titre ?? "Article indisponible";
+    return { id: decision.id, date: decision.date, action: decision.action, articleId: decision.signalements?.article_id ?? null, titre };
+  });
+}
+
+export async function chargerSignalementsAvis(client: SupabaseClient<Database>): Promise<GroupeSignalementsAvis[]> {
+  const signalements: SignalementAvisModeration[] = [];
+  for (let offset = 0; ; offset += 500) {
+    const { data, error } = await client.from("signalements_avis").select("*, avis(id, note, commentaire, reponse, reponse_masquee, statut, cree_le, boutiques(nom), profils(nom))").eq("statut", "ouvert").order("id", { ascending: true }).range(offset, offset + 499);
+    if (error || !data) throw new Error("Impossible de charger les signalements. Réessayez.");
+    signalements.push(...data);
+    if (data.length < 500) return regrouperSignalementsAvis(signalements);
+  }
+}
+
+/** Signal de fraude (jamais automatique) : boutiques avec 3 avis 5 étoiles ou plus en 7 jours venant de comptes récents. */
+export async function chargerSignauxAvis(client: SupabaseClient<Database>): Promise<SignalAvis[]> {
+  const { data, error } = await client.rpc("signaux_avis");
+  if (error) throw new Error("Impossible de charger les signaux. Réessayez.");
+  return (data ?? []).map(s => ({ boutiqueId: s.boutique_id, boutique: s.boutique, nombre: s.cinq_etoiles_comptes_recents }));
+}
+
+/** Une transaction dans la base : effet, une décision par signalement, signalements clos (seulement ceux vus). */
+export async function modererAvis(client: SupabaseClient<Database>, avisId: string, ids: string[], action: ActionModerationAvis) {
+  await verifierAdministrateur(client);
+  if (!Object.hasOwn(ACTIONS_MODERATION_AVIS, action)) throw new Error("Choisissez une action valide.");
+  const selection = [...new Set(ids)];
+  if (!selection.length) throw new Error("Aucun signalement à traiter.");
+  const { error } = await client.rpc("moderer_avis", { avis: avisId, action, signalements: selection });
+  if (error) throw new Error(["22023", "P0002", "42501"].includes(error.code ?? "") && error.message ? error.message : "Impossible de traiter les signalements. Réessayez.");
 }
 
 export async function modererArticle(client: SupabaseClient<Database>, articleId: string, ids: string[], action: ActionModeration) {

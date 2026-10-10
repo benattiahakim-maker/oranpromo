@@ -2,7 +2,7 @@ import "server-only";
 import { createHmac } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Enums } from "./supabase/types";
-import { MOTIFS_SIGNALEMENT } from "./moderation";
+import { MOTIFS_SIGNALEMENT, MOTIFS_SIGNALEMENT_AVIS } from "./moderation";
 
 // Limiter les envois en masse (vues, clics « Ajouter au panier », partages, signalements).
 // Le navigateur n'écrit plus dans evenements ni signalements : il appelle une action serveur, qui appelle les fonctions
@@ -16,6 +16,7 @@ type Client = SupabaseClient<Database>;
 export type TypeEvenement = Enums<"type_evenement">;
 export type SaisieEvenement = { type: TypeEvenement; boutiqueId: string; articleId?: string; taille?: string };
 export type SaisieSignalement = { articleId: string; motif: string; commentaire?: string };
+export type SaisieSignalementAvis = { avisId: string; motif: string; commentaire?: string };
 
 export const TYPES_EVENEMENT: readonly TypeEvenement[] = ["vue_article", "vue_boutique", "clic_reserver", "partage"];
 export const COMMENTAIRE_SIGNALEMENT_MAX = 1000;
@@ -67,18 +68,26 @@ export async function mesurerEvenement(client: Client, entetes: Headers, saisie:
 }
 
 export async function signalerArticle(client: Client, entetes: Headers, saisie: SaisieSignalement): Promise<void> {
+  return signaler(client, entetes, "signaler_article", saisie.articleId, saisie.motif, saisie.commentaire, MOTIFS_SIGNALEMENT);
+}
+
+// US-32.4 : signaler un avis (client, visiteur ou boutique), mêmes limites par visiteur que signaler_article.
+export async function signalerAvis(client: Client, entetes: Headers, saisie: SaisieSignalementAvis): Promise<void> {
+  return signaler(client, entetes, "signaler_avis", saisie.avisId, saisie.motif, saisie.commentaire, MOTIFS_SIGNALEMENT_AVIS);
+}
+
+async function signaler(client: Client, entetes: Headers, fonction: "signaler_article" | "signaler_avis", cible: string, motif: string, saisieCommentaire: string | undefined, motifs: Record<string, string>): Promise<void> {
+  const saisie = { motif, commentaire: saisieCommentaire };
   const commentaire = (saisie.commentaire ?? "").trim();
-  if (!Object.hasOwn(MOTIFS_SIGNALEMENT, saisie.motif)) throw new ErreurSignalement("Choisissez un motif.");
+  if (!Object.hasOwn(motifs, saisie.motif)) throw new ErreurSignalement("Choisissez un motif.");
   if (Array.from(commentaire).length > COMMENTAIRE_SIGNALEMENT_MAX) throw new ErreurSignalement(`Le commentaire doit contenir ${COMMENTAIRE_SIGNALEMENT_MAX} caractères au plus.`);
-  if (!UUID.test(saisie.articleId)) throw new ErreurSignalement(MESSAGE_SIGNALEMENT_ECHEC);
+  if (!UUID.test(cible)) throw new ErreurSignalement(MESSAGE_SIGNALEMENT_ECHEC);
   const secret = secretVisiteurs();
   if (!secret) throw new ErreurSignalement(MESSAGE_SIGNALEMENT_INDISPONIBLE);
   let erreur: { code?: string; message?: string } | null;
   try {
-    ({ error: erreur } = await client.rpc("signaler_article", {
-      jeton: secret, visiteur: cleVisiteur(adresseIp(entetes), secret), article: saisie.articleId, motif: saisie.motif,
-      ...(commentaire ? { commentaire } : {}),
-    }));
+    const commun = { jeton: secret, visiteur: cleVisiteur(adresseIp(entetes), secret), motif: saisie.motif, ...(commentaire ? { commentaire } : {}) };
+    ({ error: erreur } = fonction === "signaler_article" ? await client.rpc("signaler_article", { ...commun, article: cible }) : await client.rpc("signaler_avis", { ...commun, avis: cible }));
   } catch { throw new ErreurSignalement(MESSAGE_SIGNALEMENT_ECHEC); }
   if (!erreur) return;
   // Messages de la base, déjà en français : limite atteinte (54000) ou saisie refusée (22023).

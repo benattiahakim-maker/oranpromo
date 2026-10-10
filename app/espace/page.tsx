@@ -11,6 +11,7 @@ import { lireRelevesBoutique, type ReleveBoutique } from "@/lib/parrainage-admin
 import { villeLue } from "@/lib/ville";
 import AbonnesBoutique from "@/components/AbonnesBoutique";
 import { lireAbonnesBoutique, type NombreAbonnes } from "@/lib/abonnements";
+import { lireResumeMaBoutique, texteResumeEspace, type ResumeEspace } from "@/lib/avis";
 
 export default async function Espace({ searchParams }: { searchParams: Promise<{ erreur?: string }> }) {
   const supabase = await creerClientServeur();
@@ -26,6 +27,7 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
   let nomsProgrammes = new Map<string, string>();
   let plafonds: PlafondBoutique[] = [];
   let abonnes: NombreAbonnes | null = null;
+  let resumeAvis: ResumeEspace | null = null;
   if (profil?.boutique_id) {
     const [resultat, boutique] = await Promise.all([
       supabase.from("articles").select("*, photos(*), tailles(*), promos(*)").eq("boutique_id", profil.boutique_id).order("cree_le", { ascending: false }),
@@ -47,6 +49,8 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
     ]);
     // US-31.3 : nombre de clients qui suivent la boutique (masqué si la lecture échoue).
     abonnes = await lireAbonnesBoutique(supabase);
+    // US-32.4 : bloc « ★ 4,6 · 18 avis · 2 sans réponse » (masqué si la lecture échoue).
+    try { resumeAvis = await lireResumeMaBoutique(supabase); } catch { resumeAvis = null; }
   }
 
   return <main className="mx-auto w-full max-w-[390px] bg-blanc text-noir">
@@ -56,6 +60,7 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
       {profil?.boutique_id && <Link href="/espace/articles/nouveau" className="etiquette mt-6 flex min-h-[54px] items-center justify-center bg-noir px-4 text-blanc">+ Ajouter un article</Link>}
       {erreur === "deconnexion" && <p role="alert" className="mt-4">Impossible de vous déconnecter. Réessayez.</p>}
       {profil?.boutique_id && <Link href="/espace/statistiques" className="etiquette my-6 flex min-h-[44px] items-center justify-center border border-noir px-4">Mes statistiques</Link>}
+      {resumeAvis && <Link href="/espace/avis" aria-label={`Avis clients : ${texteResumeEspace(resumeAvis)}`} className="mb-6 flex min-h-[44px] flex-col items-center justify-center border border-trait p-4 text-center"><span className="etiquette text-gris">Avis clients</span><span className="mt-1 text-sm">{texteResumeEspace(resumeAvis)}</span></Link>}
       {abonnes && <AbonnesBoutique abonnes={abonnes} />}
       <BonsBoutique releves={releves} noms={nomsProgrammes} plafonds={plafonds} />
       {position && <PositionEspace {...position} />}

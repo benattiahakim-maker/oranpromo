@@ -588,6 +588,17 @@ export const fr = {
     suivants: "Avis plus anciens",
     retourBoutique: "Retour à la boutique",
     chargementImpossible: "Impossible de charger les avis. Réessayez.",
+    // US-32.4 : signaler un avis (texte n° 12 du module 18).
+    signaler: "Signaler",
+    signalerTitre: "Signaler l’avis de {auteur}",
+    motifSignalement: "Motif du signalement",
+    choisirMotif: "Choisir un motif",
+    motifs: { faux_avis: "Faux avis", insulte: "Insulte ou propos déplacés", informations_personnelles: "Informations personnelles", autre: "Autre" },
+    commentaireSignalement: "Commentaire (facultatif)",
+    envoyerSignalement: "Envoyer le signalement",
+    envoiSignalement: "Envoi…",
+    motifObligatoire: "Choisissez un motif.",
+    signalementEchec: "Le signalement n’a pas pu être envoyé. Réessayez.",
   },
 };
 

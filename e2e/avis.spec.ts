@@ -147,3 +147,79 @@ test("avis affichés : vitrine (note à partir de 3 avis, critères), fiche, cat
     await expect(page.getByRole("region", { name: "آراء الكليان" })).toContainText("مازال ما كاينش بزاف تاع الآراء");
   });
 });
+
+test("avis : réponse de la boutique (une fois, filtre), signalement, modération (masquer la réponse puis l'avis)", async ({ page, browser }) => {
+  test.setTimeout(150_000);
+  const u = unique();
+  const boutique = await creerBoutique({ nom: `Boutique Nour ${u}` });
+  await avisDirect(boutique.id, 3, "Sara Kaci", [], "Un peu d'attente au retrait.");
+  const [{ id: avisId }] = await sql<{ id: string }>("select id from avis where boutique_id = $1", [boutique.id]);
+  const espace = await connecterEspace(browser, (await creerCompte({ role: "commercant", boutique: boutique.id, nom: "Karim" })).email);
+
+  await test.step("espace : bloc « 1 avis · 1 sans réponse » vers /espace/avis", async () => {
+    await espace.goto("/espace");
+    await espace.getByRole("link", { name: "Avis clients : 1 avis · 1 sans réponse" }).click();
+    await expect(espace).toHaveURL(/\/espace\/avis$/);
+    await expect(espace.getByRole("heading", { name: "Avis", exact: true })).toBeVisible();
+    await expect(espace.getByText("Vous ne pouvez pas supprimer un avis. Un avis faux ou insultant : « Signaler ».")).toBeVisible();
+  });
+
+  await test.step("réponse avec un lien refusée, puis réponse publiée une seule fois", async () => {
+    const champ = espace.getByLabel("Votre réponse publique (une seule fois)");
+    await champ.fill("Venez sur www.ailleurs.dz");
+    await espace.getByRole("button", { name: "Publier la réponse" }).click();
+    await expect(espace.getByRole("main").getByRole("alert")).toHaveText("Votre réponse ne peut pas contenir de lien, de numéro de téléphone ni de mot grossier.");
+    await champ.fill("Désolés pour l’attente, merci Sara.");
+    await espace.getByRole("button", { name: "Publier la réponse" }).click();
+    await expect(espace.getByText("Votre réponse : Désolés pour l’attente, merci Sara.")).toBeVisible();
+    await expect(espace.getByRole("button", { name: "Publier la réponse" })).toHaveCount(0);
+    expect(await sql("select 1 from avis where id = $1 and reponse = 'Désolés pour l’attente, merci Sara.'", [avisId])).toHaveLength(1);
+  });
+
+  await test.step("vitrine : la réponse s'affiche ; « Signaler » ouvre les 4 motifs (sans secret visiteurs en local : indisponible)", async () => {
+    await page.goto(`/b/${boutique.slug}`);
+    const avis = page.getByRole("region", { name: "Avis clients" });
+    await expect(avis).toContainText("Réponse de la boutique : Désolés pour l’attente, merci Sara.");
+    await avis.getByRole("button", { name: "Signaler l’avis de Sara K." }).click();
+    await avis.getByLabel("Motif du signalement").selectOption({ label: "Insulte ou propos déplacés" });
+    await avis.getByRole("button", { name: "Envoyer le signalement" }).click();
+    await expect(avis.getByRole("status")).toHaveText("Le signalement n’est pas disponible pour le moment. Réessayez plus tard.");
+  });
+
+  // VISITEURS_SECRET est vide en e2e : les signalements sont posés dans la base locale (signaler_avis est testé en SQL).
+  await sql(`insert into signalements_avis (avis_id, motif) values ($1, 'informations_personnelles'), ($1, 'informations_personnelles')`, [avisId]);
+  const admin = await connecterEspace(browser, (await creerCompte({ role: "admin", nom: "Hakim" })).email);
+
+  await test.step("admin : onglet Avis, « 2 signalements : Informations personnelles », masquer la réponse", async () => {
+    await admin.goto("/admin/moderation?onglet=avis");
+    const groupe = admin.getByRole("listitem").filter({ hasText: boutique.nom });
+    await expect(groupe).toContainText("2 signalements : Informations personnelles");
+    await expect(groupe).toContainText("« Un peu d'attente au retrait. »");
+    await groupe.getByRole("button", { name: "Masquer la réponse" }).click();
+    await groupe.getByRole("button", { name: "Confirmer" }).click();
+    await expect(groupe.getByRole("status")).toHaveText("Décisions enregistrées.");
+    await page.goto(`/b/${boutique.slug}`);
+    await expect(page.getByRole("region", { name: "Avis clients" })).toContainText("Sara K.");
+    await expect(page.getByRole("region", { name: "Avis clients" })).not.toContainText("Réponse de la boutique");
+  });
+
+  await sql(`insert into signalements_avis (avis_id, motif) values ($1, 'faux_avis')`, [avisId]);
+  await test.step("admin : masquer l'avis ; il disparaît de la vitrine et de l'espace ; décisions dans l'historique", async () => {
+    await admin.goto("/admin/moderation?onglet=avis");
+    const groupe = admin.getByRole("listitem").filter({ hasText: boutique.nom });
+    await expect(groupe).toContainText("1 signalement : Faux avis");
+    await groupe.getByRole("button", { name: "Masquer l’avis" }).click();
+    await groupe.getByRole("button", { name: "Confirmer" }).click();
+    await expect(groupe.getByRole("status")).toHaveText("Décisions enregistrées.");
+    expect(await sql("select action from decisions where signalement_avis_id in (select id from signalements_avis where avis_id = $1) order by action", [avisId]))
+      .toEqual([{ action: "masquer_avis" }, { action: "masquer_reponse" }, { action: "masquer_reponse" }]);
+    await admin.goto("/admin/moderation?onglet=historique");
+    await expect(admin.getByText(`Avis de Sara K. · ${boutique.nom}`).first()).toBeVisible();
+    await page.goto(`/b/${boutique.slug}`);
+    await expect(page.getByRole("region", { name: "Avis clients" })).not.toContainText("Sara K.");
+    await espace.goto("/espace/avis");
+    await expect(espace.getByText("Pas encore d’avis", { exact: true })).toBeVisible();
+  });
+  await espace.context().close();
+  await admin.context().close();
+});
