@@ -303,7 +303,7 @@ export const ar: Textes = {
     // US-26.2 : textes 1 à 10 de la story US-26 (darja en gras dans la story) ; les autres suivent le même style.
     bloc: "QR تاع الاستلام",
     consigne: "ورّي هاد QR للبيّاع في الحانوت. تخلّص تمّا، كاش.",
-    sansCamera: "ما خدمتش الكاميرا؟ عطيه هاد الرقم:",
+    sansCamera: "ما خدمتش الكاميرا؟ عطيه هاد الرقم تاع 6 أرقام:",
     aPayer: "تخلّص كاش",
     luminosite: "طلّع الضو تاع التيليفون باش يتقرا مليح.",
     envoyerProche: "ابعثو لواحد من دارك (واتساب)",
@@ -316,7 +316,7 @@ export const ar: Textes = {
     metaTitre: "طلبية للاستلام",
     titreProche: "الطلبية رقم {n} تدّيها من {boutique}",
     avant: "قبل {date}",
-    consigneProche: "ورّي هاد QR للبيّاع، ولا عطيه الرقم:",
+    consigneProche: "ورّي هاد QR للبيّاع، ولا عطيه الرقم تاع 6 أرقام:",
     voirBoutique: "شوف الحانوت",
     articles: "السلع اللي تدّيها",
     recuperee: "هاد الطلبية تدّات من قبل.",

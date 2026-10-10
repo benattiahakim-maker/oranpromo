@@ -255,7 +255,7 @@ export function signauxReleve(r: Pick<ReleveAdmin, "montant" | "lignes">): strin
   const s: string[] = [];
   if (r.montant > SEUIL_RELEVE_SIGNALE) s.push(`Relevé au-dessus de ${montantDA(SEUIL_RELEVE_SIGNALE)}`);
   const comptees = r.lignes.filter(l => l.statut !== "refuse");
-  if (comptees.length >= 2 && comptees.every(l => l.mode_remise === "code")) s.push("Toujours par code à 4 chiffres, jamais par QR code");
+  if (comptees.length >= 2 && comptees.every(l => l.mode_remise === "code")) s.push("Toujours par code à 6 chiffres, jamais par QR code");
   const rapides = comptees.filter(l => signalRemiseRapide(l.commande)).length;
   if (rapides) s.push(`${rapides} remise${rapides > 1 ? "s" : ""} très rapide${rapides > 1 ? "s" : ""}`);
   return s;

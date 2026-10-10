@@ -545,16 +545,16 @@ Livrée en 4 sous-stories, dans cet ordre (une PR chacune), après validation :
 
 | Story | Contenu | Écrans |
 | --- | --- | --- |
-| US-26.1 | Jeton de retrait et code à 4 chiffres dans la base, fonctions de lecture et de remise, limite d'essais | aucun |
+| US-26.1 | Jeton de retrait et code à 6 chiffres dans la base, fonctions de lecture et de remise, limite d'essais | aucun |
 | US-26.2 | QR code et code côté client, lien à partager, page du proche | `/compte/commandes/[id]`, `/retrait/[jeton]` |
 | US-26.3 | Scanner côté boutique (caméra + saisie du code), résumé, « Remis au client » | `/espace/commandes`, `/espace/scanner`, `/espace/retrait/[jeton]` |
 | US-26.4 | Bouton « Mon QR code » dans le message WhatsApp « commande prête » (modèle Meta à faire approuver) | message WhatsApp |
 
 **Parcours** :
-1. La boutique passe la commande « Prête » (comme aujourd'hui). À ce moment, la base crée un **jeton de retrait** (QR code) et un **code à 4 chiffres** pour cette commande.
-2. Le client voit dans « Mes commandes » (`/compte/commandes/[id]`) un bloc **« Mon QR code de retrait »** : le QR code (grand, noir sur blanc), le code à 4 chiffres en dessous (« Pas de caméra ? Donnez ce code »), le **montant à payer en espèces**, la date limite, et « Montez la luminosité de l'écran ». Le message WhatsApp « commande prête » a un bouton **« Mon QR code »** qui ouvre la même chose (page `/retrait/<jeton>`, sans connexion).
+1. La boutique passe la commande « Prête » (comme aujourd'hui). À ce moment, la base crée un **jeton de retrait** (QR code) et un **code à 6 chiffres** pour cette commande.
+2. Le client voit dans « Mes commandes » (`/compte/commandes/[id]`) un bloc **« Mon QR code de retrait »** : le QR code (grand, noir sur blanc), le code à 6 chiffres en dessous (« Pas de caméra ? Donnez ce code »), le **montant à payer en espèces**, la date limite, et « Montez la luminosité de l'écran ». Le message WhatsApp « commande prête » a un bouton **« Mon QR code »** qui ouvre la même chose (page `/retrait/<jeton>`, sans connexion).
 3. **Un proche peut y aller** : « Envoyer à un proche (WhatsApp) » et « Copier le lien » partagent l'adresse `/retrait/<jeton>`. Avertissement affiché : « Toute personne qui a ce lien peut récupérer la commande : ne l'envoyez qu'à quelqu'un de confiance. » La page du proche montre la boutique (nom, adresse, lien carte), le numéro de commande, la date limite, les articles avec taille ou contenance, le total à payer, le QR code et le code ; **ni le nom ni le téléphone du client**.
-4. En boutique, le commerçant ouvre son espace, rubrique Commandes, touche **« Scanner un QR code client »** : la caméra arrière s'ouvre dans la page (« Placez le QR code du client dans le cadre »). Si la caméra ne marche pas : il tape le **code à 4 chiffres** dans la même page.
+4. En boutique, le commerçant ouvre son espace, rubrique Commandes, touche **« Scanner un QR code client »** : la caméra arrière s'ouvre dans la page (« Placez le QR code du client dans le cadre »). Si la caméra ne marche pas : il tape le **code à 6 chiffres** dans la même page.
 5. Il voit le **résumé** : numéro, prénom du client, articles (titre, taille ou contenance, quantité, prix), **« À encaisser en espèces : 6 300 DA »** en grand, date limite, et « Vérifiez les articles avec le client avant de remettre. Un proche peut venir à sa place : c'est normal. »
 6. Il touche **« Remis au client »** : la commande passe « Récupérée » (même règle qu'aujourd'hui : seulement depuis « Prête »), le suivi indique « Remise par QR code » ou « Remise par code ». Écran « Commande remise » + « Scanner une autre commande ».
 
@@ -564,9 +564,9 @@ Livrée en 4 sous-stories, dans cet ordre (une PR chacune), après validation :
 - **Valable seulement pour la boutique de la commande**, connectée à son espace : le QR code d'une autre boutique, abîmé ou inconnu donne le même message « Ce QR code n'est pas valide pour votre boutique. » (on ne dit jamais qu'une commande existe ailleurs).
 - **Invisible pour la boutique avant le scan** : ni le jeton ni le code n'apparaissent dans l'espace commerçant, la liste des commandes ou les données que la boutique peut lire.
 - **Expire avec la commande** : seulement tant que la commande est « Prête » et avant sa date limite (24 h). Annulée ou expirée : « Cette commande a été annulée. » / « Cette commande a expiré : elle n'est plus à remettre. »
-- Le **code à 4 chiffres** n'est valable que pour les commandes prêtes **de la boutique connectée** ; deux commandes prêtes d'une même boutique n'ont jamais le même code.
+- Le **code à 6 chiffres** n'est valable que pour les commandes prêtes **de la boutique connectée** ; deux commandes prêtes d'une même boutique n'ont jamais le même code.
 - **Pas de blocage de la boutique** sur des QR codes ou codes faux (décision du propriétaire : un compte par numéro WhatsApp, on ne bloque pas les boutiques) : chaque erreur donne le même message, sans limite d'essais. La sécurité tient au jeton de 128 bits et au code limité aux commandes prêtes de la boutique connectée.
-- **Mode de remise enregistré** par la base sur la commande (`qr`, `code` ou `manuel`), impossible à modifier ensuite : il servira au parrainage (US-27 : le premier retrait du filleul doit être validé par QR code ou code à 4 chiffres).
+- **Mode de remise enregistré** par la base sur la commande (`qr`, `code` ou `manuel`), impossible à modifier ensuite : il servira au parrainage (US-27 : le premier retrait du filleul doit être validé par QR code ou code à 6 chiffres).
 - Ouvrir la page du QR code (client ou proche) **ne change rien** ; scanner **ne remet rien** : seule la touche « Remis au client » remet la commande.
 
 **Bouton manuel « Récupérée »** (proposition) : il **reste**, renommé « Remis sans QR code », derrière une confirmation (« Le client n'a ni QR code ni code ? Remettez la commande seulement si vous le reconnaissez. »). Raisons : téléphone du client déchargé ou sans internet, client âgé, scanner en panne ; le supprimer bloquerait des remises réelles. Le suivi indique « Remise sans QR code ». Dans la carte de la commande, le texte guide vers le scan : « Remise : scannez le QR code du client. »
@@ -583,24 +583,24 @@ Livrée en 4 sous-stories, dans cet ordre (une PR chacune), après validation :
 | --- | --- | --- | --- | --- |
 | 1 | Client, titre du bloc | Mon QR code de retrait | QR تاع الاستلام | رمز QR للاستلام |
 | 2 | Client, consigne | Montrez ce QR code au vendeur, dans la boutique. Vous payez sur place, en espèces. | **ورّي** هاد QR للبيّاع في الحانوت. **تخلّص** تمّا، كاش. | أظهر رمز QR للبائع في المحل. الدفع في المحل نقدًا. |
-| 3 | Client, code | Pas de caméra ? Donnez ce code : | **ما خدمتش** الكاميرا؟ **عطيه** هاد الرقم: | الكاميرا لا تعمل؟ أعطه هذا الرمز: |
+| 3 | Client, code | Pas de caméra ? Donnez ce code à 6 chiffres : | **ما خدمتش** الكاميرا؟ **عطيه** هاد الرقم تاع 6 أرقام: | الكاميرا لا تعمل؟ أعطه هذا الرمز: |
 | 4 | Client, montant | À payer en espèces | **تخلّص** كاش | المبلغ المطلوب نقدًا |
 | 5 | Client, luminosité | Montez la luminosité de l'écran pour que le QR code se lise bien. | **طلّع** الضو تاع التيليفون باش يتقرا مليح. | ارفع إضاءة الشاشة لقراءة الرمز جيدًا. |
 | 6 | Client, partage | Envoyer à un proche (WhatsApp) | **ابعثو** لواحد من **دارك** (واتساب) | أرسله إلى أحد أقاربك (واتساب) |
 | 7 | Client, copier | Copier le lien | **كوبي** الرابط | انسخ الرابط |
 | 8 | Client, avertissement | Toute personne qui a ce lien peut récupérer la commande : ne l'envoyez qu'à quelqu'un de confiance. | **أي واحد** عندو هاد الرابط **يقدر يدّي** الطلبية: ما **تبعثوش** غير لواحد **تثيق** فيه. | كل من لديه هذا الرابط يمكنه استلام الطلب: لا ترسله إلا لشخص تثق به. |
 | 9 | Proche, titre | Commande n° 128 à récupérer chez … | الطلبية رقم 128 **تدّيها** من … | الطلب رقم 128 للاستلام من … |
-| 10 | Proche, consigne | Montrez ce QR code au vendeur, ou donnez-lui le code : | **ورّي** هاد QR للبيّاع، **ولا عطيه** الرقم: | أظهر الرمز للبائع أو أعطه الرقم: |
+| 10 | Proche, consigne | Montrez ce QR code au vendeur, ou donnez-lui le code à 6 chiffres : | **ورّي** هاد QR للبيّاع، **ولا عطيه** الرقم تاع 6 أرقام: | أظهر الرمز للبائع أو أعطه الرقم: |
 | 11 | Boutique, bouton | Scanner un QR code client | **سكاني** QR تاع الزبون | امسح رمز QR للزبون |
 | 12 | Boutique, consigne | Placez le QR code du client dans le cadre. | **حط** QR تاع الزبون وسط الكادر. | ضع رمز الزبون داخل الإطار. |
-| 13 | Boutique, code | La caméra ne marche pas ? Tapez le code à 4 chiffres | **ما خدمتش** الكاميرا؟ **اكتب** الرقم تاع 4 أرقام | الكاميرا لا تعمل؟ أدخل الرمز المكوّن من 4 أرقام |
+| 13 | Boutique, code | La caméra ne marche pas ? Tapez le code à 6 chiffres | **ما خدمتش** الكاميرا؟ **اكتب** الرقم تاع 6 أرقام | الكاميرا لا تعمل؟ أدخل الرمز المكوّن من 4 أرقام |
 | 14 | Boutique, montant | À encaisser en espèces | **اقبض** كاش | المبلغ الواجب تحصيله نقدًا |
 | 15 | Boutique, bouton | Remis au client | **سلّمت** الطلبية للزبون | تم التسليم للزبون |
 | 16 | Boutique, succès | Commande remise | الطلبية **تسلّمت** | تم تسليم الطلب |
 | 17 | Boutique, autre boutique | Ce QR code n'est pas valide pour votre boutique. | هاد QR **ماشي** صالح لحانوتك. | هذا الرمز غير صالح لمحلك. |
 | 18 | Boutique, déjà remise | Déjà remise le 10/10 à 17 h 05. | **تسلّمت** من قبل، نهار 10/10 على 17:05. | تم تسليمه سابقًا يوم 10/10 على 17:05. |
 | 19 | Boutique, expirée | Cette commande a expiré : elle n'est plus à remettre. | الطلبية **فات** وقتها: **ما تسلّمهاش**. | انتهت صلاحية الطلب: لا تسلّمه. |
-| 20 | Boutique, code faux | Code faux. Vérifiez les 4 chiffres avec le client. | الرقم **غالط**. **عاود شوف** الـ4 أرقام مع الزبون. | الرمز خاطئ. تحقّق من الأرقام الأربعة مع الزبون. |
+| 20 | Boutique, code faux | Code faux. Vérifiez les 6 chiffres avec le client. | الرقم **غالط**. **عاود شوف** الـ6 أرقام مع الزبون. | الرمز خاطئ. تحقّق من الأرقام الأربعة مع الزبون. |
 | 21 | ~~Boutique, trop d'essais~~ | (supprimé : pas de limite d'essais, décision 6) | | |
 | 22 | Boutique, caméra bloquée | La caméra est bloquée. Autorisez-la dans les réglages du navigateur (cadenas à côté de l'adresse), ou tapez le code. | الكاميرا **مبلوكية**. **حلّها** من الإعدادات تاع المتصفح (القفل حدا العنوان)، ولا **اكتب** الرقم. | الكاميرا محظورة. اسمح بها من إعدادات المتصفح أو أدخل الرمز. |
 
@@ -625,10 +625,10 @@ L'espace commerçant est aujourd'hui en français seulement (US-23) : les textes
 5. **Nouveau modèle Meta** « commande prête » avec le bouton « Mon QR code », **désactivé par un réglage** (`bouton_retrait`) tant que Meta ne l'a pas approuvé.
 6. **Changement** : **aucune limite d'essais, aucun blocage de la boutique** sur des codes ou QR codes faux (un compte par numéro WhatsApp, on ne bloque pas les boutiques). On garde le message unique (« Ce QR code n'est pas valide pour votre boutique. » / « Code faux… »), le jeton de 128 bits et le code limité aux commandes prêtes de la boutique.
 7. La page du proche montre les **articles et le montant**, jamais le nom ni le téléphone du client.
-8. **Parrainage (US-27)** : le premier retrait du filleul devra être validé par QR code ou code à 4 chiffres : le **mode de remise** est enregistré de façon fiable par la base (`commandes.mode_remise`).
+8. **Parrainage (US-27)** : le premier retrait du filleul devra être validé par QR code ou code à 6 chiffres : le **mode de remise** est enregistré de façon fiable par la base (`commandes.mode_remise`).
 
 ### US-26.1 — Jeton de retrait dans la base (aucun écran)
-En tant que propriétaire, je veux que chaque commande prête ait un QR code et un code à 4 chiffres sûrs, et que la base retienne comment elle a été remise.
+En tant que propriétaire, je veux que chaque commande prête ait un QR code et un code à 6 chiffres sûrs, et que la base retienne comment elle a été remise.
 - Jeton (128 bits) et code (unique parmi les commandes prêtes de la boutique) créés au passage « Prête », invisibles pour la boutique ; fonctions `retrait_client`, `retrait_par_lien`, `retrait_boutique`, `remettre_commande` ; `commandes.mode_remise` (`qr`, `code`, `manuel`) posé par la base, jamais modifiable.
 - Tests SQL : voir `docs/architecture.md`.
 
@@ -648,7 +648,7 @@ En tant que client, je veux ouvrir mon QR code depuis le message WhatsApp « com
 
 Source : demande du propriétaire du 9 octobre 2026 (« une section ou une page pour promouvoir le parrainage ; à l'inscription, un client peut donner le numéro WhatsApp de son parrain pour gagner des promos »). Conception (PR #67) puis **décisions du propriétaire du 9/10 à 19 h 16** (ci-dessous) : récompense **A, bon BleDeal de 300 DA**. Conception technique : `docs/architecture.md`, section « Parrainage (US-27) ». Maquette : `docs/maquettes/Parrainage.dc.html`. (Le module 13 est le retrait par QR code, US-26.)
 
-**Ordre** : US-27 se code **après US-26** (retrait par QR code), car le parrainage n'est validé, et un bon n'est remboursé, que sur une commande remise par **QR code ou code à 4 chiffres**. Rien n'est codé pour l'instant.
+**Ordre** : US-27 se code **après US-26** (retrait par QR code), car le parrainage n'est validé, et un bon n'est remboursé, que sur une commande remise par **QR code ou code à 6 chiffres**. Rien n'est codé pour l'instant.
 
 **Décisions du propriétaire (9 octobre 2026, 19 h 16)** :
 1. **Récompense : option A**. Un **bon BleDeal de 300 DA** pour le parrain **et** un pour le filleul, déduit **en caisse** sur une commande suivante, puis **remboursé chaque mois par BleDeal à la boutique**. Les options B (bon offert par la boutique) et C (Club) sont abandonnées.
@@ -657,7 +657,7 @@ Source : demande du propriétaire du 9 octobre 2026 (« une section ou une page 
 4. Au plus **5 parrainages récompensés par parrain et par mois**.
 5. La première commande du filleul doit faire **au moins 2 000 DA**.
 6. **Pas de message WhatsApp** au parrain : tout se voit dans `/compte`.
-7. La première commande du filleul doit être **remise par QR code** (US-26). Une remise « Remis sans QR code » ou **par code à 4 chiffres** ne valide pas le parrainage (relecture n°6, point 2 : le code peut être deviné par la boutique).
+7. La première commande du filleul doit être **remise par QR code** (US-26). Une remise « Remis sans QR code » ou **par code à 6 chiffres** ne valide pas le parrainage (relecture n°6, point 2 : le code peut être deviné par la boutique).
 8. Le parrain voit le **prénom et l'initiale** du filleul validé.
 9. On garde le **tutoiement** sur les pages du parrainage.
 10. Textes arabes : **validés tels que proposés** (les textes du bon, n° 15 à 24, sont nouveaux : à relire).
@@ -684,7 +684,7 @@ Livrée en 5 sous-stories, dans cet ordre (une PR chacune) :
 - **Un seul parrain par compte**. On peut corriger sa saisie **2 fois** (3 saisies au plus) tant qu'aucune commande n'est passée ; ensuite c'est figé (l'admin peut corriger).
 - **Refusés** : son propre numéro ou son propre code (« C'est ton propre numéro : choisis le numéro d'un ami. ») ; un parrain qui est le filleul de son filleul (boucle A ↔ B) : refus **silencieux**.
 - **Pas d'énumération** : la réponse est **la même** que le numéro soit celui d'un client ou non : « C'est noté. Si ce numéro est celui d'un client BleDeal, il deviendra ton parrain après ton premier retrait en boutique. ». Un numéro qui ne correspond à aucun parrain possible **n'est pas enregistré**. BleDeal **n'écrit jamais** au numéro saisi.
-- **Validation** : seule la **première commande récupérée** du filleul compte. Le parrainage est **validé** si elle est remise **par QR code** (US-26, `commandes.mode_remise` = `qr` ; `code` = code à 4 chiffres, ne compte plus depuis la relecture n°6 ; `manuel` = « Remis sans QR code »), avec un **total d'au moins 2 000 DA**, au plus **60 jours** après l'inscription. Si cette première commande récupérée ne remplit pas ces conditions (remise « sans QR code » ou par code, moins de 2 000 DA, après 60 jours), le parrainage passe `non_valide` : une commande suivante ne le rattrape pas. Une commande annulée ou expirée ne compte pas (le parrainage reste en attente tant que le délai de 60 jours court). Inscription seule : rien.
+- **Validation** : seule la **première commande récupérée** du filleul compte. Le parrainage est **validé** si elle est remise **par QR code** (US-26, `commandes.mode_remise` = `qr` ; `code` = code à 6 chiffres, ne compte plus depuis la relecture n°6 ; `manuel` = « Remis sans QR code »), avec un **total d'au moins 2 000 DA**, au plus **60 jours** après l'inscription. Si cette première commande récupérée ne remplit pas ces conditions (remise « sans QR code » ou par code, moins de 2 000 DA, après 60 jours), le parrainage passe `non_valide` : une commande suivante ne le rattrape pas. Une commande annulée ou expirée ne compte pas (le parrainage reste en attente tant que le délai de 60 jours court). Inscription seule : rien.
 - **Récompense** : à la validation, la base crée **un bon de 300 DA pour le filleul** et **un bon de 300 DA pour le parrain**, sauf :
   - parrain au **plafond** (5 parrainages récompensés ce mois civil, heure d'Alger) : bon du filleul seulement, statut `plafond` ;
   - parrain bloqué ou exclu au moment de la validation : bon du filleul seulement, statut `refuse` ;
@@ -696,7 +696,7 @@ Livrée en 5 sous-stories, dans cet ordre (une PR chacune) :
 - **Un seul bon par commande**, sur une commande d'au moins **1 000 DA** (proposition, voir « Question restante ») ; jamais de monnaie rendue ni de reste : 300 DA de moins sur le total, c'est tout. Pas de bon sur sa première commande (le filleul n'en a pas encore).
 - **Choisi au panier** : « Utiliser mon bon parrainage (−300 DA) », coché par défaut quand le client a un bon et que le total atteint 1 000 DA ; le panier affiche « Total 3 500 DA · Bon parrainage −300 DA · À payer en boutique 3 200 DA ». Le bon le plus proche de sa fin est utilisé en premier.
 - **Réservé** dès la commande (il ne peut pas servir deux fois en même temps) ; **rendu** au client si la commande est annulée ou expire (avec au moins 7 jours de validité restante : sa fin est repoussée si besoin) ; **utilisé** seulement quand la commande est remise **par QR code ou code**.
-- **Commande remise « sans QR code »** : le bon **ne s'applique pas** ; la confirmation le dit à la boutique (« Sans QR code, le bon ne s'applique pas : encaissez 3 500 DA. Le bon reste au client. ») ; le bon est rendu au client ; rien à rembourser. **Même chose par code à 4 chiffres** (relecture n°6) : le résumé du scan n'enlève pas le bon et prévient « Par code, le bon ne s’applique pas : encaissez 3 500 DA. Le bon reste au client. »
+- **Commande remise « sans QR code »** : le bon **ne s'applique pas** ; la confirmation le dit à la boutique (« Sans QR code, le bon ne s'applique pas : encaissez 3 500 DA. Le bon reste au client. ») ; le bon est rendu au client ; rien à rembourser. **Même chose par code à 6 chiffres** (relecture n°6) : le résumé du scan n'enlève pas le bon et prévient « Par code, le bon ne s’applique pas : encaissez 3 500 DA. Le bon reste au client. »
 - La boutique voit le bon **partout où elle voit la commande** : liste des commandes (« Bon parrainage −300 DA · à encaisser 3 200 DA »), résumé du scan (« Sous-total 3 500 DA · Bon parrainage BleDeal −300 DA · **À encaisser en espèces : 3 200 DA** » et « Ces 300 DA vous sont remboursés par BleDeal sur le relevé de novembre. »). Le client et le proche le voient sur le QR code (« À payer en espèces : 3 200 DA (bon −300 DA déduit) »).
 - **Remboursement** : chaque bon utilisé devient une ligne du **relevé mensuel** de la boutique (mois de la remise, heure d'Alger). Le 1er du mois, le relevé du mois passé est **clôturé** ; l'admin l'exporte en CSV, fait le virement (CCP, BaridiMob, en dehors du site), puis **« Marquer comme payé »** avec la référence du virement. La boutique voit ses relevés dans `/espace`. Objectif : payé avant le 10 du mois.
 - Messages WhatsApp : **aucun nouveau modèle**. Le message « nouvelle commande » à la boutique (modèle existant, Utilitaire) garde son texte ; son 4e paramètre (le total) devient « 3 200 DA à encaisser (bon parrainage −300 DA) » pour une commande avec bon : information sur la commande, pas de promotion.

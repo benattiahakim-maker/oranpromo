@@ -7,7 +7,7 @@ import { bonsAnnulables, masquerTelephone, montantDA, STATUTS_PARRAINAGE, type P
 import { formaterDateHeure } from "@/lib/commandes";
 
 // US-27.5 : liste des parrainages, signaux (jamais bloquants), actions admin.
-const MODES: Record<string, string> = { qr: "QR code", code: "code à 4 chiffres", manuel: "sans QR code" };
+const MODES: Record<string, string> = { qr: "QR code", code: "code à 6 chiffres", manuel: "sans QR code" };
 const ETATS_BON: Record<string, string> = { en_file: "en file", disponible: "disponible", reserve: "réservé", utilise: "utilisé", expire: "expiré", annule: "annulé" };
 
 export default function ParrainagesAdmin({ parrainages, signaux }: { parrainages: ParrainageAdmin[]; signaux: Record<string, string[]> }) {

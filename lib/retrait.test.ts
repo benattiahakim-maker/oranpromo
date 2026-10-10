@@ -5,13 +5,15 @@ const JETON = "q7Kx2mPZ9vTfW8LrB4n1aE";
 const client = (resultat: { data: unknown; error: unknown }) => { const rpc = vi.fn().mockResolvedValue(resultat); return { rpc, c: { rpc } as never }; };
 
 describe("US-26 : retrait par QR code", () => {
-  it("formats du jeton (22 caractères base64url) et du code (4 chiffres)", () => {
+  it("formats du jeton (22 caractères base64url) et du code (6 chiffres)", () => {
     expect(jetonRetraitValide(JETON)).toBe(true);
     expect(jetonRetraitValide("q7Kx2mPZ9vTfW8LrB4n1a")).toBe(false);
     expect(jetonRetraitValide("q7Kx2mPZ9vTfW8LrB4n1a+")).toBe(false);
     expect(jetonRetraitValide(null)).toBe(false);
-    expect(codeRetraitValide("0481")).toBe(true);
+    expect(codeRetraitValide("048193")).toBe(true);
     expect(codeRetraitValide("481")).toBe(false); expect(codeRetraitValide("48a1")).toBe(false); expect(codeRetraitValide("04811")).toBe(false);
+    // Suivi de la relecture n°6 : un ancien code à 4 chiffres ou un code à 7 chiffres est refusé.
+    expect(codeRetraitValide("0481")).toBe(false); expect(codeRetraitValide("04819")).toBe(false); expect(codeRetraitValide("0481937")).toBe(false); expect(codeRetraitValide("04819a")).toBe(false);
   });
   it("lien du proche et contenu du QR code (espace de la boutique), sur l’adresse du site", () => {
     expect(lienRetrait(JETON, "https://oranpromo.example/")).toBe(`https://oranpromo.example/retrait/${JETON}`);
@@ -35,7 +37,7 @@ describe("US-26 : retrait par QR code", () => {
     expect(rpc).not.toHaveBeenCalled();
   });
   it("page du proche : vue de la base, état inconnu refusé, erreur signalée", async () => {
-    const vue = { etat: "prete", numero: 128, total: 6300, expire_le: null, terminee_le: null, boutique: { nom: "B", slug: "b", quartier: "Q", adresse: null }, lignes: [], code: "0481" };
+    const vue = { etat: "prete", numero: 128, total: 6300, expire_le: null, terminee_le: null, boutique: { nom: "B", slug: "b", quartier: "Q", adresse: null }, lignes: [], code: "048193" };
     const ok = client({ data: vue, error: null });
     expect(await lireRetraitParLien(ok.c, JETON)).toEqual(vue);
     expect(ok.rpc).toHaveBeenCalledWith("retrait_par_lien", { jeton: JETON });
@@ -44,11 +46,11 @@ describe("US-26 : retrait par QR code", () => {
     await expect(lireRetraitParLien(client({ data: null, error: { message: "x" } }).c, JETON)).rejects.toThrow();
   });
   it("client : son jeton et son code, rien si la base ne rend rien ou un format inattendu", async () => {
-    const ok = client({ data: [{ jeton: JETON, code: "0481" }], error: null });
-    expect(await lireRetraitClient(ok.c, "c1")).toEqual({ jeton: JETON, code: "0481" });
+    const ok = client({ data: [{ jeton: JETON, code: "048193" }], error: null });
+    expect(await lireRetraitClient(ok.c, "c1")).toEqual({ jeton: JETON, code: "048193" });
     expect(ok.rpc).toHaveBeenCalledWith("retrait_client", { commande: "c1" });
     expect(await lireRetraitClient(client({ data: [], error: null }).c, "c1")).toBeNull();
-    expect(await lireRetraitClient(client({ data: [{ jeton: "x", code: "0481" }], error: null }).c, "c1")).toBeNull();
+    expect(await lireRetraitClient(client({ data: [{ jeton: "x", code: "048193" }], error: null }).c, "c1")).toBeNull();
     await expect(lireRetraitClient(client({ data: null, error: { message: "x" } }).c, "c1")).rejects.toThrow();
   });
 });

@@ -31,7 +31,7 @@ export default async function SuiviCommande({ params, searchParams }: { params: 
   // Seul le client voit cette page (la boutique a « Commandes reçues ») ; la base filtre déjà les autres comptes.
   if (!commande || !user || commande.client_id !== user.id) notFound();
   const boutique = commande.boutiques;
-  // US-26.2 : QR code de retrait et code à 4 chiffres, seulement pour une commande prête (la base vérifie le compte et la date).
+  // US-26.2 : QR code de retrait et code à 6 chiffres, seulement pour une commande prête (la base vérifie le compte et la date).
   let retrait: { qr: string; code: string; lien: string } | null = null;
   if (commande.statut === "prete") {
     try {

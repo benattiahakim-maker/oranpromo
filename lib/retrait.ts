@@ -3,13 +3,15 @@ import type { Database } from "./supabase/types";
 import type { Langue } from "./langue";
 import { adresseDonneesSvg, adresseSite, qrCodeSvg } from "./lien-boutique";
 
-// US-26 : retrait par QR code. Le jeton (128 bits, base64url, 22 caractères) et le code à 4 chiffres sont créés
+// US-26 : retrait par QR code. Le jeton (128 bits, base64url, 22 caractères) et le code à 6 chiffres sont créés
 // par la base au passage « prête » (prive.retraits) ; voir docs/architecture.md, « Retrait par QR code (US-26) ».
 
 type Client = SupabaseClient<Database>;
 
 export const FORMAT_JETON_RETRAIT = /^[A-Za-z0-9_-]{22}$/;
-export const FORMAT_CODE_RETRAIT = /^[0-9]{4}$/;
+/** Suivi de la relecture n°6 : 6 chiffres (migration 20261015120000_code_retrait_6_chiffres.sql). */
+export const LONGUEUR_CODE_RETRAIT = 6;
+export const FORMAT_CODE_RETRAIT = /^[0-9]{6}$/;
 
 export function jetonRetraitValide(jeton: unknown): jeton is string {
   return typeof jeton === "string" && FORMAT_JETON_RETRAIT.test(jeton);
@@ -74,7 +76,7 @@ export async function lireRetraitClient(client: Client, commandeId: string): Pro
 }
 
 // ---------------------------------------------------------------------------
-// US-26.3 : côté boutique (scanner, code à 4 chiffres, « Remis au client »). Espace commerçant en français.
+// US-26.3 : côté boutique (scanner, code à 6 chiffres, « Remis au client »). Espace commerçant en français.
 // ---------------------------------------------------------------------------
 
 /**
@@ -101,8 +103,19 @@ export type CleRetrait = { jeton: string } | { code: string };
 
 const ETATS_BOUTIQUE: readonly EtatRetraitBoutique[] = ["ok", "remise", "invalide", "deja_remise", "annulee", "expiree"];
 export const MESSAGE_CONNEXION_BOUTIQUE = "Connectez-vous à votre espace boutique.";
-/** Relecture n°6, point 2 : après 10 codes faux en 15 minutes, la base refuse le code pendant 15 minutes (QR code toujours accepté). */
-export const MESSAGE_CODE_BLOQUE = "Trop de codes faux : la saisie du code est bloquée 15 minutes. Scannez le QR code du client.";
+/**
+ * Suivi de la relecture n°6 : 20 codes faux en une heure pour la boutique, ou 5 codes faux proches du code d'une commande
+ * (cette commande seulement, 15 minutes) : la base refuse le code (54000) avec un message en français qui donne la durée,
+ * repris tel quel. Le QR code et « Remis sans QR code » ne sont jamais limités.
+ */
+export const MESSAGE_CODE_BLOQUE = "Trop de codes faux : la saisie du code est bloquée pour le moment. Scannez le QR code du client.";
+export const MESSAGE_CODE_FAUX = "Code faux. Vérifiez les 6 chiffres avec le client.";
+
+function messageErreurRetrait(error: { code?: string; message?: string }): string {
+  if (error.code === "42501") return MESSAGE_CONNEXION_BOUTIQUE;
+  if (error.code === "54000") return error.message?.startsWith("Trop de codes faux") ? error.message : MESSAGE_CODE_BLOQUE;
+  return "Impossible de lire cette commande. Réessayez.";
+}
 
 function parametres(cle: CleRetrait): { jeton?: string; code?: string } {
   if ("jeton" in cle) {
@@ -117,7 +130,7 @@ async function appelerRetrait(client: Client, fonction: "retrait_boutique" | "re
   // Mauvais format : même réponse que la base pour un jeton ou un code inconnu, sans appel.
   if (!args.jeton && !args.code) return { etat: "invalide" };
   const { data, error } = await client.rpc(fonction, args);
-  if (error) throw new Error(error.code === "42501" ? MESSAGE_CONNEXION_BOUTIQUE : error.code === "54000" ? MESSAGE_CODE_BLOQUE : "Impossible de lire cette commande. Réessayez.");
+  if (error) throw new Error(messageErreurRetrait(error));
   const vue = data as ResumeRetrait | null;
   if (!vue || !ETATS_BOUTIQUE.includes(vue.etat)) throw new Error("Impossible de lire cette commande. Réessayez.");
   return vue;
@@ -143,7 +156,7 @@ export function formaterDateRemise(iso: string): string {
 /** Message pour un retrait qui ne peut pas être remis (jamais d'erreur technique, jamais d'indice sur une autre boutique). */
 export function messageRetraitBoutique(resume: ResumeRetrait, parCode: boolean): string | null {
   switch (resume.etat) {
-    case "invalide": return parCode ? "Code faux. Vérifiez les 4 chiffres avec le client." : "Ce QR code n’est pas valide pour votre boutique.";
+    case "invalide": return parCode ? MESSAGE_CODE_FAUX : "Ce QR code n’est pas valide pour votre boutique.";
     case "deja_remise": return resume.terminee_le ? `Déjà remise le ${formaterDateRemise(resume.terminee_le)}.` : "Cette commande a déjà été remise.";
     case "annulee": return "Cette commande a été annulée.";
     case "expiree": return "Cette commande a expiré : elle n’est plus à remettre.";

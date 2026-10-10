@@ -41,7 +41,7 @@ describe("US-27.5 admin", () => {
   it("relevés : mois, export, total, signal code, « Marquer comme payé » sur un relevé à payer", () => {
     const html = renderToStaticMarkup(<RelevesAdmin mois="2026-09-01" moisPossibles={["2026-10-01", "2026-09-01"]} releves={[releve]} deCote={[]} aujourdhui="2026-10-09" />);
     expect(html).toContain('href="/admin/remboursements/export?mois=2026-09"'); expect(html).toContain("Septembre 2026 : 2 bons · 600 DA à rembourser");
-    expect(html).toContain("À payer"); expect(html).toContain("Signal : Toujours par code à 4 chiffres, jamais par QR code");
+    expect(html).toContain("À payer"); expect(html).toContain("Signal : Toujours par code à 6 chiffres, jamais par QR code");
     expect(html).toContain("Marquer comme payé"); expect(html).toContain("Mettre de côté"); expect(html).toContain("boutique=B");
   });
   it("relevé payé : date et référence, plus d’action", () => {

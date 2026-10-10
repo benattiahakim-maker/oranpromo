@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { lireRetraitParCode } from "@/app/espace/retrait/actions";
-import { codeRetraitValide, jetonDepuisQr, MESSAGE_CAMERA_BLOQUEE, MESSAGE_PAS_QR_RETRAIT, type ResumeRetrait } from "@/lib/retrait";
+import { codeRetraitValide, jetonDepuisQr, LONGUEUR_CODE_RETRAIT, MESSAGE_CAMERA_BLOQUEE, MESSAGE_PAS_QR_RETRAIT, type ResumeRetrait } from "@/lib/retrait";
 import RetraitBoutique from "./RetraitBoutique";
 
 // US-26.3 : scanner de la boutique (maquette ⑤). Caméra arrière dans la page ; lecteur intégré du navigateur
@@ -56,6 +56,7 @@ export default function ScannerRetrait() {
   const [lampe, setLampe] = useState<boolean | null>(null);
   const [avis, setAvis] = useState("");
   const [code, setCode] = useState("");
+  const [saisie, setSaisie] = useState(false);
   const [message, setMessage] = useState("");
   const [enCours, setEnCours] = useState(false);
   const [resume, setResume] = useState<{ resume: ResumeRetrait; code: string } | null>(null);
@@ -132,7 +133,7 @@ export default function ScannerRetrait() {
   async function chercher(e: React.FormEvent) {
     e.preventDefault();
     if (enCours) return;
-    if (!codeRetraitValide(code)) { setMessage("Tapez les 4 chiffres du code."); return; }
+    if (!codeRetraitValide(code)) { setMessage("Tapez les 6 chiffres du code."); return; }
     setEnCours(true); setMessage("");
     try {
       const resultat = await lireRetraitParCode(code);
@@ -159,10 +160,19 @@ export default function ScannerRetrait() {
     </div>
     {avis && <p role="status" className="mt-2 text-sm">{avis}</p>}
     <form noValidate onSubmit={e => void chercher(e)} className="mt-5">
-      <label htmlFor="code-retrait" className="text-sm">La caméra ne marche pas ? Tapez le code à 4 chiffres</label>
-      <input id="code-retrait" name="code" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} autoComplete="off" value={code}
-        onChange={e => { setCode(e.target.value.replace(/\D/g, "").slice(0, 4)); setMessage(""); }}
-        className="mt-2 box-border block w-full rounded-none border border-noir px-3 py-2 text-center font-[inherit] text-[28px] tracking-[0.5em]" />
+      <label htmlFor="code-retrait" className="text-sm">La caméra ne marche pas ? Tapez le code à 6 chiffres</label>
+      {/* Suivi de la relecture n°6 : 6 cases. Un seul vrai champ (collage, clavier numérique, lecteur d'écran) posé
+          sur les cases, transparent ; les cases montrent les chiffres et la case en cours. */}
+      <div dir="ltr" className="relative mt-2">
+        <div aria-hidden="true" className="grid grid-cols-6 gap-2">
+          {Array.from({ length: LONGUEUR_CODE_RETRAIT }, (_, i) =>
+            <span key={i} data-case-code={i} className={`flex h-14 items-center justify-center border text-[28px] ${saisie && i === Math.min(code.length, LONGUEUR_CODE_RETRAIT - 1) ? "border-2 border-noir" : "border-noir"}`}>{code[i] ?? ""}</span>)}
+        </div>
+        <input id="code-retrait" name="code" inputMode="numeric" pattern="[0-9]{6}" maxLength={LONGUEUR_CODE_RETRAIT} autoComplete="off" value={code}
+          onFocus={() => setSaisie(true)} onBlur={() => setSaisie(false)}
+          onChange={e => { setCode(e.target.value.replace(/\D/g, "").slice(0, LONGUEUR_CODE_RETRAIT)); setMessage(""); }}
+          className="absolute inset-0 box-border size-full rounded-none border-0 bg-transparent text-transparent caret-transparent outline-none selection:bg-transparent" />
+      </div>
       <button type="submit" disabled={enCours} className="etiquette mt-3 min-h-12 w-full bg-noir text-blanc">Voir la commande</button>
       {message && <p role="alert" className="mt-3 border border-trait p-3 text-sm">{message}</p>}
     </form>

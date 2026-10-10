@@ -89,14 +89,14 @@ select r.jeton as jb, r.code as kb from prive.retraits r where r.commande_id = :
 select pg_temp.ok((select count(*) from prive.retraits where commande_id in (:'c1', :'c2', :'c3', :'c4', :'cb') and actif) = 5,
   'un retrait actif par commande prête');
 select pg_temp.ok(not exists (select 1 from prive.retraits where commande_id = :'cd'), 'commande pas encore prête : aucun jeton');
-select pg_temp.ok(:'j1' ~ '^[A-Za-z0-9_-]{22}$' and :'k1' ~ '^[0-9]{4}$', 'jeton de 22 caractères base64url (128 bits), code de 4 chiffres');
+select pg_temp.ok(:'j1' ~ '^[A-Za-z0-9_-]{22}$' and :'k1' ~ '^[0-9]{6}$', 'jeton de 22 caractères base64url (128 bits), code de 6 chiffres (relecture 6 suivi)');
 select pg_temp.ok((select count(distinct jeton) from prive.retraits) = (select count(*) from prive.retraits), 'jetons tous différents');
 select pg_temp.ok((select count(distinct code) from prive.retraits where boutique_id = 'd2600000-0000-0000-0000-00000000000a' and actif) = 4,
   'codes différents parmi les commandes prêtes d''une boutique');
 select pg_temp.ok((select boutique_id from prive.retraits where commande_id = :'cb') = 'd2600000-0000-0000-0000-00000000000b', 'retrait rattaché à la boutique de la commande');
 select pg_temp.ok((select count(distinct prive.nouveau_jeton_retrait()) from generate_series(1, 2000)) = 2000
   and (select bool_and(prive.nouveau_jeton_retrait() ~ '^[A-Za-z0-9_-]{22}$') from generate_series(1, 200))
-  and (select bool_and(prive.nouveau_code_retrait() ~ '^[0-9]{4}$') from generate_series(1, 200)),
+  and (select bool_and(prive.nouveau_code_retrait() ~ '^[0-9]{6}$') from generate_series(1, 200)),
   'générateurs : 2000 jetons distincts, formats corrects');
 -- Code déjà pris : la contrainte refuse un doublon actif dans une même boutique.
 select pg_temp.erreur(format('insert into prive.retraits (commande_id, boutique_id, jeton, code) values (%L, %L, %L, %L)',
@@ -156,21 +156,21 @@ select pg_temp.ok(position('Benali' in :'r1') = 0 and position('+213' in :'r1') 
   'résumé : ni nom de famille, ni téléphone, ni jeton');
 select pg_temp.ok((select statut from commandes where id = :'c1') = 'prete', 'lire le QR code ne remet rien');
 select pg_temp.ok((retrait_boutique(code => :'k2'))->>'etat' = 'ok' and ((retrait_boutique(code => :'k2'))->>'commande')::uuid = :'c2'::uuid,
-  'code à 4 chiffres : la bonne commande');
+  'code à 6 chiffres : la bonne commande');
 select pg_temp.ok((retrait_boutique(:'jb'))::text = '{"etat": "invalide"}', 'QR code d''une autre boutique : « invalide »');
 select pg_temp.ok((retrait_boutique('AAAAAAAAAAAAAAAAAAAAAA'))::text = '{"etat": "invalide"}'
   and (retrait_boutique('https://exemple/x'))::text = '{"etat": "invalide"}', 'QR code inconnu ou abîmé : même réponse');
 select pg_temp.compte('b2600000-0000-0000-0000-00000000000b') \g /dev/null
 select pg_temp.ok((retrait_boutique(code => :'k1'))->>'etat' = 'invalide' or :'k1' = :'kb', 'boutique B : code d''une commande de A → « invalide »');
 select pg_temp.ok((retrait_boutique(:'j1'))::text = '{"etat": "invalide"}', 'boutique B : QR code de A → « invalide »');
-select pg_temp.ok((retrait_boutique(code => 'abcd'))::text = '{"etat": "invalide"}' and (retrait_boutique(code => '12345'))::text = '{"etat": "invalide"}',
+select pg_temp.ok((retrait_boutique(code => 'abcd'))::text = '{"etat": "invalide"}' and (retrait_boutique(code => '1234567'))::text = '{"etat": "invalide"}' and (retrait_boutique(code => '1234'))::text = '{"etat": "invalide"}',
   'code mal formé : « invalide »');
 select pg_temp.erreur('select retrait_boutique()', '22023', 'QR code ou le code', 'ni QR code ni code : refusé');
 select pg_temp.erreur(format('select retrait_boutique(%L, %L)', :'jb', :'kb'), '22023', 'QR code ou le code', 'les deux à la fois : refusé');
--- Relecture n°6, point 2 : 10 codes faux en 15 minutes bloquent la saisie du code (retrait_code_limite.test.sql) ;
+-- Relecture n°6 et suivi : 20 codes faux en une heure bloquent la saisie du code (retrait_code_limite.test.sql) ;
 -- le QR code n'est jamais limité.
-select count(*) from generate_series(1, 7) i, lateral (select retrait_boutique(code => lpad(i::text, 4, '0'))) x \g /dev/null
-select pg_temp.ok((retrait_boutique(:'jb'))->>'etat' = 'ok', 'après 10 codes faux : le bon QR code marche');
+select count(*) from generate_series(1, 16) i, lateral (select retrait_boutique(code => lpad(i::text, 6, '9'))) x \g /dev/null
+select pg_temp.ok((retrait_boutique(:'jb'))->>'etat' = 'ok', 'après 20 codes faux : le bon QR code marche');
 select pg_temp.compte(null) \g /dev/null
 reset role;
 
@@ -187,7 +187,7 @@ select pg_temp.ok((remettre_commande(:'j1'))->>'etat' = 'deja_remise', 'deuxièm
 select pg_temp.ok((retrait_boutique(:'j1'))->>'etat' = 'deja_remise' and (retrait_boutique(:'j1'))->>'terminee_le' is not null,
   'lecture après remise : « déjà remise » avec la date');
 select pg_temp.ok((retrait_boutique(code => :'k1'))->>'etat' = 'invalide' or :'k1' in (:'k2', :'k4'), 'code d''une commande remise : plus valable');
-select pg_temp.ok((remettre_commande(code => :'k2'))->>'mode_remise' = 'code', 'code à 4 chiffres : commande remise');
+select pg_temp.ok((remettre_commande(code => :'k2'))->>'mode_remise' = 'code', 'code à 6 chiffres : commande remise');
 select changer_statut_commande(:'c3', 'recuperee', null, 'Remise sans QR code') \g /dev/null
 select pg_temp.compte(null) \g /dev/null
 reset role;

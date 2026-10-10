@@ -4,7 +4,7 @@ import "@testing-library/jest-dom/vitest";
 import ScannerRetrait from "./ScannerRetrait";
 import { lienRetrait, lienScanRetrait } from "@/lib/retrait";
 
-// US-26.3 : scanner de la boutique (caméra, lecteur intégré ou jsqr, code à 4 chiffres).
+// US-26.3 : scanner de la boutique (caméra, lecteur intégré ou jsqr, code à 6 chiffres).
 const { push, lireRetraitParCode, remettreCommandeRetrait, jsQR } = vi.hoisted(() => ({ push: vi.fn(), lireRetraitParCode: vi.fn(), remettreCommandeRetrait: vi.fn(), jsQR: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }));
 vi.mock("@/app/espace/retrait/actions", () => ({ lireRetraitParCode, remettreCommandeRetrait }));
@@ -74,41 +74,52 @@ describe("US-26.3 : scanner", () => {
     preparer();
     render(<ScannerRetrait />);
     expect(await screen.findByText(/La caméra est bloquée. Autorisez-la dans les réglages du navigateur/)).toBeInTheDocument();
-    expect(screen.getByLabelText("La caméra ne marche pas ? Tapez le code à 4 chiffres")).toBeEnabled();
+    expect(screen.getByLabelText("La caméra ne marche pas ? Tapez le code à 6 chiffres")).toBeEnabled();
   });
-  it("code à 4 chiffres : résumé dans la page, puis « Remis au client » par le code", async () => {
+  it("code à 6 chiffres : résumé dans la page, puis « Remis au client » par le code", async () => {
     lireRetraitParCode.mockResolvedValue({ succes: true, message: "", resume });
     remettreCommandeRetrait.mockResolvedValue({ succes: true, message: "Commande remise", resume: { ...resume, etat: "remise" } });
     render(<ScannerRetrait />);
-    const champ = screen.getByLabelText("La caméra ne marche pas ? Tapez le code à 4 chiffres");
-    fireEvent.change(champ, { target: { value: "04a81" } });
-    expect(champ).toHaveValue("0481");
+    const champ = screen.getByLabelText("La caméra ne marche pas ? Tapez le code à 6 chiffres");
+    fireEvent.change(champ, { target: { value: "04a8 19 37" } });
+    expect(champ).toHaveValue("048193");
+    expect(champ).toHaveAttribute("maxLength", "6");
+    expect([...document.querySelectorAll("[data-case-code]")].map(c => c.textContent)).toEqual(["0", "4", "8", "1", "9", "3"]);
     fireEvent.click(screen.getByRole("button", { name: "Voir la commande" }));
     expect(await screen.findByText("Commande n° 128 · Amine")).toBeInTheDocument();
-    expect(lireRetraitParCode).toHaveBeenCalledWith("0481");
+    expect(lireRetraitParCode).toHaveBeenCalledWith("048193");
     expect(screen.getByText("Commande trouvée · par code")).toBeInTheDocument();
     expect(remettreCommandeRetrait).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Remis au client" }));
     expect(await screen.findByText("Commande remise")).toBeInTheDocument();
-    expect(remettreCommandeRetrait).toHaveBeenCalledWith({ code: "0481" });
+    expect(remettreCommandeRetrait).toHaveBeenCalledWith({ code: "048193" });
     fireEvent.click(screen.getByRole("button", { name: "Scanner une autre commande" }));
-    expect(await screen.findByLabelText("La caméra ne marche pas ? Tapez le code à 4 chiffres")).toHaveValue("");
+    expect(await screen.findByLabelText("La caméra ne marche pas ? Tapez le code à 6 chiffres")).toHaveValue("");
   });
-  it("code incomplet : pas d’appel ; code faux : message, on peut réessayer (la limite de 10 codes faux en 15 min est dans la base)", async () => {
-    lireRetraitParCode.mockResolvedValue({ succes: false, message: "Code faux. Vérifiez les 4 chiffres avec le client." });
+  it("code incomplet : pas d’appel ; code faux : message, on peut réessayer (les limites de codes faux sont dans la base)", async () => {
+    lireRetraitParCode.mockResolvedValue({ succes: false, message: "Code faux. Vérifiez les 6 chiffres avec le client." });
     render(<ScannerRetrait />);
-    const champ = screen.getByLabelText("La caméra ne marche pas ? Tapez le code à 4 chiffres");
-    fireEvent.change(champ, { target: { value: "12" } });
+    const champ = screen.getByLabelText("La caméra ne marche pas ? Tapez le code à 6 chiffres");
+    fireEvent.change(champ, { target: { value: "1234" } });
     fireEvent.click(screen.getByRole("button", { name: "Voir la commande" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("Tapez les 4 chiffres du code.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Tapez les 6 chiffres du code.");
     expect(lireRetraitParCode).not.toHaveBeenCalled();
-    for (const code of ["1234", "5678", "9012", "3456", "7890", "1111"]) {
+    for (const code of ["123456", "567890", "901234", "345678", "789012", "111111"]) {
       fireEvent.change(champ, { target: { value: code } });
       fireEvent.click(screen.getByRole("button", { name: "Voir la commande" }));
       await waitFor(() => expect(lireRetraitParCode).toHaveBeenLastCalledWith(code));
-      expect(await screen.findByText("Code faux. Vérifiez les 4 chiffres avec le client.")).toBeInTheDocument();
+      expect(await screen.findByText("Code faux. Vérifiez les 6 chiffres avec le client.")).toBeInTheDocument();
     }
     expect(screen.getByRole("button", { name: "Voir la commande" })).toBeEnabled();
+  });
+  it("suivi relecture n°6 : code bloqué par la base → son message (durée) s’affiche, le QR code reste proposé", async () => {
+    const message = "Trop de codes faux (20 en une heure) : la saisie du code est bloquée encore 42 min. Scannez le QR code du client.";
+    lireRetraitParCode.mockResolvedValue({ succes: false, message });
+    render(<ScannerRetrait />);
+    fireEvent.change(screen.getByLabelText("La caméra ne marche pas ? Tapez le code à 6 chiffres"), { target: { value: "123456" } });
+    fireEvent.click(screen.getByRole("button", { name: "Voir la commande" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(message);
+    expect(screen.getByLabelText("Caméra")).toBeInTheDocument();
   });
   it("quitter la page coupe la caméra", async () => {
     const { unmount } = render(<ScannerRetrait />);

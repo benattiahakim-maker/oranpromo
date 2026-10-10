@@ -1,4 +1,8 @@
 import { creerClientNavigateur } from "./supabase/client";
+import { cheminSuite } from "./chemin";
+
+// Suivi de la relecture n°6, point 4 : cheminSuite vit dans lib/chemin.ts (sans dépendance), réexporté ici.
+export { cheminSuite };
 
 export class ErreurConnexion extends Error {}
 
@@ -13,19 +17,6 @@ export function emailValide(email: string): boolean {
     && !local.startsWith(".") && !local.endsWith(".") && !local.includes("..")
     && domaine.split(".").length >= 2
     && domaine.split(".").every(partie => /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/.test(partie));
-}
-
-/** Accepte uniquement une destination sur la même origine, jamais //hote. */
-export function cheminSuite(suite: string | null | undefined): string | null {
-  if (suite == null) return "/espace";
-  try {
-    const decode = decodeURIComponent(suite);
-    if (!suite.startsWith("/") || suite.startsWith("//") || decode.startsWith("//")
-      || /[\\\u0000-\u0020\u007f]/.test(suite) || /[\\\u0000-\u001f\u007f]/.test(decode)) return null;
-    const url = new URL(suite, "https://oranpromo.invalid");
-    if (url.origin !== "https://oranpromo.invalid" || url.pathname.startsWith("//")) return null;
-    return `${url.pathname}${url.search}${url.hash}`;
-  } catch { return null; }
 }
 
 /** US-20.2 : après la connexion d’un client, retour au panier ou à une page de son compte uniquement. */

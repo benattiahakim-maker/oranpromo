@@ -53,8 +53,8 @@ describe("US-26.3 : résumé et remise", () => {
     const { rpc, c } = client({ data: resume, error: null });
     expect(await lireRetraitBoutique(c, { jeton: JETON })).toEqual(resume);
     expect(rpc).toHaveBeenLastCalledWith("retrait_boutique", { jeton: JETON });
-    await lireRetraitBoutique(c, { code: "0481" });
-    expect(rpc).toHaveBeenLastCalledWith("retrait_boutique", { code: "0481" });
+    await lireRetraitBoutique(c, { code: "048193" });
+    expect(rpc).toHaveBeenLastCalledWith("retrait_boutique", { code: "048193" });
     rpc.mockClear();
     expect(await lireRetraitBoutique(c, { jeton: "abc" })).toEqual({ etat: "invalide" });
     expect(await lireRetraitBoutique(c, { code: "12" })).toEqual({ etat: "invalide" });
@@ -71,14 +71,25 @@ describe("US-26.3 : résumé et remise", () => {
     await expect(lireRetraitBoutique(client({ data: null, error: { code: "XX000", message: "détail technique" } }).c, { jeton: JETON })).rejects.toThrow("Impossible de lire cette commande. Réessayez.");
     await expect(lireRetraitBoutique(client({ data: { etat: "bizarre" }, error: null }).c, { jeton: JETON })).rejects.toThrow("Impossible de lire");
   });
-  it("relecture n°6 : 10 codes faux en 15 minutes → la base bloque le code (54000), message clair en lecture et en remise", async () => {
-    const erreur = { data: null, error: { code: "54000", message: "Trop de codes faux" } };
-    await expect(lireRetraitBoutique(client(erreur).c, { code: "0481" })).rejects.toThrow("Trop de codes faux : la saisie du code est bloquée 15 minutes. Scannez le QR code du client.");
-    await expect(remettreRetrait(client(erreur).c, { code: "0481" })).rejects.toThrow("Scannez le QR code du client.");
+  it("suivi relecture n°6 : code bloqué par la base (54000, boutique ou commande) → message de la base repris, en lecture et en remise", async () => {
+    const boutique = "Trop de codes faux (20 en une heure) : la saisie du code est bloquée encore 42 min. Scannez le QR code du client.";
+    const commande = "Trop de codes faux pour cette commande : son code est bloqué encore 15 min. Scannez le QR code du client.";
+    await expect(lireRetraitBoutique(client({ data: null, error: { code: "54000", message: boutique } }).c, { code: "048193" })).rejects.toThrow(boutique);
+    await expect(remettreRetrait(client({ data: null, error: { code: "54000", message: commande } }).c, { code: "048193" })).rejects.toThrow(commande);
+    // Message inattendu : message général, jamais de détail technique.
+    await expect(lireRetraitBoutique(client({ data: null, error: { code: "54000", message: "statement timeout" } }).c, { code: "048193" }))
+      .rejects.toThrow("Trop de codes faux : la saisie du code est bloquée pour le moment. Scannez le QR code du client.");
+  });
+  it("suivi relecture n°6 : lecture seule refusée par la base (25006) → message général ; le code n’est pas envoyé s’il n’a pas 6 chiffres", async () => {
+    await expect(lireRetraitBoutique(client({ data: null, error: { code: "25006", message: "Saisie du code impossible en lecture seule." } }).c, { code: "048193" }))
+      .rejects.toThrow("Impossible de lire cette commande. Réessayez.");
+    const { rpc, c } = client({ data: { etat: "ok" }, error: null });
+    expect(await lireRetraitBoutique(c, { code: "0481" })).toEqual({ etat: "invalide" });
+    expect(rpc).not.toHaveBeenCalled();
   });
   it("messages (textes 17 à 20 de la story) : même message pour un QR code inconnu ou d’une autre boutique", () => {
     expect(messageRetraitBoutique({ etat: "invalide" }, false)).toBe("Ce QR code n’est pas valide pour votre boutique.");
-    expect(messageRetraitBoutique({ etat: "invalide" }, true)).toBe("Code faux. Vérifiez les 4 chiffres avec le client.");
+    expect(messageRetraitBoutique({ etat: "invalide" }, true)).toBe("Code faux. Vérifiez les 6 chiffres avec le client.");
     expect(messageRetraitBoutique({ etat: "deja_remise", terminee_le: "2026-10-10T16:05:00Z" }, false)).toBe("Déjà remise le 10/10 à 17 h 05.");
     expect(messageRetraitBoutique({ etat: "annulee" }, false)).toBe("Cette commande a été annulée.");
     expect(messageRetraitBoutique({ etat: "expiree" }, true)).toBe("Cette commande a expiré : elle n’est plus à remettre.");

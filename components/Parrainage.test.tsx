@@ -151,7 +151,7 @@ describe("US-27.4 : bon au panier et sur le QR code", () => {
     expect(screen.getByText("Ton bon s’utilise dès 1 000 DA d’achat.")).toBeInTheDocument();
   });
   it("QR code (client et proche) : « Bon parrainage −300 DA » et « À payer en espèces : 3 200 DA »", () => {
-    render(<BlocRetrait qr="data:image/svg+xml,x" code="0481" numero={12} total={3500} remise={300} />);
+    render(<BlocRetrait qr="data:image/svg+xml,x" code="048193" numero={12} total={3500} remise={300} />);
     expect(screen.getByText("Bon parrainage").nextSibling).toHaveTextContent(/−300\sDA/);
     expect(screen.getByText("À payer en espèces").nextSibling).toHaveTextContent(/3\s200\sDA/);
   });

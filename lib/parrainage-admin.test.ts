@@ -129,7 +129,7 @@ describe("US-27.5 relevés", () => {
   it("signaux : > 3 000 DA, toujours par code, remises rapides ; lignes refusées ignorées", () => {
     expect(signauxReleve(releve())).toEqual([]);
     const code = [ligne({ id: "a", mode_remise: "code" }), ligne({ id: "b", mode_remise: "code" }), ligne({ id: "c", mode_remise: "qr", statut: "refuse" })];
-    expect(signauxReleve({ montant: 3300, lignes: code })).toEqual(["Relevé au-dessus de 3 000 DA", "Toujours par code à 4 chiffres, jamais par QR code"]);
+    expect(signauxReleve({ montant: 3300, lignes: code })).toEqual(["Relevé au-dessus de 3 000 DA", "Toujours par code à 6 chiffres, jamais par QR code"]);
     expect(signauxReleve({ montant: 3000, lignes: [ligne({ commande: { cree_le: "2026-10-05T13:00:00Z", prete_le: "2026-10-05T13:25:00Z", terminee_le: "2026-10-05T13:32:00Z" } })] }))
       .toEqual(["1 remise très rapide"]);
   });

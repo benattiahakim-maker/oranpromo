@@ -14,7 +14,7 @@ const commande = (statut: string) => ({ id: "c1", numero: 128, client_id: "k1", 
   suivi_commandes: [], lignes_commande: [{ id: "l1", article_id: "a1", titre: "Eau de parfum rose et musc", taille: "50 ml", quantite: 1, prix_unitaire: 3900 }] });
 const afficher = async (bon?: string) => renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "c1" }), searchParams: Promise.resolve(bon ? { bon } : {}) }));
 beforeEach(() => { vi.clearAllMocks(); langue.valeur = "fr"; vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://oranpromo.example");
-  lireCommande.mockResolvedValue(commande("prete")); rpc.mockResolvedValue({ data: [{ jeton: JETON, code: "0481" }], error: null }); });
+  lireCommande.mockResolvedValue(commande("prete")); rpc.mockResolvedValue({ data: [{ jeton: JETON, code: "048193" }], error: null }); });
 
 describe("US-26.2 : QR code de retrait dans « Mes commandes »", () => {
   it("commande prête : QR code, code, montant, envoi à un proche avec le lien /retrait/<jeton>", async () => {
@@ -65,7 +65,7 @@ describe("US-27.3 et US-27.4 : bon et parrainage sur le suivi", () => {
     expect(decodeURIComponent(/href="(https:\/\/wa\.me\/\?text=[^"]+)"/.exec(html)![1])).toContain("https://oranpromo.example/p/K7M2QX");
   });
   it("pas d'encadré si le parrainage est fermé ou la commande pas récupérée", async () => {
-    rpc.mockImplementation(async (nom: string) => nom === "mon_parrainage" ? { data: { actif: false, peut_parrainer: true }, error: null } : { data: [{ jeton: JETON, code: "0481" }], error: null });
+    rpc.mockImplementation(async (nom: string) => nom === "mon_parrainage" ? { data: { actif: false, peut_parrainer: true }, error: null } : { data: [{ jeton: JETON, code: "048193" }], error: null });
     lireCommande.mockResolvedValue(commande("recuperee"));
     expect(await afficher()).not.toContain("Merci !");
     lireCommande.mockResolvedValue(commande("prete"));
