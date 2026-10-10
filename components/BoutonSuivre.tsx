@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTextes } from "@/components/FournisseurTextes";
 import { remplir } from "@/lib/langue";
 import type { ErreurAbonnement } from "@/lib/abonnements";
-import { nePlusSuivre, seConnecterPourSuivre, suivreApresConnexion, suivreBoutique } from "@/app/compte/boutiques/actions";
+import { nePlusSuivre, rattacherInscription, seConnecterPourSuivre, suivreApresConnexion, suivreBoutique } from "@/app/compte/boutiques/actions";
 
 type Props = {
   boutiqueId: string;
@@ -13,12 +13,15 @@ type Props = {
   /** Client connecté (null : visiteur ; les comptes commerçant et admin ne voient pas le bouton). */
   connecte: boolean;
   suivieAuDepart: boolean;
-  /** Le visiteur a touché « Suivre » avant de se connecter : on termine le suivi au retour sur la vitrine. */
-  terminerApresConnexion: boolean;
+  /**
+   * À terminer au retour sur la vitrine, une fois connecté : « suivre » (le visiteur a touché « Suivre » avant de se
+   * connecter) ou « inscription » (il a scanné l'affiche, US-31.3 : suivi et rattachement d'un compte nouveau).
+   */
+  apresConnexion: "suivre" | "inscription" | null;
 };
 
 // US-31.2 : bouton « Suivre » / « ✓ Suivie » de la vitrine, avec confirmation avant d'arrêter de suivre.
-export default function BoutonSuivre({ boutiqueId, slug, nom, connecte, suivieAuDepart, terminerApresConnexion }: Props) {
+export default function BoutonSuivre({ boutiqueId, slug, nom, connecte, suivieAuDepart, apresConnexion }: Props) {
   const t = useTextes().suivre;
   const router = useRouter();
   const [suivie, setSuivie] = useState(suivieAuDepart);
@@ -28,13 +31,13 @@ export default function BoutonSuivre({ boutiqueId, slug, nom, connecte, suivieAu
   const termine = useRef(false);
 
   useEffect(() => {
-    if (!terminerApresConnexion || termine.current) return;
+    if (!apresConnexion || termine.current) return;
     termine.current = true;
     demarrer(async () => {
-      const resultat = await suivreApresConnexion(slug);
+      const resultat = apresConnexion === "inscription" ? await rattacherInscription(slug) : await suivreApresConnexion(slug);
       if (resultat.succes) { setSuivie(true); router.refresh(); } else if (resultat.erreur) setErreur(resultat.erreur);
     });
-  }, [terminerApresConnexion, slug, router]);
+  }, [apresConnexion, slug, router]);
 
   function agir(action: () => Promise<{ succes: boolean; suivie: boolean; erreur?: ErreurAbonnement }>) {
     setErreur(null);

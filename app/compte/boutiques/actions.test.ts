@@ -2,19 +2,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const etat = vi.hoisted(() => ({
   rpc: vi.fn(), getUser: vi.fn(), maybeSingle: vi.fn(), set: vi.fn(), supprimer: vi.fn(), redirect: vi.fn((url: string) => { throw new Error(`REDIRECT:${url}`); }),
-  cookie: undefined as string | undefined,
+  cookie: undefined as string | undefined, inscription: undefined as string | undefined,
 }));
-vi.mock("next/headers", () => ({ cookies: async () => ({ get: (nom: string) => (nom === "suivre_boutique" && etat.cookie ? { value: etat.cookie } : undefined), set: etat.set, delete: etat.supprimer }) }));
+vi.mock("next/headers", () => ({ cookies: async () => ({ get: (nom: string) => (nom === "suivre_boutique" && etat.cookie ? { value: etat.cookie } : nom === "inscription_boutique" && etat.inscription ? { value: etat.inscription } : undefined), set: etat.set, delete: etat.supprimer }) }));
 vi.mock("next/navigation", () => ({ redirect: etat.redirect }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({
   rpc: etat.rpc, auth: { getUser: etat.getUser },
   from: () => ({ select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: etat.maybeSingle }) }) }) }),
 }) }));
-import { nePlusSuivre, seConnecterPourSuivre, suivreApresConnexion, suivreBoutique } from "./actions";
+import { nePlusSuivre, rattacherInscription, seConnecterPourSuivre, suivreApresConnexion, suivreBoutique } from "./actions";
 
 const ID = "11111111-1111-4111-8111-111111111111";
 beforeEach(() => {
-  vi.clearAllMocks(); etat.cookie = undefined;
+  vi.clearAllMocks(); etat.cookie = undefined; etat.inscription = undefined;
   etat.getUser.mockResolvedValue({ data: { user: { id: "client" } } });
   etat.rpc.mockResolvedValue({ data: true, error: null });
   etat.maybeSingle.mockResolvedValue({ data: { id: ID }, error: null });
@@ -66,5 +66,26 @@ describe("US-31.2 : suivre une boutique", () => {
     expect(await suivreApresConnexion("chez-amine")).toMatchObject({ succes: false, erreur: "introuvable" });
     expect(etat.supprimer).toHaveBeenCalled();
     expect(etat.rpc).not.toHaveBeenCalled();
+  });
+
+  it("US-31.3 : affiche scannée puis connexion → rattacher_inscription, seulement pour la vitrine du cookie, cookie effacé", async () => {
+    expect(await rattacherInscription("chez-amine")).toEqual({ succes: false, suivie: false });
+    etat.inscription = "autre-boutique";
+    expect(await rattacherInscription("chez-amine")).toEqual({ succes: false, suivie: false });
+    expect(etat.rpc).not.toHaveBeenCalled();
+    etat.inscription = "chez-amine";
+    etat.rpc.mockResolvedValue({ data: { suivie_nouvelle: true, rattache: true }, error: null });
+    expect(await rattacherInscription("chez-amine")).toEqual({ succes: true, suivie: true, rattache: true });
+    expect(etat.rpc).toHaveBeenCalledWith("rattacher_inscription", { slug_boutique: "chez-amine" });
+    expect(etat.supprimer).toHaveBeenCalledWith("inscription_boutique");
+  });
+  it("US-31.3 : sans session, rien n'est appelé et le cookie reste ; erreur de la base → clé de texte", async () => {
+    etat.inscription = "chez-amine";
+    etat.getUser.mockResolvedValue({ data: { user: null } });
+    expect(await rattacherInscription("chez-amine")).toMatchObject({ succes: false, erreur: "connexion" });
+    expect(etat.supprimer).not.toHaveBeenCalled();
+    etat.getUser.mockResolvedValue({ data: { user: { id: "commercant" } } });
+    etat.rpc.mockResolvedValue({ data: null, error: { code: "42501" } });
+    expect(await rattacherInscription("chez-amine")).toMatchObject({ succes: false, erreur: "reserve" });
   });
 });

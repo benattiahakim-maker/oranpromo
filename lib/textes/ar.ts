@@ -213,6 +213,9 @@ export const ar: Textes = {
     introuvable: "هاد الحانوت ما راهوش متوفر.",
     reserve: "غير حسابات الزبائن يقدرو يتبّعو الحوانت.",
     erreur: "ما قدرناش دابا. عاود جرّب.",
+    bienvenueTitre: "مرحبا بيك عند {nom}",
+    bienvenueTexte: "دير حسابك في BleDeal: تتبّع الحانوت وتحجز السلعة نتاعو من التيليفون، وتخلّص في الحانوت.",
+    creerCompte: "دير حسابي",
   },
   panier: {
     titre: "السلة ديالي",

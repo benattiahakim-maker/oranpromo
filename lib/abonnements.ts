@@ -81,3 +81,24 @@ export async function estSuivie(client: Client, boutiqueId: string): Promise<boo
   const { data } = await client.from("abonnements_boutique").select("boutique_id").eq("boutique_id", boutiqueId).maybeSingle();
   return Boolean(data);
 }
+
+// US-31.3 : compteur de l'espace commerçant (un nombre, jamais de liste ; décision du propriétaire du 10/10).
+export type NombreAbonnes = { total: number; sept_jours: number };
+
+/** null si la lecture échoue (le bloc est alors masqué, l'espace reste utilisable). */
+export async function lireAbonnesBoutique(client: Client): Promise<NombreAbonnes | null> {
+  try {
+    const { data, error } = await client.rpc("abonnes_boutique");
+    if (error || !data || typeof data !== "object") return null;
+    const objet = data as Record<string, unknown>;
+    const total = Number(objet.total), sept = Number(objet.sept_jours);
+    return Number.isFinite(total) && Number.isFinite(sept) ? { total, sept_jours: sept } : null;
+  } catch { return null; }
+}
+
+/** « 12 clients suivent votre boutique · +3 cette semaine » (espace commerçant, en français). */
+export function texteAbonnes({ total, sept_jours }: NombreAbonnes): string {
+  if (total <= 0) return "Aucun client ne suit encore votre boutique.";
+  const base = total === 1 ? "1 client suit votre boutique" : `${total} clients suivent votre boutique`;
+  return sept_jours > 0 ? `${base} · +${sept_jours} cette semaine` : base;
+}

@@ -16,6 +16,8 @@ import { textesDe } from "@/lib/textes";
 import BoutonSuivre from "@/components/BoutonSuivre";
 import { cookies } from "next/headers";
 import { COOKIE_SUIVRE, estSuivie } from "@/lib/abonnements";
+import { COOKIE_INSCRIPTION } from "@/lib/inscription-boutique";
+import BienvenueBoutique from "@/components/BienvenueBoutique";
 import { chargerApercuBoutique, METADONNEES_BOUTIQUE_INDISPONIBLE, metadonneesBoutique } from "@/lib/lien-boutique";
 
 export const dynamic = "force-dynamic";
@@ -47,7 +49,10 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
   const { data: profil } = user ? await supabase.from("profils").select("role").eq("id", user.id).maybeSingle() : { data: null };
   const afficherSuivre = !user || profil?.role === "client";
   const suivie = user && afficherSuivre ? await estSuivie(supabase, boutique.id) : false;
-  const terminerApresConnexion = Boolean(user) && (await cookies()).get(COOKIE_SUIVRE)?.value === slug;
+  // US-31.3 : QR code de l'affiche (cookie posé par /i/<slug>) → bandeau d'accueil, puis suivi et rattachement une fois connecté.
+  const magasin = await cookies();
+  const inscription = magasin.get(COOKIE_INSCRIPTION)?.value === slug;
+  const apresConnexion = !user ? null : inscription ? "inscription" : magasin.get(COOKIE_SUIVRE)?.value === slug ? "suivre" : null;
   const maintenant = new Date();
   const liste = trierArticlesVitrine((articles ?? []).map(article => {
     const promotion = Array.isArray(article.promos) ? article.promos[0] : article.promos;
@@ -62,10 +67,11 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
   return <div className="mx-auto w-full max-w-lg pb-10">
     <EnregistrerVue boutiqueId={boutique.id} />
     <EntetePublic /><div className="relative h-11"><PartagerArticle titre={boutique.nom} boutiqueId={boutique.id} libelle={t.partager} /></div>
+    {inscription && !user && <BienvenueBoutique nom={boutique.nom} slug={slug} t={textesDe(langue).suivre} />}
     <section className="flex flex-col gap-3 px-6 py-8 text-center">
       <p className="etiquette text-gris">{boutique.quartier}{villeBoutique && ` · ${langue === "ar" ? villeBoutique.nom_ar : villeBoutique.nom}`}</p>
       <h1 dir="auto" className="font-titre break-words text-3xl">{boutique.nom}</h1>
-      {afficherSuivre && <BoutonSuivre boutiqueId={boutique.id} slug={slug} nom={boutique.nom} connecte={Boolean(user)} suivieAuDepart={suivie} terminerApresConnexion={terminerApresConnexion} />}
+      {afficherSuivre && <BoutonSuivre boutiqueId={boutique.id} slug={slug} nom={boutique.nom} connecte={Boolean(user)} suivieAuDepart={suivie} apresConnexion={apresConnexion} />}
       <p dir="auto" className="text-sm font-light">{boutique.adresse ?? t.adresseInconnue}</p>
       <p dir="auto" className="whitespace-pre-line text-sm text-gris">{boutique.horaires ?? t.horairesInconnus}</p>
       <div className="mt-3 grid grid-cols-2 gap-3">

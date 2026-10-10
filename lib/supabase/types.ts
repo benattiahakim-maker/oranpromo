@@ -483,6 +483,39 @@ export type Database = {
           },
         ]
       }
+      inscriptions_boutique: {
+        Row: {
+          boutique_id: string
+          cree_le: string
+          profil_id: string
+        }
+        Insert: {
+          boutique_id: string
+          cree_le?: string
+          profil_id: string
+        }
+        Update: {
+          boutique_id?: string
+          cree_le?: string
+          profil_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inscriptions_boutique_boutique_id_fkey"
+            columns: ["boutique_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inscriptions_boutique_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: true
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lignes_commande: {
         Row: {
           article_id: string | null
@@ -1214,6 +1247,7 @@ export type Database = {
         Args: { boutique: string; email_commercant: string }
         Returns: undefined
       }
+      rattacher_inscription: { Args: { slug_boutique: string }; Returns: Json }
       regler_budget_parrainage: {
         Args: { montant: number }
         Returns: undefined
