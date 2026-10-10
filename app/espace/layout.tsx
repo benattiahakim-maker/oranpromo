@@ -37,5 +37,5 @@ export default async function EspaceLayout({ children }: { children: ReactNode }
   const [{ aConfirmer, avisSansReponse }, conditions] = await Promise.all([compteurs(), conditionsAAccepter()]);
   // Tant que les conditions ne sont pas acceptées, chaque page de l'espace affiche la demande d'accord à la place
   // de son contenu (la navigation et la déconnexion restent).
-  return <div className="font-sans [&_button]:cursor-pointer [&_button:disabled]:cursor-wait [&_button:disabled]:opacity-50 [&_select:disabled]:opacity-50 [&_input[type=checkbox]]:accent-noir"><NavigationEspace aConfirmer={aConfirmer} avisSansReponse={avisSansReponse} />{conditions.length > 0 ? <AccepterConditionsCommercant documents={conditions} /> : children}</div>;
+  return <div dir="ltr" lang="fr" className="font-sans [&_button]:cursor-pointer [&_button:disabled]:cursor-wait [&_button:disabled]:opacity-50 [&_select:disabled]:opacity-50 [&_input[type=checkbox]]:accent-noir"><NavigationEspace aConfirmer={aConfirmer} avisSansReponse={avisSansReponse} />{conditions.length > 0 ? <AccepterConditionsCommercant documents={conditions} /> : children}</div>;
 }

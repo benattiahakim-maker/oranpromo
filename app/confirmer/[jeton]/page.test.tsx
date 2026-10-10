@@ -48,4 +48,7 @@ describe("US-20.6 : page du lien « Confirmer »", () => {
   it("ne montre jamais le téléphone du client", async () => {
     expect(await afficher(creerLienConfirmation(ID, SECRET))).not.toContain("+213");
   });
+  it("revue RTL : la page (en français) est en ltr même si le site est en arabe", async () => {
+    expect(await afficher(creerLienConfirmation(ID, SECRET))).toMatch(/^<main dir="ltr" lang="fr"/);
+  });
 });

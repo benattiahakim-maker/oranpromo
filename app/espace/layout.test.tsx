@@ -36,4 +36,9 @@ describe("US-34.3 : espace fermé tant que les conditions ne sont pas acceptées
     render(await EspaceLayout({ children: <p>Mes articles</p> }));
     expect(screen.getByText("Mes articles")).toBeInTheDocument();
   });
+  it("revue RTL : l’espace (en français) reste de gauche à droite même si le site est en arabe", async () => {
+    const { container } = render(await EspaceLayout({ children: <p>Mes articles</p> }));
+    const racine = container.firstElementChild!;
+    expect(racine.getAttribute("dir")).toBe("ltr"); expect(racine.getAttribute("lang")).toBe("fr");
+  });
 });

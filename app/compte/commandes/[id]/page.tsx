@@ -61,7 +61,7 @@ export default async function SuiviCommande({ params, searchParams }: { params: 
   const motif = commande.motif_annulation && Object.hasOwn(t.motifs, commande.motif_annulation) ? traduire(t.motifs, commande.motif_annulation) : null;
   return <main className="mx-auto w-full max-w-lg bg-blanc pb-10 text-noir">
     <header className="border-b border-trait px-6 pb-5 pt-6 text-center"><p className="etiquette text-gris">{remplir(t.numero, { n: commande.numero })}{boutique ? ` · ${boutique.nom}` : ""}</p><h1 className="font-titre text-[28px] font-normal">{t.titresSuivi[commande.statut]}</h1></header>
-    {commande.statut === "prete" && commande.expire_le && <p className="border-b border-trait px-6 py-3 text-center text-sm">{t.aRecuperer} <strong className="font-medium">{formaterDateHeure(commande.expire_le, langue)}</strong>{boutique?.adresse ? ` · ${boutique.adresse}` : ""}</p>}
+    {commande.statut === "prete" && commande.expire_le && <p className="border-b border-trait px-6 py-3 text-center text-sm">{t.aRecuperer} <strong className="font-medium">{formaterDateHeure(commande.expire_le, langue)}</strong>{boutique?.adresse ? <> · <bdi data-adresse="">{boutique.adresse}</bdi></> : null}</p>}
     {commande.statut === "annulee" && motif && <p className="border-b border-trait px-6 py-3 text-center text-sm">{remplir(t.motif, { motif })}</p>}
     {commande.statut === "expiree" && <p className="border-b border-trait px-6 py-3 text-center text-sm">{t.expiree}</p>}
     {raisonBon && remise === 0 && commande.statut === "demandee" && <p role="status" className="mx-4 mt-4 border border-noir p-3 text-sm leading-[1.6]">{tBon.bonNonApplique[raisonBon]}</p>}

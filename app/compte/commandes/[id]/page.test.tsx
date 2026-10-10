@@ -111,4 +111,8 @@ describe("US-32.2 : « Donner mon avis » sur le suivi", () => {
     lireCommande.mockResolvedValue(recuperee({ mode_remise: "qr" }));
     expect(await afficher()).toContain("قول رايك");
   });
+  it("revue RTL : l’adresse de la boutique est isolée (« 12 rue de Mostaganem » ne se retourne pas en arabe)", async () => {
+    langue.valeur = "ar";
+    expect(await afficher()).toContain(" · <bdi data-adresse=\"\">12 rue de Mostaganem</bdi>");
+  });
 });
