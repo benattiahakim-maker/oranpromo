@@ -16,7 +16,8 @@ const CarteLeaflet = dynamic(() => import("./CarteLeaflet"), { ssr: false, loadi
 
 type EtatLocalisation = "aucun" | "recherche" | "actif" | "refus" | "introuvable";
 
-export default function CarteBoutiques({ boutiques, univers: universInitial }: { boutiques: BoutiqueCarte[]; univers: CleUnivers | null }) {
+// US-29.2 : « chemin » = adresse de la carte de la ville (/oran/carte), pour les liens du filtre.
+export default function CarteBoutiques({ boutiques, univers: universInitial, chemin = "/carte" }: { boutiques: BoutiqueCarte[]; univers: CleUnivers | null; chemin?: string }) {
   const t = useTextes(), langue = useLangue(), c = t.carteBoutiques;
   const [univers, setUnivers] = useState<CleUnivers | null>(universInitial);
   const [selection, setSelection] = useState<string | null>(null);
@@ -41,7 +42,7 @@ export default function CarteBoutiques({ boutiques, univers: universInitial }: {
   function choisirUnivers(evenement: MouseEvent<HTMLAnchorElement>, cle: CleUnivers | null) {
     evenement.preventDefault();
     setUnivers(cle); setSelection(null);
-    window.history.replaceState(null, "", cle ? `/carte?univers=${cle}` : "/carte");
+    window.history.replaceState(null, "", cle ? `${chemin}?univers=${cle}` : chemin);
   }
 
   function autourDeMoi() {
@@ -64,7 +65,7 @@ export default function CarteBoutiques({ boutiques, univers: universInitial }: {
     <nav aria-label={c.filtre} className="flex flex-wrap justify-center gap-1 px-3 pb-4">
       {[null, ...UNIVERS.map(u => u.cle)].map(cle => {
         const actif = univers === cle;
-        return <a key={cle ?? "tous"} href={cle ? `/carte?univers=${cle}` : "/carte"} aria-current={actif ? "page" : undefined} onClick={evenement => choisirUnivers(evenement, cle)}
+        return <a key={cle ?? "tous"} href={cle ? `${chemin}?univers=${cle}` : chemin} aria-current={actif ? "page" : undefined} onClick={evenement => choisirUnivers(evenement, cle)}
           className={`etiquette inline-flex min-h-11 items-center border px-2 text-[10px] ${actif ? "border-noir bg-noir text-blanc" : "border-trait"}`}>{cle ? nomUnivers(cle) : c.tous}</a>;
       })}
     </nav>
@@ -100,7 +101,7 @@ export default function CarteBoutiques({ boutiques, univers: universInitial }: {
     <section className="px-5 pb-10 pt-6">
       {total === 0 ? <div className="py-6 text-center">
         <p>{univers ? c.aucuneUnivers : c.aucune}</p>
-        {univers && <a href="/carte" onClick={evenement => choisirUnivers(evenement, null)} className="etiquette mt-4 inline-flex min-h-11 items-center border border-noir px-4">{c.voirToutes}</a>}
+        {univers && <a href={chemin} onClick={evenement => choisirUnivers(evenement, null)} className="etiquette mt-4 inline-flex min-h-11 items-center border border-noir px-4">{c.voirToutes}</a>}
       </div> : <>
         {liste.length > 0 && <><h2 className="etiquette text-gris">{parDistance ? c.listeProches : c.listeParNom}</h2>
           <ul className="mt-2">{liste.map(b => <LigneBoutique key={b.id} boutique={b} promos={textePromos(b.promos)} distance={distances.get(b.id) === undefined ? null : formaterDistance(distances.get(b.id)!, langue)} />)}</ul></>}

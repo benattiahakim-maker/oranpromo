@@ -44,3 +44,24 @@ describe("US-23 : sélecteur de langue dans l'en-tête", () => {
     expect(screen.getByRole("link", { name: "الخريطة" }).getAttribute("href")).toBe("/carte");
   });
 });
+
+describe("US-29.2 : en-tête sur une page de ville", () => {
+  const oran = { code: "oran", nom: "Oran", nom_ar: "وهران" };
+  it("logo, recherche et carte restent dans la ville ; pas de bouton ville avec une seule ville ouverte", () => {
+    render(<FournisseurTextes langue="fr" textes={textesDe("fr")}><EntetePublic ville={oran} /></FournisseurTextes>);
+    expect(screen.getByRole("link", { name: "ORANPROMO" }).getAttribute("href")).toBe("/oran");
+    expect(screen.getByRole("link", { name: "Rechercher" }).getAttribute("href")).toBe("/oran/catalogue");
+    expect(screen.getByRole("link", { name: "Carte" }).getAttribute("href")).toBe("/oran/carte");
+    expect(screen.queryByRole("link", { name: /Changer de ville/ })).toBeNull();
+  });
+  it("à partir de 2 villes ouvertes : « Oran ▾ » vers /villes, nom lu « Changer de ville, ville actuelle : Oran »", () => {
+    render(<FournisseurTextes langue="fr" textes={textesDe("fr")}><EntetePublic ville={oran} choixVille /></FournisseurTextes>);
+    const bouton = screen.getByRole("link", { name: "Changer de ville, ville actuelle : Oran" });
+    expect(bouton.textContent).toBe("Oran ▾");
+    expect(bouton.getAttribute("href")).toMatch(/^\/villes\?retour=/);
+  });
+  it("en arabe : « وهران ▾ »", () => {
+    render(<FournisseurTextes langue="ar" textes={textesDe("ar")}><EntetePublic ville={oran} choixVille /></FournisseurTextes>);
+    expect(screen.getByRole("link", { name: "بدّل المدينة، المدينة دروك: وهران" }).textContent).toBe("وهران ▾");
+  });
+});

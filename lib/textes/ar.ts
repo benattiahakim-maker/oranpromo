@@ -11,6 +11,23 @@ export const ar: Textes = {
     carte: "الخريطة", // US-24, texte 1
     panierUnArticle: "السلة (1)",
     panierArticles: "السلة ({n})",
+    changerVille: "بدّل المدينة، المدينة دروك: {ville}",
+  },
+  villes: {
+    metaTitre: "اختار مدينتك",
+    titre: "اختار مدينتك",
+    texte: "التخفيضات والحوانيت على حساب المدينة. تقدر تبدّلها وقتما حبيت.",
+    localiser: "لقاني وين راني",
+    recherche: "راني نحوّس على البلاصة تاعك…",
+    confidentialite: "البلاصة تاعك تبقى في التيليفون: ما تتبعثش وما تتسجلش.",
+    proche: "راك قريب من {ville}.",
+    horsVilles: "مازال ما كاش حوانت BleDeal قريب منك: اختار مدينة من هنا.",
+    introuvable: "ما لقيناش البلاصة تاعك: اختار مدينة من هنا.",
+    inconnue: "هاد المدينة مازالت ما راهيش في BleDeal.",
+    boutiqueUne: "{n} حانوت",
+    boutiques: "{n} حانوت",
+    liste: "المدن",
+    actuelle: "المدينة دروك",
   },
   langue: {
     groupe: "اللغة",

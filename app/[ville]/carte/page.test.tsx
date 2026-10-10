@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import Carte, { generateMetadata } from "./page";
 
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
+vi.mock("@/lib/ville-serveur", async () => { const { VILLE_ORAN } = await import("@/lib/ville"); return { getVilleOuverte: async (code: string) => (code === "oran" ? VILLE_ORAN : null), getVillesOuvertes: async () => [VILLE_ORAN] }; });
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ rpc }) }));
 vi.mock("@/lib/langue-serveur", async () => { const { textesDe } = await import("@/lib/textes"); return { getLangue: async () => "fr", getTextes: async () => textesDe("fr") }; });
 vi.mock("@/components/EntetePublic", () => ({ default: () => null }));
@@ -13,7 +14,7 @@ const lignes = [
   { id: "b", slug: "maison-ilyes", nom: "Maison Ilyes", quartier: "Front de Mer", latitude: 35.7034, longitude: -0.6436, promos_en_cours: 1, rayons: [{ categorie: "Chemises", genre: "homme" }] },
   { id: "c", slug: "atelier-sarah", nom: "Atelier Sarah", quartier: "Gambetta", latitude: null, longitude: null, promos_en_cours: 0, rayons: [] },
 ];
-const page = async (univers?: string) => renderToStaticMarkup(await Carte({ searchParams: Promise.resolve(univers ? { univers } : {}) }));
+const page = async (univers?: string) => renderToStaticMarkup(await Carte({ params: Promise.resolve({ ville: "oran" }), searchParams: Promise.resolve(univers ? { univers } : {}) }));
 beforeEach(() => { vi.clearAllMocks(); rpc.mockResolvedValue({ data: lignes, error: null }); });
 
 describe("US-24.3 : /carte rendue par le serveur (liste lisible sans JavaScript)", () => {
@@ -35,6 +36,6 @@ describe("US-24.3 : /carte rendue par le serveur (liste lisible sans JavaScript)
     expect(await page()).toContain("Impossible de charger les boutiques. Réessayez.");
   });
   it("titre de la page", async () => {
-    expect(await generateMetadata()).toEqual({ title: "Carte des boutiques" });
+    expect(await generateMetadata({ params: Promise.resolve({ ville: "oran" }) })).toEqual({ title: "Carte des boutiques", alternates: { canonical: "/oran/carte" } });
   });
 });

@@ -10,6 +10,25 @@ export const fr = {
     carte: "Carte",
     panierUnArticle: "Panier, 1 article",
     panierArticles: "Panier, {n} articles",
+    // US-29.2 : bouton « Oran ▾ » (à partir de 2 villes ouvertes).
+    changerVille: "Changer de ville, ville actuelle : {ville}",
+  },
+  villes: {
+    // US-29.2 : page /villes (textes 2 à 7 du module 16).
+    metaTitre: "Choisir sa ville",
+    titre: "Choisissez votre ville",
+    texte: "Les promos et les boutiques dépendent de la ville. Vous pourrez en changer à tout moment.",
+    localiser: "Me localiser",
+    recherche: "Recherche de votre position…",
+    confidentialite: "Votre position reste sur votre téléphone : elle n’est ni envoyée ni enregistrée.",
+    proche: "Vous êtes près de {ville}.",
+    horsVilles: "Pas encore de boutiques BleDeal près de vous : choisissez une ville ci-dessous.",
+    introuvable: "Position introuvable : choisissez une ville ci-dessous.",
+    inconnue: "Cette ville n’est pas encore sur BleDeal.",
+    boutiqueUne: "{n} boutique",
+    boutiques: "{n} boutiques",
+    liste: "Villes",
+    actuelle: "ville actuelle",
   },
   langue: {
     groupe: "Langue",
