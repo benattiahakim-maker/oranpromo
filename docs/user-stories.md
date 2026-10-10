@@ -1102,3 +1102,78 @@ L'espace commerçant reste en français (US-23) : « 23 clients suivent votre bo
 3. **Pas le jour même dans la boutique qui a inscrit** : d'accord (recommandé) ?
 4. **Prime du vendeur** : plus tard (recommandé : il faut un code par vendeur sur l'affiche et un suivi des paiements), ou dès la première version ?
 5. **Alerte WhatsApp** : un **résumé par jour au plus** (recommandé, coût maîtrisé) ou un message par promo ? Plafond mensuel de départ (ex. 5 000 messages ≈ 110 $) ? À coder seulement après US-34 et l'approbation Meta.
+
+## Module 18 — Avis clients sur les boutiques (après le MVP)
+
+Source : carte Trello « Confiance · Avis clients sur les boutiques » (idée du propriétaire : note et commentaire seulement après un retrait réel, modération, seuil d'affichage, « petite réduction » pour chaque avis). Demande du 10/10 : **conception seulement** : aucun code, aucune migration, aucune dépendance. Conception technique : `docs/architecture.md`, section « Avis clients sur les boutiques (US-32) » ; maquette `docs/maquettes/AvisBoutiques.dc.html` (375 px, français et arabe de droite à gauche). **À valider par le propriétaire** (questions en fin de module).
+
+**Ordre conseillé** : la carte dit « à faire après la carte Bons de réduction ». US-32.1 à US-32.4 (avis, affichage, réponse, modération) **ne dépendent de rien** ; la **récompense** (US-32.5) est un programme de bons de US-33 et se code **après US-33**.
+
+**Ce qui ne change pas** : blocage, no-shows, contestation, vérification du numéro, statuts des commandes, retrait. Un avis ne change jamais une commande ni un compteur de no-shows. Un client bloqué garde le droit de donner un avis sur ses commandes déjà récupérées.
+
+| Story | Contenu | Écrans |
+| --- | --- | --- |
+| US-32.1 | Table des avis, règles (commande récupérée par QR code, 14 jours, un avis par commande), filtre de contenu | aucun |
+| US-32.2 | Donner un avis depuis « Mes commandes » | `/compte/commandes` |
+| US-32.3 | Afficher les avis (vitrine, fiche article), seuil d'affichage, tri par note | `/b/[slug]`, `/a/[id]`, catalogue, carte |
+| US-32.4 | Réponse publique de la boutique, avis dans l'espace, signalement et modération | `/espace`, `/espace/avis`, `/admin/moderation` |
+| US-32.5 | Petit bon pour chaque avis (après US-33), signaux de fraude | `/compte`, `/admin/remboursements` |
+
+### US-32 — Avis clients (vue d'ensemble) — **à valider**
+En tant que client, je veux lire les avis de vrais clients et donner le mien après un retrait, afin de choisir une boutique sérieuse ; en tant que commerçant, je veux voir mes avis et y répondre.
+
+### US-32.1 — Avis dans la base (aucun écran)
+- Nouvelle table **`avis`** : `commande_id` (unique : un avis par commande), `boutique_id`, `client_id`, `note` (1 à 5), `criteres` (au plus trois, au choix : `accueil`, `article_conforme`, `rapidite`), `commentaire` (facultatif, 300 caractères au plus), `statut` (`publie`, `masque`), `cree_le`, `reponse` (300 caractères au plus), `reponse_le`.
+- Fonction **`donner_avis(commande, note, criteres, commentaire)`** ; accepté seulement si : la commande est au client connecté, **`statut = 'recuperee'` et `mode_remise = 'qr'`** (même preuve que les bons et le parrainage, US-26 / relecture n°6 ; question 2), récupérée **depuis 14 jours au plus**, pas d'avis déjà donné, et le client n'est pas rattaché à la boutique (`profils.boutique_id` ≠ boutique : pas d'avis sur sa propre boutique). Pas de modification après envoi (question 6).
+- **Filtre de contenu** (dans la base, comme les autres règles) : commentaire refusé s'il contient un lien (`http`, `www.`, `.com`…), un numéro de téléphone (8 chiffres ou plus, espaces compris) ou un mot de la liste des mots interdits (`prive.mots_interdits`, tenue par l'admin, français, arabe et darja en lettres latines). Message : « Votre commentaire ne peut pas contenir de lien, de numéro de téléphone ni de mot grossier. »
+- Lecture publique **seulement** par une fonction (`avis_boutique(boutique)`, `resume_avis(boutiques[])`) : prénom et initiale du nom (« Amine B. »), note, critères, commentaire, mois (« octobre 2026 »), réponse ; jamais le numéro, l'identifiant du client ni la commande. Les avis d'une boutique non validée ou d'une ville fermée ne sont pas lisibles.
+
+### US-32.2 — Donner un avis (page `/compte/commandes`)
+- Sur une commande récupérée par QR code depuis 14 jours au plus : bouton **« Donner mon avis »** ; écran : 5 étoiles (obligatoire), 3 puces facultatives (« Bon accueil », « Article conforme », « Rapide »), commentaire facultatif (compteur 0/300), bouton « Publier mon avis ».
+- Rappel sous le bouton : « Votre avis est public avec votre prénom et l'initiale de votre nom. »
+- Après envoi : « Merci, votre avis est publié. » (et, après US-32.5 : « Votre bon de 150 DA est dans votre compte. »).
+- Passé 14 jours : plus de bouton. Commande remise par code ou « sans QR code » : pas de bouton (question 2).
+
+### US-32.3 — Afficher les avis (vitrine, fiche, catalogue, carte)
+- **Seuil d'affichage** : la note moyenne ne s'affiche qu'à partir de **3 avis publiés** (question 3) ; avant : « Pas encore assez d'avis ». Les commentaires s'affichent dès le premier.
+- **Vitrine** `/b/<slug>` : « ★ 4,6 · 18 avis », les 3 critères les plus cités (« Bon accueil · 12 »), les 5 derniers commentaires, « Voir tous les avis » ; texte public : **« Les clients reçoivent un petit bon pour chaque avis, quelle que soit leur note. »** (affiché dès que la récompense est active).
+- **Fiche article** `/a/<id>` : « Boutique Nour · ★ 4,6 (18 avis) » (lien vers les avis de la vitrine) ; pas d'avis par article (l'avis porte sur la boutique).
+- **Catalogue et carte** : tri « Mieux notées » ajouté (boutiques sous le seuil après les autres) ; sur la carte, la note dans la fiche de la boutique.
+
+### US-32.4 — Réponse de la boutique, espace, modération
+- **`/espace/avis`** : moyenne, nombre, avis récents ; **une réponse publique** par avis (300 caractères, même filtre), non modifiable (question 6) ; la boutique **ne peut pas supprimer** un avis. Bloc dans `/espace` : « ★ 4,6 · 18 avis · 2 sans réponse ».
+- **Signaler un avis** (client, visiteur ou boutique) : lien « Signaler » sous chaque avis, motifs « Faux avis », « Insulte ou propos déplacés », « Informations personnelles », « Autre » ; même limite par visiteur que `signaler_article` (US-17). Arrive dans **`/admin/moderation`** (US-18) avec l'avis, le motif et le nombre de signalements ; décisions : **masquer l'avis** (le bon déjà donné n'est pas repris), masquer la réponse, classer ; chaque décision dans `decisions`.
+- Un avis masqué ne compte plus dans la moyenne.
+
+### US-32.5 — Petit bon pour chaque avis (après US-33)
+- Chaque avis publié donne un **bon « avis »** de US-33 (exemple : 150 DA, dans la fourchette de la carte 100–200 DA), utilisable sur une **prochaine** commande avec **minimum d'achat** (exemple : 1 500 DA), valable 30 jours, **quelle que soit la note**.
+- Garde-fous : un bon par commande notée ; au plus **2 bons « avis » par mois et par numéro vérifié** (question 4) ; budget mensuel séparé (0 = arrêt, comme `parrainage_budget_mois`) ; numéro vérifié obligatoire ; pas de bon si l'avis est donné sur une commande de la boutique à laquelle le client a été rattaché le jour même (US-31).
+- **Signaux admin** (jamais automatiques) : beaucoup de 5 étoiles venant de comptes créés depuis moins de 7 jours dans la même boutique ; plusieurs avis d'une boutique à la même minute ; même numéro qui note toujours la même boutique ; commandes récupérées moins de 30 minutes après leur création.
+
+### Textes nouveaux (français / arabe, à valider)
+
+| # | Où | Français | Arabe (darja, à valider) |
+| --- | --- | --- | --- |
+| 1 | Mes commandes, bouton | Donner mon avis | **قول** رايك |
+| 2 | Avis, titre | Votre avis sur Boutique Nour | رايك في Boutique Nour |
+| 3 | Avis, puces | Bon accueil · Article conforme · Rapide | **استقبال مليح** · السلعة **كيما في الصورة** · **زربان** |
+| 4 | Avis, champ | Commentaire (facultatif) | **كلمة** (**ماشي** **لازم**) |
+| 5 | Avis, rappel | Votre avis est public avec votre prénom et l'initiale de votre nom. | رايك **يبان** للناس **بإسمك** و**الحرف الأول** من **لقبك**. |
+| 6 | Avis, bouton | Publier mon avis | **انشر** رايي |
+| 7 | Après envoi | Merci, votre avis est publié. | **يعطيك الصحة**، رايك **تنشر**. |
+| 8 | Filtre | Votre commentaire ne peut pas contenir de lien, de numéro de téléphone ni de mot grossier. | ما **تقدرش** تكتب **لينك**، ولا **نمرة** تيليفون، ولا **كلام** **خايب**. |
+| 9 | Vitrine | ★ 4,6 · 18 avis | ★ 4,6 · 18 **راي** |
+| 10 | Vitrine, sous le seuil | Pas encore assez d'avis | **مازال** ما كاينش **بزاف** تاع الآراء |
+| 11 | Vitrine, mention | Les clients reçoivent un petit bon pour chaque avis, quelle que soit leur note. | الكليان **ياخذو** بون صغير على كل راي، **مهما كانت** النقطة. |
+| 12 | Avis, lien | Signaler | **بلّغ** |
+| 13 | Catalogue, tri | Mieux notées | **الأحسن** في النقاط |
+
+L'espace commerçant et l'admin restent en français.
+
+### Questions au propriétaire (US-32)
+1. **Montant du bon « avis »** : 150 DA avec 1 500 DA d'achat minimum et 30 jours de validité ? Budget mensuel de départ ?
+2. **Remise par code à 6 chiffres** : ouvre-t-elle aussi le droit à un avis ? Recommandé : **QR code seulement**, comme les bons et le parrainage (sinon une boutique peut « remettre » des commandes fictives à ses proches).
+3. **Seuil d'affichage** de la moyenne : 3 avis (recommandé) ou 5 ?
+4. **Plafond** : 2 bons « avis » par mois et par numéro ?
+5. **Tri « Mieux notées »** : dès le lancement, ou quand assez de boutiques ont 3 avis ?
+6. Le client peut-il **modifier** son avis (et la boutique sa réponse) ? Recommandé : non dans la première version (simple ; un avis faux se signale).
