@@ -1022,6 +1022,6 @@ Les autres textes ne changent que par le nom : « OranPromo » devient « BleDea
 8. Noms des modèles WhatsApp `oranpromo_*` **gardés** ; « BleDeal » dans leurs textes chez Meta.
 9. Ordre : US-29 (29.1 à 29.4), puis US-30 (30.1 à 30.3).
 10. « BleDeal » en lettres latines dans les phrases arabes (pas « بليديل » pour l'instant) ; logo en lettres latines.
-11. *(en attente)* Ancien domaine ou affiches : on suppose qu'il n'y en a pas ; la redirection possible est documentée (`ETAT.md`).
-12. *(en attente)* Prochaines villes : **seule Oran** est créée et ouverte ; la marche à suivre pour ajouter une ville est dans `architecture.md`.
+11. Ancien domaine ou affiches (réponse du propriétaire, 10/10 à 4 h 25) : **rien n'a été acheté** (pas d'`oranpromo.com`, pas d'affiches imprimées) : **aucune redirection** à prévoir.
+12. Prochaines villes (réponse du propriétaire, 10/10 à 4 h 25) — **feuille de route** : l'**Ouest** d'abord (Oran, Mostaganem, Relizane, Tlemcen), puis le **Centre** (Alger, Tizi Ouzou, Béjaïa), puis l'**Est** (Annaba, Constantine). Les 9 villes sont créées dès US-29.1 (codes `oran`, `mostaganem`, `relizane`, `tlemcen`, `alger`, `tizi-ouzou`, `bejaia`, `annaba`, `constantine`, noms français et arabes, numéros de wilaya, bornes OpenStreetMap + environ 1 km) ; **seule Oran est ouverte**, l'admin ouvre les autres. Bornes, sources et marche à suivre pour ajouter une ville : `architecture.md`.
 13. Darja oranaise gardée pour tout le pays.

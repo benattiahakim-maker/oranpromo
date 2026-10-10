@@ -673,20 +673,46 @@ create table public.villes (
   unique (pays, numero_wilaya)
 );
 insert into public.villes (code, numero_wilaya, nom, nom_ar, lat_min, lat_max, lng_min, lng_max, centre_lat, centre_lng, ouverte, ordre)
-values ('oran', 31, 'Oran', 'وهران', 35.33, 35.92, -1.15, -0.10, 35.6971, -0.6337, true, 1);
+values ('oran', 31, 'Oran', 'وهران', 35.33, 35.92, -1.15, -0.10, 35.6971, -0.6337, true, 1),
+       ('mostaganem', 27, …, false, 2), …;   -- 9 villes de la feuille de route, voir ci-dessous
 alter table public.boutiques add column ville text not null default 'oran' references public.villes (code);
 alter table public.profils add column ville text references public.villes (code);   -- ambassadeur (question 5)
 create index boutiques_ville_statut_idx on public.boutiques (ville, statut);
 alter table public.boutiques drop constraint boutiques_position_oran;
+alter table public.boutiques add constraint boutiques_position_oran check (ville <> 'oran' or latitude is null or (latitude between 35.33 and 35.92 and longitude between -1.15 and -0.10));
 ```
 
 - **Pourquoi `code` comme clé** (et pas un uuid) : il est lisible dans l'adresse (`/oran`), le cookie et les requêtes (`boutiques.ville = 'oran'`), sans jointure. Un code ne change jamais (`on update` non prévu).
 - **Algérie : 69 wilayas** depuis la loi n° 26-06 du 4 avril 2026 (JO n° 25). On n'insère **pas** les 69 : une ville est ajoutée par migration quand elle est prête (bornes lues dans OpenStreetMap comme Oran, arrondies vers l'extérieur, testées), puis ouverte par l'admin.
-- **Bornes par ville** : `prive.verifier_position_boutique()` (déclencheur existant) lit les bornes de `new.ville` ; il s'exécute aussi sur `update of ville` ; message `'La position doit être dans la wilaya ' || (case when nom ~* '^[aeiouyàâéèêîïôûh]' then 'd''' else 'de ' end) || nom || '.'` → pour Oran **exactement** « La position doit être dans la wilaya d'Oran. » (même code `23514`). La contrainte `boutiques_position_oran` est remplacée par ce contrôle (une contrainte ne peut pas lire une autre table) ; le déclencheur s'applique à tous, clé de service comprise, comme la contrainte. `boutiques_position_complete` reste.
+- **Villes créées (migration `20261013090000_villes.sql`, feuille de route du propriétaire du 10/10)** : l'Ouest d'abord, puis le Centre, puis l'Est. **Seule Oran est ouverte** ; les autres sont créées fermées (invisibles du public) pour que l'admin les ouvre le jour venu sans nouvelle migration.
+
+| Ordre | Code | Nom / nom arabe | Wilaya | Relation OSM | lat_min – lat_max | lng_min – lng_max | Centre (chef-lieu) | Ouverte |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `oran` | Oran / وهران | 31 | 1259187 | 35,33 – 35,92 | -1,15 – -0,10 | 35,6971 ; -0,6337 | **oui** |
+| 2 | `mostaganem` | Mostaganem / مستغانم | 27 | 1259191 | 35,66 – 36,35 | -0,13 – 0,76 | 35,9288 ; 0,0900 | non |
+| 3 | `relizane` | Relizane / غليزان | 48 | 1282091 | 35,43 – 36,24 | 0,21 – 1,44 | 35,7381 ; 0,5548 | non |
+| 4 | `tlemcen` | Tlemcen / تلمسان | 13 | 1280702 | 34,08 – 35,25 | -2,23 – -0,75 | 34,8818 ; -1,3167 | non |
+| 5 | `alger` | Alger / الجزائر | 16 | 157062 | 36,56 – 36,84 | 2,78 – 3,40 | 36,7729 ; 3,0588 | non |
+| 6 | `tizi-ouzou` | Tizi Ouzou / تيزي وزو | 15 | 1283601 | 36,44 – 36,93 | 3,70 – 4,67 | 36,7138 ; 4,0494 | non |
+| 7 | `bejaia` | Béjaïa / بجاية | 6 | 1278765 | 36,20 – 36,91 | 4,33 – 5,50 | 36,7512 ; 5,0644 | non |
+| 8 | `annaba` | Annaba / عنابة | 23 | 1455599 | 36,59 – 37,10 | 7,27 – 7,85 | 36,8982 ; 7,7549 | non |
+| 9 | `constantine` | Constantine / قسنطينة | 25 | 1273368 | 36,08 – 36,64 | 6,29 – 7,06 | 36,3642 ; 6,6084 | non |
+
+  Source : limites de la wilaya (relation `boundary=administrative`, `admin_level=4`, `ISO3166-2` = `DZ-xx`) lues le 10/10/2026 dans OpenStreetMap avec Nominatim (`/search?state=…&countrycodes=dz&featureType=state`), rectangle élargi d'environ **1 km (0,01°) de chaque côté** puis arrondi vers l'extérieur au centième ; les limites brutes sont en commentaire dans la migration. **Oran garde exactement son rectangle d'avant** (même contrainte, même message). Centre : le chef-lieu dans OpenStreetMap. Les rectangles de deux wilayas voisines se recouvrent un peu (ex. Oran et Mostaganem) : c'est `boutiques.ville` qui choisit les bornes. Le rectangle de Tlemcen est celui d'OpenStreetMap au 10/10/2026 ; si une wilaya créée en 2026 en est détachée, il reste plus large que la wilaya (aucun point de Tlemcen refusé). Tests : `supabase/tests/villes.test.sql` (centre dans les bornes, valeurs ci-dessus, limites OSM à l'intérieur des bornes).
+
+- **Ouvrir une ville déjà créée** : l'admin, sur `/admin/villes` (US-29.4) — ou, avant US-29.4, `update public.villes set ouverte = true where code = 'mostaganem';` dans le SQL Editor de Supabase. Avant d'ouvrir : au moins quelques boutiques validées dans cette ville (sinon catalogue vide), affiches et ambassadeur prêts.
+- **Ajouter une nouvelle ville** (hors des 9) : une migration `supabase/migrations/AAAAMMJJHHMMSS_ville_<code>.sql` avec un `insert into public.villes (…) values (…)` fermé (`ouverte = false`) :
+  1. code en minuscules sans accent, mots séparés par `-` (`sidi-bel-abbes`), jamais un mot réservé (contrainte `villes_code_libre`) ;
+  2. nom français, nom arabe, numéro de wilaya (loi n° 26-06 : 69 wilayas) ;
+  3. bornes : chercher la wilaya dans Nominatim comme ci-dessus, noter la relation et le rectangle brut, retirer 0,01° aux minimums et ajouter 0,01° aux maximums, arrondir vers l'extérieur au centième ;
+  4. centre : le chef-lieu (doit être dans les bornes, contrainte `villes_centre`) ; `zoom` 12 ; `ordre` à la suite ;
+  5. ajouter la ligne aux deux listes de `supabase/tests/villes.test.sql` (valeurs documentées et limites OSM), mettre à jour le tableau ci-dessus, `npm run db:types` inutile (aucune colonne nouvelle) ;
+  6. appliquer la migration en production, puis l'admin ouvre la ville.
+- **Bornes par ville** : `prive.verifier_position_boutique()` (déclencheur existant) lit les bornes de `new.ville` ; il s'exécute aussi sur `update of ville` ; message `'La position doit être dans la wilaya ' || (case when nom ~* '^[aeiouyàâéèêîïôûh]' then 'd''' else 'de ' end) || nom || '.'` → pour Oran **exactement** « La position doit être dans la wilaya d'Oran. » (même code `23514`). Une contrainte ne peut pas lire une autre table : le déclencheur s'applique à toutes les villes, clé de service comprise ; la contrainte `boutiques_position_oran` est **gardée** pour Oran (`ville <> 'oran' or …` mêmes bornes), double garantie identique à avant (codé en US-29.1). `boutiques_position_complete` reste.
 - **Ville d'une boutique publiée** : ajoutée à la liste des colonnes réservées à l'admin dans `prive.proteger_coordonnees_boutique()` (nom, WhatsApp, slug, liens, position… et ville). Le contrôle du numéro WhatsApp (`+213`) n'est **pas** touché.
 - **Droits (RLS) de `villes`** : lecture publique des villes ouvertes (`ouverte or prive.est_admin()`) ; mise à jour par l'admin de `ouverte` et `ordre` seulement (`grant update (ouverte, ordre)`) ; pas d'insertion ni de suppression hors migration. Un ambassadeur et un commerçant lisent aussi les villes fermées dont ils ont besoin (la leur) : politique `code = (select ville from profils where id = auth.uid())` ou `code in (select ville from boutiques …)` — à préciser au code, testé.
 - **Ambassadeur avec une ville** (question 5) : politique d'insertion des boutiques complétée (`ville = profil.ville` quand `profils.ville` est renseignée). L'admin règle `profils.ville` (`/admin`).
-- **Lectures** : `boutiques_carte(ville text, limite integer default 500)` remplace `boutiques_carte(limite)` (mêmes colonnes, mêmes filtres publics, `and b.ville = ville and v.ouverte`) ; `villes_ouvertes()` (`security invoker`) : `code, nom, nom_ar, lat_min…, centre_lat, centre_lng, zoom, boutiques` (nombre de boutiques validées), triées par `ordre, nom`.
+- **Lectures** : `boutiques_carte(limite integer default 500, code_ville text default 'oran')` remplace `boutiques_carte(limite)` (mêmes colonnes, mêmes filtres publics, `and b.ville = code_ville and v.ouverte` ; sans paramètre : Oran, comme avant) ; `villes_ouvertes()` (`security invoker`) : `code, nom, nom_ar, lat_min…, centre_lat, centre_lng, zoom, boutiques` (nombre de boutiques validées), triées par `ordre, nom`.
 - **Maghreb plus tard** : `pays` est prêt, rien d'autre. Un autre pays demandera une story à part, car il touche des règles **non modifiées ici** : numéros `+213` (WhatsApp des boutiques, numéros des clients, codes de connexion), dinar et `formaterPrix`, fuseau `Africa/Algiers` (Maroc : `Africa/Casablanca`), langue des modèles Meta, textes en darja algérienne. Les adresses pourraient alors devenir `/ma/casablanca` sans casser `/oran` (le code d'une ville est unique dans tous les pays).
 
 ### Choisir et garder la ville (US-29.2) : adresse avec la ville ou cookie seul

@@ -177,6 +177,7 @@ export type Database = {
           quartier: string
           slug: string
           statut: Database["public"]["Enums"]["statut_boutique"]
+          ville: string
           whatsapp: string
         }
         Insert: {
@@ -193,6 +194,7 @@ export type Database = {
           quartier: string
           slug: string
           statut?: Database["public"]["Enums"]["statut_boutique"]
+          ville?: string
           whatsapp: string
         }
         Update: {
@@ -209,9 +211,18 @@ export type Database = {
           quartier?: string
           slug?: string
           statut?: Database["public"]["Enums"]["statut_boutique"]
+          ville?: string
           whatsapp?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "boutiques_ville_fkey"
+            columns: ["ville"]
+            isOneToOne: false
+            referencedRelation: "villes"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       commandes: {
         Row: {
@@ -732,6 +743,7 @@ export type Database = {
           role: Database["public"]["Enums"]["role_utilisateur"]
           telephone: string | null
           telephone_verifie_le: string | null
+          ville: string | null
         }
         Insert: {
           bloque?: boolean
@@ -747,6 +759,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["role_utilisateur"]
           telephone?: string | null
           telephone_verifie_le?: string | null
+          ville?: string | null
         }
         Update: {
           bloque?: boolean
@@ -762,6 +775,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["role_utilisateur"]
           telephone?: string | null
           telephone_verifie_le?: string | null
+          ville?: string | null
         }
         Relationships: [
           {
@@ -770,6 +784,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "boutiques"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profils_ville_fkey"
+            columns: ["ville"]
+            isOneToOne: false
+            referencedRelation: "villes"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -971,6 +992,60 @@ export type Database = {
           },
         ]
       }
+      villes: {
+        Row: {
+          centre_lat: number
+          centre_lng: number
+          code: string
+          cree_le: string
+          lat_max: number
+          lat_min: number
+          lng_max: number
+          lng_min: number
+          nom: string
+          nom_ar: string
+          numero_wilaya: number | null
+          ordre: number
+          ouverte: boolean
+          pays: string
+          zoom: number
+        }
+        Insert: {
+          centre_lat: number
+          centre_lng: number
+          code: string
+          cree_le?: string
+          lat_max: number
+          lat_min: number
+          lng_max: number
+          lng_min: number
+          nom: string
+          nom_ar: string
+          numero_wilaya?: number | null
+          ordre?: number
+          ouverte?: boolean
+          pays?: string
+          zoom?: number
+        }
+        Update: {
+          centre_lat?: number
+          centre_lng?: number
+          code?: string
+          cree_le?: string
+          lat_max?: number
+          lat_min?: number
+          lng_max?: number
+          lng_min?: number
+          nom?: string
+          nom_ar?: string
+          numero_wilaya?: number | null
+          ordre?: number
+          ouverte?: boolean
+          pays?: string
+          zoom?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -983,7 +1058,7 @@ export type Database = {
       annuler_no_show: { Args: { commande: string }; Returns: undefined }
       bloquer_client: { Args: { client: string }; Returns: undefined }
       boutiques_carte: {
-        Args: { limite?: number }
+        Args: { code_ville?: string; limite?: number }
         Returns: {
           id: string
           latitude: number
@@ -1146,6 +1221,23 @@ export type Database = {
       }
       utiliser_bon: { Args: { commande: string }; Returns: string }
       valider_no_show: { Args: { commande: string }; Returns: undefined }
+      villes_ouvertes: {
+        Args: never
+        Returns: {
+          boutiques: number
+          centre_lat: number
+          centre_lng: number
+          code: string
+          lat_max: number
+          lat_min: number
+          lng_max: number
+          lng_min: number
+          nom: string
+          nom_ar: string
+          pays: string
+          zoom: number
+        }[]
+      }
     }
     Enums: {
       genre_article: "homme" | "femme" | "enfant" | "mixte"

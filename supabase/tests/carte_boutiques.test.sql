@@ -185,7 +185,7 @@ insert into boutiques (nom, slug, quartier, whatsapp, statut)
   select 'Masse ' || i, 'masse-' || i, 'Centre', '+213555' || lpad(i::text, 6, '0'), 'validee' from generate_series(1, 510) i;
 select pg_temp.ok((select count(*) = 500 from public.boutiques_carte(100000)), 'limite : jamais plus de 500 boutiques');
 select pg_temp.ok((select count(*) = 500 from public.boutiques_carte()), 'limite : 500 par défaut');
-select pg_temp.ok(has_function_privilege('anon', 'public.boutiques_carte(integer)', 'execute'), 'droits : appel anonyme permis');
+select pg_temp.ok(has_function_privilege('anon', 'public.boutiques_carte(integer, text)', 'execute'), 'droits : appel anonyme permis');
 
 select 'Tous les tests SQL de la carte des boutiques (US-24.1) passent.';
 rollback;
