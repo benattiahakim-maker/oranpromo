@@ -13,6 +13,9 @@ import EnregistrerVue from "@/components/EnregistrerVue";
 import { getLangue } from "@/lib/langue-serveur";
 import { remplir } from "@/lib/langue";
 import { textesDe } from "@/lib/textes";
+import BoutonSuivre from "@/components/BoutonSuivre";
+import { cookies } from "next/headers";
+import { COOKIE_SUIVRE, estSuivie } from "@/lib/abonnements";
 import { chargerApercuBoutique, METADONNEES_BOUTIQUE_INDISPONIBLE, metadonneesBoutique } from "@/lib/lien-boutique";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +42,12 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
     .select("id, titre, prix, cree_le, promos(prix_promo, date_fin), photos(adresse, adresse_vignette, ordre)")
     .eq("boutique_id", boutique.id).eq("statut", "disponible");
   if (erreurArticles) throw new Error("Impossible de charger les articles de la boutique.");
+  // US-31.2 : bouton « Suivre » pour les visiteurs et les clients (pas pour les comptes commerçant ou admin).
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profil } = user ? await supabase.from("profils").select("role").eq("id", user.id).maybeSingle() : { data: null };
+  const afficherSuivre = !user || profil?.role === "client";
+  const suivie = user && afficherSuivre ? await estSuivie(supabase, boutique.id) : false;
+  const terminerApresConnexion = Boolean(user) && (await cookies()).get(COOKIE_SUIVRE)?.value === slug;
   const maintenant = new Date();
   const liste = trierArticlesVitrine((articles ?? []).map(article => {
     const promotion = Array.isArray(article.promos) ? article.promos[0] : article.promos;
@@ -56,6 +65,7 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
     <section className="flex flex-col gap-3 px-6 py-8 text-center">
       <p className="etiquette text-gris">{boutique.quartier}{villeBoutique && ` · ${langue === "ar" ? villeBoutique.nom_ar : villeBoutique.nom}`}</p>
       <h1 dir="auto" className="font-titre break-words text-3xl">{boutique.nom}</h1>
+      {afficherSuivre && <BoutonSuivre boutiqueId={boutique.id} slug={slug} nom={boutique.nom} connecte={Boolean(user)} suivieAuDepart={suivie} terminerApresConnexion={terminerApresConnexion} />}
       <p dir="auto" className="text-sm font-light">{boutique.adresse ?? t.adresseInconnue}</p>
       <p dir="auto" className="whitespace-pre-line text-sm text-gris">{boutique.horaires ?? t.horairesInconnus}</p>
       <div className="mt-3 grid grid-cols-2 gap-3">

@@ -14,6 +14,8 @@ import MonParrainage from "@/components/MonParrainage";
 import MesBons from "@/components/MesBons";
 import { afficherMonParrainage, COOKIE_PARRAIN, lireMonParrainage, normaliserCodeParrainage, preparerInvitation, type MonParrainage as DonneesParrainage } from "@/lib/parrainage";
 import { lireMesBons, type BonClient } from "@/lib/bons";
+import { compterMesBoutiques } from "@/lib/abonnements";
+import { remplir } from "@/lib/langue";
 
 export const metadata = { title: "Mon compte", robots: { index: false, follow: false } };
 
@@ -35,6 +37,9 @@ export default async function MonCompte({ searchParams }: { searchParams: Promis
     [parrainage, bons] = await Promise.all([lireMonParrainage(client).catch(() => null), lireMesBons(client).catch(() => [])]);
   }
   const invitation = parrainage?.actif && parrainage.peut_parrainer ? await preparerInvitation(await creerClientServeur(), await getLangue()).catch(() => null) : null;
+  // US-31.2 : boutiques suivies (clients seulement).
+  const nombreBoutiques = profil.role === "client" ? await compterMesBoutiques(await creerClientServeur()) : null;
+  const ts = (await getTextes()).suivre;
   const codeInvite = normaliserCodeParrainage((await cookies()).get(COOKIE_PARRAIN)?.value) ?? "";
   return <main className="mx-auto w-full max-w-lg bg-blanc px-6 pb-10 text-noir">
     <header className="border-b border-trait pb-5 pt-6 text-center"><p className="etiquette text-gris">{t.monCompte}</p><h1 dir="auto" className="font-titre text-[28px] font-normal">{profil.nom ?? t.monProfil}</h1></header>
@@ -45,6 +50,7 @@ export default async function MonCompte({ searchParams }: { searchParams: Promis
     <div className="mt-6"><FormulaireProfilClient nom={profil.nom} telephone={profil.telephone} telephoneModifiable={!parTelephone && !profil.telephone_verifie_le} /></div>
     {parrainage?.peut_choisir && <ChoixParrain initial={parrainage.parrain_saisi ? "" : codeInvite} parrainSaisi={parrainage.parrain_saisi} saisies={parrainage.saisies} />}
     <Link href="/compte/commandes" className="etiquette mt-8 flex min-h-[44px] items-center justify-center border border-noir">{t.mesCommandes}</Link>
+    {nombreBoutiques !== null && <Link href="/compte/boutiques" className="etiquette mt-3 flex min-h-[44px] items-center justify-center border border-noir">{remplir(ts.mesBoutiques, { n: nombreBoutiques })}</Link>}
     {profil.boutique_id && <Link href="/espace" className="etiquette mt-3 flex min-h-[44px] items-center justify-center border border-trait">{t.monEspace}</Link>}
     {bons.length > 0 && <MesBons bons={bons} />}
     {parrainage && afficherMonParrainage(parrainage) && <MonParrainage parrainage={parrainage} invitation={invitation} />}

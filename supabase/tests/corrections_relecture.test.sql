@@ -270,7 +270,8 @@ select pg_temp.ok(passer_commande('d0000000-0000-0000-0000-000000000001', '[{"ar
 -- Point 4 (suite) : un nom invalide n'entre jamais dans un message WhatsApp.
 -- ---------------------------------------------------------------------------
 reset role;
-select pg_temp.ok((select count(*) from messages_whatsapp where texte ~ '[0-9]{4}|://' and modele <> 'oranpromo_nouvelle_commande') = 0,
+-- Le n° de commande (séquence, 4 chiffres dès 1000) est retiré avant le contrôle : seul le nom du client compte ici.
+select pg_temp.ok((select count(*) from messages_whatsapp where regexp_replace(texte, 'n° [0-9]+', '', 'g') ~ '[0-9]{4}|://' and modele <> 'oranpromo_nouvelle_commande') = 0,
   'point 4 : aucun message ne contient de lien ou de numéro venant du nom');
 
 rollback;
