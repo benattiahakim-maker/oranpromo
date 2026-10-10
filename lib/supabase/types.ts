@@ -169,45 +169,121 @@ export type Database = {
           },
         ]
       }
+      avis: {
+        Row: {
+          boutique_id: string
+          client_id: string
+          commande_id: string
+          commentaire: string | null
+          cree_le: string
+          criteres: string[]
+          id: string
+          note: number
+          reponse: string | null
+          reponse_le: string | null
+          statut: string
+        }
+        Insert: {
+          boutique_id: string
+          client_id: string
+          commande_id: string
+          commentaire?: string | null
+          cree_le?: string
+          criteres?: string[]
+          id?: string
+          note: number
+          reponse?: string | null
+          reponse_le?: string | null
+          statut?: string
+        }
+        Update: {
+          boutique_id?: string
+          client_id?: string
+          commande_id?: string
+          commentaire?: string | null
+          cree_le?: string
+          criteres?: string[]
+          id?: string
+          note?: number
+          reponse?: string | null
+          reponse_le?: string | null
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avis_boutique_id_fkey"
+            columns: ["boutique_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avis_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avis_commande_id_fkey"
+            columns: ["commande_id"]
+            isOneToOne: true
+            referencedRelation: "commandes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bons: {
         Row: {
           commande_id: string | null
           cree_le: string
           expire_le: string | null
           id: string
+          minimum_achat: number
           montant: number
           origine: string
           parrainage_id: string | null
           profil_id: string
+          programme_id: string | null
           releve_id: string | null
           statut: string
+          univers: string | null
           utilise_le: string | null
+          villes: string[]
         }
         Insert: {
           commande_id?: string | null
           cree_le?: string
           expire_le?: string | null
           id?: string
+          minimum_achat?: number
           montant?: number
           origine: string
           parrainage_id?: string | null
           profil_id: string
+          programme_id?: string | null
           releve_id?: string | null
           statut?: string
+          univers?: string | null
           utilise_le?: string | null
+          villes?: string[]
         }
         Update: {
           commande_id?: string | null
           cree_le?: string
           expire_le?: string | null
           id?: string
+          minimum_achat?: number
           montant?: number
           origine?: string
           parrainage_id?: string | null
           profil_id?: string
+          programme_id?: string | null
           releve_id?: string | null
           statut?: string
+          univers?: string | null
           utilise_le?: string | null
+          villes?: string[]
         }
         Relationships: [
           {
@@ -229,6 +305,13 @@ export type Database = {
             columns: ["profil_id"]
             isOneToOne: false
             referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bons_programme_id_fkey"
+            columns: ["programme_id"]
+            isOneToOne: false
+            referencedRelation: "programmes_bons"
             referencedColumns: ["id"]
           },
           {
@@ -611,6 +694,8 @@ export type Database = {
           montant: number
           motif: string | null
           numero_commande: number
+          origine: string | null
+          programme_id: string | null
           releve_id: string
           remise_le: string
           statut: string
@@ -626,6 +711,8 @@ export type Database = {
           montant: number
           motif?: string | null
           numero_commande: number
+          origine?: string | null
+          programme_id?: string | null
           releve_id: string
           remise_le: string
           statut?: string
@@ -641,6 +728,8 @@ export type Database = {
           montant?: number
           motif?: string | null
           numero_commande?: number
+          origine?: string | null
+          programme_id?: string | null
           releve_id?: string
           remise_le?: string
           statut?: string
@@ -666,6 +755,13 @@ export type Database = {
             columns: ["commande_id"]
             isOneToOne: false
             referencedRelation: "commandes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lignes_releve_programme_id_fkey"
+            columns: ["programme_id"]
+            isOneToOne: false
+            referencedRelation: "programmes_bons"
             referencedColumns: ["id"]
           },
           {
@@ -902,6 +998,74 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "villes"
             referencedColumns: ["code"]
+          },
+        ]
+      }
+      programmes_bons: {
+        Row: {
+          actif: boolean
+          budget: number
+          code: string | null
+          cree_le: string
+          cree_par: string | null
+          debut: string
+          fin: string | null
+          id: string
+          minimum_achat: number
+          montant: number
+          nom_ar: string
+          nom_fr: string
+          plafond_par_boutique: number | null
+          type: string
+          univers: string | null
+          validite_jours: number
+          villes: string[]
+        }
+        Insert: {
+          actif?: boolean
+          budget?: number
+          code?: string | null
+          cree_le?: string
+          cree_par?: string | null
+          debut?: string
+          fin?: string | null
+          id?: string
+          minimum_achat?: number
+          montant: number
+          nom_ar: string
+          nom_fr: string
+          plafond_par_boutique?: number | null
+          type: string
+          univers?: string | null
+          validite_jours?: number
+          villes?: string[]
+        }
+        Update: {
+          actif?: boolean
+          budget?: number
+          code?: string | null
+          cree_le?: string
+          cree_par?: string | null
+          debut?: string
+          fin?: string | null
+          id?: string
+          minimum_achat?: number
+          montant?: number
+          nom_ar?: string
+          nom_fr?: string
+          plafond_par_boutique?: number | null
+          type?: string
+          univers?: string | null
+          validite_jours?: number
+          villes?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programmes_bons_cree_par_fkey"
+            columns: ["cree_par"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1193,6 +1357,18 @@ export type Database = {
         Returns: number
       }
       annuler_no_show: { Args: { commande: string }; Returns: undefined }
+      avis_boutique: {
+        Args: { boutique: string; decalage?: number; limite?: number }
+        Returns: {
+          auteur: string
+          commentaire: string
+          criteres: string[]
+          id: string
+          mois: string
+          note: number
+          reponse: string
+        }[]
+      }
       bloquer_client: { Args: { client: string }; Returns: undefined }
       boutiques_carte: {
         Args: { code_ville?: string; limite?: number }
@@ -1251,6 +1427,15 @@ export type Database = {
           document: string
           version: string
         }[]
+      }
+      donner_avis: {
+        Args: {
+          commande: string
+          commentaire?: string
+          criteres?: string[]
+          note: number
+        }
+        Returns: Json
       }
       enregistrer_envoi_code: {
         Args: { jeton: string; numero: string }
@@ -1339,6 +1524,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      resume_avis: {
+        Args: { boutiques: string[] }
+        Returns: {
+          boutique_id: string
+          criteres: Json
+          moyenne: number
+          nombre: number
+        }[]
+      }
       retirer_boutique_des_bons: {
         Args: { boutique: string; retiree: boolean }
         Returns: undefined
@@ -1366,7 +1560,10 @@ export type Database = {
         Returns: undefined
       }
       suivre_boutique: { Args: { boutique: string }; Returns: boolean }
-      utiliser_bon: { Args: { commande: string }; Returns: string }
+      utiliser_bon: {
+        Args: { bon?: string; commande: string }
+        Returns: string
+      }
       valider_no_show: { Args: { commande: string }; Returns: undefined }
       villes_ouvertes: {
         Args: never
