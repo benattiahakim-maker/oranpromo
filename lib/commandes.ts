@@ -77,11 +77,12 @@ export async function annulerCommandeClient(client: SupabaseClient<Database>, id
   await changerStatutCommande(client, id, "annulee", { motif: "client_a_annule", note });
 }
 
-export type ResumeCommande = Pick<Tables<"commandes">, "id" | "numero" | "statut" | "total" | "cree_le" | "expire_le"> & { boutiques: { nom: string } | null };
+// US-32.2 : mode_remise et terminee_le disent si « Donner mon avis » s'affiche (lib/avis.ts, avisPossible).
+export type ResumeCommande = Pick<Tables<"commandes">, "id" | "numero" | "statut" | "total" | "cree_le" | "expire_le" | "mode_remise" | "terminee_le"> & { boutiques: { nom: string } | null };
 export async function listerMesCommandes(client: SupabaseClient<Database>): Promise<ResumeCommande[]> {
   const { data: { user }, error: erreurSession } = await client.auth.getUser();
   if (erreurSession || !user) throw new Error("Votre session a expiré. Reconnectez-vous.");
-  const { data, error } = await client.from("commandes").select("id, numero, statut, total, cree_le, expire_le, boutiques(nom)").eq("client_id", user.id).order("cree_le", { ascending: false }).limit(100);
+  const { data, error } = await client.from("commandes").select("id, numero, statut, total, cree_le, expire_le, mode_remise, terminee_le, boutiques(nom)").eq("client_id", user.id).order("cree_le", { ascending: false }).limit(100);
   if (error) throw new Error("Impossible de charger vos commandes. Réessayez.");
   return (data ?? []) as unknown as ResumeCommande[];
 }
