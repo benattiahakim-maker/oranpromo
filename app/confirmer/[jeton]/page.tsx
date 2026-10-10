@@ -19,7 +19,7 @@ const ETAT_STATUT: Partial<Record<CommandeAConfirmer["statut"], string>> = {
 function Cadre({ titre, sousTitre, children }: { titre: string; sousTitre?: string; children: React.ReactNode }) {
   return <main className="mx-auto w-full max-w-[390px] bg-blanc text-noir">
     <header className="flex flex-col items-center gap-1.5 border-b border-trait px-6 pb-5 pt-7 text-center">
-      <span className="font-titre text-xl">OranPromo</span>
+      <span className="font-titre text-xl">BleDeal</span>
       {sousTitre && <p className="etiquette text-gris">{sousTitre}</p>}
       <h1 className="font-titre text-[28px] font-normal">{titre}</h1>
     </header>

@@ -16,7 +16,7 @@ export const FORMAT_CODE_PARRAINAGE = /^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/;
 export const COOKIE_PARRAIN = "parrain";
 export const DUREE_COOKIE_PARRAIN = 60 * 60 * 24 * 30;
 
-export const MESSAGE_PARRAIN_ENREGISTRE = "C'est noté. Si ce numéro est celui d'un client OranPromo, il deviendra ton parrain après ton premier retrait en boutique.";
+export const MESSAGE_PARRAIN_ENREGISTRE = "C'est noté. Si ce numéro est celui d'un client BleDeal, il deviendra ton parrain après ton premier retrait en boutique.";
 export const MESSAGE_SAISIE_PARRAIN_INVALIDE = "Écris le numéro WhatsApp de ton parrain (05, 06 ou 07 et 8 chiffres) ou son code de 6 caractères.";
 export const MESSAGE_PARRAIN_IMPOSSIBLE = "Impossible d'enregistrer ton parrain. Réessaie.";
 
@@ -38,15 +38,16 @@ export function lienParrainage(code: string, siteUrl?: string): string {
 }
 
 const MESSAGE_PARTAGE: Record<Langue, (lien: string) => string> = {
-  fr: lien => `Je t'invite sur OranPromo, les promos des boutiques d'Oran : ${lien}`,
-  ar: lien => `نعرضك لـ OranPromo، التخفيضات تاع حوانيت وهران: ${lien}`,
+  // US-30.1 : texte 13 (plus de ville dans l'invitation).
+  fr: lien => `Je t'invite sur BleDeal, les promos des boutiques près de chez toi : ${lien}`,
+  ar: lien => `نعرضك لـ BleDeal، التخفيضات تاع الحوانيت اللي قراب ليك: ${lien}`,
 };
 
 export function messagePartageParrainage(langue: Langue, lien: string): string {
   return MESSAGE_PARTAGE[langue](lien);
 }
 
-/** Partage sur WhatsApp sans destinataire (le client choisit le contact ou son statut ; OranPromo n'écrit à personne). */
+/** Partage sur WhatsApp sans destinataire (le client choisit le contact ou son statut ; BleDeal n'écrit à personne). */
 export function lienPartageParrainage(langue: Langue, lien: string): string {
   return `https://wa.me/?text=${encodeURIComponent(messagePartageParrainage(langue, lien))}`;
 }

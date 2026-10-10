@@ -13,6 +13,6 @@ export default function BonsBoutique({ releves, maintenant = new Date() }: { rel
     {releves.some(r => r.lignes.length) && <details className="mt-2"><summary className="inline-flex min-h-11 cursor-pointer items-center text-sm underline">Détail des commandes</summary>
       <ul>{releves.flatMap(r => r.lignes).map(l => <li key={l.id} className="flex justify-between gap-3 border-t border-trait py-2 text-xs text-gris"><span>N° {l.numero_commande} · {dateHeureAlger(l.remise_le)}</span><span className="shrink-0 text-noir">{l.statut === "a_rembourser" ? montantDA(l.montant) : ETATS_LIGNE[l.statut] ?? l.statut}</span></li>)}</ul>
     </details>}
-    <p className="mt-2 text-xs leading-[1.6] text-gris">OranPromo vous rembourse chaque mois les bons de 300 DA déduits sur des commandes remises par QR code ou code (relevé clôturé le 1er, paiement avant le 10).</p>
+    <p className="mt-2 text-xs leading-[1.6] text-gris">BleDeal vous rembourse chaque mois les bons de 300 DA déduits sur des commandes remises par QR code ou code (relevé clôturé le 1er, paiement avant le 10).</p>
   </section>;
 }

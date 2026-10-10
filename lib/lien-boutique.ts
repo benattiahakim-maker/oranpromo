@@ -42,13 +42,14 @@ export function lienBoutique(slug: string, siteUrl?: string): string {
   return `${adresseSite(siteUrl)}/b/${encodeURIComponent(slug)}`;
 }
 
-export function messagePartageBoutique(nom: string, lien: string): string {
-  return `Découvrez ${nom} sur OranPromo : nos articles et nos promos à Oran, à réserver sur WhatsApp. ${lien}`;
+// US-30.1 : ville de la boutique (Oran par défaut, comme avant).
+export function messagePartageBoutique(nom: string, lien: string, ville = "Oran"): string {
+  return `Découvrez ${nom} sur BleDeal : nos articles et nos promos à ${ville}, à réserver sur WhatsApp. ${lien}`;
 }
 
 /** Partage sur WhatsApp sans destinataire : le commerçant choisit le contact, le groupe ou son statut. */
-export function lienPartageWhatsApp(nom: string, lien: string): string {
-  return `https://wa.me/?text=${encodeURIComponent(messagePartageBoutique(nom, lien))}`;
+export function lienPartageWhatsApp(nom: string, lien: string, ville = "Oran"): string {
+  return `https://wa.me/?text=${encodeURIComponent(messagePartageBoutique(nom, lien, ville))}`;
 }
 
 /** Description de l'aperçu (WhatsApp, Facebook…) : quartier et nombre d'articles disponibles. */
@@ -62,7 +63,7 @@ export function descriptionBoutique(quartier: string, nombreArticles: number | n
 
 /** Nom de fichier du QR code téléchargé. */
 export function nomFichierQrCode(slug: string): string {
-  return `oranpromo-${slug}-qr.svg`;
+  return `bledeal-${slug}-qr.svg`;
 }
 
 /** QR code SVG noir sur blanc, généré localement (aucun service externe). Serveur seulement. */
@@ -86,7 +87,7 @@ export function metadonneesBoutique({ nom, quartier, ville, slug, photo, nombreA
     title: nom,
     description,
     alternates: { canonical: chemin },
-    openGraph: { title: nom, description, url: chemin, siteName: "OranPromo", locale: "fr_FR", type: "website", images: [image] },
+    openGraph: { title: nom, description, url: chemin, siteName: "BleDeal", locale: "fr_FR", type: "website", images: [image] },
     twitter: { card: "summary_large_image", title: nom, description, images: [{ url: image.url, alt: nom }] },
   };
 }
@@ -111,11 +112,13 @@ export function adresseDonneesSvg(svg: string): string {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
-export type PartageBoutique = { nom: string; slug: string; statut: "en_attente" | "validee" | "suspendue"; lien: string; lienWhatsApp: string | null; qrCode: string | null; fichierQrCode: string };
+// US-30.1 : « ville » = nom de la ville de la boutique (affiche « BleDeal · Oran », message de partage) ; Oran par défaut.
+export type PartageBoutique = { nom: string; slug: string; statut: "en_attente" | "validee" | "suspendue"; lien: string; lienWhatsApp: string | null; qrCode: string | null; fichierQrCode: string; ville: string };
 
 /** Tout ce que le bloc « Partager ma boutique » affiche ; lien WhatsApp et QR code seulement pour une boutique validée. */
-export async function preparerPartageBoutique(boutique: { nom: string; slug: string; statut: PartageBoutique["statut"] }, siteUrl?: string): Promise<PartageBoutique> {
+export async function preparerPartageBoutique(boutique: { nom: string; slug: string; statut: PartageBoutique["statut"]; ville?: string | null }, siteUrl?: string): Promise<PartageBoutique> {
   const lien = lienBoutique(boutique.slug, siteUrl);
   const validee = boutique.statut === "validee";
-  return { nom: boutique.nom, slug: boutique.slug, statut: boutique.statut, lien, lienWhatsApp: validee ? lienPartageWhatsApp(boutique.nom, lien) : null, qrCode: validee ? adresseDonneesSvg(await qrCodeSvg(lien)) : null, fichierQrCode: nomFichierQrCode(boutique.slug) };
+  const ville = boutique.ville || "Oran";
+  return { nom: boutique.nom, slug: boutique.slug, statut: boutique.statut, lien, lienWhatsApp: validee ? lienPartageWhatsApp(boutique.nom, lien, ville) : null, qrCode: validee ? adresseDonneesSvg(await qrCodeSvg(lien)) : null, fichierQrCode: nomFichierQrCode(boutique.slug), ville };
 }

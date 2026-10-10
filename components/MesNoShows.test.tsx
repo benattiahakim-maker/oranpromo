@@ -7,7 +7,7 @@ const { contesterMonNoShow, refresh } = vi.hoisted(() => ({ contesterMonNoShow: 
 vi.mock("@/app/compte/actions", () => ({ contesterMonNoShow }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
 afterEach(cleanup);
-beforeEach(() => { vi.clearAllMocks(); contesterMonNoShow.mockResolvedValue({ succes: true, message: "Contestation envoyée : OranPromo va l’examiner." }); });
+beforeEach(() => { vi.clearAllMocks(); contesterMonNoShow.mockResolvedValue({ succes: true, message: "Contestation envoyée : BleDeal va l’examiner." }); });
 
 const base = { id: "c1", numero: 12, no_show_le: "2026-10-09T10:00:00Z", contestee_le: null, contestation_validee_le: null, boutiques: { nom: "Boutique Nour" }, contestations: null };
 const maintenant = Date.parse("2026-10-10T10:00:00Z");
@@ -60,7 +60,7 @@ describe("contester un no-show depuis /compte", () => {
   });
   it("une seule contestation en attente à la fois : les autres no-shows attendent la réponse", () => {
     render(<MesNoShows noShows={[{ ...base, id: "c2", contestee_le: "2026-10-09T12:00:00Z", contestations: { motif: "J’étais malade" } }, { ...base, id: "c4", numero: 20 }]} maintenant={maintenant} />);
-    expect(screen.getByText(/quand OranPromo aura répondu à votre contestation en cours/)).toBeInTheDocument();
+    expect(screen.getByText(/quand BleDeal aura répondu à votre contestation en cours/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Contester" })).not.toBeInTheDocument();
   });
 });

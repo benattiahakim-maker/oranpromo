@@ -798,6 +798,16 @@ Relevé du 10/10 sur `main` : « OranPromo » dans **93 lignes de 44 fichiers** 
 | Cloudflare Turnstile, CARTO | domaines autorisés | — | ajouter `bledeal.com` |
 | Affiches et QR codes | QR = `NEXT_PUBLIC_SITE_URL/b/<slug>` | régénérés automatiquement | réimprimer ; si un ancien domaine a été imprimé, le rediriger vers `bledeal.com` (question 11) |
 
+**Codé en US-30.1** (aucune migration) :
+- Logo « BleDeal » (Bodoni Moda, plus de capitales espacées, `dir="ltr"`) : `components/EntetePublic.tsx`, `app/retrait/[jeton]/page.tsx`, `app/confirmer/[jeton]/page.tsx` ; image d'aperçu `app/b/[slug]/apercu/route.tsx` (« BleDeal » en casse normale).
+- `app/layout.tsx` : titre « BleDeal », modèle `%s · BleDeal`, description (texte 14) « Les promos des boutiques près de chez vous, ville par ville. Réservez sur WhatsApp, payez en boutique. » ; `siteName: "BleDeal"` (`lib/lien-boutique.ts`).
+- Tous les textes FR / arabe et messages du site qui disaient « OranPromo » disent « BleDeal » (« d'OranPromo » → « de BleDeal », « qu'OranPromo » → « que BleDeal » ; en arabe, « BleDeal » en lettres latines, question 10).
+- Messages WhatsApp préparés : réserver / question / signalement / relance / contact (`lib/whatsapp.ts`, « vu sur BleDeal ») ; partage de boutique `messagePartageBoutique(nom, lien, ville)` (« … nos promos à <ville de la boutique> … », Oran par défaut ; `preparerPartageBoutique` reçoit `ville`, lue par `villes(nom)` dans `/espace` et l'affiche) ; parrainage (texte 13, sans ville).
+- Affiche `/espace/affiche` : « BleDeal · <ville de la boutique> ».
+- Fichiers : `bledeal-<slug>-qr.svg`, `bledeal-bons-<mois>.csv`.
+- `lib/textes/messages.ts` : `avecMarque(texte)` appliqué par `traduireMessage` (français et arabe) : les messages de la base qui disent encore « OranPromo » (blocage, contestation ; base non modifiée) s'affichent avec « BleDeal ». Limite : un message de la base affiché sans passer par `traduireMessage` garderait « OranPromo ».
+- Gardés : `oranpromo:panier`, `oranpromo:article:modifier:…`, `oranpromo-son`, `oranpromo.invalid`, modèles `oranpromo_*`, réglages internes de la base.
+
 ### Fichiers prévus (au moment du code)
 
 US-29 : migration `…_villes.sql` + `supabase/tests/villes.test.sql` ; `lib/ville.ts` (+ test : cookie, `deVille`, codes réservés, choix de la ville par défaut), `lib/villes.ts` (photos), `lib/position.ts` (bornes par ville), `lib/catalogue.ts`, `lib/carte.ts`, `lib/boutique.ts` ; `app/[ville]/layout.tsx`, `app/[ville]/page.tsx`, `app/[ville]/catalogue/page.tsx`, `app/[ville]/carte/page.tsx` ; `app/page.tsx`, `app/catalogue/page.tsx`, `app/carte/page.tsx` (redirections) ; `app/villes/page.tsx`, `app/ville/actions.ts`, `components/ChoixVille.tsx` ; `app/admin/villes/page.tsx` + `actions.ts` ; `components/EntetePublic.tsx`, `CarteLeaflet.tsx`, `CartePosition.tsx`, `ChoixPosition.tsx`, `Promos.tsx`, `NouvelleBoutique.tsx` ; types régénérés (`npm run db:types`). US-30 : fichiers de l'inventaire ci-dessus. Tests Vitest pour chaque fonction de `lib/`, les redirections et les pages ; tests SQL pour la migration (Oran identique).

@@ -5,6 +5,14 @@ import type { Langue } from "@/lib/langue";
 /** Apostrophes droites et typographiques confondues (la base écrit « n'existe », lib/ « n’existe »). */
 const normaliser = (texte: string) => texte.replace(/’/g, "'").trim();
 
+/**
+ * US-30.1 : les messages de la base disent encore « OranPromo » (fonctions de blocage et de no-show non modifiées) :
+ * le site les affiche avec « BleDeal » (« d'OranPromo » → « de BleDeal »), en français comme avant traduction.
+ */
+export function avecMarque(texte: string): string {
+  return texte.replace(/\bd(['’])OranPromo\b/g, "de BleDeal").replace(/\bqu(['’])OranPromo\b/g, "que BleDeal").replace(/OranPromo/g, "BleDeal");
+}
+
 const FIXES: Record<string, string> = {
   // Code par WhatsApp (US-21) — n° 8 validé par le propriétaire le 9/10.
   "Code incorrect ou expiré. Vérifiez les 6 chiffres ou demandez un nouveau code.": "الكود غالط ولا فات وقتو. شوف الأرقام الستة ولا اطلب كود جديد.",
@@ -25,7 +33,7 @@ const FIXES: Record<string, string> = {
   "Trop de codes demandés pour ce numéro : réessayez dans une heure.": "طلبت كودات بزاف لهاد الرقم: عاود جرّب من بعد ساعة.",
   "Numéro refusé : seuls les mobiles algériens (05, 06 ou 07) sont acceptés.": "الرقم ما تقبلش: غير البورطابل الجزائري (05، 06 ولا 07).",
   "Votre numéro est vérifié : pour en changer, vérifiez le nouveau numéro par code.": "رقمك مأكّد: باش تبدّلو، أكّد الرقم الجديد بالكود.",
-  "Votre compte est bloqué : vous ne pouvez pas changer de numéro. Contactez OranPromo.": "حسابك مبلوكي: ما تقدرش تبدّل الرقم. اتصل بـ OranPromo.",
+  "Votre compte est bloqué : vous ne pouvez pas changer de numéro. Contactez BleDeal.": "حسابك مبلوكي: ما تقدرش تبدّل الرقم. اتصل بـ BleDeal.",
   "Vous êtes connecté.": "راك داخل لحسابك.",
   "Numéro vérifié.": "الرقم تأكّد.",
   // Connexion par e-mail
@@ -47,12 +55,12 @@ const FIXES: Record<string, string> = {
   "Corrigez votre nom dans votre compte : lettres, espaces, apostrophe et tiret seulement.": "صحّح اسمك في حسابك: غير الحروف، الفراغات، الفاصلة العليا والخط.",
   "Profil introuvable : reconnectez-vous.": "ما لقيناش حسابك: عاود ادخل.",
   // Blocage et no-shows (textes affichés seulement : les règles ne changent pas)
-  "Votre compte est bloqué : vous ne pouvez plus commander. Contactez OranPromo pour le débloquer.": "حسابك مبلوكي: ما تقدرش تطلب. اتصل بـ OranPromo باش يحلّوه.",
-  "Votre compte est bloqué : contactez OranPromo pour le débloquer.": "حسابك مبلوكي: اتصل بـ OranPromo باش يحلّوه.",
-  "Votre compte est bloqué après 5 commandes non récupérées : contactez OranPromo pour le débloquer.": "حسابك تبلوكا من بعد 5 طلبات ما تدّاوش: اتصل بـ OranPromo باش يحلّوه.",
+  "Votre compte est bloqué : vous ne pouvez plus commander. Contactez BleDeal pour le débloquer.": "حسابك مبلوكي: ما تقدرش تطلب. اتصل بـ BleDeal باش يحلّوه.",
+  "Votre compte est bloqué : contactez BleDeal pour le débloquer.": "حسابك مبلوكي: اتصل بـ BleDeal باش يحلّوه.",
+  "Votre compte est bloqué après 5 commandes non récupérées : contactez BleDeal pour le débloquer.": "حسابك تبلوكا من بعد 5 طلبات ما تدّاوش: اتصل بـ BleDeal باش يحلّوه.",
   "Connectez-vous pour contester.": "ادخل لحسابك باش تعترض.",
   "Contestation invalide.": "الاعتراض ماشي صحيح.",
-  "Contestation envoyée : OranPromo va l'examiner. En attendant, cette commande ne compte pas dans vos commandes non récupérées.": "الاعتراض تبعث: OranPromo راح تشوفو. في هاد الوقت، هاد الطلب ما يتحسبش مع الطلبات اللي ما تدّاوش.",
+  "Contestation envoyée : BleDeal va l'examiner. En attendant, cette commande ne compte pas dans vos commandes non récupérées.": "الاعتراض تبعث: BleDeal راح تشوفو. في هاد الوقت، هاد الطلب ما يتحسبش مع الطلبات اللي ما تدّاوش.",
   "Impossible d'envoyer votre contestation. Réessayez.": "ما قدرناش نبعثو الاعتراض ديالك. عاود جرّب.",
   "Aucun no-show à contester sur cette commande.": "هاد الطلب ما فيهش غياب باش تعترض عليه.",
   "Le délai pour contester est dépassé : un no-show se conteste dans les 7 jours.": "فات وقت الاعتراض: تعترض في 7 أيام.",
@@ -90,7 +98,7 @@ const FIXES: Record<string, string> = {
   "Cette contenance est épuisée.": "هاد الحجم ما بقاش.",
   "Il ne reste qu'une pièce dans cette contenance.": "بقات غير وحدة في هاد الحجم.",
   // Parrainage (US-27) : réponses de choisir_parrain et de l'action serveur. N° 9 et 10 validés (9/10), les autres à relire.
-  "C'est noté. Si ce numéro est celui d'un client OranPromo, il deviendra ton parrain après ton premier retrait en boutique.": "تسجّلت. إلا كانت هاد النمرة نتاع زبون في OranPromo، يولّي هو اللي عرضك من بعد أول طلب تدّيه من الحانوت.",
+  "C'est noté. Si ce numéro est celui d'un client BleDeal, il deviendra ton parrain après ton premier retrait en boutique.": "تسجّلت. إلا كانت هاد النمرة نتاع زبون في BleDeal، يولّي هو اللي عرضك من بعد أول طلب تدّيه من الحانوت.",
   "C'est ton propre numéro : choisis le numéro d'un ami.": "هادي نمرتك أنت: ختار نمرة صاحبك.",
   "Écris le numéro WhatsApp de ton parrain (05, 06 ou 07 et 8 chiffres) ou son code de 6 caractères.": "اكتب نمرة الواتساب تاع اللي عرضك (05، 06 ولا 07 و8 أرقام) ولا الكود نتاعو (6 حروف).",
   "Connecte-toi pour choisir ton parrain.": "ادخل لحسابك باش تكتب اللي عرضك.",
@@ -122,7 +130,7 @@ const MODELES: [RegExp, string][] = [
   [/^Vous pouvez commander au plus (\d+) pièces dans cette taille\.$/, "تقدر تطلب $1 برك في هاد المقاس."],
   [/^Vous pouvez commander au plus (\d+) pièces dans cette contenance\.$/, "تقدر تطلب $1 برك في هاد الحجم."],
   [/^Un panier contient au plus (\d+) articles différents\.$/, "السلة فيها $1 سلع مختلفة على الأكثر."],
-  [/^Votre compte est bloqué après (\d+) commandes non récupérées : vous ne pouvez plus commander\. Contactez OranPromo pour le débloquer\.$/, "حسابك تبلوكا من بعد $1 طلبات ما تدّاوش: ما تقدرش تطلب. اتصل بـ OranPromo باش يحلّوه."],
+  [/^Votre compte est bloqué après (\d+) commandes non récupérées : vous ne pouvez plus commander\. Contactez BleDeal pour le débloquer\.$/, "حسابك تبلوكا من بعد $1 طلبات ما تدّاوش: ما تقدرش تطلب. اتصل بـ BleDeal باش يحلّوه."],
   [/^Attention : (\d+) commandes? non récupérées?\. Il vous reste (\d+) essais? avant le blocage de votre compte\.$/, "رد بالك: $1 طلب ما تدّاش. بقاولك $2 فرص قبل ما يتبلوكا حسابك."],
   [/^Votre nom doit contenir entre 2 et (\d+) caractères\.$/, "الاسم لازم يكون من 2 حتى $1 حرف."],
   [/^Expliquez en quelques mots pourquoi vous contestez \((\d+) à (\d+) caractères\)\.$/, "قول في كلمتين علاش راك تعترض (من $1 حتى $2 حرف)."],
@@ -139,7 +147,9 @@ const MODELES: [RegExp, string][] = [
 export function traduireMessage(message: string, langue: Langue): string;
 export function traduireMessage(message: string | null | undefined, langue: Langue): string | null;
 export function traduireMessage(message: string | null | undefined, langue: Langue): string | null {
-  if (message == null || langue !== "ar") return message ?? null;
+  if (message == null) return null;
+  message = avecMarque(message);
+  if (langue !== "ar") return message;
   const cle = normaliser(message);
   const fixe = FIXES[cle];
   if (fixe) return fixe;

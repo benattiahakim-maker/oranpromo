@@ -1,7 +1,7 @@
 "use client";
 
 // US-24.2 : bloc « Position sur la carte » de /espace. Boutique en attente : le commerçant la règle ;
-// boutique publiée (validée ou suspendue) : lecture seule, seul OranPromo (admin) la déplace (règle aussi dans la base).
+// boutique publiée (validée ou suspendue) : lecture seule, seul BleDeal (admin) la déplace (règle aussi dans la base).
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -41,7 +41,7 @@ export default function PositionEspace({ statut, latitude, longitude, zone = ZON
     <h2 id="position-espace-titre" className="my-3 font-titre text-[28px] font-normal">Position sur la carte</h2>
     <p className="mb-3 text-sm text-gris">Ville : {zone.nom}</p>
     {enAttente ? <>
-      <p className="mb-4 text-sm">Réglez-la avant la validation : ensuite, seul OranPromo pourra la changer.</p>
+      <p className="mb-4 text-sm">Réglez-la avant la validation : ensuite, seul BleDeal pourra la changer.</p>
       <ChoixPosition id="position-espace" zone={zone} latitude={lat} longitude={lng} onChange={(a, b) => { setLat(a); setLng(b); }} desactive={enCours} />
       <button type="button" onClick={() => void enregistrer()} disabled={enCours} className="etiquette mt-4 min-h-[54px] w-full bg-noir px-4 text-blanc">{enCours ? "Enregistrement…" : "Enregistrer la position"}</button>
     </> : <>

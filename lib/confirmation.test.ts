@@ -54,7 +54,7 @@ describe("US-20.6 : confirmation par le lien", () => {
   });
   it("lien expiré ou invalide : la base n’est pas appelée", async () => {
     const rpc = vi.fn();
-    expect((await confirmerParLien(base(rpc), lien(), ENV, T0 + DUREE_LIEN_MS)).message).toBe("Ce lien a expiré. Confirmez la commande dans votre espace OranPromo, rubrique Commandes.");
+    expect((await confirmerParLien(base(rpc), lien(), ENV, T0 + DUREE_LIEN_MS)).message).toBe("Ce lien a expiré. Confirmez la commande dans votre espace BleDeal, rubrique Commandes.");
     expect((await confirmerParLien(base(rpc), "faux", ENV, T0)).message).toBe("Ce lien n’est pas valide.");
     expect(rpc).not.toHaveBeenCalled();
   });

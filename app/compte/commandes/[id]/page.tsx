@@ -55,7 +55,7 @@ export default async function SuiviCommande({ params, searchParams }: { params: 
     {commande.statut === "expiree" && <p className="border-b border-trait px-6 py-3 text-center text-sm">{t.expiree}</p>}
     {raisonBon && remise === 0 && commande.statut === "demandee" && <p role="status" className="mx-4 mt-4 border border-noir p-3 text-sm leading-[1.6]">{tBon.bonNonApplique[raisonBon]}</p>}
     {retrait && <div className="px-4 pt-[18px]"><BlocRetrait qr={retrait.qr} code={retrait.code} numero={commande.numero} total={commande.total} remise={remise}
-      partage={{ lien: retrait.lien, whatsapp: lienPartageRetrait(langue, commande.numero, boutique?.nom ?? "OranPromo", retrait.lien) }} /></div>}
+      partage={{ lien: retrait.lien, whatsapp: lienPartageRetrait(langue, commande.numero, boutique?.nom ?? "BleDeal", retrait.lien) }} /></div>}
     <div className="px-6 pt-5">
       <FriseCommande statut={commande.statut} suivi={commande.suivi_commandes} />
       <ul aria-label={t.articles} className="mt-2 border-t border-trait pt-3 text-[13px] font-light">{commande.lignes_commande.map(l => <li key={l.id} className="flex justify-between gap-3 py-1"><span>{l.article_id ? <Link href={`/a/${l.article_id}`} className="underline-offset-2 hover:underline">{l.titre}</Link> : l.titre} · {afficherTaille(l.taille, langue)} × {l.quantite}</span><span className="whitespace-nowrap">{formaterPrix(l.prix_unitaire * l.quantite, langue)}</span></li>)}</ul>

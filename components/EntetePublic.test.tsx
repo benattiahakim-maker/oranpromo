@@ -49,7 +49,7 @@ describe("US-29.2 : en-tête sur une page de ville", () => {
   const oran = { code: "oran", nom: "Oran", nom_ar: "وهران" };
   it("logo, recherche et carte restent dans la ville ; pas de bouton ville avec une seule ville ouverte", () => {
     render(<FournisseurTextes langue="fr" textes={textesDe("fr")}><EntetePublic ville={oran} /></FournisseurTextes>);
-    expect(screen.getByRole("link", { name: "ORANPROMO" }).getAttribute("href")).toBe("/oran");
+    expect(screen.getByRole("link", { name: "BleDeal" }).getAttribute("href")).toBe("/oran");
     expect(screen.getByRole("link", { name: "Rechercher" }).getAttribute("href")).toBe("/oran/catalogue");
     expect(screen.getByRole("link", { name: "Carte" }).getAttribute("href")).toBe("/oran/carte");
     expect(screen.queryByRole("link", { name: /Changer de ville/ })).toBeNull();

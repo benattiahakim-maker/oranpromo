@@ -9,7 +9,7 @@ import { useLangue, useTextes } from "./FournisseurTextes";
 import { traduireMessage } from "@/lib/textes/messages";
 
 // Contestation d’un no-show : le client voit ses commandes déclarées « non récupérées » et peut en contester
-// chacune une fois, avec un motif court. OranPromo (l’admin) confirme ou annule.
+// chacune une fois, avec un motif court. BleDeal (l’admin) confirme ou annule.
 // Règles du propriétaire : 7 jours pour contester, une seule contestation en attente à la fois.
 export default function MesNoShows({ noShows, maintenant: maintenantFixe }: { noShows: MonNoShow[]; maintenant?: number }) {
   const t = useTextes().noShows;

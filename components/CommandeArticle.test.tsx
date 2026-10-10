@@ -42,7 +42,7 @@ describe("ajouter au panier depuis la fiche (US-20.2)", () => {
     render(<CommandeArticle {...article} tailles={[{ libelle: "M", quantite: 1 }]} />);
     const lien = screen.getByRole("link", { name: "Une question ? WhatsApp" }).getAttribute("href")!;
     expect(lien).toContain("https://wa.me/213555123456?");
-    expect(new URL(lien).searchParams.get("text")).toContain("/a/1234 (vu sur OranPromo)");
+    expect(new URL(lien).searchParams.get("text")).toContain("/a/1234 (vu sur BleDeal)");
   });
 });
 

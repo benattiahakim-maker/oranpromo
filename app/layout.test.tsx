@@ -20,3 +20,11 @@ describe("US-23 : mise en page selon la langue", () => {
     expect(html).toContain(texte);
   });
 });
+
+describe("US-30.1 : métadonnées BleDeal", () => {
+  it("titre BleDeal et description « ville par ville » (texte 14)", async () => {
+    const { metadata } = await import("./layout");
+    expect(metadata.title).toEqual({ default: "BleDeal", template: "%s · BleDeal" });
+    expect(metadata.description).toBe("Les promos des boutiques près de chez vous, ville par ville. Réservez sur WhatsApp, payez en boutique.");
+  });
+});

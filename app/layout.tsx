@@ -14,8 +14,9 @@ const naskh = Noto_Naskh_Arabic({ variable: "--font-naskh", subsets: ["arabic"],
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
-  title: { default: "OranPromo", template: "%s · OranPromo" },
-  description: "Les promos des boutiques de vêtements d'Oran. Réservez sur WhatsApp, payez en boutique.",
+  title: { default: "BleDeal", template: "%s · BleDeal" },
+  // US-30.1 : texte 14 (« ville par ville »).
+  description: "Les promos des boutiques près de chez vous, ville par ville. Réservez sur WhatsApp, payez en boutique.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

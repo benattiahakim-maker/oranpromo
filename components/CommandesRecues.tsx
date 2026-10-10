@@ -63,11 +63,11 @@ export function CarteCommande({ commande, boutique, dansTableau = false }: { com
     <p className="text-xs text-gris">{formaterDateHeure(commande.cree_le)} · <a href={lienContactClient(commande.client_telephone, commande.numero, boutique)} target="_blank" rel="noopener noreferrer" className="underline">{telephoneLisible(commande.client_telephone)} · WhatsApp</a></p>
     <ul className="text-[13px] font-light">{commande.lignes_commande.map(l => <li key={l.id}>{l.titre} · {l.taille} × {l.quantite} · {formaterPrix(l.prix_unitaire * l.quantite)}</li>)}</ul>
     <p className="text-sm">Total {formaterPrix(commande.total)} · {quantiteTotale(commande.lignes_commande)} pièce{quantiteTotale(commande.lignes_commande) > 1 ? "s" : ""}</p>
-    {/* US-27.4 : bon parrainage OranPromo (300 DA remboursés à la boutique). */}
+    {/* US-27.4 : bon parrainage BleDeal (300 DA remboursés à la boutique). */}
     {(commande.remise_bon ?? 0) > 0 && <p className="text-sm font-medium">Bon parrainage −{formaterPrix(commande.remise_bon)} · à encaisser {formaterPrix(aEncaisser(commande.total, commande.remise_bon))}</p>}
     {commande.note && <p className="text-sm text-gris">Note du client : « {commande.note} »</p>}
     {motifAffiche && <p className="text-sm text-gris">Motif : {motifAffiche}</p>}
-    {commande.no_show_le && <p className="text-sm text-gris">Client pas venu · signalé le {formaterDateHeure(commande.no_show_le)}{commande.no_show_annule_le ? " (annulé par OranPromo)" : ""}</p>}
+    {commande.no_show_le && <p className="text-sm text-gris">Client pas venu · signalé le {formaterDateHeure(commande.no_show_le)}{commande.no_show_annule_le ? " (annulé par BleDeal)" : ""}</p>}
     {commande.statut === "prete" && !annulation && <p className="text-sm">Remise : scannez le QR code du client. <Link href="/espace/scanner" className="underline">Scanner</Link></p>}
     {(action || annulableParBoutique(commande.statut)) && !annulation && <div className="mt-1 flex gap-2">
       {action && commande.statut !== "prete" && <button type="button" disabled={enCours} onClick={() => void changer(action.statut)} className="etiquette min-h-11 flex-1 bg-noir text-blanc">{action.libelle}</button>}

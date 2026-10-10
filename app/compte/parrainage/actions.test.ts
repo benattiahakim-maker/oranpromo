@@ -26,7 +26,7 @@ describe("US-27.2 : choisir son parrain", () => {
   });
   it("en arabe : messages n° 9 et 10 validés", async () => {
     langue.valeur = "ar";
-    expect((await choisirParrain("0661234567")).message).toBe("تسجّلت. إلا كانت هاد النمرة نتاع زبون في OranPromo، يولّي هو اللي عرضك من بعد أول طلب تدّيه من الحانوت.");
+    expect((await choisirParrain("0661234567")).message).toBe("تسجّلت. إلا كانت هاد النمرة نتاع زبون في BleDeal، يولّي هو اللي عرضك من بعد أول طلب تدّيه من الحانوت.");
     rpc.mockResolvedValue({ data: null, error: { code: "23514", message: "C'est ton propre numéro : choisis le numéro d'un ami." } });
     expect((await choisirParrain("0661234567")).message).toBe("هادي نمرتك أنت: ختار نمرة صاحبك.");
   });

@@ -29,6 +29,6 @@ export default function PartagerBoutique({ partage }: { partage: PartageBoutique
           <Link href="/espace/affiche" className="etiquette flex min-h-12 items-center justify-center border border-noir px-2 text-center">Imprimer l’affiche</Link>
         </div>
       </div>}
-    </> : <p role="status" className="mt-3 text-center text-sm">{partage.statut === "suspendue" ? "Votre boutique est suspendue : son lien affiche « Boutique indisponible »." : "Votre lien sera actif dès que votre boutique sera validée par OranPromo."}</p>}
+    </> : <p role="status" className="mt-3 text-center text-sm">{partage.statut === "suspendue" ? "Votre boutique est suspendue : son lien affiche « Boutique indisponible »." : "Votre lien sera actif dès que votre boutique sera validée par BleDeal."}</p>}
   </section>;
 }

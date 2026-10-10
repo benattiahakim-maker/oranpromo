@@ -22,7 +22,7 @@ afterEach(cleanup);
 describe("US-24.2 : /espace, bloc « Position sur la carte »", () => {
   it("boutique en attente : le commerçant place l'épingle et enregistre deux nombres", async () => {
     render(<PositionEspace statut="en_attente" latitude={null} longitude={null} />);
-    expect(screen.getByText("Réglez-la avant la validation : ensuite, seul OranPromo pourra la changer.")).toBeInTheDocument();
+    expect(screen.getByText("Réglez-la avant la validation : ensuite, seul BleDeal pourra la changer.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Déplacer l’épingle" }));
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer la position" }));
     await waitFor(() => expect(enregistrerPositionMaBoutique).toHaveBeenCalledWith(35.7034, -0.6436));
@@ -38,10 +38,10 @@ describe("US-24.2 : /espace, bloc « Position sur la carte »", () => {
   });
 
   it("refus du serveur affiché", async () => {
-    enregistrerPositionMaBoutique.mockResolvedValue({ succes: false, message: "Pour déplacer votre boutique sur la carte, contactez OranPromo." });
+    enregistrerPositionMaBoutique.mockResolvedValue({ succes: false, message: "Pour déplacer votre boutique sur la carte, contactez BleDeal." });
     render(<PositionEspace statut="en_attente" latitude={35.7303} longitude={-0.5784} />);
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer la position" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("contactez OranPromo");
+    expect(await screen.findByRole("alert")).toHaveTextContent("contactez BleDeal");
   });
 
   it("US-29.4 : ville affichée (Oran par défaut) et bornes de la ville de la boutique", () => {
@@ -61,9 +61,9 @@ describe("US-24.2 : /espace, bloc « Position sur la carte »", () => {
     expect(enregistrerPositionMaBoutique).not.toHaveBeenCalled();
   });
 
-  it.each(["validee", "suspendue"] as const)("boutique %s : lecture seule, « contactez OranPromo », aucun bouton", statut => {
+  it.each(["validee", "suspendue"] as const)("boutique %s : lecture seule, « contactez BleDeal », aucun bouton", statut => {
     render(<PositionEspace statut={statut} latitude={35.7303} longitude={-0.5784} />);
-    expect(screen.getByText("Pour déplacer votre boutique sur la carte, contactez OranPromo.")).toBeInTheDocument();
+    expect(screen.getByText("Pour déplacer votre boutique sur la carte, contactez BleDeal.")).toBeInTheDocument();
     expect(screen.getByText("35,730300 · −0,578400")).toBeInTheDocument();
     expect(screen.getByTestId("carte")).toHaveAttribute("data-deplacable", "false");
     expect(screen.queryByRole("button", { name: /Enregistrer|Je suis dans la boutique|Retirer/ })).toBeNull();

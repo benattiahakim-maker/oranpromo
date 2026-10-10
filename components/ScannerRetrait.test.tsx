@@ -50,7 +50,7 @@ describe("US-26.3 : scanner", () => {
   it("un autre QR code (lien du proche, affiche, autre site) est refusé sans appel au serveur", async () => {
     lecteurIntegre([lienRetrait(JETON), "https://autre.example/espace/retrait/" + JETON]);
     render(<ScannerRetrait />);
-    expect(await screen.findByText("Ce n’est pas un QR code de retrait OranPromo.")).toBeInTheDocument();
+    expect(await screen.findByText("Ce n’est pas un QR code de retrait BleDeal.")).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled(); expect(lireRetraitParCode).not.toHaveBeenCalled();
   });
   it("sans lecteur intégré (iPhone) : jsqr chargée à la demande lit l’image de la caméra", async () => {
