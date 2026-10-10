@@ -1177,3 +1177,82 @@ L'espace commerçant et l'admin restent en français.
 4. **Plafond** : 2 bons « avis » par mois et par numéro ?
 5. **Tri « Mieux notées »** : dès le lancement, ou quand assez de boutiques ont 3 avis ?
 6. Le client peut-il **modifier** son avis (et la boutique sa réponse) ? Recommandé : non dans la première version (simple ; un avis faux se signale).
+
+## Module 19 — Bons de réduction : 1re commande et campagnes (après le MVP)
+
+Source : carte Trello « Marketing · Bons de réduction (1re commande + campagnes Aïd / rentrée) » (bons payés par BleDeal, option A ; bon de bienvenue ; bons de campagne de 500 / 1 000 DA avec code, minimum d'achat, plafonds, dates, univers ; relevé mensuel ; clause dans les conditions commerçants ; à vérifier avec le comptable). Demande du 10/10 : **conception seulement** : aucun code, aucune migration. Conception technique : `docs/architecture.md`, section « Bons de réduction : bienvenue et campagnes (US-33) » ; maquette `docs/maquettes/BonsReduction.dc.html` (375 px, français et arabe de droite à gauche). **À valider par le propriétaire** (questions en fin de module).
+
+**Principe** : on **étend** le système de bons du parrainage (US-27) au lieu d'en créer un autre : même table `bons`, mêmes relevés mensuels (`releves_bons`, `lignes_releve`), même preuve (**remise par QR code seulement**, relecture n°6), même retrait d'une boutique des bons (`bons_acceptes`), mêmes pages admin (`/admin/remboursements`, export CSV). Ce qui est nouveau : des **programmes** (bienvenue, campagnes, puis avis US-32 et inscription en boutique US-31) avec chacun son montant, son minimum, ses dates, ses villes, son univers et **son budget**.
+
+**Ordre conseillé** : après US-34 (la clause « bons » des conditions commerçants doit être en ligne avant le premier bon de campagne) ; US-33 avant US-31.4 et US-32.5, qui en sont des cas particuliers.
+
+**Ce qui ne change pas** : blocage, no-shows, contestation, vérification du numéro, statuts, stock ; le parrainage garde ses règles, son budget (`parrainage_budget_mois`) et ses textes. Un compte bloqué ne commande pas, donc n'utilise pas de bon.
+
+| Story | Contenu | Écrans |
+| --- | --- | --- |
+| US-33.1 | Programmes de bons, nouvelles origines, budget par programme (base) | aucun |
+| US-33.2 | Bon de bienvenue (1re commande, numéro vérifié) | `/compte`, `/panier` |
+| US-33.3 | Bons de campagne avec code (Aïd, rentrée…), villes, univers, minimum calculé par la base | `/compte`, `/panier`, `/[ville]` |
+| US-33.4 | Côté boutique : scan, relevé avec l'origine du bon, plafond par boutique | `/espace/scanner`, `/espace` |
+| US-33.5 | Admin : créer et suivre une campagne, signaux de fraude (historique des prix), paiement | `/admin/bons`, `/admin/remboursements` |
+
+### US-33 — Bons de réduction (vue d'ensemble) — **à valider**
+En tant que BleDeal, je veux offrir un bon sur la 1re commande et lancer des campagnes (Aïd, rentrée), afin de faire venir des clients dans les boutiques, sans dépasser un budget et sans fraude.
+
+### US-33.1 — Programmes de bons (aucun écran)
+- Nouvelle table **`programmes_bons`** : `type` (`bienvenue`, `campagne`, puis `avis`, `inscription_boutique`), `nom` (« Aïd 2026 »), `code` (campagne seulement, unique, majuscules, ex. `AID2026`), `montant`, `minimum_achat`, `univers` (vide = tous ; sinon femme, homme, enfant, beauté, comme les filtres du site), `villes` (vide = toutes les villes ouvertes), `debut`, `fin` (heure d'Alger), `validite_jours`, `budget` (DA, part BleDeal), `plafond_par_boutique` (bons utilisés par boutique), `actif`.
+- `bons` reçoit : `programme_id`, `minimum_achat`, `univers`, `villes` (copiés à la création : changer le programme ne change pas les bons déjà donnés), `part_boutique` (0 sauf US-31.4). Nouvelles valeurs d'`origine` : `bienvenue`, `campagne` (puis `avis`, `inscription_boutique`).
+- **Budget par programme** : le budget du parrainage ne compte que les bons de parrainage (petit changement de `prive.bons_emis`, testé : rien ne change tant qu'il n'y a que des bons de parrainage) ; chaque programme compte ses propres bons. Budget atteint : plus de nouveau bon (les bons déjà donnés restent valables).
+- **Un numéro vérifié = un bon par programme** (empreinte du numéro, gardée même si le compte est supprimé, comme `prive.numeros_parraines`).
+
+### US-33.2 — Bon de bienvenue (pages `/compte`, `/panier`)
+- Donné **quand le numéro est vérifié** (US-21) à un compte client qui n'a **jamais eu de commande récupérée**, si le programme est actif et que ce numéro n'a jamais eu de bon de bienvenue.
+- Utilisable sur une commande à partir du minimum (exemple : 300 DA dès 2 000 DA, question 1), valable 30 jours ; si la 1re commande est annulée par la boutique, le bon revient (règle de la question 5).
+- Un filleul du parrainage reçoit déjà un bon de 300 DA : **pas de bon de bienvenue en plus** (question 2).
+- `/compte`, rubrique « Mes bons » : « Bon de bienvenue · 300 DA dès 2 000 DA d'achat · jusqu'au 9/11 ».
+
+### US-33.3 — Bons de campagne avec code (pages `/compte`, `/panier`, accueil `/[ville]`)
+- L'admin crée une campagne (US-33.5). Le client tape le **code** dans `/compte` (« J'ai un code ») : `ajouter_code_bon(code)` vérifie le code, les dates, la ville du compte (ville choisie, cookie `ville`) seulement pour l'affichage — **la ville qui compte est celle de la boutique au moment de la commande** —, le budget, et **une fois par numéro vérifié et par campagne**. Numéro vérifié obligatoire. Au plus 5 codes faux par heure et par compte (« Trop d'essais. Réessayez dans une heure. »).
+- Bandeau sur l'accueil de la ville pendant la campagne : « **Aïd : 500 DA offerts dès 4 000 DA d'achat avec le code AID2026**, jusqu'au 5/6. Conditions » (lien vers les conditions de la campagne : montant, minimum, univers, villes, dates, une fois par numéro, QR code obligatoire). La loi 18-05 (art. 30) demande que les conditions d'une offre promotionnelle soient claires et accessibles.
+- **Minimum calculé par la base** sur les **prix réels des lignes** de la commande (`lignes_commande`), en ne comptant que les articles de l'univers de la campagne (« 4 000 DA d'articles Femme ») ; jamais un montant envoyé par le navigateur.
+- **Un seul bon par commande** (inchangé). Au panier, le client **choisit** le bon s'il en a plusieurs (le plus avantageux est proposé), avec la raison quand un bon ne s'applique pas : « Dès 4 000 DA d'achat », « Pas dans cette ville », « Articles Femme seulement », « Cette boutique ne prend plus les bons ».
+
+### US-33.4 — Côté boutique (pages `/espace/scanner`, `/espace`)
+- Le bon se voit **comme aujourd'hui** (liste des commandes, résumé du scan, « À encaisser en espèces »), avec son nom : « Bon Aïd 2026 −500 DA ». Toujours **remis par QR code** pour être remboursé (code à 6 chiffres ou « sans QR code » : bon rendu au client, pas de remboursement — inchangé).
+- **Plafond par boutique et par campagne** (exemple : 30 bons utilisés) : au-delà, le bon ne s'applique plus dans cette boutique (raison au panier : « Ce bon n'est plus accepté dans cette boutique pour cette campagne. »).
+- Relevé mensuel inchangé, avec une colonne « Origine » (parrainage, bienvenue, Aïd 2026…).
+
+### US-33.5 — Admin : campagnes, fraude, paiement (pages `/admin/bons`, `/admin/remboursements`)
+- **`/admin/bons`** : liste des programmes (bienvenue, campagnes) avec émis, utilisés, montant remboursé, budget restant ; « Nouvelle campagne » (nom, code, montant, minimum, univers, villes, dates, validité, budget, plafond par boutique) ; « Arrêter » (plus de nouveau bon, les bons donnés restent valables jusqu'à leur échéance).
+- **Signaux** (jamais automatiques, l'admin décide avec « Mettre de côté » / « Refuser » existants) : article **créé** ou **prix augmenté** dans les 14 jours avant le début de la campagne (nouvel historique des prix) ; boutique qui atteint son plafond très vite ; beaucoup de bons utilisés par des comptes créés depuis moins de 7 jours ; commandes récupérées moins de 30 minutes après leur création.
+- **Paiement** : relevé clôturé le 1er du mois (inchangé), payé par CCP / BaridiMob ou en espèces (référence obligatoire) ; délai : « avant le 10 » (US-27) ou « environ 15 jours après la fin du mois » (carte) — question 6. Déduction d'un futur abonnement : plus tard (il n'y a pas d'abonnement aujourd'hui).
+- **À vérifier avec le comptable** (carte) : comment BleDeal enregistre ces remboursements (charge de promotion), justificatifs à garder (relevé, référence de paiement), et la manière dont la boutique déclare la vente (prix total ou montant encaissé).
+
+### Textes nouveaux (français / arabe, à valider)
+
+| # | Où | Français | Arabe (darja, à valider) |
+| --- | --- | --- | --- |
+| 1 | Compte, rubrique | Mes bons | **البونات** نتاعي |
+| 2 | Compte, bon | Bon de bienvenue · 300 DA dès 2 000 DA d'achat · jusqu'au 9/11 | بون **مرحبا** · 300 دج **كي تشري** 2 000 دج **ولا كثر** · حتى 9/11 |
+| 3 | Compte, lien | J'ai un code | عندي **كود** |
+| 4 | Code, bouton | Ajouter | **زيد** |
+| 5 | Code ajouté | Bon Aïd 2026 ajouté : 500 DA dès 4 000 DA d'achat. | بون **العيد** 2026 **تزاد** : 500 دج كي تشري 4 000 دج ولا كثر. |
+| 6 | Code faux | Ce code n'existe pas ou n'est plus valable. | هاد الكود **ما كاينش** ولا **فات** الوقت نتاعو. |
+| 7 | Déjà utilisé | Vous avez déjà eu ce bon. | **ديجا** **خذيت** هاد البون. |
+| 8 | Trop d'essais | Trop d'essais. Réessayez dans une heure. | **بزاف** تاع **المحاولات**. **عاود** من بعد ساعة. |
+| 9 | Panier | Utiliser mon bon Aïd 2026 (−500 DA) | **استعمل** بون العيد 2026 (−500 دج) |
+| 10 | Panier, minimum | Dès 4 000 DA d'achat | كي تشري 4 000 دج ولا كثر |
+| 11 | Panier, univers | Articles Femme seulement | **غير** **سلعة** النسا |
+| 12 | Panier, ville | Pas dans cette ville | **ماشي** في هاد المدينة |
+| 13 | Panier, plafond | Ce bon n'est plus accepté dans cette boutique pour cette campagne. | هاد البون ما **بقاش** **يتقبل** في هاد الحانوت **لهاد** **البروموسيون**. |
+| 14 | Accueil, bandeau | Aïd : 500 DA offerts dès 4 000 DA d'achat avec le code AID2026, jusqu'au 5/6. Conditions | **العيد** : 500 دج **هدية** كي تشري 4 000 دج ولا كثر **بالكود** AID2026، حتى 5/6. **الشروط** |
+
+L'espace commerçant et l'admin restent en français. Les noms de campagne sont saisis par l'admin en français et en arabe (deux champs).
+
+### Questions au propriétaire (US-33)
+1. **Bon de bienvenue** : montant et minimum (proposition : 300 DA dès 2 000 DA, 30 jours) ? Budget mensuel de départ ?
+2. **Filleul du parrainage** : pas de bon de bienvenue en plus (recommandé), ou les deux sur deux commandes différentes ?
+3. **Campagnes** : montants de la carte (500 DA dès 4 000 DA, 1 000 DA dès 8 000 DA) et plafond de 30 par boutique confirmés ? Code à taper seulement (recommandé : on mesure la campagne), ou aussi donné d'office à tous les comptes vérifiés d'une ville ?
+4. **Participation des boutiques** : toutes celles qui acceptent les bons (recommandé : BleDeal paie tout) ou inscription boutique par boutique à chaque campagne ?
+5. **Commande annulée** : la carte dit « le bon expire, sauf si la boutique a annulé » ; aujourd'hui (parrainage) le bon est **toujours rendu** (+7 jours). Règle de la carte pour les nouveaux bons, et parrainage inchangé (recommandé), ou une seule règle pour tous ?
+6. **Délai de paiement** des relevés : avant le 10 (comme le parrainage) ou environ 15 jours après la fin du mois (carte) ? Paiement en espèces accepté (avec reçu signé) ?
