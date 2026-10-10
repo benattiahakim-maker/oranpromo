@@ -28,4 +28,8 @@ describe("US-29.2 : choisirVille (formulaire de /villes)", () => {
   it("retour vers un autre site refusé", async () => {
     await expect(choisirVille(formulaire({ ville: "oran", retour: "//evil.example/x" }))).rejects.toThrow("REDIRECT /oran");
   });
+  it("relecture n°6, point 3 : « /\t/evil.com », « /\n/evil.com », « /%09/evil.com » → accueil de la ville", async () => {
+    for (const retour of ["/\t/evil.com", "/\n/evil.com", "/%09/evil.com"])
+      await expect(choisirVille(formulaire({ ville: "oran", retour }))).rejects.toThrow(/^REDIRECT \/oran$/);
+  });
 });

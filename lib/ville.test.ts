@@ -45,6 +45,11 @@ describe("US-29.2 : page après le choix d'une ville", () => {
     expect(cheminApresChoix("oran", "/b/boutique-nour", villes)).toBe("/b/boutique-nour");
     for (const retour of ["", null, undefined, "//evil.example", "/\\evil.example", "https://evil.example", "/villes?inconnue=x"]) expect(cheminApresChoix("oran", retour, villes), String(retour)).toBe("/oran");
   });
+  it("relecture n°6, point 3 : caractères de contrôle et espaces refusés, même encodés (pas de redirection vers un autre site)", () => {
+    for (const retour of ["/\t/evil.com", "/\n/evil.com", "/%09/evil.com", "/%0a/evil.com", "/\r/evil.com", "/ /evil.com", "/%2F/evil.com", "/%5C/evil.com", "/\u0000/evil.com", "/\u007f/evil.com"])
+      expect(cheminApresChoix("oran", retour, villes), JSON.stringify(retour)).toBe("/oran");
+    expect(cheminApresChoix("oran", "/catalogue?q=robe%20rouge", villes)).toBe("/oran/catalogue?q=robe%20rouge");
+  });
   it("cheminVille", () => {
     expect(cheminVille("oran")).toBe("/oran"); expect(cheminVille("oran", "/")).toBe("/oran"); expect(cheminVille("oran", "/catalogue?promo=1")).toBe("/oran/catalogue?promo=1");
   });
