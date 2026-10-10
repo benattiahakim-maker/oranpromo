@@ -917,7 +917,7 @@ Programme de bons US-33 de type `avis` (montant, minimum, validité, budget du m
 
 ```
 supabase/migrations/…_avis.sql                  US-32.1 (table, donner_avis, filtre, lectures, tests SQL)
-supabase/migrations/…_avis_moderation.sql       US-32.4 (repondre_avis, signalements_avis, décisions)
+supabase/migrations/…_avis_moderation.sql       US-32.4 (repondre_avis, signalements_avis, décisions) : codé en 20261019100000_avis_moderation.sql (+ avis_ma_boutique, resume_ma_boutique, moderer_avis, signaux_avis, avis.reponse_masquee ; decisions.signalement_id devient facultatif, signalement_avis_id ajouté, une seule cible)
 lib/avis.ts (+ test)                            lecture, textes, format « Amine B. », mois
 app/compte/commandes/avis/…                     écran « Donner mon avis »
 components/AvisBoutique.tsx, NoteBoutique.tsx, FormulaireAvis.tsx, SignalerAvis.tsx
