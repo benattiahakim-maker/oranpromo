@@ -9,11 +9,14 @@ vi.mock("@/lib/bons", () => ({ utiliserBon: utiliser }));
 vi.mock("next/server", () => ({ after }));
 const { cookie } = vi.hoisted(() => ({ cookie: { langue: "fr" } }));
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: (nom: string) => (nom === "langue" ? { value: cookie.langue } : undefined) }) }));
-vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ auth: { getUser } }) }));
+const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
+vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ auth: { getUser }, rpc }) }));
 vi.mock("@/lib/commandes", () => ({ passerCommande: passer, definirLangueCommande: definirLangue }));
 vi.mock("@/lib/notifications", () => ({ envoyerMessagesCommande: envoyer }));
 const ligne = { article_id: "a1", taille: "M", quantite: 2 };
-beforeEach(() => { vi.clearAllMocks(); ordre.length = 0; utiliser.mockImplementation(async () => { ordre.push("utiliser_bon"); return "applique"; }); cookie.langue = "fr"; getUser.mockResolvedValue({ data: { user: { id: "k1" } }, error: null }); passer.mockResolvedValue("c1"); });
+beforeEach(() => { vi.clearAllMocks(); ordre.length = 0; utiliser.mockImplementation(async () => { ordre.push("utiliser_bon"); return "applique"; }); cookie.langue = "fr"; getUser.mockResolvedValue({ data: { user: { id: "k1" } }, error: null }); passer.mockResolvedValue("c1");
+  aAccepter = []; rpc.mockImplementation(async (nom: string) => { ordre.push(nom); return nom === "documents_a_accepter" ? { data: aAccepter, error: null } : { data: null, error: null }; }); });
+let aAccepter: { document: string; version: string }[] = [];
 
 describe("commander le panier (US-20.2, US-20.5)", () => {
   it("passe la commande puis prévient la boutique sur WhatsApp après la réponse", async () => {
@@ -82,7 +85,7 @@ describe("US-27.4 : bon parrainage au panier", () => {
     passer.mockImplementation(async () => { ordre.push("passer_commande"); return "c1"; });
     expect(await commanderPanier("b1", [ligne], "", true)).toEqual({ id: "c1" });
     expect(utiliser).toHaveBeenCalledWith(expect.anything(), "c1");
-    expect(ordre).toEqual(["passer_commande", "utiliser_bon", "after"]);
+    expect(ordre).toEqual(["documents_a_accepter", "passer_commande", "utiliser_bon", "after"]);
   });
   it("case décochée (ou ancien appel sans 4e argument) : pas de bon", async () => {
     await commanderPanier("b1", [ligne], "", false);
@@ -98,5 +101,38 @@ describe("US-27.4 : bon parrainage au panier", () => {
     passer.mockRejectedValue(new Error("Votre compte est bloqué."));
     await commanderPanier("b1", [ligne], "", true);
     expect(utiliser).not.toHaveBeenCalled();
+  });
+});
+
+describe("US-34.2 : conditions à accepter avant la commande", () => {
+  const nouvelles = [{ document: "conditions", version: "2026-12-01" }];
+  it("rien à accepter : commande comme avant, aucun accord enregistré", async () => {
+    expect(await commanderPanier("b1", [ligne], "")).toEqual({ id: "c1" });
+    expect(rpc).not.toHaveBeenCalledWith("accepter_documents", expect.anything());
+  });
+  it("nouvelle version, case non cochée : pas de commande", async () => {
+    aAccepter = nouvelles;
+    expect(await commanderPanier("b1", [ligne], "", false, [])).toEqual({ conditions: true, erreur: "Nos conditions ont changé : acceptez-les pour commander." });
+    expect(passer).not.toHaveBeenCalled();
+  });
+  it("case cochée sur une version dépassée : recharger, pas de commande", async () => {
+    aAccepter = nouvelles;
+    expect(await commanderPanier("b1", [ligne], "", false, [{ document: "conditions", version: "2026-10-10" }])).toEqual({ conditions: true, erreur: "Les conditions ont changé : rechargez la page." });
+    expect(await commanderPanier("b1", [ligne], "", false, "n'importe quoi" as never)).toEqual({ conditions: true, erreur: "Nos conditions ont changé : acceptez-les pour commander." });
+    expect(passer).not.toHaveBeenCalled();
+  });
+  it("case cochée sur la bonne version : accord enregistré (contexte commande) puis commande", async () => {
+    aAccepter = nouvelles;
+    passer.mockImplementation(async () => { ordre.push("passer_commande"); return "c1"; });
+    expect(await commanderPanier("b1", [ligne], "", false, [{ document: "conditions", version: "2026-12-01" }])).toEqual({ id: "c1" });
+    expect(rpc).toHaveBeenCalledWith("accepter_documents", { documents: ["conditions"], versions: ["2026-12-01"], contexte: "commande" });
+    expect(ordre.slice(0, 3)).toEqual(["documents_a_accepter", "accepter_documents", "passer_commande"]);
+  });
+  it("accord refusé par la base : pas de commande, message clair (en arabe aussi)", async () => {
+    aAccepter = nouvelles;
+    rpc.mockImplementation(async (nom: string) => nom === "documents_a_accepter" ? { data: aAccepter, error: null } : { data: null, error: { message: "Les conditions ont changé : rechargez la page." } });
+    cookie.langue = "ar";
+    expect(await commanderPanier("b1", [ligne], "", false, [{ document: "conditions", version: "2026-12-01" }])).toEqual({ erreur: "الشروط تبدلو: عاود حمّل الصفحة." });
+    expect(passer).not.toHaveBeenCalled();
   });
 });

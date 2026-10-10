@@ -19,10 +19,29 @@ export async function commanderArticle(page: Page, article: Article, options: { 
     await seConnecterParEmail(page, options.email);
     await expect(page).toHaveURL(/\/panier/);
   }
-  await page.getByRole("button", { name: "Commander", exact: true }).click();
+  await commanderOuAccepter(page);
   await expect(page).toHaveURL(/\/compte\/commandes\/[0-9a-f-]{36}/);
   await expect(page.getByText("Commande envoyée").first()).toBeVisible();
   return new URL(page.url()).pathname;
+}
+
+/** US-34.2 : au panier, « Commander » ; ou, si les conditions sont à accepter (compte créé par e-mail, nouvelle
+ *  version), case cochée puis « Accepter et commander ». */
+export async function commanderOuAccepter(page: Page) {
+  const commander = page.getByRole("button", { name: "Commander", exact: true });
+  const accepter = page.getByRole("button", { name: "Accepter et commander" });
+  await expect(commander.or(accepter)).toBeVisible();
+  if (await accepter.isVisible()) {
+    await page.getByRole("checkbox", { name: /J’accepte les conditions d’utilisation/ }).check();
+    await accepter.click();
+  } else await commander.click();
+}
+
+/** US-34.3 : à la première visite de l'espace, le commerçant accepte les conditions commerçants. */
+export async function accepterConditionsCommercant(page: Page) {
+  await page.getByRole("checkbox", { name: /J’ai lu et j’accepte les conditions commerçants/ }).check();
+  await page.getByRole("button", { name: "Accepter", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Conditions commerçants" })).toHaveCount(0);
 }
 
 /** Nouvel onglet « navigation privée » : le commerçant (ou l'admin) se connecte sur son propre téléphone. */
@@ -32,6 +51,11 @@ export async function connecterEspace(browser: Browser, email: string): Promise<
   await page.goto("/espace/connexion");
   await seConnecterParEmail(page, email);
   await expect(page).toHaveURL(/\/espace/);
+  // US-34.3 : un commerçant qui n'a pas encore accepté les conditions les accepte d'abord (admin : rien à accepter).
+  const demande = page.getByRole("heading", { name: "Conditions commerçants" });
+  const espaceOuvert = page.getByRole("navigation", { name: "Espace commerçant" });
+  await expect(espaceOuvert).toBeVisible();
+  if (await demande.isVisible()) await accepterConditionsCommercant(page);
   return page;
 }
 

@@ -17,6 +17,9 @@ import { afficherTaille } from "@/lib/article";
 import { traduire } from "@/lib/textes";
 import { useLangue, useTextes } from "./FournisseurTextes";
 import { traduireMessage } from "@/lib/textes/messages";
+import CaseConditions from "./CaseConditions";
+import { formaterVersion } from "@/lib/juridique";
+import type { DocumentAAccepter } from "@/lib/acceptations";
 
 // US-21.2 : verificationRequise = mode téléphone (CONNEXION_CLIENT=telephone) ; telephoneVerifie = numéro vérifié par code.
 export type ProfilPanier = { nom: string | null; telephone: string | null; complet: boolean; bloque: boolean; noShows: number; telephoneVerifie?: boolean; verificationRequise?: boolean } | null;
@@ -24,7 +27,9 @@ export type ProfilPanier = { nom: string | null; telephone: string | null; compl
 export type ParrainagePanier = { bonDisponible: boolean; choix: { initial: string; parrainSaisi: boolean; saisies: number } | null };
 
 // US-20.2 : panier d’une boutique → « Commander ».
-export default function PanierCommande({ profil, parrainage = { bonDisponible: false, choix: null } }: { profil: ProfilPanier; parrainage?: ParrainagePanier }) {
+// US-34.2 : conditions = textes à (re)accepter (nouvelle version importante, compte créé avant US-34) : case et
+// « Accepter et commander » à la place de « Commander ».
+export default function PanierCommande({ profil, parrainage = { bonDisponible: false, choix: null }, conditions = [] }: { profil: ProfilPanier; parrainage?: ParrainagePanier; conditions?: DocumentAAccepter[] }) {
   const router = useRouter();
   const t = useTextes().panier;
   const tailleUnique = useTextes().listes.tailleUnique;
@@ -35,6 +40,8 @@ export default function PanierCommande({ profil, parrainage = { bonDisponible: f
   const [erreur, setErreur] = useState("");
   const [enCours, setEnCours] = useState(false);
   const [avecBon, setAvecBon] = useState(true);
+  const [accord, setAccord] = useState(false);
+  const tJuridique = useTextes().juridique;
   const verrou = useRef(false);
 
   if (!panier) return <div className="px-6 py-10 text-center"><p>{t.vide}</p><Link href="/catalogue" className="etiquette mt-6 flex min-h-[54px] items-center justify-center bg-noir text-blanc">{t.voirArticles}</Link></div>;
@@ -45,14 +52,17 @@ export default function PanierCommande({ profil, parrainage = { bonDisponible: f
     verrou.current = true; setEnCours(true); setErreur("");
     try {
       const bon = Boolean(profil && parrainage.bonDisponible && avecBon && bonApplicable(totalPanier(panier), true));
-      const resultat = await commanderPanier(panier.boutiqueId, lignesCommande(panier), note, bon);
+      const resultat = await commanderPanier(panier.boutiqueId, lignesCommande(panier), note, bon, accord ? conditions : []);
       if (resultat.id) { sauverPanierLocal(null); router.push(`/compte/commandes/${resultat.id}${resultat.bon ? `?bon=${resultat.bon}` : ""}`); return; }
       if (resultat.connexion) { router.push("/compte/connexion?suite=/panier"); return; }
+      if (resultat.conditions) { setAccord(false); router.refresh(); }
       setErreur(resultat.erreur ?? t.envoiImpossible);
     } catch { setErreur(t.connexionPerdue); }
     finally { verrou.current = false; setEnCours(false); }
   }
 
+  const aAccepter = conditions.length > 0;
+  const dateConditions = aAccepter ? formaterVersion(conditions.map(d => d.version).sort().at(-1)!) : "";
   const avertissement = profil ? traduireMessage(messageNoShows(profil.noShows, profil.bloque), langue) : null;
   return <div className="px-6">
     <p className="etiquette pb-2 text-center text-gris">{panier.boutiqueNom}</p>
@@ -81,6 +91,11 @@ export default function PanierCommande({ profil, parrainage = { bonDisponible: f
     {!profil ? <Link href="/compte/connexion?suite=/panier" className="etiquette flex min-h-[54px] items-center justify-center bg-noir text-blanc">{t.seConnecter}</Link>
       : profil.verificationRequise && !profil.telephoneVerifie ? <div className="border border-noir p-4"><p className="etiquette mb-2 text-xs">{t.verifierTitre}</p><p className="mb-3 text-sm leading-[1.6]">{t.verifierTexte}</p><CodeTelephone usage="verification" numeroInitial={profil.telephone} onVerifie={() => router.refresh()} /></div>
       : !profil.complet ? <div className="border border-trait p-4"><p className="mb-3 text-sm">{profil.telephoneVerifie ? t.profilNom : t.profilNomTelephone}</p><FormulaireProfilClient nom={profil.nom} telephone={profil.telephone} telephoneModifiable={!profil.telephoneVerifie && !profil.verificationRequise} bouton={t.enregistrerContinuer} onEnregistre={() => router.refresh()} /></div>
+      : aAccepter ? <div className="flex flex-col gap-3 border border-noir p-4">
+        <p className="etiquette m-0 text-xs">{remplir(tJuridique.conditionsChangees, { date: dateConditions })}</p>
+        <CaseConditions coche={accord} onChange={setAccord} desactive={enCours} />
+        <button type="button" disabled={enCours || profil.bloque || !accord} onClick={() => void commander()} className="etiquette min-h-[54px] w-full bg-noir text-blanc disabled:opacity-50">{enCours ? t.envoi : tJuridique.accepterCommander}</button>
+      </div>
       : <button type="button" disabled={enCours || profil.bloque} onClick={() => void commander()} className="etiquette min-h-[54px] w-full bg-noir text-blanc">{enCours ? t.envoi : t.commander}</button>}
     {erreur && <p role="alert" className="mt-3 text-sm">{erreur}</p>}
     <p className="mt-3 pb-8 text-center text-xs text-gris">{t.mention}</p>

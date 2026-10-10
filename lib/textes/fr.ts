@@ -504,6 +504,11 @@ export const fr = {
     version: "Version du {date}",
     provisoire: "Version provisoire, en cours de relecture juridique.",
     traductionAttente: "La traduction arabe de ce texte arrive bientôt. Le texte ci-dessous est la version française.",
+    // US-34.2 : acceptation par le client (textes n° 2 à 5 de la conception, docs/user-stories.md).
+    caseInscription: "J’accepte les conditions d’utilisation et la politique de confidentialité, y compris l’utilisation de prestataires situés hors d’Algérie (Supabase, Vercel, WhatsApp…).",
+    caseRequise: "Cochez la case pour créer votre compte.",
+    conditionsChangees: "Nos conditions ont changé le {date}",
+    accepterCommander: "Accepter et commander",
   },
 };
 

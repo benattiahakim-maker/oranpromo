@@ -20,6 +20,7 @@ beforeEach(() => {
 });
 
 const saisir = (numero: string) => fireEvent.change(screen.getByLabelText("Numéro de mobile"), { target: { value: numero } });
+const accepter = () => fireEvent.click(screen.getByRole("checkbox", { name: /J’accepte les conditions d’utilisation/ }));
 
 describe("connexion par numéro (US-21.2)", () => {
   it("refuse tout de suite un numéro non algérien", () => {
@@ -32,6 +33,7 @@ describe("connexion par numéro (US-21.2)", () => {
   it("WhatsApp par défaut, puis code à 6 chiffres et retour à la page demandée", async () => {
     render(<CodeTelephone usage="connexion" suite="/panier" />);
     saisir("0555 12 34 56");
+    accepter();
     fireEvent.click(screen.getByRole("button", { name: "Recevoir le code sur WhatsApp" }));
     await screen.findByLabelText("Code à 6 chiffres");
     expect(m.envoyerCodeConnexion).toHaveBeenCalledWith("+213555123456", null);
@@ -42,7 +44,7 @@ describe("connexion par numéro (US-21.2)", () => {
     fireEvent.change(screen.getByLabelText("Code à 6 chiffres"), { target: { value: "123456" } });
     fireEvent.click(screen.getByRole("button", { name: "Valider le code" }));
     await waitFor(() => expect(m.replace).toHaveBeenCalledWith("/panier"));
-    expect(m.verifierCodeConnexion).toHaveBeenCalledWith("+213555123456", "123456", "/panier");
+    expect(m.verifierCodeConnexion).toHaveBeenCalledWith("+213555123456", "123456", "/panier", true);
   });
   it("WhatsApp uniquement : pas de bouton SMS", () => {
     render(<CodeTelephone usage="connexion" />);
@@ -53,6 +55,7 @@ describe("connexion par numéro (US-21.2)", () => {
     m.envoyerCodeConnexion.mockResolvedValueOnce({ succes: false, message: "Attendez une minute avant de demander un nouveau code." });
     render(<CodeTelephone usage="connexion" />);
     saisir("0555123456");
+    accepter();
     fireEvent.click(screen.getByRole("button", { name: "Recevoir le code sur WhatsApp" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Attendez une minute");
     fireEvent.click(screen.getByRole("button", { name: "Recevoir le code sur WhatsApp" }));
@@ -69,6 +72,7 @@ describe("connexion par numéro (US-21.2)", () => {
     vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "cle-de-site");
     render(<CodeTelephone usage="connexion" />);
     saisir("0555123456");
+    accepter();
     expect(screen.getByRole("button", { name: "Recevoir le code sur WhatsApp" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Je ne suis pas un robot" }));
     fireEvent.click(screen.getByRole("button", { name: "Recevoir le code sur WhatsApp" }));
@@ -77,6 +81,28 @@ describe("connexion par numéro (US-21.2)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Changer de numéro ou recevoir un nouveau code" }));
     expect(screen.getByRole("button", { name: "Recevoir le code sur WhatsApp" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Je ne suis pas un robot" })).toHaveAttribute("data-reinit", "1");
+  });
+});
+
+describe("US-34.2 : case des conditions à l’inscription", () => {
+  it("non cochée d’office ; sans elle, pas d’envoi du code ; liens vers les deux textes et mention provisoire", () => {
+    render(<CodeTelephone usage="connexion" suite="/panier" />);
+    const caseConditions = screen.getByRole("checkbox", { name: /J’accepte les conditions d’utilisation et la politique de confidentialité, y compris l’utilisation de prestataires situés hors d’Algérie/ });
+    expect(caseConditions).not.toBeChecked();
+    expect(screen.getByRole("link", { name: "Conditions d’utilisation" })).toHaveAttribute("href", "/conditions");
+    expect(screen.getByRole("link", { name: "Politique de confidentialité" })).toHaveAttribute("href", "/confidentialite");
+    expect(screen.getByText("Version provisoire, en cours de relecture juridique.")).toBeInTheDocument();
+    saisir("0555123456");
+    fireEvent.click(screen.getByRole("button", { name: "Recevoir le code sur WhatsApp" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Cochez la case pour créer votre compte.");
+    expect(caseConditions).toHaveAttribute("aria-invalid", "true");
+    expect(m.envoyerCodeConnexion).not.toHaveBeenCalled();
+    fireEvent.click(caseConditions);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+  it("pas de case pour vérifier le numéro d’un compte déjà connecté", () => {
+    render(<CodeTelephone usage="verification" numeroInitial="+213661234567" />);
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 });
 

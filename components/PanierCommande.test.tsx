@@ -33,7 +33,7 @@ describe("panier et commande (US-20.2)", () => {
     fireEvent.change(screen.getByLabelText("Note pour la boutique (facultative)"), { target: { value: "Samedi" } });
     fireEvent.click(screen.getByRole("button", { name: "Commander" }));
     await waitFor(() => expect(push).toHaveBeenCalledWith("/compte/commandes/c1"));
-    expect(commanderPanier).toHaveBeenCalledWith("b1", [{ article_id: "polo", taille: "M", quantite: 1 }, { article_id: "chemise", taille: "L", quantite: 1 }], "Samedi", false);
+    expect(commanderPanier).toHaveBeenCalledWith("b1", [{ article_id: "polo", taille: "M", quantite: 1 }, { article_id: "chemise", taille: "L", quantite: 1 }], "Samedi", false, []);
     expect(localStorage.getItem(CLE_PANIER)).toBeNull();
   });
   it("affiche le refus de la base sans vider le panier", async () => {
@@ -132,7 +132,7 @@ describe("US-27 : bon et parrain au panier", () => {
     expect(screen.getByRole("checkbox", { name: "Utiliser mon bon parrainage (−300 DA)" })).toBeChecked();
     expect(screen.getByText("À payer en boutique").nextSibling).toHaveTextContent(/8\s400\sDA/);
     fireEvent.click(screen.getByRole("button", { name: "Commander" }));
-    await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", true));
+    await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", true, []));
     expect(push).toHaveBeenCalledWith("/compte/commandes/c1");
   });
   it("case décochée : commande sans bon", async () => {
@@ -140,7 +140,7 @@ describe("US-27 : bon et parrain au panier", () => {
     render(<PanierCommande profil={complet} parrainage={{ bonDisponible: true, choix: null }} />);
     fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.click(screen.getByRole("button", { name: "Commander" }));
-    await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", false));
+    await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", false, []));
   });
   it("bon non posé : le suivi s'ouvre avec la raison", async () => {
     commanderPanier.mockResolvedValue({ id: "c1", bon: "aucun_bon" });
@@ -157,5 +157,39 @@ describe("US-27 : bon et parrain au panier", () => {
     render(<PanierCommande profil={null} parrainage={{ bonDisponible: true, choix: { initial: "", parrainSaisi: false, saisies: 0 } }} />);
     expect(screen.queryByRole("checkbox")).toBeNull();
     expect(screen.queryByLabelText(/Ton parrain/)).toBeNull();
+  });
+});
+
+describe("US-34.2 : nouvelle version des conditions au panier", () => {
+  const conditions = [{ document: "conditions" as const, version: "2026-12-01" }];
+  it("titre daté, case non cochée, « Accepter et commander » actif seulement après la case", async () => {
+    commanderPanier.mockResolvedValue({ id: "c1" });
+    render(<PanierCommande profil={complet} conditions={conditions} />);
+    expect(screen.getByText("Nos conditions ont changé le 1/12/2026")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Commander" })).toBeNull();
+    const bouton = screen.getByRole("button", { name: "Accepter et commander" });
+    expect(bouton).toBeDisabled();
+    const caseConditions = screen.getByRole("checkbox", { name: /J’accepte les conditions d’utilisation/ });
+    expect(caseConditions).not.toBeChecked();
+    fireEvent.click(caseConditions);
+    fireEvent.click(bouton);
+    await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", false, conditions));
+    expect(push).toHaveBeenCalledWith("/compte/commandes/c1");
+  });
+  it("refus du serveur (version changée) : message et page rechargée", async () => {
+    commanderPanier.mockResolvedValue({ conditions: true, erreur: "Les conditions ont changé : rechargez la page." });
+    render(<PanierCommande profil={complet} conditions={conditions} />);
+    fireEvent.click(screen.getByRole("checkbox", { name: /J’accepte/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Accepter et commander" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Les conditions ont changé");
+    expect(refresh).toHaveBeenCalled();
+    expect(screen.getByRole("checkbox", { name: /J’accepte/ })).not.toBeChecked();
+  });
+  it("arabe : « نقبل ونطلب »", async () => {
+    const { default: FournisseurTextes } = await import("./FournisseurTextes");
+    const { textesDe } = await import("@/lib/textes");
+    render(<FournisseurTextes langue="ar" textes={textesDe("ar")}><PanierCommande profil={complet} conditions={conditions} /></FournisseurTextes>);
+    expect(screen.getByRole("button", { name: "نقبل ونطلب" })).toBeDisabled();
+    expect(screen.getByText("الشروط نتاعنا تبدلو نهار 1/12/2026")).toBeInTheDocument();
   });
 });

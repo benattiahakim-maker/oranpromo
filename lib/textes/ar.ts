@@ -496,5 +496,9 @@ export const ar: Textes = {
     version: "النسخة تاع {date}",
     provisoire: "نسخة مؤقتة، راهي في المراجعة القانونية.",
     traductionAttente: "الترجمة بالعربية تاع هاد النص جاية قريب. النص اللي تحت هو النسخة بالفرنسية.",
+    caseInscription: "نقبل شروط الاستعمال وسياسة الخصوصية، حتى استعمال شركات برّا الدزاير (Supabase، Vercel، WhatsApp…).",
+    caseRequise: "علّم على الخانة باش تدير الحساب نتاعك.",
+    conditionsChangees: "الشروط نتاعنا تبدلو نهار {date}",
+    accepterCommander: "نقبل ونطلب",
   },
 };
