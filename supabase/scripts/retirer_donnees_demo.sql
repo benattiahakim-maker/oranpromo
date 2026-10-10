@@ -29,11 +29,21 @@
 --     leurs messages, statistiques, signalements) ;
 --   - plus généralement, tout article dont l'identifiant commence par a0000000-0000-0000-0000- ;
 --   - toute photo dont l'adresse est sur placehold.co ;
---   - les messages WhatsApp liés à ces commandes ou envoyés aux numéros de test.
+--   - les messages WhatsApp liés à ces commandes ou envoyés aux numéros de test ;
+--   - parrainage (US-27, relecture n°6) : les relevés de bons des boutiques de démo et toutes les lignes
+--     de relevé d'une commande de démo (clés « on delete restrict » : supprimées AVANT les boutiques,
+--     sinon le script s'arrêterait ; un relevé d'une vraie boutique qui perd une ligne est recalculé) ;
+--     le parrainage et les bons d'un compte de démo (par cascade) ; les jetons et codes de retrait
+--     des commandes de démo (prive.retraits, par cascade). Si un de ces relevés est déjà PAYÉ, le script
+--     s'arrête sans rien supprimer (à régler à la main avec l'admin).
 -- Ce qui est GARDÉ :
 --   - le compte admin benattia.hakim@gmail.com (78b03d9d-299d-480b-b2b9-f6149523bb27),
 --     et plus généralement tout compte admin (le script s'arrête s'il devait en supprimer un) ;
 --   - la boutique « Maison Ilyes » (boutique de l'admin), vide d'articles après le retrait ;
+--   - le parrainage d'un vrai filleul dont le parrain était un compte de démo (parrain vidé), et les bons
+--     des vrais clients : un bon réservé sur une commande de démo est RENDU au client (disponible, au moins
+--     7 jours de validité, comme pour une commande annulée) ; un bon déjà utilisé sur une commande de démo
+--     passe « annulé » (sa commande n'existe plus ; la base refuse un bon utilisé sans commande) ;
 --   - les réglages (prive.reglages) ;
 --   - les lignes de vraies commandes qui citaient un article de démonstration : la commande
 --     reste, la ligne garde son titre et son prix, seul le lien vers l'article est retiré.
@@ -60,10 +70,15 @@ declare
   tables_suivies constant text[] := array[
     'auth.users', 'auth.identities', 'auth.sessions', 'profils', 'boutiques', 'articles', 'photos',
     'tailles', 'promos', 'evenements', 'signalements', 'decisions', 'commandes', 'lignes_commande',
-    'suivi_commandes', 'contestations', 'messages_whatsapp', 'appels_ia', 'prive.envois_codes'];
+    'suivi_commandes', 'contestations', 'messages_whatsapp', 'appels_ia', 'prive.envois_codes',
+    'parrainages', 'bons', 'releves_bons', 'lignes_releve', 'prive.retraits'];
   avant bigint[] := '{}';
   apres bigint[] := '{}';
   lignes_detachees bigint;
+  bons_rendus bigint := 0;
+  bons_annules bigint := 0;
+  releves_touches uuid[] := '{}';
+  ok_paye boolean;
   admins_avant bigint;
   i int;
   n bigint;
@@ -95,6 +110,19 @@ begin
 
   select count(*) into lignes_detachees from lignes_commande
    where article_id = any(articles_demo) and not (commande_id = any(commandes_demo));
+  if to_regclass('public.bons') is not null then
+    execute $q$select count(*) filter (where statut = 'reserve'), count(*) filter (where statut = 'utilise')
+      from bons where commande_id = any($1) and not (profil_id = any($2))$q$
+      into bons_rendus, bons_annules using commandes_demo, comptes_demo;
+  end if;
+  if to_regclass('public.releves_bons') is not null then
+    execute $q$select exists (select 1 from releves_bons r where r.statut = 'paye' and (r.boutique_id = any($1)
+      or exists (select 1 from lignes_releve l where l.releve_id = r.id and l.commande_id = any($2))))$q$
+      into ok_paye using boutiques_demo, commandes_demo;
+    if ok_paye then
+      raise exception 'Arrêt : un relevé de bons PAYÉ concerne une boutique ou une commande de démonstration. Rien n''a été supprimé.';
+    end if;
+  end if;
 
   for i in 1 .. array_length(tables_suivies, 1) loop
     n := null;
@@ -110,7 +138,29 @@ begin
        or signalement_id in (select id from signalements where article_id = any(articles_demo));
     -- Messages WhatsApp : liés aux commandes de démo ou envoyés aux numéros de test.
     delete from messages_whatsapp where commande_id = any(commandes_demo) or destinataire = any(numeros_demo);
-    -- Commandes (lignes, suivi, contestations suivent par cascade).
+    -- Parrainage (US-27) : lignes de relevé des boutiques et commandes de démo, puis relevés des boutiques de
+    -- démo, AVANT les boutiques (clés « on delete restrict ») ; bons d'un compte de démo supprimés AVANT les
+    -- commandes (un bon réservé ou utilisé doit garder sa commande) ; bon d'un vrai client réservé sur une
+    -- commande de démo : rendu (comme une commande annulée) ; utilisé : annulé. Le reste suit par cascade
+    -- (parrainage d'un compte de démo, prive.retraits des commandes de démo) ou est vidé (parrain, commande,
+    -- boutique d'un parrainage gardé).
+    if to_regclass('public.releves_bons') is not null then
+      execute $q$with supprimees as (delete from lignes_releve where boutique_id = any($1) or commande_id = any($2)
+          or releve_id in (select id from releves_bons where boutique_id = any($1)) returning releve_id)
+        select coalesce(array_agg(distinct releve_id), '{}') from supprimees$q$
+        into releves_touches using boutiques_demo, commandes_demo;
+      execute $q$delete from releves_bons where boutique_id = any($1)$q$ using boutiques_demo;
+      -- Relevé d'une vraie boutique qui a perdu une ligne (commande d'un compte de démo) : nombre et montant recalculés.
+      execute $q$select prive.recalculer_releve(r.id) from releves_bons r where r.id = any($1)$q$ using releves_touches;
+    end if;
+    if to_regclass('public.bons') is not null then
+      execute $q$delete from bons where profil_id = any($1)$q$ using comptes_demo;
+      execute $q$update bons set statut = 'disponible', commande_id = null, expire_le = greatest(expire_le, now() + interval '7 days')
+        where commande_id = any($1) and statut = 'reserve' and not (profil_id = any($2))$q$ using commandes_demo, comptes_demo;
+      execute $q$update bons set statut = 'annule', commande_id = null, releve_id = null
+        where commande_id = any($1) and statut = 'utilise' and not (profil_id = any($2))$q$ using commandes_demo, comptes_demo;
+    end if;
+    -- Commandes (lignes, suivi, contestations, retraits suivent par cascade).
     delete from commandes where id = any(commandes_demo);
     -- Photos d'exemple (placehold.co), même sur un article qui resterait.
     delete from photos where adresse like 'https://placehold.co/%' or adresse_vignette like 'https://placehold.co/%';
@@ -151,6 +201,8 @@ begin
     end if;
   end loop;
   insert into rapport_retrait_demo values (100, 'lignes_commande gardées, lien vers l''article retiré', lignes_detachees);
+  insert into rapport_retrait_demo values (101, 'bons de vrais clients réservés sur une commande de démo, rendus (disponibles)', bons_rendus);
+  insert into rapport_retrait_demo values (102, 'bons de vrais clients utilisés sur une commande de démo, annulés', bons_annules);
 end
 $retrait$;
 
