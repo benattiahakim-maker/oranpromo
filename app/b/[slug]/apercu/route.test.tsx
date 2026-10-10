@@ -11,6 +11,10 @@ describe("US-22 : image d’aperçu générée", () => {
     expect(reponse.status).toBe(200); expect(eq).toHaveBeenCalledWith("slug", "boutique-nour"); expect(eq).toHaveBeenCalledWith("statut", "validee");
     expect(ImageResponse).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ width: 1200, height: 630 }));
   });
+  it("relecture n°6, point 8 : cache d’1 h au plus, navigateur et hébergeur (s-maxage=3600, avant 86400)", async () => {
+    await appel("boutique-nour");
+    expect(ImageResponse).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ headers: { "Cache-Control": "public, max-age=3600, s-maxage=3600" } }));
+  });
   it("répond 404 pour une boutique non validée ou inconnue", async () => { maybeSingle.mockResolvedValue({ data: null, error: null }); expect((await appel("boutique-cachee")).status).toBe(404); expect(ImageResponse).not.toHaveBeenCalled(); });
   it("répond 404 sans lire la base pour un slug invalide", async () => { expect((await appel("Nour--x")).status).toBe(404); expect(eq).not.toHaveBeenCalled(); });
 });

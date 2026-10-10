@@ -19,6 +19,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
       <div style={{ fontSize: 40, marginTop: 40 }}>BleDeal</div>
       <div style={{ fontSize: 26, color: "#6F6F6F", marginTop: 12 }}>Réservez sur WhatsApp, payez en boutique</div>
     </div>,
-    { width: 1200, height: 630, headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400" } },
+    // Relecture n°6, point 8 : 1 h au plus, aussi dans le cache de l'hébergeur (avant 24 h) : une boutique renommée,
+    // suspendue ou retirée ne garde pas son ancien aperçu toute une journée.
+    { width: 1200, height: 630, headers: { "Cache-Control": "public, max-age=3600, s-maxage=3600" } },
   );
 }
