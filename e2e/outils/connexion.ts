@@ -20,11 +20,18 @@ async function dernierLien(email: string, apres: number): Promise<string> {
   throw new Error(`Aucun lien de connexion reçu pour ${email} dans Mailpit.`);
 }
 
+/** Libellés du formulaire de connexion par e-mail : français par défaut ; ARABE pour le parcours en arabe (US-23). */
+export const LIBELLES_CONNEXION = {
+  fr: { champ: /e-mail/i, bouton: /recevoir/i, envoye: /lien/i },
+  ar: { champ: "الإيميل", bouton: "ابعثلي رابط الدخول", envoye: "رابط" },
+} as const;
+
 /** page = page de connexion (/espace/connexion ou /compte/connexion?suite=…) déjà ouverte. */
-export async function seConnecterParEmail(page: Page, email: string) {
+export async function seConnecterParEmail(page: Page, email: string, langue: keyof typeof LIBELLES_CONNEXION = "fr") {
+  const l = LIBELLES_CONNEXION[langue];
   const depart = Date.now();
-  await page.getByLabel(/e-mail/i).first().fill(email);
-  await page.getByRole("button", { name: /recevoir/i }).click();
-  await expect(page.getByRole("status")).toContainText(/lien/i);
+  await page.getByLabel(l.champ, { exact: langue === "ar" }).first().fill(email);
+  await page.getByRole("button", { name: l.bouton }).click();
+  await expect(page.getByRole("status")).toContainText(l.envoye);
   await page.goto(await dernierLien(email, depart));
 }

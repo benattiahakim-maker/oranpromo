@@ -68,9 +68,9 @@ export async function avancerCommande(page: Page, etape: "a_confirmer" | "a_prep
   await expect(ligne).toHaveCount(0);
 }
 
-/** Côté client, commande prête : code à 6 chiffres affiché sous le QR code. */
-export async function lireCodeRetrait(page: Page): Promise<string> {
-  const code = (await page.getByLabel("Code de retrait", { exact: true }).innerText()).replace(/\D/g, "");
+/** Côté client, commande prête : code à 6 chiffres affiché sous le QR code (libellé « رقم الاستلام » en arabe). */
+export async function lireCodeRetrait(page: Page, libelle = "Code de retrait"): Promise<string> {
+  const code = (await page.getByLabel(libelle, { exact: true }).innerText()).replace(/\D/g, "");
   expect(code).toMatch(/^\d{6}$/);
   return code;
 }
@@ -78,8 +78,8 @@ export async function lireCodeRetrait(page: Page): Promise<string> {
 /** Côté client, commande prête : jeton du QR code (le même que dans le lien « Envoyer à un proche »). Le QR code
  *  contient ce lien ; la boutique qui le scanne arrive sur /espace/retrait/<jeton>. Une caméra ne se simule pas
  *  simplement dans un navigateur de test : on ouvre directement l'adresse que le scanner ouvrirait. */
-export async function lireJetonRetrait(page: Page): Promise<string> {
-  const href = await page.getByRole("link", { name: "Envoyer à un proche (WhatsApp)" }).getAttribute("href");
+export async function lireJetonRetrait(page: Page, lienProche = "Envoyer à un proche (WhatsApp)"): Promise<string> {
+  const href = await page.getByRole("link", { name: lienProche }).getAttribute("href");
   const jeton = /%2Fretrait%2F([A-Za-z0-9_-]+)/.exec(href ?? "")?.[1];
   expect(jeton, "jeton dans le lien de partage").toBeTruthy();
   return jeton!;
