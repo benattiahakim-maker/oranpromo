@@ -119,6 +119,28 @@ select pg_temp.ok((select latitude between 35.33 and 35.92 and longitude between
   'démo Parfumerie : dans la wilaya d''Oran, 4 promos en cours sur la carte, prix promo < prix');
 insert into appels_ia (utilisateur_id) values ('da9f4aa4-9bfa-4312-9a8f-05c3eefffc99'), ('78b03d9d-299d-480b-b2b9-f6149523bb27');
 insert into prive.envois_codes (telephone) values ('+213555940099'), ('+213555940001');
+-- Parrainage (US-27, relecture n°6, point 6) : parrainages, bons, relevés, lignes de relevé, retraits.
+insert into auth.users (id, email) values ('c4000000-0000-0000-0000-000000000003', 'vrai-filleul@test.dz');  -- vrai client : à garder
+insert into parrainages (filleul_id, parrain_id, commande_id, boutique_id, statut) values
+  ('da9f4aa4-9bfa-4312-9a8f-05c3eefffc99', 'c4000000-0000-0000-0000-000000000001', null, null, 'en_attente'),   -- filleul de démo : supprimé
+  ('c4000000-0000-0000-0000-000000000003', 'da9f4aa4-9bfa-4312-9a8f-05c3eefffc99', null, null, 'en_attente'),   -- parrain de démo : gardé, parrain vidé
+  ('c4000000-0000-0000-0000-000000000001', null, 'c7000000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'non_valide'); -- gardé, commande et boutique vidées
+insert into releves_bons (id, boutique_id, mois, nombre, montant) values
+  ('c8000000-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', '2026-10-01', 1, 300),  -- Parfumerie Démo : supprimé
+  ('c8000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', '2026-10-01', 2, 600);  -- Maison Ilyes : gardé, recalculé
+insert into bons (id, profil_id, origine, statut, expire_le, commande_id, releve_id, utilise_le) values
+  ('c9000000-0000-0000-0000-000000000001', 'c4000000-0000-0000-0000-000000000001', 'parrainage_filleul', 'reserve', now() + interval '1 day', 'c7000000-0000-0000-0000-000000000001', null, null),  -- rendu
+  ('c9000000-0000-0000-0000-000000000002', 'c4000000-0000-0000-0000-000000000001', 'parrainage_filleul', 'utilise', now() + interval '30 days', 'c7000000-0000-0000-0000-000000000004', 'c8000000-0000-0000-0000-000000000001', now()),  -- annulé
+  ('c9000000-0000-0000-0000-000000000003', 'da9f4aa4-9bfa-4312-9a8f-05c3eefffc99', 'parrainage_filleul', 'reserve', now() + interval '30 days', 'c7000000-0000-0000-0000-000000000002', null, null),  -- compte de démo : supprimé
+  ('c9000000-0000-0000-0000-000000000004', 'c4000000-0000-0000-0000-000000000001', 'parrainage_parrain', 'utilise', now() + interval '30 days', 'c7000000-0000-0000-0000-000000000003', 'c8000000-0000-0000-0000-000000000002', now()),  -- gardé
+  ('c9000000-0000-0000-0000-000000000005', 'da9f4aa4-9bfa-4312-9a8f-05c3eefffc99', 'parrainage_parrain', 'utilise', now() + interval '30 days', 'c7000000-0000-0000-0000-000000000002', 'c8000000-0000-0000-0000-000000000002', now());  -- compte de démo : supprimé
+insert into lignes_releve (id, releve_id, bon_id, commande_id, boutique_id, montant, remise_le, mode_remise, numero_commande, total_commande, client) values
+  ('ca000000-0000-0000-0000-000000000001', 'c8000000-0000-0000-0000-000000000001', 'c9000000-0000-0000-0000-000000000002', 'c7000000-0000-0000-0000-000000000004', '33333333-3333-3333-3333-333333333333', 300, now(), 'qr', 4, 4900, 'Vraie C.'),  -- supprimée
+  ('ca000000-0000-0000-0000-000000000002', 'c8000000-0000-0000-0000-000000000002', 'c9000000-0000-0000-0000-000000000004', 'c7000000-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 300, now(), 'qr', 3, 8400, 'Vraie C.'),  -- gardée
+  ('ca000000-0000-0000-0000-000000000003', 'c8000000-0000-0000-0000-000000000002', 'c9000000-0000-0000-0000-000000000005', 'c7000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 300, now(), 'qr', 2, 4500, 'Compte D.');  -- commande de démo : supprimée
+insert into prive.retraits (commande_id, boutique_id, jeton, code) values
+  ('c7000000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'AAAAAAAAAAAAAAAAAAAAA1', '1111'),  -- supprimé
+  ('c7000000-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'AAAAAAAAAAAAAAAAAAAAA3', '3333');  -- gardé
 
 -- ---------------------------------------------------------------------------
 -- Photo de la base avant le script, et ce qui doit rester après.
@@ -141,7 +163,12 @@ create function pg_temp.photographier() returns setof etat language sql as $$
   select 'contestations', commande_id::text from contestations union all
   select 'messages_whatsapp', id::text from messages_whatsapp union all
   select 'appels_ia', utilisateur_id::text || '|' || date::text from appels_ia union all
-  select 'prive.envois_codes', telephone || '|' || envoye_le::text from prive.envois_codes;
+  select 'prive.envois_codes', telephone || '|' || envoye_le::text from prive.envois_codes union all
+  select 'parrainages', filleul_id::text || '|' || coalesce(parrain_id::text, '-') || '|' || coalesce(commande_id::text, '-') || '|' || coalesce(boutique_id::text, '-') from parrainages union all
+  select 'bons', id::text || '|' || statut || '|' || coalesce(commande_id::text, '-') || '|' || coalesce(releve_id::text, '-') from bons union all
+  select 'releves_bons', id::text || '|' || nombre || '|' || montant from releves_bons union all
+  select 'lignes_releve', id::text from lignes_releve union all
+  select 'prive.retraits', commande_id::text from prive.retraits;
 $$;
 insert into etat select * from pg_temp.photographier();
 create temp table attendu as select * from etat;
@@ -164,6 +191,19 @@ delete from attendu where tbl = 'suivi_commandes' and cle in (select id::text fr
 delete from attendu where tbl = 'messages_whatsapp' and cle in (select id::text from messages_whatsapp where destinataire in ('+213000000002', '+213555940099') or commande_id in ('c7000000-0000-0000-0000-000000000001', 'c7000000-0000-0000-0000-000000000002', 'c7000000-0000-0000-0000-000000000004'));
 delete from attendu where tbl = 'appels_ia' and cle like 'da9f4aa4-%';
 delete from attendu where tbl = 'prive.envois_codes' and cle like '+213555940099|%';
+-- Parrainage : filleul de démo supprimé ; parrain de démo, commande et boutique de démo vidés.
+delete from attendu where tbl = 'parrainages' and cle like 'da9f4aa4-%';
+update attendu set cle = 'c4000000-0000-0000-0000-000000000003|-|-|-' where tbl = 'parrainages' and cle like 'c4000000-0000-0000-0000-000000000003|%';
+update attendu set cle = 'c4000000-0000-0000-0000-000000000001|-|-|-' where tbl = 'parrainages' and cle like 'c4000000-0000-0000-0000-000000000001|%';
+-- Bons : réservé chez la démo → rendu ; utilisé chez la démo → annulé ; bons du compte de démo supprimés ; le vrai bon reste.
+update attendu set cle = 'c9000000-0000-0000-0000-000000000001|disponible|-|-' where tbl = 'bons' and cle like 'c9000000-0000-0000-0000-000000000001|%';
+update attendu set cle = 'c9000000-0000-0000-0000-000000000002|annule|-|-' where tbl = 'bons' and cle like 'c9000000-0000-0000-0000-000000000002|%';
+delete from attendu where tbl = 'bons' and (cle like 'c9000000-0000-0000-0000-000000000003|%' or cle like 'c9000000-0000-0000-0000-000000000005|%');
+-- Relevés : celui de la Parfumerie Démo supprimé ; celui de Maison Ilyes perd la ligne du compte de démo (recalculé : 1 bon, 300 DA).
+delete from attendu where tbl = 'releves_bons' and cle like 'c8000000-0000-0000-0000-000000000001|%';
+update attendu set cle = 'c8000000-0000-0000-0000-000000000002|1|300' where tbl = 'releves_bons' and cle like 'c8000000-0000-0000-0000-000000000002|%';
+delete from attendu where tbl = 'lignes_releve' and cle in ('ca000000-0000-0000-0000-000000000001', 'ca000000-0000-0000-0000-000000000003');
+delete from attendu where tbl = 'prive.retraits' and cle = 'c7000000-0000-0000-0000-000000000001';
 
 -- ---------------------------------------------------------------------------
 -- 1. Essai à blanc : rien ne change, le rapport annonce les suppressions
@@ -207,6 +247,15 @@ select pg_temp.ok((select article_id is null and titre = 'Polo piqué bleu marin
 select pg_temp.ok(not exists (select 1 from photos where adresse like 'https://placehold.co/%')
   and exists (select 1 from photos where article_id = 'c5000000-0000-0000-0000-000000000001'), 'plus aucune photo placehold.co ; la vraie photo reste');
 select pg_temp.ok((select nombre from rapport_retrait_demo where objet like 'lignes_commande gardées%') = 1, 'rapport : 1 ligne de vraie commande détachée');
+select pg_temp.ok((select nombre from rapport_retrait_demo where objet like 'bons de vrais clients réservés%') = 1
+  and (select nombre from rapport_retrait_demo where objet like 'bons de vrais clients utilisés%') = 1
+  and (select nombre from rapport_retrait_demo where objet = 'releves_bons') = 1 and (select nombre from rapport_retrait_demo where objet = 'lignes_releve') = 2
+  and (select nombre from rapport_retrait_demo where objet = 'parrainages') = 1 and (select nombre from rapport_retrait_demo where objet = 'prive.retraits') = 1,
+  'rapport parrainage : 1 bon rendu, 1 bon annulé, 1 relevé, 2 lignes, 1 parrainage, 1 retrait');
+select pg_temp.ok((select statut = 'disponible' and expire_le > now() + interval '6 days' from bons where id = 'c9000000-0000-0000-0000-000000000001'),
+  'bon réservé sur une commande de démo : rendu, au moins 7 jours de validité');
+select pg_temp.ok((select nombre = 1 and montant = 300 from releves_bons where id = 'c8000000-0000-0000-0000-000000000002'),
+  'relevé de Maison Ilyes recalculé sans la ligne du compte de démo');
 
 -- ---------------------------------------------------------------------------
 -- 3. Idempotent : une deuxième fois, rien à supprimer
@@ -216,6 +265,31 @@ select pg_temp.ok((select nombre from rapport_retrait_demo where objet like 'lig
 \o
 select pg_temp.ok((select coalesce(sum(nombre), 0) from rapport_retrait_demo where ordre > 0) = 0, 'deuxième passage : 0 ligne supprimée');
 select pg_temp.ok(not exists (select * from attendu except select * from pg_temp.photographier()), 'deuxième passage : les vraies données sont toujours là');
+
+-- ---------------------------------------------------------------------------
+-- 4. Relevé PAYÉ d'une boutique de démo : le script s'arrête, rien n'est supprimé
+-- ---------------------------------------------------------------------------
+alter table boutiques disable trigger coordonnees_boutique_protegees;
+insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
+  ('22222222-2222-2222-2222-222222222222', 'Boutique Nour', 'boutique-nour', 'Akid Lotfi', '+213000000002', 'validee', 'oran');
+alter table boutiques enable trigger coordonnees_boutique_protegees;
+insert into releves_bons (boutique_id, mois, nombre, montant, statut, paye_le, reference_paiement) values
+  ('22222222-2222-2222-2222-222222222222', '2026-09-01', 1, 300, 'paye', '2026-10-05', 'CCP 1');
+-- Le fichier du script est lu tel quel (psql lancé depuis la racine du dépôt) et exécuté dans un bloc qui attend l'erreur.
+\set script `cat supabase/scripts/retirer_donnees_demo.sql`
+create function pg_temp.erreur(requete text, morceau text, nom text) returns text language plpgsql as $$
+begin
+  begin
+    execute requete;
+  exception when others then
+    if position(morceau in sqlerrm) > 0 then return 'ok - ' || nom; end if;
+    raise exception 'ÉCHEC - % : erreur % « % »', nom, sqlstate, sqlerrm;
+  end;
+  raise exception 'ÉCHEC - % : aucune erreur', nom;
+end $$;
+set local oranpromo.retirer_demo = 'oui';
+select pg_temp.erreur(:'script', 'Arrêt : un relevé de bons PAYÉ', 'relevé payé d''une boutique de démo : le script s''arrête');
+select pg_temp.ok(exists (select 1 from boutiques where id = '22222222-2222-2222-2222-222222222222'), 'relevé payé : rien n''est supprimé');
 
 select 'Tous les tests SQL du retrait des données de démonstration passent.';
 rollback;
