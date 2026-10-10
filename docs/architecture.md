@@ -972,6 +972,65 @@ app/bons/[code]/page.tsx                         conditions d'une campagne
 app/admin/bons/…                                 programmes et signaux
 ```
 
+## Conditions et confidentialité (US-34) — conception, **à valider par le propriétaire et à faire relire par un avocat**
+
+Stories : `docs/user-stories.md`, module 20. Brouillons et sources : `docs/juridique/` (`README.md`, `conditions-utilisation.md`, `conditions-commercants.md`, `confidentialite.md`). Maquette : `docs/maquettes/Conditions.dc.html`. Source : carte Trello « Juridique · Conditions d'utilisation commerçants ». **Aucun code, aucune migration** dans cette PR.
+
+**Principe** : les textes vivent dans le dépôt (Markdown relu par l'avocat → pages statiques) ; la base garde **quelles versions existent** et **qui a accepté quoi, quand**. Aucune règle existante ne change (connexion, commandes, blocage).
+
+### Données (migration US-34.2)
+
+| Élément | Rôle | Points clés |
+| --- | --- | --- |
+| `versions_documents` | versions en vigueur | `document` (`conditions`, `conditions_commercants`, `confidentialite`), `version` (date `AAAA-MM-JJ`), `importante` (booléen), `en_vigueur_le`, `resume_fr`, `resume_ar` ; clé (`document`, `version`) ; lecture publique ; écriture admin (migration) |
+| `acceptations` | preuve | `profil_id`, `document`, `version`, `accepte_le` (fixée par la base), `contexte` (`inscription`, `commande`, `espace`) ; clé (`profil_id`, `document`, `version`) ; RLS : chacun lit les siennes, l'admin tout ; **aucune modification ni suppression** (déclencheur), sauf suppression du compte selon la question 5 |
+| `accepter_documents(documents text[], versions text[], contexte)` | écrire | refuse une version qui n'est pas la dernière en vigueur (le navigateur ne peut pas accepter une vieille version) ; client : `conditions` + `confidentialite` ; commerçant : `conditions_commercants` + `confidentialite` |
+| `documents_a_accepter()` | lire | pour le compte connecté : documents dont la dernière version **importante** n'est pas acceptée |
+
+L'accord aux messages publicitaires reste **à part** (`abonnements_boutique.alerte_consentie_le`, US-31.5) : jamais mélangé à l'acceptation des conditions.
+
+### Où l'acceptation est demandée
+
+| Moment | Où | Contrôle |
+| --- | --- | --- |
+| Inscription du client | `/compte/connexion` (étape du code) | case obligatoire ; l'action serveur appelle `accepter_documents` juste après la vérification du code ; sans case, pas d'appel à la vérification |
+| Commande | `/panier` | l'action serveur de commande lit `documents_a_accepter()` ; s'il en reste : écran « Nos conditions ont changé » ; `passer_commande` **n'est pas modifiée** (question technique au code : ajouter aussi le contrôle dans la base) |
+| Espace commerçant | `app/espace/layout.tsx` | redirection vers `/espace/conditions` tant que `documents_a_accepter()` n'est pas vide (sauf `/espace/conditions` et la déconnexion) |
+
+### Pages
+
+- `app/conditions/page.tsx`, `app/conditions-commercants/page.tsx`, `app/confidentialite/page.tsx` : pages statiques (rendu du Markdown relu, aucune dépendance nouvelle : le texte est converti en composants au moment du code), `?version=` pour les versions précédentes ; métadonnées « BleDeal · Conditions » ; globales (pas sous `/[ville]`, comme `/compte`).
+- Pied de page commun (`components/PiedDePage.tsx`) : liens et contact.
+- `/compte/donnees` (US-34.4) : lecture des données du compte par les fonctions existantes ; « Fermer mon compte » par une fonction à concevoir avec la question 5 (anonymiser plutôt que supprimer les commandes, garder l'empreinte du numéro pour les no-shows et les bons).
+
+### Conformité : ce que le code peut faire, et ce qui relève du propriétaire
+
+| Exigence (source) | Dans le code | Hors du code (propriétaire / avocat) |
+| --- | --- | --- |
+| Conditions mises à disposition avant la commande, vérification, confirmation (18-05, art. 10 à 12) | pages, panier, acceptation datée | relecture des textes |
+| Identité de l'e-fournisseur, RC, NIF (18-05, art. 11) | pied de page, page conditions | société, numéros |
+| Site « .com.dz » hébergé en Algérie, nom de domaine au CNRC (18-05, art. 8 et 9) | — | **à trancher avec l'avocat** (aujourd'hui : Vercel + Supabase Paris) |
+| Prospection : consentement préalable, désabonnement gratuit sous 24 h, preuve (18-05, art. 31 à 33 ; 18-07, art. 37) | case séparée, date, lien de désabonnement (US-31.5) | — |
+| Déclaration préalable (18-07, art. 12 à 14) | — | **dépôt ANPDP** avant l'ouverture au public |
+| Transfert hors d'Algérie (18-07, art. 44 et 45) | mention et consentement exprès dans la case d'inscription (solution d'attente, à valider) | **autorisation ANPDP** ou autre solution |
+| Information, accès, rectification sous 10 jours, opposition (18-07, art. 32 à 36) | politique, « Mes données », e-mail de contact | traitement des demandes |
+| Sécurité, sous-traitants (18-07, art. 38 et 39) | règles RLS, secrets serveur (existant) | contrats des prestataires (conditions Supabase, Vercel, Meta, Twilio…) |
+| Délégué à la protection des données, registre des traitements (loi 25-11, à vérifier) | — | désignation, registre |
+
+### Fichiers prévus
+
+```
+docs/juridique/*.md                              brouillons (cette PR) → textes relus
+supabase/migrations/…_acceptations.sql           US-34.2 (versions_documents, acceptations, fonctions, tests SQL)
+lib/juridique.ts (+ test)                        versions, textes, lecture
+app/conditions/…, app/conditions-commercants/…, app/confidentialite/…
+app/espace/conditions/page.tsx, actions.ts
+components/PiedDePage.tsx, AccepterConditions.tsx
+app/compte/donnees/…                             US-34.4
+```
+
+**Aucune nouvelle dépendance**, aucune nouvelle variable d'environnement.
+
 ## Limites par visiteur (vues, clics, partages, signalements)
 
 Carte Trello « Sécurité · Limiter les envois en masse ». Migration `20261010180000_limites_visiteurs.sql`.

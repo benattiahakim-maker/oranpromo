@@ -1256,3 +1256,67 @@ L'espace commerçant et l'admin restent en français. Les noms de campagne sont 
 4. **Participation des boutiques** : toutes celles qui acceptent les bons (recommandé : BleDeal paie tout) ou inscription boutique par boutique à chaque campagne ?
 5. **Commande annulée** : la carte dit « le bon expire, sauf si la boutique a annulé » ; aujourd'hui (parrainage) le bon est **toujours rendu** (+7 jours). Règle de la carte pour les nouveaux bons, et parrainage inchangé (recommandé), ou une seule règle pour tous ?
 6. **Délai de paiement** des relevés : avant le 10 (comme le parrainage) ou environ 15 jours après la fin du mois (carte) ? Paiement en espèces accepté (avec reçu signé) ?
+
+## Module 20 — Conditions d'utilisation, conditions commerçants et confidentialité (après le MVP)
+
+Source : carte Trello « Juridique · Conditions d'utilisation commerçants » (BleDeal ne vend rien ; le commerçant est responsable de ses produits et de leur authenticité, parfums et maquillage ; retrait des annonces signalées, US-17 / US-18 ; à faire relire par un avocat) et demande du 10/10 (conditions clients, politique de confidentialité, acceptation à l'inscription et à l'arrivée de la boutique, versions ; brouillons fondés sur les lois 18-05 et 18-07). **Conception seulement** : aucun code, aucune migration. Brouillons des textes : **`docs/juridique/`** (avec les sources). Conception technique : `docs/architecture.md`, section « Conditions et confidentialité (US-34) » ; maquette `docs/maquettes/Conditions.dc.html` (375 px, français et arabe de droite à gauche). **À valider par le propriétaire, textes à faire relire par un avocat algérien avant toute mise en ligne.**
+
+**Ordre conseillé** : US-34 **avant** tout message publicitaire (US-31.5) et avant la première campagne de bons (US-33) : la clause « bons » des conditions commerçants et le consentement séparé aux messages publicitaires doivent exister d'abord. Les pages peuvent être codées dès la relecture de l'avocat ; l'acceptation (US-34.2, US-34.3) ensuite.
+
+**Ce qui ne change pas** : blocage, no-shows, contestation, vérification du numéro, connexion (lien e-mail, code WhatsApp), `passer_commande`. Les textes décrivent les règles existantes, ils ne les changent pas.
+
+| Story | Contenu | Écrans |
+| --- | --- | --- |
+| US-34.1 | Pages `/conditions`, `/conditions-commercants`, `/confidentialite` (versions datées), liens en pied de page | 3 pages, pied de page |
+| US-34.2 | Acceptation par le client : à l'inscription, puis avant la commande suivante si nouvelle version | `/compte/connexion`, `/panier` |
+| US-34.3 | Acceptation par le commerçant : à la première visite de l'espace et à chaque nouvelle version | `/espace/conditions` |
+| US-34.4 | Droits des personnes : « Mes données » et « Fermer mon compte » dans le compte ; registre des acceptations pour l'admin | `/compte`, `/admin` |
+
+### US-34 — Textes juridiques (vue d'ensemble) — **à valider**
+En tant que BleDeal, je veux des conditions claires, acceptées et datées, et une politique de confidentialité, afin de protéger les clients, les commerçants et la société, et de respecter les lois 18-05 et 18-07.
+
+### US-34.1 — Pages et versions
+- Trois pages publiques, lisibles sans compte : **`/conditions`** (clients), **`/conditions-commercants`**, **`/confidentialite`**. En haut : « Version du `[date]` » et un lien « Versions précédentes ». Textes repris de `docs/juridique/` **après relecture de l'avocat** (jamais avant).
+- Pied de page de toutes les pages : « Conditions · Commerçants · Confidentialité · Contact ».
+- Chaque document a des **versions** datées ; une version est **importante** (nouvelle acceptation) ou **mineure** (simple information : « Nos conditions ont changé le … »).
+- Arabe : mêmes pages en arabe (de droite à gauche) ; **traduction juridique à faire faire** (pas de darja dans les textes juridiques ; question 4). Tant qu'elle manque, la page arabe affiche le texte français avec un bandeau en arabe.
+
+### US-34.2 — Acceptation par le client
+- **À l'inscription** (connexion par téléphone, premier code validé) : case **non cochée** « J'accepte les conditions d'utilisation et la politique de confidentialité, y compris l'utilisation de prestataires situés hors d'Algérie (Supabase, Vercel, WhatsApp…). » avec les deux liens. Sans la case : pas de compte.
+- **Accord publicitaire séparé** (jamais dans la même case, jamais coché d'office) : proposé plus tard, avec les alertes de US-31.5.
+- **Nouvelle version importante** : au panier, avant « Commander » : « Nos conditions ont changé le `[date]` » + résumé + case + « Accepter et commander ». Les commandes déjà passées ne changent pas.
+- Comptes existants (créés avant US-34) : même écran avant leur prochaine commande.
+- Chaque acceptation est enregistrée : compte, document, version, date (loi 18-05, art. 33 : la preuve du consentement est à la charge de l'e-fournisseur).
+
+### US-34.3 — Acceptation par le commerçant
+- À la **première visite de l'espace** (et à chaque nouvelle version importante) : page **`/espace/conditions`** : résumé en 5 points (BleDeal ne vend rien ; authenticité et produits interdits ; données des clients pour la commande seulement ; bons déduits et remboursés, QR code obligatoire ; modération), lien vers le texte entier, case « J'ai lu et j'accepte les conditions commerçants (version du `[date]`) » et « Accepter ». Avant : l'espace n'est pas accessible (sauf la déconnexion).
+- Un ambassadeur qui crée une boutique sur place peut montrer la page au commerçant ; l'acceptation se fait **depuis le compte du commerçant** (jamais par l'ambassadeur à sa place).
+- Le coût partagé du bon d'inscription en boutique (US-31.4) se fait par un **accord séparé**, accepté dans l'espace (question US-31 n° 2).
+
+### US-34.4 — Droits des personnes et registre
+- `/compte` : « **Mes données** » (ce que BleDeal garde : numéro, nom, commandes, bons, avis, boutiques suivies, accords, avec leurs dates) et « **Fermer mon compte** » (confirmation ; ce qui est gardé et combien de temps : commandes et relevés pour la comptabilité et la preuve, no-shows liés au numéro — question 5).
+- Demandes par e-mail (accès, rectification sous 10 jours, opposition : loi 18-07, art. 34 à 36) : adresse dans la politique.
+- Admin : nombre d'acceptations par version, liste par compte (pour répondre à une demande ou à un litige).
+
+### Textes nouveaux (français / arabe, à valider)
+
+| # | Où | Français | Arabe (darja simple, à valider) |
+| --- | --- | --- | --- |
+| 1 | Pied de page | Conditions · Commerçants · Confidentialité · Contact | **الشروط** · **التجار** · **الخصوصية** · **اتصل بنا** |
+| 2 | Inscription, case | J'accepte les conditions d'utilisation et la politique de confidentialité, y compris l'utilisation de prestataires situés hors d'Algérie (Supabase, Vercel, WhatsApp…). | **نقبل** شروط الاستعمال و**سياسة الخصوصية**، **حتى** **استعمال** **شركات** **برّا** الدزاير (Supabase، Vercel، WhatsApp…). |
+| 3 | Inscription, erreur | Cochez la case pour créer votre compte. | **علّم** على **الخانة** باش **تدير** الحساب نتاعك. |
+| 4 | Panier, titre | Nos conditions ont changé le 1/12/2026 | الشروط نتاعنا **تبدلو** نهار 1/12/2026 |
+| 5 | Panier, bouton | Accepter et commander | **نقبل** و**نطلب** |
+| 6 | Page, en-tête | Version du 1/12/2026 · Versions précédentes | **النسخة** تاع 1/12/2026 · **النسخ اللي فاتو** |
+| 7 | Page arabe en attente | La traduction arabe de ce texte arrive bientôt. Le texte ci-dessous est la version française. | **الترجمة** بالعربية تاع هاد النص **جاية** **قريب**. النص اللي **تحت** هو **النسخة** بالفرنسية. |
+| 8 | Compte | Mes données · Fermer mon compte | **المعلومات** نتاعي · **سكّر** الحساب نتاعي |
+| 9 | Fermer, confirmation | Fermer votre compte ? Vos commandes passées restent gardées `[x]` ans pour la comptabilité. | **تحب** **تسكّر** الحساب؟ الطلبات اللي فاتو **يبقاو** **محفوظين** `[x]` سنين **للحسابات**. |
+
+L'espace commerçant reste en français.
+
+### Questions au propriétaire (US-34)
+1. **Avocat** : qui relit, et quand ? Rien ne se met en ligne avant (les textes de `docs/juridique/` sont des brouillons).
+2. **Société** : raison sociale, RC, NIF, adresse, e-mail et téléphone de contact à mettre dans les textes ? BleDeal a-t-il déjà une société ?
+3. **Points de loi à trancher avec l'avocat** (essentiel) : a) loi 18-05, art. 8 et 9 : site « **.com.dz** » **hébergé en Algérie** et nom de domaine déposé au CNRC — BleDeal (et les boutiques ?) sont-ils « e-fournisseurs » alors que la vente et le paiement se font en boutique ? b) loi 18-07 : **déclaration ANPDP** avant l'ouverture au public, et **transferts hors d'Algérie** (Supabase Paris, Vercel, Meta, Twilio, Cloudflare, CARTO, Anthropic) : autorisation (art. 44) ou exceptions (art. 45) ; c) **délégué à la protection des données** (loi 25-11) ; d) **âge minimum** ; e) parfums et cosmétiques vs « produits pharmaceutiques » (art. 3).
+4. **Arabe** : traduction juridique professionnelle des 3 textes (recommandé) ; en attendant, page arabe avec le texte français ?
+5. **Durées de conservation** (comptes, commandes, relevés, mesures) et **fermeture de compte** : à fixer avec l'avocat et le comptable.
