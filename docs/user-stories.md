@@ -1329,6 +1329,7 @@ En tant que BleDeal, je veux des conditions claires, acceptées et datées, et u
 - `/compte` : « **Mes données** » (ce que BleDeal garde : numéro, nom, commandes, bons, avis, boutiques suivies, accords, avec leurs dates) et « **Fermer mon compte** » (confirmation ; ce qui est gardé et combien de temps : commandes et relevés pour la comptabilité et la preuve, no-shows liés au numéro — question 5).
 - Demandes par e-mail (accès, rectification sous 10 jours, opposition : loi 18-07, art. 34 à 36) : adresse dans la politique.
 - Admin : nombre d'acceptations par version, liste par compte (pour répondre à une demande ou à un litige).
+- **Codé en partie** (10/10, sans migration) : « Mes données » (`/compte/donnees`, lien dans `/compte`) et le registre admin (`/admin/acceptations` : nombre par version, recherche d'un compte par numéro ou nom). **Pas codé** : « Fermer mon compte » (durées de conservation et ce qui est anonymisé : question 5, texte n° 9 `[x]` ans) et l'adresse e-mail des demandes (identité de la société pas encore fournie) ; en attendant, « Mes données » renvoie à la politique de confidentialité.
 
 ### Textes nouveaux (français / arabe, à valider)
 
@@ -1357,4 +1358,4 @@ L'espace commerçant reste en français.
 1. Pages `/conditions`, `/conditions-commercants`, `/confidentialite` et **acceptation par version** comme conçu (US-34.1 à US-34.3).
 2. Les textes restent des **brouillons** et sont publiés avec le bandeau visible **« Version provisoire, en cours de relecture juridique »** (jusqu'à la relecture de l'avocat).
 3. Questions juridiques (« .com.dz », hébergement en Algérie, déclaration ANPDP, transferts, délégué, âge) : notées pour l'avocat dans `docs/ETAT.md`.
-4. US-34.4 (« Mes données », « Fermer mon compte ») : pas dans cette série (durées de conservation à fixer d'abord).
+4. US-34.4 : « Mes données » et registre admin codés le 10/10 ; « Fermer mon compte » attend les durées de conservation (question 5).

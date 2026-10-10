@@ -52,6 +52,8 @@ export default async function MonCompte({ searchParams }: { searchParams: Promis
     {parrainage?.peut_choisir && <ChoixParrain initial={parrainage.parrain_saisi ? "" : codeInvite} parrainSaisi={parrainage.parrain_saisi} saisies={parrainage.saisies} />}
     <Link href="/compte/commandes" className="etiquette mt-8 flex min-h-[44px] items-center justify-center border border-noir">{t.mesCommandes}</Link>
     {nombreBoutiques !== null && <Link href="/compte/boutiques" className="etiquette mt-3 flex min-h-[44px] items-center justify-center border border-noir">{remplir(ts.mesBoutiques, { n: nombreBoutiques })}</Link>}
+    {/* US-34.4 : « Mes données » (droit d'accès). « Fermer mon compte » : pas encore (durées de conservation à fixer). */}
+    <Link href="/compte/donnees" className="etiquette mt-3 flex min-h-[44px] items-center justify-center border border-trait">{(await getTextes()).donnees.mesDonnees}</Link>
     {profil.boutique_id && <Link href="/espace" className="etiquette mt-3 flex min-h-[44px] items-center justify-center border border-trait">{t.monEspace}</Link>}
     {bons.length > 0 && <MesBons bons={bons} />}
     {/* US-33.3 : code d'une campagne (numéro vérifié obligatoire, vérifié aussi par la base). */}

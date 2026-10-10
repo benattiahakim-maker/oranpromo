@@ -284,7 +284,33 @@ export const ar: Textes = {
     monEspace: "فضاء الحانوت ديالي",
     chargementImpossible: "ما قدرناش نحمّلو معلوماتك. عاود جرّب.",
     deconnexionImpossible: "ما قدرناش نخرجوك. عاود جرّب.",
+  },  // US-34.4 : « المعلومات نتاعي » (texte n° 8 de la conception) ; les autres textes sont nouveaux, à valider.
+  donnees: {
+    mesDonnees: "المعلومات نتاعي",
+    intro: "واش تحفظ BleDeal على الحساب نتاعك، بالتواريخ.", // à valider
+    numero: "النمرة",
+    numeroVerifie: "{numero} · مأكّدة نهار {date}", // à valider
+    numeroNonVerifie: "{numero} · ماشي مأكّدة", // à valider
+    aucun: "ما كاينش",
+    aucune: "ما كاينش",
+    nom: "الاسم",
+    compte: "الحساب",
+    creeLe: "تحلّ نهار {date}", // à valider
+    commandes: "الطلبات",
+    bons: "البونات",
+    avis: "الآراء",
+    nombreDernier: "{n} · آخر واحد نهار {date}", // à valider
+    nombreDerniere: "{n} · آخر واحد نهار {date}", // à valider
+    boutiques: "الحوانت اللي تتبّعهم",
+    suivieDepuis: "{nom} · من {date}", // à valider
+    accords: "الموافقات", // à valider
+    accord: "{document}، النسخة تاع {version} · قبلتها نهار {date}", // à valider
+    droits: "نسخة، تصحيح، مسح ولا رفض: الحقوق نتاعك وكيفاش تطلبهم راهم في", // à valider
+    lienPolitique: "سياسة الخصوصية",
+    chargementImpossible: "ما قدرناش نحمّلو المعلومات نتاعك. عاود جرّب.",
+    retour: "رجوع للحساب نتاعي",
   },
+
   profil: {
     nom: "الاسم واللقب",
     telephone: "رقم الواتساب",
