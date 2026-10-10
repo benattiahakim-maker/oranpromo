@@ -2,7 +2,7 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 echo.
-echo === OranPromo : installation ===
+echo === BleDeal : installation ===
 echo.
 
 where git >nul 2>nul

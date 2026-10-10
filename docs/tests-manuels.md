@@ -147,7 +147,7 @@ Ne copiez jamais de secret (clé, jeton, mot de passe) dans ce fichier ni dans u
 - [ ] **Blocage au 5e no-show.** Au 5e « Client pas venu » non annulé :
   - Attendu : le compte du client est bloqué, et il reçoit un WhatsApp de blocage (modèle `oranpromo_compte_bloque`).
 - [ ] **Commande refusée.** Le client bloqué essaie de commander.
-  - Attendu : « Votre compte est bloqué après 5 commandes non récupérées : contactez OranPromo pour le débloquer. »
+  - Attendu : « Votre compte est bloqué après 5 commandes non récupérées : contactez BleDeal pour le débloquer. »
 - [ ] **Déblocage.** Après le déblocage par l'admin (3.2) :
   - Attendu : le client peut de nouveau commander.
 
@@ -164,7 +164,7 @@ Ne copiez jamais de secret (clé, jeton, mot de passe) dans ce fichier ni dans u
   - Attendu : le message « Lien copié ».
   - Attendu : en le collant dans un navigateur, l'adresse est `https://test.<domaine>/b/<slug>` (en production : `https://<domaine>/b/<slug>`) et ouvre la vitrine.
 - [ ] **Aperçu du lien.** Coller le lien dans une conversation WhatsApp (avec vous-même).
-  - Attendu : un aperçu s'affiche (image « OranPromo » / « Réservez sur WhatsApp, payez en boutique », nom de la boutique).
+  - Attendu : un aperçu s'affiche (image « BleDeal » / « Réservez sur WhatsApp, payez en boutique », nom de la boutique).
   - Note : sur la preview protégée par Vercel (Deployment Protection), l'aperçu peut ne pas s'afficher. Refaire ce test en production.
 - [ ] **QR code.** Cliquer « Télécharger le QR code ».
   - Attendu : une image se télécharge. En la scannant avec l'appareil photo d'un autre téléphone, la vitrine de la boutique s'ouvre.
@@ -230,7 +230,7 @@ Ne copiez jamais de secret (clé, jeton, mot de passe) dans ce fichier ni dans u
 - [ ] **Lien modifié.** Changer un caractère à la fin de l'adresse `/confirmer/…`.
   - Attendu : « Ce lien n'est pas valide. »
 - [ ] **Lien de plus de 24 h (lourd / facultatif).** Ouvrir un lien reçu il y a plus de 24 h.
-  - Attendu : « Ce lien a expiré. Confirmez la commande dans votre espace OranPromo, rubrique Commandes. »
+  - Attendu : « Ce lien a expiré. Confirmez la commande dans votre espace BleDeal, rubrique Commandes. »
 - [ ] **Secret absent.** Si `CONFIRMATION_SECRET` ou `jeton_confirmation` manque ou ne correspond pas :
   - Attendu : « La confirmation par lien n'est pas disponible pour le moment… ». Corriger l'étape 3 du guide et redéployer.
 - [ ] **Liens de la page.** Vérifier « Voir mes commandes » et « Annuler ou voir toutes mes commandes ».
@@ -274,7 +274,7 @@ Ne copiez jamais de secret (clé, jeton, mot de passe) dans ce fichier ni dans u
   - Attendu : la contestation disparaît de la liste, et le no-show compte toujours.
 - [ ] **Annuler le no-show.** Sur une autre contestation, cliquer « Annuler le no-show ».
   - Attendu : le no-show ne compte plus.
-  - Attendu : côté boutique, la carte affiche « (annulé par OranPromo) ».
+  - Attendu : côté boutique, la carte affiche « (annulé par BleDeal) ».
 - [ ] **Bloquer.** Cliquer « Bloquer » sur un client de test.
   - Attendu : le client ne peut plus commander (message de blocage, voir 1.8).
 - [ ] **Débloquer.** Cliquer « Débloquer ».

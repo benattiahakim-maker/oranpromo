@@ -1,8 +1,8 @@
 @AGENTS.md
 
-# OranPromo — règles pour les agents
+# BleDeal — règles pour les agents
 
-OranPromo est le click & collect des boutiques de vêtements d'Oran : le client voit une promo, réserve par un message WhatsApp pré-rempli, vient essayer et payer en boutique. Le propriétaire du projet ne code pas : **c'est toi qui codes, et tu dois prouver que ça marche.**
+BleDeal (anciennement OranPromo) est le click & collect des boutiques de vêtements, ville par ville (Oran d'abord, puis le reste de l'Ouest, le Centre et l'Est) : le client voit une promo, réserve par un message WhatsApp pré-rempli, vient essayer et payer en boutique. Le propriétaire du projet ne code pas : **c'est toi qui codes, et tu dois prouver que ça marche.**
 
 ## À lire avant de coder
 
