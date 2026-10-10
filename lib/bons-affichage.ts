@@ -33,7 +33,15 @@ export function detailInscription(bon: BonClient, t: TextesBons, maintenant: Dat
 export function libelleUtiliserBon(bon: BonClient, t: TextesBons, langue: Langue): string {
   if (bon.origine === "bienvenue" || bon.origine === "inscription_boutique") return remplir(t.utiliserBonBienvenue, { montant: formaterPrix(bon.montant, langue) });
   if (bon.origine === "campagne" || bon.origine === "avis") return remplir(t.utiliserBonProgramme, { nom: (langue === "ar" ? bon.nom_ar : bon.nom_fr) ?? bon.nom_fr ?? "", montant: formaterPrix(bon.montant, langue) });
-  return t.utiliserBon;
+  return remplir(t.utiliserBon, { montant: formaterPrix(bon.montant, langue) });
+}
+
+/** Phrase d'aide de « Mes bons » avec le montant réel des bons encore utilisables : « 150 DA », « 150 DA ou 300 DA »
+ *  (montants différents, du plus petit au plus grand). null : aucun bon utilisable, pas de phrase. */
+export function aideMesBons(montants: number[], t: TextesBons, langue: Langue): string | null {
+  const uniques = [...new Set(montants.filter(m => m > 0))].sort((a, b) => a - b);
+  if (!uniques.length) return null;
+  return remplir(t.aideBons, { montant: uniques.map(m => formaterPrix(m, langue)).join(t.ouMontant) });
 }
 
 /** US-33.3 : raison affichée au panier quand un bon ne s'applique pas (textes n° 10 à 13). */

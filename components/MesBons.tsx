@@ -2,7 +2,7 @@
 import { remplir } from "@/lib/langue";
 import { formaterPrix } from "@/lib/prix";
 import { etatBon, type BonClient } from "@/lib/bons";
-import { detailBonProgramme, detailInscription, nomDuBon } from "@/lib/bons-affichage";
+import { aideMesBons, detailBonProgramme, detailInscription, nomDuBon } from "@/lib/bons-affichage";
 import { useLangue, useTextes } from "./FournisseurTextes";
 
 // US-27.3 : « Mes bons » dans /compte : disponible (jusqu'au …), réservé (commande n° …), utilisé (le … chez …), expiré, en file.
@@ -11,6 +11,8 @@ import { useLangue, useTextes } from "./FournisseurTextes";
 export default function MesBons({ bons, maintenant }: { bons: BonClient[]; maintenant?: Date }) {
   const t = useTextes().parrainage;
   const langue = useLangue();
+  // Montant réel de chaque bon encore utilisable (disponible, réservé, en file) : 150 DA, 300 DA, 500 DA…
+  const aide = aideMesBons(bons.filter(b => etatBon(b, langue, maintenant).actif).map(b => b.montant), t, langue);
   return <section aria-labelledby="titre-mes-bons" className="mt-8 border-t border-trait pt-6">
     <h2 id="titre-mes-bons" className="etiquette text-xs text-gris">{t.mesBons}</h2>
     <ul className="mt-1">{bons.map(bon => {
@@ -22,6 +24,6 @@ export default function MesBons({ bons, maintenant }: { bons: BonClient[]; maint
         <span className={`whitespace-nowrap ${etat.actif ? "font-medium" : ""}`}>{formaterPrix(bon.montant, langue)}</span>
       </li>;
     })}</ul>
-    <p className="mt-3 text-xs leading-[1.6] text-gris">{t.aideBons}</p>
+    {aide && <p className="mt-3 text-xs leading-[1.6] text-gris">{aide}</p>}
   </section>;
 }

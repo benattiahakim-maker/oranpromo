@@ -497,14 +497,15 @@ export const ar: Textes = {
     expire: "فات وقتو نهار {date}", // 23
     enFile: "البون نتاعك يجيك نهار {date} (الميزانية تاع الشهر كملت).", // 20
     annule: "تلغى",
-    aideBons: "تخدم بيه في السلة: 300 دج أقل، BleDeal تخلّصها للحانوت.",
+    aideBons: "تخدم بيه في السلة: {montant} أقل، BleDeal تخلّصها للحانوت.",
+    ouMontant: " ولا ",
     accueilTitre: "عرّض صحابك", // 13
     accueilTexte: "300 دج لكل واحد", // 13
     accueilLien: "شوف",
     merciTitre: "يعطيك الصحة!", // 14
     merciTexte: "عرّف صاحبك بـ BleDeal: 300 دج لكل واحد من بعد أول طلب نتاعو.", // 14
     partagerMonLien: "ابعث الرابط نتاعي",
-    utiliserBon: "خدم بالبون نتاعي (−300 دج)", // 17
+    utiliserBon: "خدم بالبون نتاعي (−{montant})", // 17
     ligneBon: "بون العرضة",
     aPayerBoutique: "تخلّص في الحانوت", // 18
     sousMinimum: "البون يخدم من 1000 دج وفوق.", // 19
