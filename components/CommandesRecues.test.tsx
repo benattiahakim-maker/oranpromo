@@ -127,7 +127,7 @@ describe("US-27.4 : bon parrainage dans la liste de la boutique", () => {
   it("« Remis sans QR code » avec un bon : la confirmation dit d'encaisser le total, le bon reste au client", () => {
     render(<CommandesRecues commandes={[commande("prete", { bon_id: "b1", remise_bon: 300 })]} boutique="Boutique Amine" />);
     fireEvent.click(screen.getByRole("button", { name: "Remis sans QR code" }));
-    expect(screen.getByText(/Sans QR code ni code, le bon ne s’applique pas : encaissez 8\s700\sDA\. Le bon reste au client\./)).toBeInTheDocument();
+    expect(screen.getByText(/Sans QR code, le bon ne s’applique pas : encaissez 8\s700\sDA\. Le bon reste au client\./)).toBeInTheDocument();
     expect(changerStatutCommandeBoutique).not.toHaveBeenCalled();
   });
   it("« Remis sans QR code » sans bon : pas de phrase sur le bon", () => {

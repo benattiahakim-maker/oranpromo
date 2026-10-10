@@ -3,7 +3,8 @@ import { creerClientServeur } from "@/lib/supabase/server";
 import { codeRetraitValide, jetonRetraitValide, lireRetraitBoutique, messageRetraitBoutique, remettreRetrait, type ResumeRetrait } from "@/lib/retrait";
 
 // US-26.3 : actions du scanner de la boutique. La base refait tous les contrôles (boutique connectée, commande de
-// cette boutique, prête, date limite). Aucune limite d'essais (décision 6 du propriétaire, 9/10).
+// cette boutique, prête, date limite). Relecture n°6, point 2 : après 10 codes faux en 15 minutes, la base refuse le code
+// pendant 15 minutes (message MESSAGE_CODE_BLOQUE) ; le QR code n'est jamais limité.
 
 export type ResultatRetrait = { succes: boolean; message: string; resume?: ResumeRetrait };
 

@@ -8,6 +8,7 @@ import type { CleRetrait, ResumeRetrait } from "@/lib/retrait";
 import { aEncaisser, moisAlger, releveDuMois } from "@/lib/bons";
 
 // US-26.3 : résumé d'une commande trouvée par QR code ou par code, puis « Remis au client » (maquette ⑥ et ⑦).
+// Bon parrainage (US-27.4) : déduit seulement par QR code (relecture n°6, point 2).
 // Le résumé ne remet rien : seule la touche « Remis au client » appelle la base.
 export default function RetraitBoutique({ resume, cle, onAutre }: { resume: ResumeRetrait; cle: CleRetrait; onAutre?: () => void }) {
   const [remise, setRemise] = useState<ResumeRetrait | null>(null);
@@ -16,7 +17,9 @@ export default function RetraitBoutique({ resume, cle, onAutre }: { resume: Resu
   const verrou = useRef(false);
   const parCode = "code" in cle;
   // US-27.4 : bon parrainage BleDeal déduit du montant à encaisser, remboursé à la boutique sur le relevé du mois de la remise.
-  const bon = resume.remise_bon ?? 0;
+  // Relecture n°6, point 2 : seulement par QR code. Par code, la base rend le bon au client : la boutique encaisse le total.
+  const bonReserve = resume.remise_bon ?? 0;
+  const bon = parCode ? 0 : bonReserve;
   const total = resume.total ?? 0;
 
   async function remettre() {
@@ -55,6 +58,10 @@ export default function RetraitBoutique({ resume, cle, onAutre }: { resume: Resu
     </dl>}
     <p className="mt-4 flex items-center justify-between gap-3 bg-noir px-4 py-3 text-blanc"><span className="etiquette">À encaisser en espèces</span><span className="text-[22px] font-medium whitespace-nowrap">{formaterPrix(aEncaisser(total, bon))}</span></p>
     {bon > 0 && <p className="mt-2 border border-noir p-3 text-sm">Ces {formaterPrix(bon)} vous sont remboursés par BleDeal ({releveDuMois(moisAlger())}).</p>}
+    {parCode && <div className="mt-3 border border-noir p-3 text-sm">
+      {bonReserve > 0 && <p className="font-medium">Par code, le bon ne s’applique pas : encaissez {formaterPrix(total)}. Le bon reste au client.</p>}
+      <p className={bonReserve > 0 ? "mt-1" : ""}>Remise par code : ni bon parrainage ni parrainage BleDeal. Scannez plutôt le QR code du client.</p>
+    </div>}
     <p className="mt-3 text-sm text-gris">Vérifiez les articles avec le client avant de remettre. Un proche peut venir à sa place : c’est normal.</p>
     <button type="button" disabled={enCours} onClick={() => void remettre()} className="etiquette mt-4 min-h-12 w-full bg-noir text-blanc">Remis au client</button>
     {message && <p role="alert" className="mt-3 border border-trait p-3 text-sm">{message}</p>}

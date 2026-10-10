@@ -36,7 +36,8 @@ describe("US-26.3 : résumé et « Remis au client »", () => {
 describe("US-27.4 : bon parrainage dans le résumé du scan", () => {
   it("Sous-total, « Bon parrainage BleDeal −300 DA », À encaisser 6 000 DA et remboursement sur le relevé du mois", () => {
     vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-11-05T10:00:00Z"));
-    render(<RetraitBoutique resume={{ ...resume, remise_bon: 300 }} cle={{ code: "0481" }} />);
+    render(<RetraitBoutique resume={{ ...resume, remise_bon: 300 }} cle={{ jeton: JETON }} />);
+    expect(screen.queryByText(/Remise par code/)).toBeNull();
     expect(screen.getByText("Sous-total").nextSibling).toHaveTextContent(/6\s300\sDA/);
     expect(screen.getByText("Bon parrainage BleDeal").nextSibling).toHaveTextContent(/−300\sDA/);
     expect(screen.getByText("À encaisser en espèces").nextSibling).toHaveTextContent(/6\s000\sDA/);
@@ -54,5 +55,23 @@ describe("US-27.4 : bon parrainage dans le résumé du scan", () => {
     render(<RetraitBoutique resume={resume} cle={{ jeton: JETON }} />);
     expect(screen.queryByText("Sous-total")).toBeNull(); expect(screen.queryByText(/remboursés par BleDeal/)).toBeNull();
     expect(screen.getByText("À encaisser en espèces").nextSibling).toHaveTextContent(/6\s300\sDA/);
+  });
+});
+
+describe("Relecture n°6, point 2 : par code à 4 chiffres, ni bon ni parrainage", () => {
+  it("commande avec bon trouvée par code : pas de déduction, encaisser le total, le bon reste au client", () => {
+    render(<RetraitBoutique resume={{ ...resume, remise_bon: 300 }} cle={{ code: "0481" }} />);
+    expect(screen.queryByText("Sous-total")).toBeNull(); expect(screen.queryByText(/remboursés par BleDeal/)).toBeNull();
+    expect(screen.getByText("À encaisser en espèces").nextSibling).toHaveTextContent(/6\s300\sDA/);
+    expect(screen.getByText(/Par code, le bon ne s’applique pas : encaissez 6\s300\sDA\. Le bon reste au client\./)).toBeInTheDocument();
+    expect(screen.getByText("Remise par code : ni bon parrainage ni parrainage BleDeal. Scannez plutôt le QR code du client.")).toBeInTheDocument();
+  });
+  it("sans bon, par code : l’avertissement sur le parrainage reste ; par QR code : aucun avertissement", () => {
+    render(<RetraitBoutique resume={resume} cle={{ code: "0481" }} />);
+    expect(screen.getByText(/Remise par code : ni bon parrainage ni parrainage BleDeal/)).toBeInTheDocument();
+    expect(screen.queryByText(/le bon ne s’applique pas/)).toBeNull();
+    cleanup();
+    render(<RetraitBoutique resume={resume} cle={{ jeton: JETON }} />);
+    expect(screen.queryByText(/Remise par code/)).toBeNull();
   });
 });

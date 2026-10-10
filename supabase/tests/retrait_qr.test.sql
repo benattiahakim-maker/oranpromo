@@ -167,9 +167,10 @@ select pg_temp.ok((retrait_boutique(code => 'abcd'))::text = '{"etat": "invalide
   'code mal formé : « invalide »');
 select pg_temp.erreur('select retrait_boutique()', '22023', 'QR code ou le code', 'ni QR code ni code : refusé');
 select pg_temp.erreur(format('select retrait_boutique(%L, %L)', :'jb', :'kb'), '22023', 'QR code ou le code', 'les deux à la fois : refusé');
--- Aucun blocage après de nombreuses erreurs (décision 6 du propriétaire).
-select count(*) from generate_series(1, 30) i, lateral (select retrait_boutique(code => lpad(i::text, 4, '0'))) x \g /dev/null
-select pg_temp.ok((retrait_boutique(:'jb'))->>'etat' = 'ok', 'après 30 codes faux : aucune limite, le bon QR code marche');
+-- Relecture n°6, point 2 : 10 codes faux en 15 minutes bloquent la saisie du code (retrait_code_limite.test.sql) ;
+-- le QR code n'est jamais limité.
+select count(*) from generate_series(1, 7) i, lateral (select retrait_boutique(code => lpad(i::text, 4, '0'))) x \g /dev/null
+select pg_temp.ok((retrait_boutique(:'jb'))->>'etat' = 'ok', 'après 10 codes faux : le bon QR code marche');
 select pg_temp.compte(null) \g /dev/null
 reset role;
 
