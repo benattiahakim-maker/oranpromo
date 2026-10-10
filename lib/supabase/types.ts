@@ -1654,6 +1654,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      signaux_fraude_avis: {
+        Args: never
+        Returns: {
+          boutique: string
+          boutique_id: string
+          detail: string
+          nombre: number
+          signal: string
+        }[]
+      }
       signaux_avis: {
         Args: never
         Returns: {

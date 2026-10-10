@@ -38,10 +38,20 @@ describe("US-32.4 : onglet Avis de la modération", () => {
     expect((await screen.findByRole("alert")).textContent).toContain("ont changé");
     expect(traiterSignalementsAvis).toHaveBeenCalledWith("v1", ["1", "2"], "classer_signalement_avis");
   });
-  it("file vide et signal de fraude (jamais automatique)", () => {
-    render(<SignalementsAvisModeration groupes={[]} signaux={[{ boutiqueId: "b", boutique: "Dar Lebsa", nombre: 6 }]} />);
+  it("file vide et les 4 signaux de fraude (jamais automatiques, aucun bouton d'action)", () => {
+    render(<SignalementsAvisModeration groupes={[]} signaux={[
+      { signal: "comptes_recents", boutiqueId: "b", boutique: "Dar Lebsa", nombre: 6, detail: null },
+      { signal: "avis_groupes", boutiqueId: "b", boutique: "Dar Lebsa", nombre: 3, detail: "08/10 14:32" },
+      { signal: "meme_numero", boutiqueId: "n", boutique: "Boutique Nour", nombre: 4, detail: "+213 … 56" },
+      { signal: "retraits_rapides", boutiqueId: "n", boutique: "Boutique Nour", nombre: 5, detail: null },
+    ]} />);
     expect(screen.getByText("Aucun avis signalé.")).toBeTruthy();
-    expect(screen.getByText("Signal (jamais automatique)")).toBeTruthy();
+    expect(screen.getByText("Signaux (jamais automatiques)")).toBeTruthy();
+    expect(screen.getByText(/rien n’est masqué ni bloqué automatiquement/)).toBeTruthy();
     expect(screen.getByText("Dar Lebsa : 6 avis 5 étoiles sur 7 jours venant de comptes de moins de 7 jours.")).toBeTruthy();
+    expect(screen.getByText("Dar Lebsa : 3 avis dans la même minute (08/10 14:32).")).toBeTruthy();
+    expect(screen.getByText("Boutique Nour : le numéro +213 … 56 a donné 4 avis, tous à cette boutique (30 jours).")).toBeTruthy();
+    expect(screen.getByText("Boutique Nour : 5 commandes récupérées moins de 30 minutes après la commande (30 jours).")).toBeTruthy();
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
   });
 });

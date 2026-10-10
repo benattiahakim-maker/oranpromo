@@ -223,3 +223,18 @@ test("avis : réponse de la boutique (une fois, filtre), signalement, modératio
   await espace.context().close();
   await admin.context().close();
 });
+
+test("signaux de fraude : avis groupés dans la même minute, affichés à l'admin sans aucune action automatique", async ({ browser }) => {
+  test.setTimeout(90_000);
+  const boutique = await creerBoutique({ nom: `Atelier ${unique()}` });
+  for (const nom of ["Ines Haddad", "Yacine Saidi", "Lina Amrani"]) await avisDirect(boutique.id, 4, nom, [], null);
+  await sql(`begin; set local session_replication_role = replica;
+    update avis set cree_le = date_trunc('minute', now()) - interval '1 hour' + interval '10 seconds' where boutique_id = '${boutique.id}'; commit;`);
+  const admin = await connecterEspace(browser, (await creerCompte({ role: "admin", nom: "Hakim" })).email);
+  await admin.goto("/admin/moderation?onglet=avis");
+  const signaux = admin.getByRole("region", { name: "Signaux (jamais automatiques)" });
+  await expect(signaux).toContainText(`${boutique.nom} : 3 avis dans la même minute`);
+  await expect(signaux.getByRole("button")).toHaveCount(0);
+  expect(await sql("select statut from avis where boutique_id = $1 and statut <> 'publie'", [boutique.id])).toHaveLength(0);
+  await admin.context().close();
+});

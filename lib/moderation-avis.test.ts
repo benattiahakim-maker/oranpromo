@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { chargerHistoriqueModeration, chargerSignalementsAvis, chargerSignauxAvis, LIBELLES_DECISIONS, modererAvis, prenomInitiale, regrouperSignalementsAvis, type SignalementAvisModeration } from "./moderation";
+import { chargerHistoriqueModeration, chargerSignalementsAvis, chargerSignauxAvis, LIBELLES_DECISIONS, modererAvis, prenomInitiale, regrouperSignalementsAvis, texteSignalAvis, type SignalementAvisModeration } from "./moderation";
 
 const avis = { id: "v1", note: 5, commentaire: "Très bon accueil", reponse: null, reponse_masquee: false, statut: "publie", cree_le: "2026-10-08T10:00:00Z", boutiques: { nom: "Boutique Nour" }, profils: { nom: "Amine Benali" } };
 const s = (id: string, avis_id = "v1", motif = "faux_avis", cree_le = "2026-10-09T10:00:00Z", statut: SignalementAvisModeration["statut"] = "ouvert"): SignalementAvisModeration =>
@@ -32,10 +32,25 @@ describe("file des avis signalés", () => {
     expect(groupes[0].nombre).toBe(501);
     expect(eq).toHaveBeenCalledWith("statut", "ouvert");
   });
-  it("signal de fraude lu par la fonction de la base (admin)", async () => {
-    const rpc = vi.fn().mockResolvedValue({ data: [{ boutique_id: "b", boutique: "Dar Lebsa", cinq_etoiles_comptes_recents: 6 }], error: null });
-    expect(await chargerSignauxAvis({ rpc } as unknown as SupabaseClient<Database>)).toEqual([{ boutiqueId: "b", boutique: "Dar Lebsa", nombre: 6 }]);
-    expect(rpc).toHaveBeenCalledWith("signaux_avis");
+  it("signaux de fraude lus par la fonction de la base (admin), signal inconnu ignoré", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: [
+      { signal: "comptes_recents", boutique_id: "b", boutique: "Dar Lebsa", nombre: 6, detail: null },
+      { signal: "meme_numero", boutique_id: "n", boutique: "Boutique Nour", nombre: 3, detail: "+213 … 56" },
+      { signal: "autre_chose", boutique_id: "x", boutique: "X", nombre: 9, detail: null },
+    ], error: null });
+    expect(await chargerSignauxAvis({ rpc } as unknown as SupabaseClient<Database>)).toEqual([
+      { signal: "comptes_recents", boutiqueId: "b", boutique: "Dar Lebsa", nombre: 6, detail: null },
+      { signal: "meme_numero", boutiqueId: "n", boutique: "Boutique Nour", nombre: 3, detail: "+213 … 56" },
+    ]);
+    expect(rpc).toHaveBeenCalledWith("signaux_fraude_avis");
+    await expect(chargerSignauxAvis({ rpc: vi.fn().mockResolvedValue({ data: null, error: { message: "x" } }) } as unknown as SupabaseClient<Database>)).rejects.toThrow("Impossible de charger les signaux");
+  });
+  it("phrases des 4 signaux (information seulement)", () => {
+    const base = { boutiqueId: "b", boutique: "Dar Lebsa", nombre: 3 };
+    expect(texteSignalAvis({ ...base, signal: "comptes_recents", detail: null })).toBe("Dar Lebsa : 3 avis 5 étoiles sur 7 jours venant de comptes de moins de 7 jours.");
+    expect(texteSignalAvis({ ...base, signal: "avis_groupes", detail: "08/10 14:32" })).toBe("Dar Lebsa : 3 avis dans la même minute (08/10 14:32).");
+    expect(texteSignalAvis({ ...base, signal: "meme_numero", detail: "+213 … 56" })).toBe("Dar Lebsa : le numéro +213 … 56 a donné 3 avis, tous à cette boutique (30 jours).");
+    expect(texteSignalAvis({ ...base, signal: "retraits_rapides", detail: null })).toBe("Dar Lebsa : 3 commandes récupérées moins de 30 minutes après la commande (30 jours).");
   });
   it("historique : décision sur un avis (« Avis de Amine B. · Boutique Nour ») ou sur un article", async () => {
     const limit = vi.fn().mockResolvedValue({ data: [
