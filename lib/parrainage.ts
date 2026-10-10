@@ -20,6 +20,32 @@ export const MESSAGE_PARRAIN_ENREGISTRE = "C'est noté. Si ce numéro est celui 
 export const MESSAGE_SAISIE_PARRAIN_INVALIDE = "Écris le numéro WhatsApp de ton parrain (05, 06 ou 07 et 8 chiffres) ou son code de 6 caractères.";
 export const MESSAGE_PARRAIN_IMPOSSIBLE = "Impossible d'enregistrer ton parrain. Réessaie.";
 
+// Parrainage affiché dans /compte : vouvoiement (le reste du site vouvoie ; le tutoiement reste sur les pages du
+// parrainage, décision 9 du 9/10). Réponses de choisir_parrain et de l'action, en français seulement (l'arabe ne
+// distingue pas ici).
+const MESSAGES_PARRAIN_VOUS: Record<string, string> = {
+  [MESSAGE_PARRAIN_ENREGISTRE]: "C'est noté. Si ce numéro est celui d'un client BleDeal, il deviendra votre parrain après votre premier retrait en boutique.",
+  "C'est ton propre numéro : choisis le numéro d'un ami.": "C'est votre propre numéro : choisissez le numéro d'un ami.",
+  [MESSAGE_SAISIE_PARRAIN_INVALIDE]: "Écrivez le numéro WhatsApp de votre parrain (05, 06 ou 07 et 8 chiffres) ou son code de 6 caractères.",
+  "Connecte-toi pour choisir ton parrain.": "Connectez-vous pour choisir votre parrain.",
+  "Vérifie ton numéro par code avant de choisir ton parrain.": "Vérifiez votre numéro par code avant de choisir votre parrain.",
+  "Tu as déjà modifié ton parrain 2 fois : ton choix est enregistré.": "Vous avez déjà modifié votre parrain 2 fois : votre choix est enregistré.",
+  "Le parrain se choisit avant ta première commande.": "Le parrain se choisit avant votre première commande.",
+  "Le parrain se choisit dans les 7 jours après ton inscription.": "Le parrain se choisit dans les 7 jours après votre inscription.",
+  "Ton parrainage est déjà traité : il ne peut plus changer.": "Votre parrainage est déjà traité : il ne peut plus changer.",
+  "Ton numéro a déjà été parrainé : un numéro ne peut être parrainé qu'une fois.": "Votre numéro a déjà été parrainé : un numéro ne peut être parrainé qu'une fois.",
+  [MESSAGE_PARRAIN_IMPOSSIBLE]: "Impossible d'enregistrer votre parrain. Réessayez.",
+};
+
+export function vouvoyerMessageParrain(message: string): string {
+  return MESSAGES_PARRAIN_VOUS[message] ?? message;
+}
+
+/** Textes du parrainage, au vouvoiement hors des pages du parrainage (/compte). */
+export function textesParrainage<T extends { vous: Record<string, string> }>(t: T, vous: boolean): T {
+  return vous ? { ...t, ...t.vous } : t;
+}
+
 /** Code de parrainage tapé ou lu dans un lien (espaces ignorés, minuscules acceptées), ou null. */
 export function normaliserCodeParrainage(saisie: string | null | undefined): string | null {
   if (typeof saisie !== "string" || saisie.length > 20) return null;

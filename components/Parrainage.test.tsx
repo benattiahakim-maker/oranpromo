@@ -4,6 +4,7 @@ import "@testing-library/jest-dom/vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import FournisseurTextes from "./FournisseurTextes";
 import ChoixParrain from "./ChoixParrain";
+import PartageParrainage from "./PartageParrainage";
 import MonParrainage from "./MonParrainage";
 import MesBons from "./MesBons";
 import BonPanier from "./BonPanier";
@@ -36,7 +37,7 @@ describe("US-27.2 : « Ton parrain »", () => {
     expect(screen.getByText(fr.parrainage.rappel)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Valider" }));
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(ENREGISTRE));
-    expect(choisirParrain).toHaveBeenCalledWith("K7M2QX");
+    expect(choisirParrain).toHaveBeenCalledWith("K7M2QX", false); // pages du parrainage : tutoiement
     expect(screen.getByText("Parrain enregistré")).toBeInTheDocument();
     expect(refresh).toHaveBeenCalled();
   });
@@ -78,7 +79,26 @@ describe("US-27.3 : « Mon parrainage » et « Mes bons »", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Plafond du mois atteint");
     unmount();
     render(<MonParrainage parrainage={donnees({ filleuls: [], en_attente: 0 })} invitation={null} />);
-    expect(screen.getByText(fr.parrainage.aucunFilleul)).toBeInTheDocument();
+    expect(screen.getByText("Aucun ami récompensé pour le moment : partagez votre lien.")).toBeInTheDocument(); // /compte : vouvoiement
+  });
+  it("vouvoiement dans /compte (le reste du site vouvoie), tutoiement sur les pages du parrainage (décision 9)", async () => {
+    choisirParrain.mockResolvedValue({ succes: false, message: "Vous avez déjà modifié votre parrain 2 fois : votre choix est enregistré." });
+    const { unmount } = render(<ChoixParrain parrainSaisi saisies={1} vouvoiement />);
+    fireEvent.click(screen.getByRole("button", { name: "Modifier" }));
+    expect(screen.getByLabelText("Votre parrain (facultatif) : son numéro WhatsApp ou son code")).toBeInTheDocument();
+    expect(screen.getByText(/^Votre bon et celui de votre parrain arrivent après votre première commande/)).toBeInTheDocument();
+    expect(screen.getByText(/^Vous pouvez encore le modifier \d fois, avant votre première commande\.$/)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "0555123456" } });
+    fireEvent.click(screen.getByRole("button", { name: "Valider" }));
+    await waitFor(() => expect(choisirParrain).toHaveBeenCalledWith("0555123456", true));
+    unmount();
+    render(<PartageParrainage invitation={{ code: "K7M2QX", lien: "https://bledeal.com/p/K7M2QX", whatsapp: "https://wa.me/?text=x", qr: "data:image/svg+xml,x" }} vouvoiement />);
+    expect(screen.getByText("Votre code")).toBeInTheDocument();
+    expect(screen.getByAltText("QR code de votre lien de parrainage")).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/\b(ton|ta|tes|tu|toi)\b/i);
+    cleanup();
+    render(<ChoixParrain parrainSaisi={false} saisies={0} />);
+    expect(screen.getByLabelText(fr.parrainage.champ)).toBeInTheDocument(); // « Ton parrain… » sur /parrainage
   });
   it("Mes bons : disponible, réservé, utilisé, en file, avec la phrase d'aide", () => {
     const bons: BonClient[] = [

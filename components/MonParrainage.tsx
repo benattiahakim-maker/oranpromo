@@ -1,14 +1,14 @@
 "use client";
 import Link from "next/link";
 import { remplir } from "@/lib/langue";
-import { compteursParrainage, type MonParrainage as DonneesParrainage } from "@/lib/parrainage";
+import { compteursParrainage, textesParrainage, type MonParrainage as DonneesParrainage } from "@/lib/parrainage";
 import { formaterJourMois } from "@/lib/bons";
 import PartageParrainage, { type LienInvitation } from "./PartageParrainage";
 import { useLangue, useTextes } from "./FournisseurTextes";
 
 // US-27.3 : bloc « Mon parrainage » de /compte. Prénom + initiale des filleuls récompensés seulement, jamais de numéro.
 export default function MonParrainage({ parrainage, invitation }: { parrainage: DonneesParrainage; invitation: LienInvitation | null }) {
-  const t = useTextes().parrainage;
+  const t = textesParrainage(useTextes().parrainage, true); // dans /compte : vouvoiement
   const langue = useLangue();
   const { valides, enAttente } = compteursParrainage(parrainage);
   return <section aria-labelledby="titre-mon-parrainage" className="mt-8 border-t border-trait pt-6">
@@ -23,7 +23,7 @@ export default function MonParrainage({ parrainage, invitation }: { parrainage: 
         <li key={i} className="flex justify-between gap-3 border-b border-trait py-3 text-sm"><span><bdi>{remplir(t.filleul, { prenom: f.prenom, date: f.valide_le ? formaterJourMois(f.valide_le, langue) : "" })}</bdi></span><span className="text-end">{f.statut === "en_file" ? t.bonEnFile : t.bonFilleul}</span></li>)}</ul>
       : <p className="mt-3 text-sm text-gris">{t.aucunFilleul}</p>}
     <p className="mt-2 text-xs text-gris">{t.discretion}</p>
-    {invitation && <div className="mt-4"><PartageParrainage invitation={invitation} cadre={false} /></div>}
+    {invitation && <div className="mt-4"><PartageParrainage invitation={invitation} cadre={false} vouvoiement /></div>}
     <Link href="/parrainage" className="mt-1 flex min-h-11 items-center justify-center text-sm text-gris underline">{t.commentMarche}</Link>
   </section>;
 }

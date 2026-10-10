@@ -49,7 +49,7 @@ export default async function MonCompte({ searchParams }: { searchParams: Promis
     {/* US-21.2 : en mode téléphone (ou numéro déjà vérifié), le numéro se vérifie par code et ne se saisit plus à la main. */}
     <NumeroVerifie telephone={profil.telephone} verifie={Boolean(profil.telephone_verifie_le)} verificationActive={parTelephone && profil.role === "client"} />
     <div className="mt-6"><FormulaireProfilClient nom={profil.nom} telephone={profil.telephone} telephoneModifiable={!parTelephone && !profil.telephone_verifie_le} /></div>
-    {parrainage?.peut_choisir && <ChoixParrain initial={parrainage.parrain_saisi ? "" : codeInvite} parrainSaisi={parrainage.parrain_saisi} saisies={parrainage.saisies} />}
+    {parrainage?.peut_choisir && <ChoixParrain initial={parrainage.parrain_saisi ? "" : codeInvite} parrainSaisi={parrainage.parrain_saisi} saisies={parrainage.saisies} vouvoiement />}
     <Link href="/compte/commandes" className="etiquette mt-8 flex min-h-[44px] items-center justify-center border border-noir">{t.mesCommandes}</Link>
     {nombreBoutiques !== null && <Link href="/compte/boutiques" className="etiquette mt-3 flex min-h-[44px] items-center justify-center border border-noir">{remplir(ts.mesBoutiques, { n: nombreBoutiques })}</Link>}
     {/* US-34.4 : « Mes données » (droit d'accès). « Fermer mon compte » : pas encore (durées de conservation à fixer). */}
