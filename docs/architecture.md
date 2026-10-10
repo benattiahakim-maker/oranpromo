@@ -917,6 +917,61 @@ app/admin/moderation/…                          onglet « Avis »
 
 **Aucune nouvelle dépendance**, aucune nouvelle variable d'environnement.
 
+## Bons de réduction : bienvenue et campagnes (US-33) — conception, **à valider par le propriétaire**
+
+Stories : `docs/user-stories.md`, module 19. Maquette : `docs/maquettes/BonsReduction.dc.html`. Source : carte Trello « Marketing · Bons de réduction (1re commande + campagnes Aïd / rentrée) ». **Aucun code, aucune migration** dans cette PR.
+
+**Principe** : extension de US-27 (section « Parrainage » plus haut). Tables `bons`, `releves_bons`, `lignes_releve`, déclencheur de bon sur les statuts de commande, tâche `parrainage-quotidien`, pages `/admin/remboursements` et export CSV **réutilisés**. Ce qui change dans l'existant est **petit et testé** : `prive.bons_emis` filtré par origine, `utiliser_bon` qui choisit parmi des bons aux règles différentes, `lignes_releve` qui garde l'origine et la part boutique. `passer_commande`, `changer_statut_commande`, `remettre_commande`, blocage, no-shows **inchangés**.
+
+### Données (migration US-33.1)
+
+| Élément | Rôle | Points clés |
+| --- | --- | --- |
+| `programmes_bons` | un programme = bienvenue, une campagne, puis avis (US-32.5), inscription en boutique (US-31.4) | `id`, `type` (`bienvenue`, `campagne`, `avis`, `inscription_boutique`), `nom_fr`, `nom_ar`, `code` (unique, `^[A-Z0-9]{4,16}$`, campagne seulement), `montant` (> 0), `minimum_achat`, `univers` (`femme`, `homme`, `enfant`, `beaute` ou vide), `villes text[]` (codes de `villes`, vide = toutes), `debut`, `fin`, `validite_jours`, `budget` (DA, part BleDeal), `plafond_par_boutique`, `part_boutique` (US-31.4), `actif`, `cree_par`, `cree_le` ; RLS : lecture admin ; lecture publique d'une campagne active par fonction (`campagne_active(ville)` : nom, montant, minimum, univers, dates, code — pour le bandeau) |
+| `bons` (existante) | nouvelles colonnes | `programme_id`, `minimum_achat` (1 000 pour les bons de parrainage existants, valeur actuelle), `univers`, `villes`, `part_boutique` (0), `boutique_origine` et `utilisable_des` (US-31.4) ; `origine` élargie (`bienvenue`, `campagne`, `avis`, `inscription_boutique`) ; contrainte : `programme_id` obligatoire hors parrainage |
+| `prive.numeros_programmes` | une fois par numéro et par programme | (`programme_id`, `empreinte` de `prive.empreinte_numero`) clé ; gardée si le compte disparaît |
+| `prive.essais_code_bon` | limite | 5 codes faux par heure et par compte |
+| `lignes_releve` (existante) | nouvelles colonnes | `origine`, `programme_id`, `part_boutique` ; **à rembourser = montant − part_boutique** |
+| `prive.historique_prix` | signal de fraude | `article_id`, `ancien_prix`, `nouveau_prix`, `le` ; déclencheurs `after update of prix` sur `articles` et `after insert or update of prix_promo` sur `promos` ; lecture admin seulement |
+
+**Budget** : `prive.bons_emis(mois)` ne compte plus que `origine like 'parrainage%'` (budget du parrainage inchangé) ; nouveau `prive.budget_programme_restant(programme)` = `budget` − somme des (montant − part_boutique) des bons non annulés du programme. Test : sans bon d'un autre programme, résultat identique à aujourd'hui.
+
+### Fonctions
+
+- `donner_bon_bienvenue(compte)` (interne) : appelée quand le numéro est vérifié (`telephone_verifie_le` posé) ; conditions : client, aucune commande récupérée, pas filleul d'un parrainage (question 2), programme actif, budget, empreinte jamais servie.
+- `ajouter_code_bon(code)` (client) : numéro vérifié, compte non bloqué, code d'une campagne active (dates heure d'Alger), budget, empreinte jamais servie pour cette campagne, limite des essais ; crée le bon (`disponible`, `expire_le = least(fin de campagne, now() + validite_jours)`).
+- `bons_utilisables(commande)` (client) : pour chaque bon `disponible` : `ok` ou la raison (`minimum`, `univers`, `ville`, `boutique_exclue`, `plafond_boutique`, `pas_aujourdhui`) ; minimum = somme des `lignes_commande` (`prix_unitaire` × quantité, prix recalculés par `passer_commande`) des articles de l'univers du bon (même règle que `critereUnivers` de `lib/catalogue.ts`, écrite en SQL et testée sur les mêmes cas).
+- `utiliser_bon(commande, bon default null)` : **même signature qu'aujourd'hui quand `bon` est vide** (le bon utilisable le plus avantageux, puis le plus proche de l'échéance) ; nouveaux résultats `univers`, `ville`, `plafond_boutique`, `pas_aujourdhui` en plus de `applique`, `aucun_bon`, `minimum`, `boutique_exclue`, `deja`. Message WhatsApp de la boutique : « bon −500 DA » (le texte « bon parrainage » devient le nom du programme).
+- Déclencheur des statuts (existant) : inchangé pour le parrainage ; pour les nouveaux bons, selon la question 5 : commande annulée **par la boutique** → bon rendu (+7 jours) ; annulée par le client ou expirée → bon `expire`.
+- Admin : `creer_programme(...)`, `arreter_programme(id)`, `programmes_admin()` (émis, utilisés, remboursé, restant), `signaux_bons(programme)`.
+
+### Écrans (au moment du code)
+
+| Où | Quoi |
+| --- | --- |
+| `/compte` | rubrique « Mes bons » (tous les bons, origine, montant, minimum, échéance) ; « J'ai un code » |
+| `/panier` | choix du bon (radio), raison quand un bon ne s'applique pas ; « À payer en boutique » inchangé |
+| `/[ville]` | bandeau de la campagne active de la ville (`campagne_active(ville)`), lien « Conditions » (page `/bons/[code]`) |
+| `/espace`, scanner, commandes | nom du bon au lieu de « Bon parrainage » ; relevé avec l'origine |
+| `/admin/bons` | programmes, création, arrêt, chiffres ; signaux (historique des prix) |
+| `/admin/remboursements` | colonne « Origine », part boutique ; export CSV avec ces colonnes |
+
+### Coûts et garde-fous
+
+Le coût maximal d'une campagne est son **budget** (part BleDeal) ; le plafond par boutique limite la fraude d'une seule boutique ; le minimum d'achat et la remise par QR code limitent les fausses commandes ; l'historique des prix repère les prix gonflés juste avant une campagne. Aucune nouvelle dépendance, aucune nouvelle variable d'environnement.
+
+### Fichiers prévus
+
+```
+supabase/migrations/…_programmes_bons.sql       US-33.1 (+ tests SQL : budget parrainage inchangé, empreintes, raisons)
+supabase/migrations/…_bons_campagnes.sql         US-33.2, US-33.3 (bienvenue, code, utiliser_bon étendu)
+supabase/migrations/…_historique_prix.sql        US-33.5
+lib/bons.ts (étendu, + test)                     raisons, textes FR / arabe, noms de programmes
+app/compte/bons/…, components/MesBons.tsx, AjouterCode.tsx, ChoixBon.tsx, BandeauCampagne.tsx
+app/bons/[code]/page.tsx                         conditions d'une campagne
+app/admin/bons/…                                 programmes et signaux
+```
+
 ## Limites par visiteur (vues, clics, partages, signalements)
 
 Carte Trello « Sécurité · Limiter les envois en masse ». Migration `20261010180000_limites_visiteurs.sql`.
