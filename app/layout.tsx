@@ -22,9 +22,11 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const langue = await getLangue();
+  const { piedDePage, conditions, commercants, confidentialite } = textesDe("fr").juridique;
+  const liensFrancais = { piedDePage, conditions, commercants, confidentialite };
   return (
     <html lang={langue} dir={direction(langue)} className={`${bodoni.variable} ${jost.variable} ${tajawal.variable} ${naskh.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col"><FournisseurTextes langue={langue} textes={textesDe(langue)}>{children}<PiedDePage /></FournisseurTextes></body>
+      <body className="min-h-full flex flex-col"><FournisseurTextes langue={langue} textes={textesDe(langue)}>{children}<PiedDePage francais={liensFrancais} /></FournisseurTextes></body>
     </html>
   );
 }

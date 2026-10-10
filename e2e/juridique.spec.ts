@@ -23,7 +23,14 @@ test("pages juridiques : pied de page → conditions, commerçants, confidential
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.getByRole("heading", { level: 1, name: "سياسة الخصوصية" })).toBeVisible();
   await expect(page.getByText("نسخة مؤقتة، راهي في المراجعة القانونية.")).toBeVisible();
-  await expect(page.getByText("الترجمة بالعربية تاع هاد النص جاية قريب.", { exact: false })).toBeVisible();
+  // BOLOSS (10/10) : pas de traduction juridique avant l'avocat ; en haut des 3 pages, l'avis « texte officiel en français ».
+  for (const [chemin, titre] of [["/conditions", "شروط الاستعمال"], ["/conditions-commercants", "شروط التجار"], ["/confidentialite", "سياسة الخصوصية"]]) {
+    await page.goto(chemin);
+    const avis = page.getByText("النص الرسمي هو النسخة بالفرنسية اللي تحت. الترجمة بالعربية تجي من بعد المراجعة القانونية.");
+    await expect(avis).toBeVisible();
+    const [haut, h1] = [await avis.boundingBox(), await page.getByRole("heading", { level: 1, name: titre }).boundingBox()];
+    expect(haut!.y).toBeLessThan(h1!.y);
+  }
   await page.getByRole("form", { name: "اللغة" }).getByRole("button", { name: "Français" }).click();
   await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
 });

@@ -624,7 +624,8 @@ export const fr = {
     },
     version: "Version du {date}",
     provisoire: "Version provisoire, en cours de relecture juridique.",
-    traductionAttente: "La traduction arabe de ce texte arrive bientôt. Le texte ci-dessous est la version française.",
+    // Affiché seulement en arabe, en haut de la page (texte à valider par le propriétaire ; pas de traduction juridique avant l’avocat).
+    traductionAttente: "Le texte officiel est la version française ci-dessous. La traduction arabe viendra après la relecture juridique.",
     // US-34.2 : acceptation par le client (textes n° 2 à 5 de la conception, docs/user-stories.md).
     caseInscription: "J’accepte les conditions d’utilisation et la politique de confidentialité, y compris l’utilisation de prestataires situés hors d’Algérie (Supabase, Vercel, WhatsApp…).",
     caseRequise: "Cochez la case pour créer votre compte.",

@@ -1341,7 +1341,7 @@ En tant que BleDeal, je veux des conditions claires, acceptées et datées, et u
 | 4 | Panier, titre | Nos conditions ont changé le 1/12/2026 | الشروط نتاعنا **تبدلو** نهار 1/12/2026 |
 | 5 | Panier, bouton | Accepter et commander | **نقبل** و**نطلب** |
 | 6 | Page, en-tête | Version du 1/12/2026 · Versions précédentes | **النسخة** تاع 1/12/2026 · **النسخ اللي فاتو** |
-| 7 | Page arabe en attente | La traduction arabe de ce texte arrive bientôt. Le texte ci-dessous est la version française. | **الترجمة** بالعربية تاع هاد النص **جاية** **قريب**. النص اللي **تحت** هو **النسخة** بالفرنسية. |
+| 7 | Page arabe en attente (en haut de la page, en arabe seulement ; texte modifié le 10/10 à la demande de BOLOSS, **à valider par le propriétaire**) | Le texte officiel est la version française ci-dessous. La traduction arabe viendra après la relecture juridique. | النص الرسمي هو النسخة بالفرنسية اللي تحت. الترجمة بالعربية تجي من بعد المراجعة القانونية. |
 | 8 | Compte | Mes données · Fermer mon compte | **المعلومات** نتاعي · **سكّر** الحساب نتاعي |
 | 9 | Fermer, confirmation | Fermer votre compte ? Vos commandes passées restent gardées `[x]` ans pour la comptabilité. | **تحب** **تسكّر** الحساب؟ الطلبات اللي فاتو **يبقاو** **محفوظين** `[x]` سنين **للحسابات**. |
 
