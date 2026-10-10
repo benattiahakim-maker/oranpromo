@@ -17,7 +17,19 @@ export type ActionModerationAvis = keyof typeof ACTIONS_MODERATION_AVIS;
 export type AvisSignale = { id: string; note: number; commentaire: string | null; reponse: string | null; reponse_masquee: boolean; statut: string; cree_le: string; boutiques: { nom: string } | null; profils: { nom: string | null } | null };
 export type SignalementAvisModeration = Tables<"signalements_avis"> & { avis: AvisSignale | null };
 export type GroupeSignalementsAvis = { avisId: string; avis: AvisSignale | null; auteur: string; signalements: SignalementAvisModeration[]; nombre: number; derniereDate: string; motifs: { motif: string; nombre: number }[] };
-export type SignalAvis = { boutiqueId: string; boutique: string; nombre: number };
+export const TYPES_SIGNAUX_AVIS = ["comptes_recents", "avis_groupes", "meme_numero", "retraits_rapides"] as const;
+export type TypeSignalAvis = (typeof TYPES_SIGNAUX_AVIS)[number];
+export type SignalAvis = { signal: TypeSignalAvis; boutiqueId: string; boutique: string; nombre: number; detail: string | null };
+
+/** Phrase d'un signal de fraude (information pour l'admin, jamais une action). */
+export function texteSignalAvis(s: SignalAvis): string {
+  switch (s.signal) {
+    case "comptes_recents": return `${s.boutique} : ${s.nombre} avis 5 étoiles sur 7 jours venant de comptes de moins de 7 jours.`;
+    case "avis_groupes": return `${s.boutique} : ${s.nombre} avis dans la même minute${s.detail ? ` (${s.detail})` : ""}.`;
+    case "meme_numero": return `${s.boutique} : le numéro ${s.detail ?? "masqué"} a donné ${s.nombre} avis, tous à cette boutique (30 jours).`;
+    case "retraits_rapides": return `${s.boutique} : ${s.nombre} commandes récupérées moins de 30 minutes après la commande (30 jours).`;
+  }
+}
 
 /** « Amine B. » (même règle que prive.prenom_initiale dans la base). */
 export function prenomInitiale(nom: string | null | undefined): string {
@@ -95,11 +107,12 @@ export async function chargerSignalementsAvis(client: SupabaseClient<Database>):
   }
 }
 
-/** Signal de fraude (jamais automatique) : boutiques avec 3 avis 5 étoiles ou plus en 7 jours venant de comptes récents. */
+/** Signaux de fraude (jamais automatiques, seuil 3) : comptes récents, avis groupés, même numéro, retraits rapides. */
 export async function chargerSignauxAvis(client: SupabaseClient<Database>): Promise<SignalAvis[]> {
-  const { data, error } = await client.rpc("signaux_avis");
+  const { data, error } = await client.rpc("signaux_fraude_avis");
   if (error) throw new Error("Impossible de charger les signaux. Réessayez.");
-  return (data ?? []).map(s => ({ boutiqueId: s.boutique_id, boutique: s.boutique, nombre: s.cinq_etoiles_comptes_recents }));
+  return (data ?? []).filter(s => (TYPES_SIGNAUX_AVIS as readonly string[]).includes(s.signal))
+    .map(s => ({ signal: s.signal as TypeSignalAvis, boutiqueId: s.boutique_id, boutique: s.boutique, nombre: s.nombre, detail: s.detail ?? null }));
 }
 
 /** Une transaction dans la base : effet, une décision par signalement, signalements clos (seulement ceux vus). */

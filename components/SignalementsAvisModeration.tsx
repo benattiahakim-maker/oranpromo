@@ -1,12 +1,12 @@
 "use client";
 
 // US-32.4 : onglet « Avis » de /admin/moderation (maquette ⑧) : avis, motifs, nombre de signalements ; décisions
-// « Masquer l'avis » (le bon déjà donné n'est pas repris), « Masquer la réponse », « Classer ». Signal de fraude
-// affiché à titre d'information (jamais automatique).
+// « Masquer l'avis » (le bon déjà donné n'est pas repris), « Masquer la réponse », « Classer ». Signaux de fraude
+// affichés à titre d'information (jamais automatiques).
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { etoiles, formaterJourMois } from "@/lib/avis";
-import { ACTIONS_MODERATION_AVIS, MOTIFS_SIGNALEMENT_AVIS, type ActionModerationAvis, type GroupeSignalementsAvis, type SignalAvis } from "@/lib/moderation";
+import { ACTIONS_MODERATION_AVIS, MOTIFS_SIGNALEMENT_AVIS, type ActionModerationAvis, type GroupeSignalementsAvis, type SignalAvis, texteSignalAvis } from "@/lib/moderation";
 import { traiterSignalementsAvis } from "@/app/admin/moderation/actions";
 
 const bouton = "min-h-[44px] w-full border border-noir px-3 py-2 text-sm";
@@ -14,8 +14,9 @@ export default function SignalementsAvisModeration({ groupes, signaux }: { group
   return <>
     {groupes.length ? <ul>{groupes.map(groupe => <GroupeAvis key={groupe.avisId} groupe={groupe} />)}</ul> : <p className="my-6">Aucun avis signalé.</p>}
     {signaux.length > 0 && <section aria-labelledby="titre-signaux" className="my-6 border border-trait p-4">
-      <h2 id="titre-signaux" className="etiquette text-gris">Signal (jamais automatique)</h2>
-      <ul>{signaux.map(s => <li key={s.boutiqueId} className="mt-2 text-sm">{s.boutique} : {s.nombre} avis 5 étoiles sur 7 jours venant de comptes de moins de 7 jours.</li>)}</ul>
+      <h2 id="titre-signaux" className="etiquette text-gris">Signaux (jamais automatiques)</h2>
+      <p className="mt-2 text-xs text-gris">Pour information : rien n’est masqué ni bloqué automatiquement. À vérifier avant toute décision.</p>
+      <ul>{signaux.map((s, i) => <li key={`${s.signal}-${s.boutiqueId}-${s.detail ?? i}`} className="mt-2 break-words text-sm">{texteSignalAvis(s)}</li>)}</ul>
     </section>}
   </>;
 }

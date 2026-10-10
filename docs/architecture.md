@@ -911,7 +911,7 @@ Date de récupération : `commandes.terminee_le` (existante, posée au passage �
 
 Programme de bons US-33 de type `avis` (montant, minimum, validité, budget du mois, plafond par numéro et par mois). Le bon est créé dans la même transaction que l'avis, si : programme actif, budget restant, numéro vérifié, plafond du numéro non atteint (empreinte du numéro, comme US-33). Remboursement : comme tous les bons (QR code seulement, relevé mensuel). Masquer un avis ne reprend pas le bon (la note n'a aucun effet sur la récompense : on ne paie pas pour une bonne note, condition de crédibilité de la mention publique).
 
-**Signaux de fraude** (dans `/admin/remboursements` ou `/admin/moderation`, jamais bloquants) : part des 5 étoiles venant de comptes de moins de 7 jours par boutique ; avis groupés (même boutique, même minute) ; même numéro qui note toujours la même boutique ; commandes récupérées moins de 30 minutes après leur création.
+**Signaux de fraude** (dans `/admin/remboursements` ou `/admin/moderation`, jamais bloquants) : part des 5 étoiles venant de comptes de moins de 7 jours par boutique ; avis groupés (même boutique, même minute) ; même numéro qui note toujours la même boutique ; commandes récupérées moins de 30 minutes après leur création. **Codé** : `signaux_fraude_avis()` (migration `20261019110000_signaux_fraude_avis.sql`), seuil 3 pour chaque signal, fenêtre 7 jours (comptes récents) ou 30 jours (autres), onglet « Avis » de `/admin/moderation`, sans aucune action automatique.
 
 ### Fichiers prévus (au moment du code)
 

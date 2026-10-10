@@ -1662,6 +1662,16 @@ export type Database = {
           cinq_etoiles_comptes_recents: number
         }[]
       }
+      signaux_fraude_avis: {
+        Args: never
+        Returns: {
+          boutique: string
+          boutique_id: string
+          detail: string
+          nombre: number
+          signal: string
+        }[]
+      }
       suivre_boutique: { Args: { boutique: string }; Returns: boolean }
       utiliser_bon: {
         Args: { bon?: string; commande: string }
