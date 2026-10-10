@@ -187,7 +187,7 @@ Restent « OranPromo », sans effet pour les clients : clés du navigateur (`ora
 Rien n'est à mettre dans le code, dans `.env.local` ni dans un commit, sauf la clé de site Turnstile (publique). **Respecter l'ordre** : sinon les connexions (e-mail compris) peuvent être bloquées.
 
 1. **Twilio** (twilio.com) : créer le compte et le passer en compte payant (un compte d'essai n'envoie qu'aux numéros vérifiés à la main). Mettre une alerte de dépenses (Console > Billing).
-2. **Service Twilio Verify** (Console > Verify > Services > Create) : nom « OranPromo », code à 6 chiffres, canal **WhatsApp seulement** : **désactiver le canal SMS** (et la voix) dans la configuration des canaux du service, pour qu'aucun SMS ne puisse être payé même si quelqu'un appelle Supabase directement. Les *Geo permissions* SMS ne sont donc pas nécessaires (si la console ne permet pas de désactiver le SMS, n'y autoriser aucun pays pour le SMS). Laisser **Fraud Guard** activé. Noter le *Service SID* (`VA…`).
+2. **Service Twilio Verify** (Console > Verify > Services > Create) : nom « BleDeal », code à 6 chiffres, canal **WhatsApp seulement** : **désactiver le canal SMS** (et la voix) dans la configuration des canaux du service, pour qu'aucun SMS ne puisse être payé même si quelqu'un appelle Supabase directement. Les *Geo permissions* SMS ne sont donc pas nécessaires (si la console ne permet pas de désactiver le SMS, n'y autoriser aucun pays pour le SMS). Laisser **Fraud Guard** activé. Noter le *Service SID* (`VA…`).
 3. **Expéditeur WhatsApp** : Console Twilio > Messaging > Senders > WhatsApp senders : enregistrer un numéro dédié (pas un numéro déjà utilisé dans l'application WhatsApp) et le relier au compte Meta Business. **Meta doit approuver** l'expéditeur (vérification de l'entreprise et nom affiché, de quelques heures à plusieurs jours). Puis, dans le service Verify, canal WhatsApp : choisir cet expéditeur. Tant que ce n'est pas fait, **aucun client ne peut recevoir de code** : rester en mode e-mail.
 4. **Supabase** > Authentication > Sign In / Providers > **Phone** : activer, fournisseur **Twilio Verify**, coller *Account SID*, *Auth Token* et *Verify Service SID* (dans le tableau de bord uniquement). Laisser « Enable phone signup » activé. Vérifier aussi Authentication > Rate Limits (messages par heure).
 5. **Cloudflare Turnstile** (dash.cloudflare.com > Turnstile > Add widget) : mode « Managed », domaines `127.0.0.1`, `localhost` et le futur domaine du site. Noter la clé de site et la clé secrète.
@@ -274,17 +274,18 @@ Mode d'emploi (Supabase > SQL Editor) :
 
 1. Fermer la fenêtre noire de `lancer-site.bat` si elle est ouverte.
 2. Double-cliquer **`mettre-a-jour.bat`** : il récupère la dernière version depuis GitHub.
-   ⚠️ Avant ça, vérifier que ChatGPT a bien fait son commit et son push, sinon son travail est effacé.
+   ⚠️ Avant ça, vérifier qu'aucun agent n'a de travail non poussé dans le dossier du PC, sinon ce travail est effacé.
 3. Double-cliquer **`lancer-site.bat`** : le site s'ouvre sur **http://127.0.0.1:3000**.
    Toujours utiliser 127.0.0.1, pas localhost, sinon la connexion se perd.
 4. Ouvrir Trello, colonne **« À faire »**, et commencer par la carte **Test**.
 
 ## Façon de travailler
 
-- **Une story (ou une carte) par prompt** donné à ChatGPT. Il doit lire `CLAUDE.md`, la story dans `docs/user-stories.md`, `docs/architecture.md` et la maquette.
-- ChatGPT doit **commiter et pousser** avant de dire « fini ». Le message de commit commence par l'identifiant, par exemple `US-07 …`.
-- Claude relit le code sur GitHub, corrige la base Supabase et la configuration, puis teste dans Chrome.
-- Grok Bot peut aussi coder par pull request sur GitHub, appliquer les migrations Supabase (avec accord) et tenir Trello à jour.
+- **Grok Bot est le développeur principal** (depuis le 9/10) : une PR par étape sur GitHub, story et maquette avant le code, migrations Supabase appliquées avec l'accord du propriétaire, Trello et ce journal tenus à jour. Dans chaque PR, une liste à cocher de ce qui était demandé avec le test qui le prouve.
+- **Claude relit** après chaque série de PR (sécurité, règles du projet, base de données), prépare les prompts de correction (« Relecture n°… ») et teste dans Chrome.
+- ChatGPT (Codex) n'est plus utilisé pour le code de BleDeal ; s'il travaille dans le dossier du PC, il doit **commiter et pousser** avant de dire « fini ».
+- Une story (ou une carte) par prompt. L'agent lit `CLAUDE.md`, la story dans `docs/user-stories.md`, `docs/architecture.md` et la maquette. Le message de commit commence par l'identifiant, par exemple `US-07 …`.
+- Plusieurs agents en parallèle : des zones séparées, **un seul agent à la fois sur la base de données**, et un site de test avec sa propre base avant de multiplier les agents (carte « Environnements prod et dev »).
 - Le schéma de la base ne change que par un **nouveau** fichier dans `supabase/migrations/`. Ensuite, lancer `npm run db:types`.
 - Jamais de clé secrète dans le code, un commit ou le chat. Les clés vont uniquement dans `.env.local` sur le PC.
 

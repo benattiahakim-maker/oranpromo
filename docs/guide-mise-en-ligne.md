@@ -220,7 +220,7 @@ Chaque numéro : **jamais utilisé dans l'application WhatsApp** (ou supprimé d
 
 ### 6.2 Jeton permanent (utilisateur système)
 ([doc Meta](https://developers.facebook.com/documentation/business-messaging/whatsapp/access-tokens))
-1. Meta Business Suite > **Paramètres de l'entreprise** (Business Settings) > **Utilisateurs système** (System users) > **Ajouter** > nom « oranpromo-serveur », rôle **Admin**.
+1. Meta Business Suite > **Paramètres de l'entreprise** (Business Settings) > **Utilisateurs système** (System users) > **Ajouter** > nom « bledeal-serveur », rôle **Admin**.
 2. **Assign assets** : l'application (contrôle total, « Manage app ») et le compte WhatsApp (contrôle total).
 3. **Generate token** > choisir l'application > expiration **Never** (jamais) > autorisations `business_management`, `whatsapp_business_management`, `whatsapp_business_messaging` > copier le jeton → `WHATSAPP_TOKEN` (étape 4).
 
