@@ -18,18 +18,21 @@ export type Database = {
         Row: {
           boutique_id: string
           cree_le: string
+          id: number
           profil_id: string
           source: string
         }
         Insert: {
           boutique_id: string
           cree_le?: string
+          id?: never
           profil_id: string
           source?: string
         }
         Update: {
           boutique_id?: string
           cree_le?: string
+          id?: never
           profil_id?: string
           source?: string
         }
