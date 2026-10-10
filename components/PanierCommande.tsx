@@ -1,14 +1,14 @@
 "use client";
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { commanderPanier } from "@/app/panier/actions";
+import { commanderPanier, raisonsBonsPanier } from "@/app/panier/actions";
 import FormulaireProfilClient from "./FormulaireProfilClient";
 import CodeTelephone from "./CodeTelephone";
 import BonPanier from "./BonPanier";
 import ChoixParrain from "./ChoixParrain";
-import { bonApplicable, bonPourTotal, type BonClient } from "@/lib/bons";
+import { bonApplicable, choixBons, type BonClient } from "@/lib/bons";
 import { formaterPrix } from "@/lib/prix";
 import { abonnerPanier, changerQuantitePanier, lignesCommande, lirePanier, NOTE_COMMANDE_MAX, panierBrut, QUANTITE_LIGNE_MAX, retirerDuPanier, sauverPanierLocal, totalPanier } from "@/lib/panier";
 import { messageNoShows } from "@/lib/clients";
@@ -44,6 +44,16 @@ export default function PanierCommande({ profil, parrainage = { bonDisponible: f
   const [accord, setAccord] = useState(false);
   const tJuridique = useTextes().juridique;
   const verrou = useRef(false);
+  // US-33.3 : raisons de chaque bon pour ce panier, lues dans la base (prix réels, univers, ville, plafond), et bon choisi.
+  const [raisons, setRaisons] = useState<{ panier: string; raisons: Record<string, string> } | null>(null);
+  const [bonChoisi, setBonChoisi] = useState<string | null>(null);
+  const avecBons = Boolean(profil && parrainage.bons && parrainage.bons.length > 0);
+  useEffect(() => {
+    if (!avecBons || !panier) return;
+    let actif = true;
+    raisonsBonsPanier(panier.boutiqueId, lignesCommande(panier)).then(r => { if (actif && r) setRaisons({ panier: brut, raisons: r }); }).catch(() => {});
+    return () => { actif = false; };
+  }, [avecBons, brut, panier]);
 
   if (!panier) return <div className="px-6 py-10 text-center"><p>{t.vide}</p><Link href="/catalogue" className="etiquette mt-6 flex min-h-[54px] items-center justify-center bg-noir text-blanc">{t.voirArticles}</Link></div>;
 
@@ -52,9 +62,10 @@ export default function PanierCommande({ profil, parrainage = { bonDisponible: f
     if (note.trim().length > NOTE_COMMANDE_MAX) { setErreur(remplir(t.noteTropLongue, { max: NOTE_COMMANDE_MAX })); return; }
     verrou.current = true; setEnCours(true); setErreur("");
     try {
-      const propose = parrainage.bons ? bonPourTotal(parrainage.bons, totalPanier(panier)) : null;
+      const propose = parrainage.bons ? choixBons(parrainage.bons, totalPanier(panier), raisons?.panier === brut ? raisons.raisons : null, bonChoisi).retenu : null;
       const bon = Boolean(profil && parrainage.bonDisponible && avecBon && (propose ? propose.applicable : bonApplicable(totalPanier(panier), true)));
-      const resultat = await commanderPanier(panier.boutiqueId, lignesCommande(panier), note, bon, accord ? conditions : []);
+      // US-33.3 : le bon affiché est celui demandé à la base (identifiant) ; sans liste : le meilleur, choisi par la base.
+      const resultat = await commanderPanier(panier.boutiqueId, lignesCommande(panier), note, bon && propose ? propose.bon.id : bon, accord ? conditions : []);
       if (resultat.id) { sauverPanierLocal(null); router.push(`/compte/commandes/${resultat.id}${resultat.bon ? `?bon=${resultat.bon}` : ""}`); return; }
       if (resultat.connexion) { router.push("/compte/connexion?suite=/panier"); return; }
       if (resultat.conditions) { setAccord(false); router.refresh(); }
@@ -88,8 +99,10 @@ export default function PanierCommande({ profil, parrainage = { bonDisponible: f
     <textarea id="note-commande" rows={2} maxLength={NOTE_COMMANDE_MAX} value={note} disabled={enCours} onChange={e => setNote(e.target.value)} className="mt-2 box-border w-full resize-none rounded-none border border-trait p-3 font-[inherit] text-base" />
     <p className="flex justify-between py-4"><span className="etiquette self-center">{t.total}</span><span>{formaterPrix(totalPanier(panier), langue)}</span></p>
     {profil && parrainage.bonDisponible && (() => {
-      const propose = parrainage.bons ? bonPourTotal(parrainage.bons, totalPanier(panier)) : null;
-      return <BonPanier total={totalPanier(panier)} utiliser={avecBon} onChange={setAvecBon} desactive={enCours} bon={propose?.bon ?? null} applicable={propose?.applicable} />;
+      const choix = parrainage.bons ? choixBons(parrainage.bons, totalPanier(panier), raisons?.panier === brut ? raisons.raisons : null, bonChoisi) : null;
+      const propose = choix?.retenu ?? null;
+      return <BonPanier total={totalPanier(panier)} utiliser={avecBon} onChange={setAvecBon} desactive={enCours} bon={propose?.bon ?? null} applicable={propose?.applicable}
+        raison={choix?.options.find(o => o.bon.id === propose?.bon.id)?.raison} options={choix?.options} onChoisir={setBonChoisi} />;
     })()}
     {avertissement && <p role="alert" className="mb-4 border border-trait p-3 text-sm leading-[1.6]">{avertissement}</p>}
     {profil && parrainage.choix && <div className="mb-4"><ChoixParrain initial={parrainage.choix.initial} parrainSaisi={parrainage.choix.parrainSaisi} saisies={parrainage.choix.saisies} /></div>}

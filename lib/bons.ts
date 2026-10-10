@@ -113,6 +113,28 @@ export function bonPourTotal(bons: BonClient[], total: number, maintenant: Date 
   return plusProche ? { bon: plusProche, applicable: false } : null;
 }
 
+/** US-33.3 : bons proposés au panier, chacun avec sa raison (celle de la base quand elle est connue, sinon le
+ *  minimum sur le total), et le bon retenu : celui choisi s'il s'applique, sinon le premier qui s'applique (le plus
+ *  gros, comme utiliser_bon), sinon celui au plus petit minimum (non applicable). */
+export type RaisonBonPanier = "ok" | "minimum" | "univers" | "ville" | "plafond_boutique" | "boutique_exclue";
+export type OptionBon = { bon: BonClient; raison: RaisonBonPanier };
+export function choixBons(bons: BonClient[], total: number, raisons: Record<string, string> | null, choisi: string | null, maintenant: Date = new Date()):
+  { options: OptionBon[]; retenu: BonPropose | null } {
+  const valables = bons.filter(b => b.statut === "disponible" && b.expire_le && new Date(b.expire_le).getTime() > maintenant.getTime())
+    .sort((a, b) => b.montant - a.montant || a.expire_le!.localeCompare(b.expire_le!) || a.cree_le.localeCompare(b.cree_le));
+  const options = valables.map(bon => {
+    const r = raisons?.[bon.id];
+    const raison: RaisonBonPanier = r === "ok" || r === "minimum" || r === "univers" || r === "ville" || r === "plafond_boutique" || r === "boutique_exclue"
+      ? r : total >= minimumBon(bon) ? "ok" : "minimum";
+    return { bon, raison };
+  });
+  const ok = options.filter(o => o.raison === "ok");
+  const pris = ok.find(o => o.bon.id === choisi) ?? ok[0];
+  if (pris) return { options, retenu: { bon: pris.bon, applicable: true } };
+  const proche = [...options].sort((a, b) => minimumBon(a.bon) - minimumBon(b.bon))[0];
+  return { options, retenu: proche ? { bon: proche.bon, applicable: false } : null };
+}
+
 /** « 9/11 » (heure d'Alger) : date courte des bons de programme (conception US-33, texte n° 2). */
 export function formaterJourMoisNumerique(iso: string): string {
   const morceaux = new Intl.DateTimeFormat("fr-FR", { timeZone: FUSEAU, day: "numeric", month: "numeric" }).formatToParts(new Date(iso));
@@ -137,9 +159,11 @@ export function etatBon(bon: BonClient, langue: Langue = "fr", maintenant: Date 
 }
 
 /** Raison affichée sur le suivi quand le bon coché n'a pas pu être posé (la commande reste au prix plein). */
-export type RaisonBonNonApplique = "aucun_bon" | "minimum" | "boutique_exclue" | "erreur";
+// US-33.3 : « univers », « ville », « plafond_boutique » (bons de campagne).
+const RAISONS_NON_APPLIQUE = ["aucun_bon", "minimum", "boutique_exclue", "univers", "ville", "plafond_boutique", "erreur"] as const;
+export type RaisonBonNonApplique = (typeof RAISONS_NON_APPLIQUE)[number];
 export function raisonBonNonApplique(valeur: unknown): RaisonBonNonApplique | null {
-  return valeur === "aucun_bon" || valeur === "minimum" || valeur === "boutique_exclue" || valeur === "erreur" ? valeur : null;
+  return (RAISONS_NON_APPLIQUE as readonly unknown[]).includes(valeur) ? (valeur as RaisonBonNonApplique) : null;
 }
 
 export async function lireMesBons(client: SupabaseClient<Database>): Promise<BonClient[]> {
@@ -152,9 +176,9 @@ export async function lireMesBons(client: SupabaseClient<Database>): Promise<Bon
  * Pose un bon sur une commande qui vient d'être passée (après passer_commande, jamais avant).
  * Un échec ne touche pas la commande : elle reste au prix plein.
  */
-export async function utiliserBon(client: SupabaseClient<Database>, commandeId: string): Promise<ResultatBon | "erreur"> {
+export async function utiliserBon(client: SupabaseClient<Database>, commandeId: string, bonId?: string): Promise<ResultatBon | "erreur"> {
   try {
-    const { data, error } = await client.rpc("utiliser_bon", { commande: commandeId });
+    const { data, error } = await client.rpc("utiliser_bon", bonId ? { commande: commandeId, bon: bonId } : { commande: commandeId });
     return error ? "erreur" : resultatBon(data) ?? "erreur";
   } catch { return "erreur"; }
 }

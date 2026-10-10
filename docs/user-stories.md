@@ -1233,6 +1233,8 @@ En tant que BleDeal, je veux offrir un bon sur la 1re commande et lancer des cam
 - **Minimum calculé par la base** sur les **prix réels des lignes** de la commande (`lignes_commande`), en ne comptant que les articles de l'univers de la campagne (« 4 000 DA d'articles Femme ») ; jamais un montant envoyé par le navigateur.
 - **Un seul bon par commande** (inchangé). Au panier, le client **choisit** le bon s'il en a plusieurs (le plus avantageux est proposé), avec la raison quand un bon ne s'applique pas : « Dès 4 000 DA d'achat », « Pas dans cette ville », « Articles Femme seulement », « Cette boutique ne prend plus les bons ».
 
+- **Codé le 10/10** (migration `20261018110000_campagnes.sql`, en production) : `ajouter_code_bon`, `campagnes_ouvertes`, `bons_panier` ; « J’ai un code » dans `/compte`, bandeau sur `/[ville]`, page des conditions `/campagne/<code>`, choix du bon au panier avec la raison. Écart : la ville du compte n'est pas vérifiée à l'ajout du code (seule compte la ville de la boutique, à la commande). Aucune campagne tant que l'admin ne l'a pas créée (US-33.5).
+
 ### US-33.4 — Côté boutique (pages `/espace/scanner`, `/espace`)
 - Le bon se voit **comme aujourd'hui** (liste des commandes, résumé du scan, « À encaisser en espèces »), avec son nom : « Bon Aïd 2026 −500 DA ». Toujours **remis par QR code** pour être remboursé (code à 6 chiffres ou « sans QR code » : bon rendu au client, pas de remboursement — inchangé).
 - **Plafond par boutique et par campagne** (exemple : 30 bons utilisés) : au-delà, le bon ne s'applique plus dans cette boutique (raison au panier : « Ce bon n'est plus accepté dans cette boutique pour cette campagne. »).

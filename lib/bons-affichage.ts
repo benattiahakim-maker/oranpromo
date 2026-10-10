@@ -1,7 +1,7 @@
 // US-33.2 : nom et lignes d'un bon (parrainage, bienvenue, campagne) pour « Mes bons » et le panier.
 import { remplir, type Langue } from "./langue";
 import { formaterPrix } from "./prix";
-import { estBonProgramme, formaterJourMoisNumerique, minimumBon, type BonClient } from "./bons";
+import { estBonProgramme, formaterJourMoisNumerique, minimumBon, type BonClient, type RaisonBonPanier } from "./bons";
 import type { fr } from "./textes/fr";
 
 type TextesBons = typeof fr.parrainage;
@@ -24,4 +24,16 @@ export function libelleUtiliserBon(bon: BonClient, t: TextesBons, langue: Langue
   if (bon.origine === "bienvenue") return remplir(t.utiliserBonBienvenue, { montant: formaterPrix(bon.montant, langue) });
   if (bon.origine === "campagne") return remplir(t.utiliserBonProgramme, { nom: (langue === "ar" ? bon.nom_ar : bon.nom_fr) ?? bon.nom_fr ?? "", montant: formaterPrix(bon.montant, langue) });
   return t.utiliserBon;
+}
+
+/** US-33.3 : raison affichée au panier quand un bon ne s'applique pas (textes n° 10 à 13). */
+export function texteRaisonBon(bon: BonClient, raison: RaisonBonPanier, t: TextesBons, langue: Langue): string | null {
+  switch (raison) {
+    case "minimum": return remplir(t.minimumProgramme, { minimum: formaterPrix(minimumBon(bon), langue) });
+    case "univers": return bon.univers && bon.univers in t.universBon ? remplir(t.raisonUnivers, { univers: t.universBon[bon.univers as keyof TextesBons["universBon"]] }) : null;
+    case "ville": return t.raisonVille;
+    case "plafond_boutique": return t.raisonPlafond;
+    case "boutique_exclue": return t.raisonBoutique;
+    default: return null;
+  }
 }

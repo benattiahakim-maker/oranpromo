@@ -13,6 +13,8 @@ import { remplir } from "@/lib/langue";
 import { traduire } from "@/lib/textes";
 import { UNIVERS } from "@/lib/article";
 import { parrainageOuvert } from "@/lib/parrainage";
+import { lireCampagnesOuvertes } from "@/lib/campagnes";
+import BandeauCampagne from "@/components/BandeauCampagne";
 import { getVilleOuverte, getVillesOuvertes } from "@/lib/ville-serveur";
 import { cheminVille, deVille, deVilleEnLangue } from "@/lib/ville";
 
@@ -33,7 +35,8 @@ export default async function Accueil({ params }: { params: Promise<{ ville: str
   const [ville, ouvertes] = await Promise.all([getVilleOuverte(code), getVillesOuvertes()]);
   if (!ville) notFound();
   // US-29.3 : promos des boutiques de la ville, titre et grande photo de la ville.
-  const [promos, t, langue, parrainage] = await Promise.all([chargerPromos(client, ville.code), getTextes(), getLangue(), parrainageOuvert(client)]);
+  // US-33.3 : campagnes ouvertes dans la ville (bandeau) ; une erreur ne bloque pas l'accueil.
+  const [promos, t, langue, parrainage, campagnes] = await Promise.all([chargerPromos(client, ville.code), getTextes(), getLangue(), parrainageOuvert(client), lireCampagnesOuvertes(client, ville.code).catch(() => [])]);
   const { photo, credit } = grandePhotoVille(ville.code);
   const titre = remplir(t.accueil.titre, { deVille: deVilleEnLangue(ville, langue) });
   const lien = (suite: string) => cheminVille(ville.code, suite);
@@ -44,6 +47,7 @@ export default async function Accueil({ params }: { params: Promise<{ ville: str
   return <div className="mx-auto w-full max-w-lg">
     <EntetePublic ville={ville} choixVille={ouvertes.length > 1} />
     <nav aria-label={t.accueil.univers} className="flex justify-center gap-6 border-b border-trait px-5 py-3">{univers.map(u => <Link key={u.nom} href={u.lien} className="etiquette inline-flex min-h-11 items-center text-[11px]">{u.nom}</Link>)}</nav>
+    <BandeauCampagne campagnes={campagnes} t={t.parrainage} langue={langue} />
     <section className="relative flex min-h-[440px] flex-col items-center justify-end gap-4 bg-noir px-6 pb-10 text-center text-blanc">
       <Image src={photo.adresse} alt={photo.alt} fill sizes="(max-width: 512px) 100vw, 512px" className="object-cover" style={{ objectPosition: photo.position }} priority />
       {/* Voile sombre, plus marqué en bas : le titre et le bouton restent lisibles sur la photo. */}

@@ -1352,6 +1352,7 @@ export type Database = {
         Args: { contexte: string; documents: string[]; versions: string[] }
         Returns: undefined
       }
+      ajouter_code_bon: { Args: { code: string }; Returns: Json }
       annuler_bons_parrainage: {
         Args: { filleul: string; motif: string }
         Returns: number
@@ -1370,6 +1371,7 @@ export type Database = {
         }[]
       }
       bloquer_client: { Args: { client: string }; Returns: undefined }
+      bons_panier: { Args: { boutique: string; lignes: Json }; Returns: Json }
       boutiques_carte: {
         Args: { code_ville?: string; limite?: number }
         Returns: {
@@ -1384,6 +1386,7 @@ export type Database = {
         }[]
       }
       budget_parrainage: { Args: { mois?: string }; Returns: Json }
+      campagnes_ouvertes: { Args: { ville?: string }; Returns: Json }
       changer_statut_commande: {
         Args: {
           commande: string
