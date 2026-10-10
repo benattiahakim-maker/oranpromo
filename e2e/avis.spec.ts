@@ -158,6 +158,7 @@ test("avis : réponse de la boutique (une fois, filtre), signalement, modératio
 
   await test.step("espace : bloc « 1 avis · 1 sans réponse » vers /espace/avis", async () => {
     await espace.goto("/espace");
+    await expect(espace.getByRole("navigation", { name: "Espace commerçant" }).getByRole("link", { name: "Avis, 1 sans réponse" })).toHaveText("Avis (1)");
     await espace.getByRole("link", { name: "Avis clients : 1 avis · 1 sans réponse" }).click();
     await expect(espace).toHaveURL(/\/espace\/avis$/);
     await expect(espace.getByRole("heading", { name: "Avis", exact: true })).toBeVisible();
@@ -173,6 +174,7 @@ test("avis : réponse de la boutique (une fois, filtre), signalement, modératio
     await espace.getByRole("button", { name: "Publier la réponse" }).click();
     await expect(espace.getByText("Votre réponse : Désolés pour l’attente, merci Sara.")).toBeVisible();
     await expect(espace.getByRole("button", { name: "Publier la réponse" })).toHaveCount(0);
+    await expect(espace.getByRole("navigation", { name: "Espace commerçant" }).getByRole("link", { name: "Avis", exact: true })).toHaveAttribute("href", "/espace/avis");
     expect(await sql("select 1 from avis where id = $1 and reponse = 'Désolés pour l’attente, merci Sara.'", [avisId])).toHaveLength(1);
   });
 

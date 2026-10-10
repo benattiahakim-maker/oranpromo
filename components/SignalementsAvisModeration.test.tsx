@@ -29,6 +29,8 @@ describe("US-32.4 : onglet Avis de la modération", () => {
     await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Décisions enregistrées."));
     expect(traiterSignalementsAvis).toHaveBeenCalledWith("v1", ["1", "2"], "masquer_avis");
     expect(screen.queryByText("Classer")).toBeNull();
+    // La confirmation reste affichée : pas d'actualisation qui retirerait l'avis traité de la liste.
+    expect(refresh).not.toHaveBeenCalled();
   });
   it("avis avec réponse : « Masquer la réponse » ; « Classer » sans confirmation", async () => {
     traiterSignalementsAvis.mockResolvedValue({ succes: false, message: "Ces signalements ont changé. Actualisez la page avant de continuer." });
@@ -37,6 +39,7 @@ describe("US-32.4 : onglet Avis de la modération", () => {
     fireEvent.click(screen.getByText("Classer"));
     expect((await screen.findByRole("alert")).textContent).toContain("ont changé");
     expect(traiterSignalementsAvis).toHaveBeenCalledWith("v1", ["1", "2"], "classer_signalement_avis");
+    expect(refresh).toHaveBeenCalled();
   });
   it("file vide et les 4 signaux de fraude (jamais automatiques, aucun bouton d'action)", () => {
     render(<SignalementsAvisModeration groupes={[]} signaux={[
