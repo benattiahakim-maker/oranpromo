@@ -55,6 +55,13 @@ describe("US-20.2 : connexion client", () => {
     expect(cheminSuiteClient(undefined)).toBe("/compte/commandes");
     expect(pageConnexion("/panier")).toBe("/compte/connexion");
     expect(pageConnexion("/espace")).toBe("/espace/connexion");
+    // US-31.2 : « Suivre » sans être connecté revient sur la vitrine.
+    expect(cheminSuiteClient("/b/chez-amine-2")).toBe("/b/chez-amine-2");
+    expect(cheminSuiteClient("/b/Chez_Amine")).toBe("/compte/commandes");
+    expect(cheminSuiteClient("/b/chez-amine/x")).toBe("/compte/commandes");
+    expect(cheminSuiteClient("/b/" + "a".repeat(61))).toBe("/compte/commandes");
+    expect(pageConnexion("/b/chez-amine")).toBe("/compte/connexion");
+    expect(pageConnexion("/boutiques")).toBe("/espace/connexion");
   });
   it("envoie le lien avec la destination du client", async () => {
     signInWithOtp.mockResolvedValue({ error: null });

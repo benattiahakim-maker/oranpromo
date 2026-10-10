@@ -19,15 +19,19 @@ export function emailValide(email: string): boolean {
     && domaine.split(".").every(partie => /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/.test(partie));
 }
 
-/** US-20.2 : après la connexion d’un client, retour au panier ou à une page de son compte uniquement. */
+/**
+ * US-20.2 : après la connexion d’un client, retour au panier ou à une page de son compte uniquement.
+ * US-31.2 : ou à la vitrine d’une boutique (/b/<slug>), pour finir « Suivre » commencé sans être connecté.
+ */
 export function cheminSuiteClient(suite: string | null | undefined): string {
   const chemin = suite ? cheminSuite(suite) : null;
+  if (chemin && /^\/b\/[a-z0-9]+(-[a-z0-9]+)*$/.test(chemin) && chemin.length <= 63) return chemin;
   return chemin && /^\/(panier|compte)(\/[a-zA-Z0-9_-]+)*\/?$/.test(chemin) ? chemin : "/compte/commandes";
 }
 
 /** Page de connexion à utiliser quand un lien échoue, selon la destination (client ou commerçant). */
 export function pageConnexion(suite: string | null | undefined): string {
-  return suite && /^\/(panier|compte)(\/|$)/.test(suite) ? "/compte/connexion" : "/espace/connexion";
+  return suite && /^\/(panier|compte|b)(\/|$)/.test(suite) ? "/compte/connexion" : "/espace/connexion";
 }
 
 /** captchaToken : jeton Cloudflare Turnstile, exigé par Supabase quand la protection anti-robot est activée (US-21). */
