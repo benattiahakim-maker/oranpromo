@@ -82,6 +82,7 @@ export function formaterDistance(metres: number, langue: Langue): string {
 }
 
 // Itinéraire Google Maps vers la boutique (sans la position de la cliente : Google la demande lui-même).
-export function lienItineraire(boutique: { latitude: number | null; longitude: number | null; adresse?: string | null; quartier: string }): string {
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(positionBoutique(boutique.latitude, boutique.longitude, boutique.adresse ?? null, boutique.quartier))}`;
+// US-29.3 : « ville » = nom de la ville de la boutique (Oran si absent, comme avant ; null : aucun).
+export function lienItineraire(boutique: { latitude: number | null; longitude: number | null; adresse?: string | null; quartier: string; ville?: string | null }): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(positionBoutique(boutique.latitude, boutique.longitude, boutique.adresse ?? null, boutique.quartier, boutique.ville === undefined ? "Oran" : boutique.ville))}`;
 }

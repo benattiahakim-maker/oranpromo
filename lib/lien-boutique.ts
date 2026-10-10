@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { villeLue } from "./ville";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import QRCode from "qrcode";
 import type { Database } from "./supabase/types";
@@ -51,8 +52,9 @@ export function lienPartageWhatsApp(nom: string, lien: string): string {
 }
 
 /** Description de l'aperçu (WhatsApp, Facebook…) : quartier et nombre d'articles disponibles. */
-export function descriptionBoutique(quartier: string, nombreArticles: number | null): string {
-  const lieu = `Boutique à ${quartier.trim() || "Oran"}, Oran`;
+// US-29.3 : ville de la boutique (Oran comme avant ; null : nom de ville illisible, ville fermée).
+export function descriptionBoutique(quartier: string, nombreArticles: number | null, ville: string | null = "Oran"): string {
+  const lieu = ville ? `Boutique à ${quartier.trim() || ville}, ${ville}` : `Boutique à ${quartier.trim() || "Algérie"}`;
   if (nombreArticles === null) return `${lieu}. Réservez sur WhatsApp, payez en boutique.`;
   const articles = nombreArticles === 0 ? "nouveaux articles bientôt" : `${nombreArticles} article${nombreArticles > 1 ? "s" : ""} disponible${nombreArticles > 1 ? "s" : ""}`;
   return `${lieu} · ${articles}. Réservez sur WhatsApp, payez en boutique.`;
@@ -73,11 +75,11 @@ export function cheminImageApercu(slug: string): string {
   return `/b/${encodeURIComponent(slug)}/apercu`;
 }
 
-export type ApercuBoutique = { nom: string; quartier: string; slug: string; photo: string | null; nombreArticles: number | null };
+export type ApercuBoutique = { nom: string; quartier: string; ville: string | null; slug: string; photo: string | null; nombreArticles: number | null };
 
 /** Métadonnées de la vitrine : Open Graph (WhatsApp, Facebook, Instagram) et Twitter/X. */
-export function metadonneesBoutique({ nom, quartier, slug, photo, nombreArticles }: ApercuBoutique): Metadata {
-  const description = descriptionBoutique(quartier, nombreArticles);
+export function metadonneesBoutique({ nom, quartier, ville, slug, photo, nombreArticles }: ApercuBoutique): Metadata {
+  const description = descriptionBoutique(quartier, nombreArticles, ville);
   const chemin = `/b/${encodeURIComponent(slug)}`;
   const image = photo ? { url: photo, alt: nom } : { url: cheminImageApercu(slug), width: 1200, height: 630, alt: nom, type: "image/png" };
   return {
@@ -94,14 +96,14 @@ export const METADONNEES_BOUTIQUE_INDISPONIBLE: Metadata = { title: "Boutique in
 /** Lit ce qu'il faut pour l'aperçu d'une boutique validée (null sinon). La RLS ne renvoie de toute façon que les boutiques validées au public. */
 export async function chargerApercuBoutique(client: SupabaseClient<Database>, slug: string): Promise<ApercuBoutique | null> {
   if (!slugValide(slug)) return null;
-  const { data: boutique } = await client.from("boutiques").select("id, nom, quartier").eq("slug", slug).eq("statut", "validee").maybeSingle();
+  const { data: boutique } = await client.from("boutiques").select("id, nom, quartier, villes(nom)").eq("slug", slug).eq("statut", "validee").maybeSingle();
   if (!boutique) return null;
   const [dernier, compte] = await Promise.all([
     client.from("articles").select("photos(adresse, ordre)").eq("boutique_id", boutique.id).eq("statut", "disponible").order("cree_le", { ascending: false }).limit(1),
     client.from("articles").select("id", { count: "exact", head: true }).eq("boutique_id", boutique.id).eq("statut", "disponible"),
   ]);
   const photo = [...(dernier.data?.[0]?.photos ?? [])].sort((a, b) => a.ordre - b.ordre)[0];
-  return { nom: boutique.nom, quartier: boutique.quartier, slug, photo: photo?.adresse ?? null, nombreArticles: compte.error ? null : compte.count ?? null };
+  return { nom: boutique.nom, quartier: boutique.quartier, ville: villeLue(boutique.villes)?.nom ?? null, slug, photo: photo?.adresse ?? null, nombreArticles: compte.error ? null : compte.count ?? null };
 }
 
 /** Adresse data: d'un SVG, pour l'afficher (<img>) ou le télécharger sans le recopier en HTML. */

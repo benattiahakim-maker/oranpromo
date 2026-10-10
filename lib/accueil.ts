@@ -16,6 +16,9 @@ export type CreditPhoto = { auteur: string; licence: string; lienLicence: string
 /** Grande photo d'accueil (décorative : alt vide), cadrée sur le fort de Santa Cruz. */
 export const GRANDE_PHOTO: ImageAccueil & { position: string } = { adresse: `${DOSSIER}/accueil-santa-cruz.webp`, alt: "", position: "50% 20%" };
 
+/** US-29.3 (question 7) : photo commune neutre pour les villes sans photo à elles (image du projet, sans crédit à afficher). */
+export const GRANDE_PHOTO_COMMUNE: ImageAccueil & { position: string } = { adresse: `${DOSSIER}/cat-robes.webp`, alt: "", position: "50% 40%" };
+
 /** Crédit obligatoire (CC BY-SA 4.0) de la grande photo, affiché sous le bouton. Photo recadrée et compressée par OranPromo. */
 export const CREDIT_GRANDE_PHOTO: CreditPhoto = {
   auteur: "Bachounda",
@@ -51,3 +54,8 @@ export function lienCategorie(categorie: string): string {
 
 export const TUILES_UNIVERS: TuileAccueil[] = UNIVERS.map(u => ({ nom: u.nom, lien: lienUnivers(u.cle), image: IMAGES_UNIVERS[u.cle] }));
 export const TUILES_PIECES_PHARES: TuileAccueil[] = PIECES_PHARES.filter(c => CATEGORIES_ARTICLE.some(x => x === c)).map(c => ({ nom: c, lien: lienCategorie(c), image: IMAGES_PIECES_PHARES[c] }));
+
+/** US-29.3 : grande photo de l'accueil d'une ville et son crédit (null : rien à créditer). Oran : Santa Cruz, comme avant. */
+export function grandePhotoVille(code: string): { photo: ImageAccueil & { position: string }; credit: CreditPhoto | null } {
+  return code === "oran" ? { photo: GRANDE_PHOTO, credit: CREDIT_GRANDE_PHOTO } : { photo: GRANDE_PHOTO_COMMUNE, credit: null };
+}

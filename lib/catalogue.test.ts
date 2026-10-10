@@ -33,17 +33,19 @@ describe("visibilité publique des listes", () => {
   it("calcule la limite des 21 jours", () => { expect(limiteConfirmation(jour)).toBe("2026-09-18T12:00:00.000Z"); });
   it("accueil : filtre boutique validée, statut et confirmation récente, page de 20", async () => {
     const { client, appels } = clientFactice([{ ...ligne, promos: { prix_promo: 2000, date_fin: "2026-11-01" } }]);
-    const [carte] = await chargerPromos(client, 1, jour);
+    const [carte] = await chargerPromos(client, "oran", 1, jour);
     expect(appels).toContainEqual(["in", "statut", ["disponible", "reserve"]]);
     expect(appels).toContainEqual(["eq", "boutiques.statut", "validee"]);
     expect(appels).toContainEqual(["gt", "derniere_confirmation", "2026-09-18T12:00:00.000Z"]);
     expect(appels).toContainEqual(["gte", "promos.date_fin", jour.toISOString()]);
     expect(appels).toContainEqual(["range", 20, 39]);
+    expect(appels).toContainEqual(["eq", "boutiques.ville", "oran"]);
+    expect(String(appels.find(a => a[0] === "select")?.[1])).toContain("boutiques!inner(nom, quartier, statut, ville)");
     expect(carte).toEqual({ id: "1", titre: "Polo", description: null, categorie: "T-shirts et polos", genre: "homme", prix: 3500, cree_le: "2026-10-08", boutique: { nom: "Test", quartier: "Centre" }, photo: "a-v", tailles: ["M"], promo: { prixPromo: 2000, dateFin: "2026-11-01" } });
   });
   it("catalogue : mêmes filtres de visibilité, filtres exacts en base et lecture bornée", async () => {
     const { client, appels } = clientFactice([ligne]);
-    const resultats = await chargerCatalogue(client, { categorie: "T-shirts et polos", genre: "homme", quartier: "Centre", taille: "M", promo: false, q: "polo" }, jour);
+    const resultats = await chargerCatalogue(client, "oran", { categorie: "T-shirts et polos", genre: "homme", quartier: "Centre", taille: "M", promo: false, q: "polo" }, jour);
     expect(resultats).toHaveLength(1);
     expect(appels).toContainEqual(["eq", "boutiques.statut", "validee"]);
     expect(appels).toContainEqual(["gt", "derniere_confirmation", "2026-09-18T12:00:00.000Z"]);
@@ -52,16 +54,18 @@ describe("visibilité publique des listes", () => {
     expect(appels).toContainEqual(["eq", "boutiques.quartier", "Centre"]);
     expect(appels).toContainEqual(["eq", "filtre_taille.libelle", "M"]);
     expect(appels).toContainEqual(["range", 0, LIMITE_CATALOGUE - 1]);
+    expect(appels).toContainEqual(["eq", "boutiques.ville", "oran"]);
     expect(String(appels.find(a => a[0] === "select")?.[1])).toContain("filtre_taille:tailles!inner");
   });
   it("catalogue : la recherche et le prix restent filtrés après lecture", async () => {
     const { client } = clientFactice([ligne]);
-    expect(await chargerCatalogue(client, { q: "jean" }, jour)).toHaveLength(0);
+    expect(await chargerCatalogue(client, "oran", { q: "jean" }, jour)).toHaveLength(0);
   });
   it("options des filtres : valeurs publiques uniques et triées", async () => {
     const { client, appels } = clientFactice([{ categorie: "Robes", boutiques: { quartier: "Gambetta" }, tailles: [{ libelle: "S", disponible: true }] }, { categorie: "T-shirts et polos", boutiques: { quartier: "Centre" }, tailles: [{ libelle: "M", disponible: true }, { libelle: "XL", disponible: false }] }]);
-    expect(await chargerOptionsCatalogue(client, jour)).toEqual({ categories: ["T-shirts et polos", "Robes"], tailles: ["S", "M"], contenances: [], quartiers: ["Centre", "Gambetta"] });
+    expect(await chargerOptionsCatalogue(client, "oran", jour)).toEqual({ categories: ["T-shirts et polos", "Robes"], tailles: ["S", "M"], contenances: [], quartiers: ["Centre", "Gambetta"] });
     expect(appels).toContainEqual(["eq", "boutiques.statut", "validee"]);
+    expect(appels).toContainEqual(["eq", "boutiques.ville", "oran"]);
   });
 });
 
@@ -79,11 +83,11 @@ describe("univers Femme / Homme / Enfant / Beauté", () => {
   });
   it("filtre l’univers dans la base (catégories et genres)", async () => {
     const { client, appels } = clientFactice([]);
-    await chargerCatalogue(client, { univers: "femme" }, new Date("2026-10-08"));
+    await chargerCatalogue(client, "oran", { univers: "femme" }, new Date("2026-10-08"));
     expect(appels).toContainEqual(["in", "genre", ["femme", "mixte"]]);
     expect(appels.find(a => a[0] === "in" && a[1] === "categorie")?.[2]).toContain("Robes");
     const beaute = clientFactice([]);
-    await chargerCatalogue(beaute.client, { univers: "beaute" }, new Date("2026-10-08"));
+    await chargerCatalogue(beaute.client, "oran", { univers: "beaute" }, new Date("2026-10-08"));
     expect(beaute.appels).toContainEqual(["in", "categorie", ["Parfums", "Maquillage", "Soins visage et corps", "Cheveux", "Hammam et traditionnel"]]);
     expect(beaute.appels.some(a => a[1] === "genre")).toBe(false);
   });
@@ -115,10 +119,10 @@ describe("US-25.2 : catalogue Beauté", () => {
   });
   it("requête Supabase : in(genre, [femme, mixte]) dans Beauté, in(genre, [femme]) ailleurs", async () => {
     const beaute = clientFactice([]);
-    await chargerCatalogue(beaute.client, { univers: "beaute", genre: "femme" }, jour);
+    await chargerCatalogue(beaute.client, "oran", { univers: "beaute", genre: "femme" }, jour);
     expect(beaute.appels).toContainEqual(["in", "genre", ["femme", "mixte"]]);
     const mode = clientFactice([]);
-    await chargerCatalogue(mode.client, { categorie: "Robes", genre: "femme" }, jour);
+    await chargerCatalogue(mode.client, "oran", { categorie: "Robes", genre: "femme" }, jour);
     expect(mode.appels).toContainEqual(["in", "genre", ["femme"]]);
     expect(mode.appels.some(a => a[0] === "in" && a[1] === "genre" && (a[2] as string[]).includes("mixte"))).toBe(false);
   });
@@ -136,8 +140,19 @@ describe("US-25.2 : catalogue Beauté", () => {
       { categorie: "T-shirts et polos", boutiques: { quartier: "Centre" }, tailles: [{ libelle: "L", disponible: true }, { libelle: "S", disponible: true }] },
       { categorie: "Accessoires", boutiques: { quartier: "Centre" }, tailles: [{ libelle: "Unique", disponible: true }] },
     ]);
-    const options = await chargerOptionsCatalogue(client, jour);
+    const options = await chargerOptionsCatalogue(client, "oran", jour);
     expect(options.contenances).toEqual(["50 ml", "100 ml", "Unique"]);
     expect(options.tailles).toEqual(["S", "L", "Unique"]);
+  });
+});
+
+describe("US-29.3 : listes filtrées par ville", () => {
+  it("promos, catalogue et options d'une autre ville : filtre boutiques.ville de cette ville", async () => {
+    for (const lire of [(c: SupabaseClient<Database>) => chargerPromos(c, "tlemcen", 0, jour), (c: SupabaseClient<Database>) => chargerCatalogue(c, "tlemcen", {}, jour), (c: SupabaseClient<Database>) => chargerOptionsCatalogue(c, "tlemcen", jour)]) {
+      const { client, appels } = clientFactice([]);
+      await lire(client);
+      expect(appels).toContainEqual(["eq", "boutiques.ville", "tlemcen"]);
+      expect(appels).not.toContainEqual(["eq", "boutiques.ville", "oran"]);
+    }
   });
 });

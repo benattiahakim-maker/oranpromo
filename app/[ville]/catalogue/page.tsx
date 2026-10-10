@@ -10,7 +10,7 @@ import { traduire } from "@/lib/textes";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getVilleOuverte, getVillesOuvertes } from "@/lib/ville-serveur";
-import { cheminVille } from "@/lib/ville";
+import { cheminVille, nomVille } from "@/lib/ville";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export default async function Catalogue({ params: parametres, searchParams }: { 
   const client = await creerClientServeur();
   const [t, langue] = await Promise.all([getTextes(), getLangue()]);
   const tc = t.catalogue;
-  const [resultats, { categories, tailles, contenances, quartiers }] = await Promise.all([chargerCatalogue(client, filtres), chargerOptionsCatalogue(client)]);
+  const [resultats, { categories, tailles, contenances, quartiers }] = await Promise.all([chargerCatalogue(client, ville.code, filtres), chargerOptionsCatalogue(client, ville.code)]);
   const page = Math.max(1, Math.floor(nombre("page") ?? 1));
   const lienPage = (numero: number) => {
     const query = new URLSearchParams();
@@ -69,7 +69,7 @@ export default async function Catalogue({ params: parametres, searchParams }: { 
         <button className="etiquette min-h-12 bg-noir text-blanc">{tc.rechercher}</button><Link href={base} className="text-center text-sm underline">{tc.effacer}</Link>
       </form>
       <p role="status" className="px-5 pb-5 text-sm text-gris">{remplir(resultats.length > 1 ? tc.resultats : tc.unResultat, { n: resultats.length })}</p>
-      {resultats.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-6 px-5">{resultats.slice((page - 1) * ARTICLES_PAR_PAGE, page * ARTICLES_PAR_PAGE).map(article => <CarteArticle key={article.id} article={article} />)}</div> : <p className="px-5 py-8 text-center">{univers?.cle === "beaute" && seulementUnivers ? tc.aucunBeaute : tc.aucun}</p>}
+      {resultats.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-6 px-5">{resultats.slice((page - 1) * ARTICLES_PAR_PAGE, page * ARTICLES_PAR_PAGE).map(article => <CarteArticle key={article.id} article={article} />)}</div> : <p className="px-5 py-8 text-center">{!Object.keys(params).length ? remplir(tc.aucunVille, { ville: nomVille(ville, langue) }) : univers?.cle === "beaute" && seulementUnivers ? tc.aucunBeaute : tc.aucun}</p>}
       <nav aria-label={tc.pagination} className="flex justify-between px-5 pt-8">{page > 1 && <Link href={lienPage(page - 1)} className="border border-noir px-4 py-3">{tc.precedent}</Link>}{page * ARTICLES_PAR_PAGE < resultats.length && <Link href={lienPage(page + 1)} className="ms-auto border border-noir px-4 py-3">{tc.suivant}</Link>}</nav>
     </main>
   </div>;
