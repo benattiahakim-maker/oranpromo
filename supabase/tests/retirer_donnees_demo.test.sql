@@ -29,10 +29,13 @@ insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
   ('11111111-1111-1111-1111-111111111111', 'Maison Ilyes', 'maison-ilyes', 'Centre', '+213555940011', 'validee', 'oran'),
   ('22222222-2222-2222-2222-222222222222', 'Boutique Nour', 'boutique-nour', 'Akid Lotfi', '+213000000002', 'validee', 'oran');
 alter table boutiques enable trigger coordonnees_boutique_protegees;
+-- Vraie boutique du vrai commerçant, créée ici (relecture n°6, point 5 : le test ne dépend d'aucune donnée hors du dépôt).
+insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
+  ('c6000000-0000-0000-0000-000000000001', 'Vraie Boutique', 'vraie-boutique', 'Gambetta', '+213555940066', 'validee', 'oran');
 update profils set role = 'admin', boutique_id = '11111111-1111-1111-1111-111111111111' where id = '78b03d9d-299d-480b-b2b9-f6149523bb27';
 update profils set role = 'commercant', boutique_id = '22222222-2222-2222-2222-222222222222', telephone = '+213555940099' where id = 'da9f4aa4-9bfa-4312-9a8f-05c3eefffc99';
 update profils set role = 'client', nom = 'Vraie Cliente', telephone = '+213555940001' where id = 'c4000000-0000-0000-0000-000000000001';
-update profils set role = 'commercant', boutique_id = '10000000-0000-0000-0000-000000000001' where id = 'c4000000-0000-0000-0000-000000000002';
+update profils set role = 'commercant', boutique_id = 'c6000000-0000-0000-0000-000000000001' where id = 'c4000000-0000-0000-0000-000000000002';
 
 insert into articles (id, boutique_id, titre, categorie, prix, genre, statut) values
   ('a0000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Polo piqué bleu marine', 'T-shirts et polos', 4500, 'homme', 'disponible'),
@@ -195,6 +198,8 @@ select pg_temp.ok(not exists (select * from pg_temp.photographier() except selec
 select pg_temp.ok(not exists (select * from attendu except select * from pg_temp.photographier()), 'suppression : toutes les autres lignes sont gardées (rien de plus n''est supprimé)');
 select pg_temp.ok((select role = 'admin' and boutique_id = '11111111-1111-1111-1111-111111111111' from profils where id = '78b03d9d-299d-480b-b2b9-f6149523bb27')
   and exists (select 1 from auth.users where email = 'benattia.hakim@gmail.com'), 'admin gardé, toujours rattaché à Maison Ilyes');
+select pg_temp.ok((select boutique_id = 'c6000000-0000-0000-0000-000000000001' from profils where id = 'c4000000-0000-0000-0000-000000000002')
+  and exists (select 1 from boutiques where slug = 'vraie-boutique'), 'vrai commerçant gardé, toujours rattaché à sa boutique');
 select pg_temp.ok(exists (select 1 from boutiques where slug = 'maison-ilyes') and not exists (select 1 from boutiques where slug in ('boutique-nour', 'parfumerie-demo')), 'Maison Ilyes gardée, Boutique Nour et Parfumerie Démo supprimées');
 select pg_temp.ok((select article_id is null and titre = 'Polo piqué bleu marine' and prix_unitaire = 4500 from lignes_commande
   where commande_id = 'c7000000-0000-0000-0000-000000000003' and taille = 'M' and titre like 'Polo%'),
