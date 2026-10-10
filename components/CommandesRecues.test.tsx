@@ -120,6 +120,10 @@ describe("US-27.4 : bon parrainage dans la liste de la boutique", () => {
     render(<CommandesRecues commandes={[commande("confirmee", { bon_id: "b1", remise_bon: 300 })]} boutique="Boutique Amine" />);
     expect(screen.getByText(/Bon parrainage −300\sDA · à encaisser 8\s400\sDA/)).toBeInTheDocument();
   });
+  it("US-33.4 : nom du bon de campagne : « Bon Aïd 2026 −500 DA · à encaisser 8 200 DA »", () => {
+    render(<CommandesRecues commandes={[commande("confirmee", { bon_id: "b1", remise_bon: 500, bon: { origine: "campagne", nom_fr: "Aïd 2026", nom_ar: "العيد 2026" } })]} boutique="Boutique Amine" />);
+    expect(screen.getByText(/Bon Aïd 2026 −500\sDA · à encaisser 8\s200\sDA/)).toBeInTheDocument();
+  });
   it("sans bon : pas de ligne", () => {
     render(<CommandesRecues commandes={[commande("confirmee")]} boutique="Boutique Amine" />);
     expect(screen.queryByText(/Bon parrainage/)).toBeNull();

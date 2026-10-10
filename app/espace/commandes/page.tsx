@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { creerClientServeur } from "@/lib/supabase/server";
 import type { CommandeRecue } from "@/lib/commandes";
+import { lireBonsDesCommandes } from "@/lib/bons-boutique";
 import { chercherCommandes, etapeParDefaut, lireEtatCommandes, lireEtape, lireRecherche, listerEtape, RECHERCHE_MAX, type CompteursEtapes, type EtapeCommande } from "@/lib/tableau-commandes";
 import VueCommandesRecues from "@/components/VueCommandesRecues";
 
@@ -27,6 +28,9 @@ async function charger(parametres: Parametres) {
       ({ derniere, ...compteurs } = etat);
       etape = lireEtape(parametres) ?? etapeParDefaut(compteurs);
       commandes = recherche ? await chercherCommandes(client, profil.boutique_id, recherche) : await listerEtape(client, profil.boutique_id, etape, maintenant);
+      // US-33.4 : nom des bons posés (en cas d'erreur : « Bon parrainage », comme avant).
+      const bons = await lireBonsDesCommandes(client, commandes.filter(c => (c.remise_bon ?? 0) > 0).map(c => c.id)).catch(() => null);
+      if (bons?.size) commandes = commandes.map(c => ({ ...c, bon: bons.get(c.id) ?? null }));
     } catch { erreur = true; }
   }
   return { boutiqueId: profil?.boutique_id ?? null, boutique, maintenant, recherche, compteurs, derniere, etape, commandes, erreur };

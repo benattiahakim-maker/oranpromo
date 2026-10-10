@@ -126,7 +126,9 @@ export function verifierActionBoutique(actuel: StatutCommande, voulu: StatutComm
   return ACTION_BOUTIQUE[actuel]?.statut === voulu ? null : "Changement de statut impossible.";
 }
 
-export type CommandeRecue = Tables<"commandes"> & { lignes_commande: Tables<"lignes_commande">[] };
+export type CommandeRecue = Tables<"commandes"> & { lignes_commande: Tables<"lignes_commande">[];
+  /** US-33.4 : nom du bon posé (lu à part) ; absent : « Bon parrainage ». */
+  bon?: { origine: "parrainage_filleul" | "parrainage_parrain" | "bienvenue" | "campagne"; nom_fr: string | null; nom_ar: string | null } | null };
 export type VueCommandes = "en_cours" | "terminees";
 export const COMMANDES_PAR_VUE = 100;
 

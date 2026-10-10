@@ -7,10 +7,12 @@ import { aEncaisser } from "@/lib/bons";
 
 // US-26.2 : QR code de retrait, code à 6 chiffres (6 cases de 40 px, 270 px en tout : tient à 375 px) et montant à payer (page du client et page du proche).
 // Le QR code est calculé par le serveur (adresse data: d'un SVG) ; le jeton n'apparaît pas en clair ici.
-export default function BlocRetrait({ qr, code, numero, total, remise = 0, partage }: {
+export default function BlocRetrait({ qr, code, numero, total, remise = 0, libelleBon, partage }: {
   qr: string; code: string; numero: number; total: number;
   /** US-27.4 : bon parrainage posé sur la commande (300 DA), déduit du montant à payer. */
   remise?: number;
+  /** US-33.4 : « Bon Aïd 2026 », « Bon de bienvenue » ; absent : « Bon parrainage ». */
+  libelleBon?: string;
   /** Seulement pour le client : lien de la page du proche et lien « Envoyer à un proche » (WhatsApp). */
   partage?: { lien: string; whatsapp: string };
 }) {
@@ -34,7 +36,7 @@ export default function BlocRetrait({ qr, code, numero, total, remise = 0, parta
       <p className="mt-2.5 text-xs text-gris">{t.sansCamera}</p>
       <p aria-label={t.code} dir="ltr" className="mt-1 flex justify-center gap-1.5">{code.split("").map((chiffre, i) =>
         <span key={i} className="flex h-[50px] w-10 items-center justify-center border border-noir text-[24px]">{chiffre}</span>)}</p>
-      {remise > 0 && <p className="mt-3.5 flex justify-between border-t border-trait pt-2.5 text-sm"><span>{tBon.ligneBon}</span><span dir="ltr">−{formaterPrix(remise, langue)}</span></p>}
+      {remise > 0 && <p className="mt-3.5 flex justify-between border-t border-trait pt-2.5 text-sm"><span>{libelleBon ?? tBon.ligneBon}</span><span dir="ltr">−{formaterPrix(remise, langue)}</span></p>}
       <p className={`flex justify-between pt-2.5 ${remise > 0 ? "mt-1" : "mt-3.5 border-t border-trait"}`}><span className="etiquette self-center">{t.aPayer}</span><strong className="text-lg font-medium">{formaterPrix(aEncaisser(total, remise), langue)}</strong></p>
       <p className="mt-2 text-xs text-gris">{t.luminosite}</p>
     </section>

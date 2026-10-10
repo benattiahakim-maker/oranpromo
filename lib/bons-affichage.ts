@@ -7,7 +7,7 @@ import type { fr } from "./textes/fr";
 type TextesBons = typeof fr.parrainage;
 
 /** « Bon parrainage », « Bon de bienvenue », « Bon Aïd 2026 » (nom du programme dans la langue de la page). */
-export function nomDuBon(bon: BonClient, t: TextesBons, langue: Langue): string {
+export function nomDuBon(bon: Pick<BonClient, "origine" | "nom_fr" | "nom_ar">, t: TextesBons, langue: Langue): string {
   if (bon.origine === "bienvenue") return t.nomBienvenue;
   if (bon.origine === "campagne") return remplir(t.nomProgramme, { nom: (langue === "ar" ? bon.nom_ar : bon.nom_fr) ?? bon.nom_fr ?? "" });
   return t.nomBon;

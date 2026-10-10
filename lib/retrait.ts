@@ -98,6 +98,8 @@ export type ResumeRetrait = {
   expire_le?: string | null; terminee_le?: string | null; mode_remise?: string | null; lignes?: LigneRetrait[];
   /** US-27.4 : bon parrainage posé sur la commande (0 sans bon). */
   remise_bon?: number;
+  /** US-33.4 : nom du bon (lu à part, `bons_des_commandes`) ; absent : « Bon parrainage ». */
+  bon?: { origine: "parrainage_filleul" | "parrainage_parrain" | "bienvenue" | "campagne"; nom_fr: string | null; nom_ar: string | null } | null;
 };
 export type CleRetrait = { jeton: string } | { code: string };
 

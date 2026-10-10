@@ -292,12 +292,15 @@ export function csvReleves(releves: Pick<ReleveAdmin, "mois" | "statut" | "refer
 export function nomFichierCsv(mois: string): string { return `bledeal-bons-${parametreMois(mois)}.csv`; }
 
 // ---------- Boutique (/espace) ----------
-export type ReleveBoutique = Pick<ReleveAdmin, "id" | "mois" | "nombre" | "montant" | "statut" | "paye_le" | "reference_paiement"> & { lignes: Pick<LigneReleveAdmin, "id" | "numero_commande" | "remise_le" | "montant" | "statut">[] };
+export type ReleveBoutique = Pick<ReleveAdmin, "id" | "mois" | "nombre" | "montant" | "statut" | "paye_le" | "reference_paiement"> & {
+  /** US-33.4 : origine du bon et programme (vides pour les lignes d'avant US-33). */
+  lignes: (Pick<LigneReleveAdmin, "id" | "numero_commande" | "remise_le" | "montant" | "statut"> & { origine?: string | null; programme_id?: string | null })[];
+};
 
 /** Relevés de la boutique du commerçant (RLS : sa boutique seulement), du plus récent au plus ancien. */
 export async function lireRelevesBoutique(client: Client, boutiqueId: string): Promise<ReleveBoutique[]> {
   const { data, error } = await client.from("releves_bons")
-    .select("id, mois, nombre, montant, statut, paye_le, reference_paiement, lignes:lignes_releve!lignes_releve_releve_id_fkey(id, numero_commande, remise_le, montant, statut)")
+    .select("id, mois, nombre, montant, statut, paye_le, reference_paiement, lignes:lignes_releve!lignes_releve_releve_id_fkey(id, numero_commande, remise_le, montant, statut, origine, programme_id)")
     .eq("boutique_id", boutiqueId).order("mois", { ascending: false }).limit(12);
   if (error) throw new Error("Impossible de charger vos bons parrainage. Réessayez.");
   return (data ?? []) as unknown as ReleveBoutique[];

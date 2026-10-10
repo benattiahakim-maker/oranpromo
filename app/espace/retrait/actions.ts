@@ -1,5 +1,6 @@
 "use server";
 import { creerClientServeur } from "@/lib/supabase/server";
+import { avecNomBon } from "@/lib/bons-boutique";
 import { codeRetraitValide, jetonRetraitValide, lireRetraitBoutique, MESSAGE_CODE_FAUX, messageRetraitBoutique, remettreRetrait, type ResumeRetrait } from "@/lib/retrait";
 
 // US-26.3 : actions du scanner de la boutique. La base refait tous les contrôles (boutique connectée, commande de
@@ -13,7 +14,8 @@ export type ResultatRetrait = { succes: boolean; message: string; resume?: Resum
 export async function lireRetraitParCode(code: string): Promise<ResultatRetrait> {
   try {
     if (!codeRetraitValide(code)) return { succes: false, message: "Tapez les 6 chiffres du code." };
-    const resume = await lireRetraitBoutique(await creerClientServeur(), { code });
+    const client = await creerClientServeur();
+    const resume = await avecNomBon(client, await lireRetraitBoutique(client, { code }));
     const message = messageRetraitBoutique(resume, true);
     return message ? { succes: false, message } : { succes: true, message: "", resume };
   } catch (error) { return { succes: false, message: error instanceof Error ? error.message : "Impossible de lire cette commande. Réessayez." }; }

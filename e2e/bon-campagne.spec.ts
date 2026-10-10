@@ -1,8 +1,9 @@
 // US-33.3 : bon de campagne avec code. La campagne est créée dans la base LOCALE (l'écran admin arrive avec US-33.5),
-// puis fermée à la fin. Le test passe par les écrans : bandeau de l'accueil, conditions, « J'ai un code », panier.
+// puis fermée à la fin. Le test passe par les écrans : bandeau de l'accueil, conditions, « J'ai un code », panier ;
+// US-33.4 : nom du bon côté boutique (commandes reçues, scan), sur le suivi et la page du proche, relevé par origine et plafond.
 import { expect, test } from "@playwright/test";
 import { creerArticle, creerBoutique, creerCompte, fermerBase, sql, unique } from "./outils/donnees";
-import { commanderOuAccepter, connecterClient } from "./outils/parcours";
+import { avancerCommande, commanderOuAccepter, connecterClient, connecterEspace, lireJetonRetrait, remettre } from "./outils/parcours";
 
 const code = `E2E${unique().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10)}`;
 test.afterAll(async () => {
@@ -10,13 +11,14 @@ test.afterAll(async () => {
   await fermerBase();
 });
 
-test("bon de campagne : bandeau et conditions → code dans /compte → bon choisi au panier, raison des autres", async ({ page }) => {
+test("bon de campagne : bandeau et conditions → code dans /compte → bon choisi au panier → nom du bon en boutique, relevé par origine", async ({ page, browser }) => {
   test.setTimeout(120_000);
   await sql(`insert into programmes_bons (type, nom_fr, nom_ar, code, montant, minimum_achat, univers, villes, fin, budget, plafond_par_boutique, actif)
              values ('campagne', 'Aïd test', 'العيد', $1, 500, 4000, 'femme', '{oran}', now() + interval '10 days', 1000000, 30, true)`, [code]);
   const boutique = await creerBoutique();
   const robe = await creerArticle(boutique.id, { prix: 2500, titre: "Robe Aïd", categorie: "Robes", genre: "femme" });
   const client = await creerCompte({ nom: "Yasmine" });
+  const marchand = await creerCompte({ role: "commercant", boutique: boutique.id, nom: "Karim" });
 
   await test.step("accueil d'Oran : bandeau (texte n° 14) et conditions de la campagne", async () => {
     await page.goto("/oran");
@@ -56,5 +58,28 @@ test("bon de campagne : bandeau et conditions → code dans /compte → bon choi
     await expect(page.getByText("4 500 DA").first()).toBeVisible();
     const bons = await sql<{ statut: string }>("select b.statut from bons b join programmes_bons p on p.id = b.programme_id where p.code = $1", [code]);
     expect(bons).toEqual([{ statut: "reserve" }]);
+  });
+  await test.step("US-33.4 : « Bon Aïd test » en boutique, sur le suivi et la page du proche ; relevé par origine, plafond", async () => {
+    const suivi = new URL(page.url()).pathname;
+    const espace = await connecterEspace(browser, marchand.email);
+    await espace.goto("/espace/commandes?etape=a_confirmer");
+    await espace.getByRole("button", { name: /^N° \d+ · Yasmine\b/ }).click();
+    await expect(espace.getByText(/Bon Aïd test −500\sDA · à encaisser 4\s500\sDA/)).toBeVisible();
+    await avancerCommande(espace, "a_confirmer", "Yasmine", "Confirmer");
+    await avancerCommande(espace, "a_preparer", "Yasmine", "Prête");
+    await page.goto(suivi);
+    await expect(page.getByText("Bon Aïd test").first()).toBeVisible();
+    const jeton = await lireJetonRetrait(page);
+    await page.goto(`/retrait/${jeton}`);
+    await expect(page.getByText("Bon Aïd test", { exact: true })).toHaveCount(2); // sous le QR code et sous les articles
+    await espace.goto(`/espace/retrait/${jeton}`);
+    await expect(espace.getByText("Bon Aïd test BleDeal")).toBeVisible();
+    await remettre(espace);
+    await expect(espace.getByText(/Bon Aïd test de 500\sDA : BleDeal vous le rembourse/)).toBeVisible();
+    await espace.goto("/espace");
+    const bloc = espace.getByRole("region", { name: "Bons à rembourser" });
+    await expect(bloc.getByRole("list", { name: "Par origine" })).toContainText(/Aïd test · 1 bon\s*500\sDA/);
+    await expect(bloc).toContainText("Plafond Aïd test : 1 / 30 bons dans votre boutique.");
+    await espace.context().close();
   });
 });

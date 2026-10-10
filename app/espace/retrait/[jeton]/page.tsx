@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { lireRetraitBoutique, messageRetraitBoutique, type ResumeRetrait } from "@/lib/retrait";
 import RetraitBoutique from "@/components/RetraitBoutique";
+import { avecNomBon } from "@/lib/bons-boutique";
 
 // US-26.3 : page ouverte par le scanner (ou par l'appareil photo du téléphone, le QR code étant ce lien).
 // Lecture seule : ouvrir la page ne remet rien ; seule la touche « Remis au client » remet la commande.
@@ -14,7 +15,8 @@ export default async function PageRetraitBoutique({ params }: { params: Promise<
   const { jeton } = await params;
   let resume: ResumeRetrait | null = null, message: string;
   try {
-    resume = await lireRetraitBoutique(await creerClientServeur(), { jeton });
+    const client = await creerClientServeur();
+    resume = await avecNomBon(client, await lireRetraitBoutique(client, { jeton }));
     message = messageRetraitBoutique(resume, false) ?? "";
   } catch (error) { message = error instanceof Error ? error.message : "Impossible de lire cette commande. Réessayez."; }
   return <main className="mx-auto w-full max-w-[390px] bg-blanc text-noir">

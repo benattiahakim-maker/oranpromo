@@ -33,6 +33,16 @@ describe("US-26.3 : résumé et « Remis au client »", () => {
   });
 });
 
+describe("US-33.4 : nom du bon dans le résumé du scan", () => {
+  it("« Bon Aïd 2026 BleDeal −500 DA », « Bon de bienvenue BleDeal »", () => {
+    const { unmount } = render(<RetraitBoutique resume={{ ...resume, remise_bon: 500, bon: { origine: "campagne", nom_fr: "Aïd 2026", nom_ar: "العيد 2026" } }} cle={{ jeton: JETON }} />);
+    expect(screen.getByText("Bon Aïd 2026 BleDeal").nextSibling).toHaveTextContent(/−500\sDA/);
+    unmount();
+    render(<RetraitBoutique resume={{ ...resume, remise_bon: 300, bon: { origine: "bienvenue", nom_fr: null, nom_ar: null } }} cle={{ jeton: JETON }} />);
+    expect(screen.getByText("Bon de bienvenue BleDeal").nextSibling).toHaveTextContent(/−300\sDA/);
+  });
+});
+
 describe("US-27.4 : bon parrainage dans le résumé du scan", () => {
   it("Sous-total, « Bon parrainage BleDeal −300 DA », À encaisser 6 000 DA et remboursement sur le relevé du mois", () => {
     vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-11-05T10:00:00Z"));
