@@ -45,7 +45,9 @@ select pg_temp.ok(not exists (select 1 from prive.reglages where cle = 'parraina
 -- Données : deux boutiques, un commerçant chacune, des clients au numéro vérifié.
 insert into auth.users (id, email) values
   ('b2700000-0000-0000-0000-00000000000a', 'boutique27a@test.dz'), ('b2700000-0000-0000-0000-00000000000b', 'boutique27b@test.dz'),
-  ('c2700000-0000-0000-0000-0000000000ff', 'nonverifie27@test.dz');
+  ('c2700000-0000-0000-0000-0000000000ff', 'nonverifie27@test.dz'),
+  -- Admin créé ici (relecture n°6, point 5 : avant, l'admin 00000000-…-00a venait de données absentes du dépôt).
+  ('a2700000-0000-0000-0000-00000000000a', 'admin27@test.dz');
 insert into auth.users (id, phone, phone_confirmed_at)
 select ('c2700000-0000-0000-0000-0000000000' || lpad(i::text, 2, '0'))::uuid, '2135552700' || lpad(i::text, 2, '0'), now()
 from generate_series(1, 21) i;
@@ -57,6 +59,7 @@ update profils set role = 'commercant', boutique_id = 'd2700000-0000-0000-0000-0
 update profils set nom = 'Client ' || chr(64 + right(id::text, 2)::integer) || ' Test' where id::text like 'c2700000-%' and id::text not like '%ff';
 update profils set nom = 'Samir Benali' where id = 'c2700000-0000-0000-0000-000000000002';
 update profils set nom = 'Sans Numero', telephone = '+213555279999' where id = 'c2700000-0000-0000-0000-0000000000ff';
+update profils set role = 'admin' where id = 'a2700000-0000-0000-0000-00000000000a';
 -- 01 = parrain (inscrit il y a 30 jours) ; 19 = client bloqué ; 20 = devenu commerçant ; les autres sont des filleuls.
 update profils set cree_le = now() - interval '30 days' where id in ('c2700000-0000-0000-0000-000000000001', 'c2700000-0000-0000-0000-000000000019');
 update profils set bloque = true, bloque_par_admin = true where id = 'c2700000-0000-0000-0000-000000000019';
@@ -122,7 +125,7 @@ begin
 end $$;
 
 \set p1 c2700000-0000-0000-0000-000000000001
-\set admin 00000000-0000-0000-0000-00000000000a
+\set admin a2700000-0000-0000-0000-00000000000a
 \set robe e2700000-0000-0000-0000-00000000000a
 \set polo e2700000-0000-0000-0000-00000000000b
 \set foulard e2700000-0000-0000-0000-00000000000c

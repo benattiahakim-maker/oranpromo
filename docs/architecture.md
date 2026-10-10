@@ -56,7 +56,7 @@ lib/
   supabase/server.ts            client serveur (pages, routes, actions)
   supabase/types.ts             types générés depuis la base (ne pas modifier à la main)
 supabase/migrations/            schéma SQL et règles de sécurité (déjà appliqués)
-supabase/tests/                 tests SQL des règles de la base (transaction annulée, psql)
+supabase/tests/                 tests SQL des règles de la base (transaction annulée, psql) ; chaque fichier crée ses propres données : ils passent sur une base vide (toutes les migrations, aucune donnée), relecture n°6
 docs/                           user stories, architecture, maquettes
 public/images/accueil/          images fixes de l'accueil (WebP), voir « Crédits des images »
 ```

@@ -147,6 +147,13 @@ insert into promos (article_id, prix_promo, date_fin) values
   ('e4000000-0000-0000-0000-000000000004', 4000, now() + interval '2 days'),
   ('e4000000-0000-0000-0000-000000000005', 4000, now() + interval '2 days'),
   ('e4000000-0000-0000-0000-000000000007', 4000, now() + interval '2 days');
+-- Deuxième boutique validée avec une promo en cours (relecture n°6, point 5 : avant, la boutique de démonstration
+-- 10000000-…-001, absente du dépôt).
+insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
+  ('d4000000-0000-0000-0000-000000000030', 'Boutique Promo Test', 'boutique-promo-test', 'Centre', '+213555940030', 'validee', 'oran');
+insert into articles (id, boutique_id, titre, categorie, prix, genre, statut) values
+  ('e4000000-0000-0000-0000-000000000030', 'd4000000-0000-0000-0000-000000000030', 'Polo promo', 'T-shirts et polos', 4000, 'homme', 'disponible');
+insert into promos (article_id, prix_promo, date_fin) values ('e4000000-0000-0000-0000-000000000030', 3500, now() + interval '3 days');
 
 set local role anon;
 select pg_temp.compte(null) \g /dev/null
@@ -161,7 +168,7 @@ select pg_temp.ok((select rayons @> '[{"categorie": "Robes", "genre": "femme"}, 
   'épingles : rayons = catégorie / genre des articles visibles seulement (réservé compris)');
 select pg_temp.ok((select latitude is null and longitude is null and promos_en_cours = 0 and rayons = '[]'::jsonb from carte_anon where id = 'd4000000-0000-0000-0000-000000000004'),
   'épingles : boutique sans position ni article présente, position vide (liste « sans position »)');
-select pg_temp.ok((select promos_en_cours = 1 from carte_anon where id = '10000000-0000-0000-0000-000000000001'), 'épingles : promo de la boutique de démonstration comptée');
+select pg_temp.ok((select promos_en_cours = 1 from carte_anon where id = 'd4000000-0000-0000-0000-000000000030'), 'épingles : promo d''une autre boutique validée comptée');
 select pg_temp.ok((select array_agg(nom order by nom) = array_agg(nom) from carte_anon), 'épingles : triées par nom');
 select pg_temp.ok((select string_agg(pg_get_function_result(oid), '') from pg_proc where proname = 'boutiques_carte')
   = 'TABLE(id uuid, slug text, nom text, quartier text, latitude double precision, longitude double precision, promos_en_cours integer, rayons jsonb)',
