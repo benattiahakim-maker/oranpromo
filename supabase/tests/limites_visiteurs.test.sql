@@ -35,9 +35,9 @@ insert into prive.reglages (cle, valeur) values ('jeton_visiteurs', encode(sha25
 \set ip1 '''ip:1111111111111111111111111111111111111111111111111111111111111111'''
 \set ip2 '''ip:2222222222222222222222222222222222222222222222222222222222222222'''
 insert into auth.users (id, email) values ('c8000000-0000-0000-0000-000000000001', 'client8@test.dz');
-insert into boutiques (id, nom, slug, quartier, whatsapp, statut) values
-  ('d8000000-0000-0000-0000-000000000001', 'Boutique Limites', 'boutique-limites', 'Centre', '+213555980001', 'validee'),
-  ('d8000000-0000-0000-0000-000000000002', 'Boutique Attente', 'boutique-attente-limites', 'Centre', '+213555980002', 'en_attente');
+insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
+  ('d8000000-0000-0000-0000-000000000001', 'Boutique Limites', 'boutique-limites', 'Centre', '+213555980001', 'validee', 'oran'),
+  ('d8000000-0000-0000-0000-000000000002', 'Boutique Attente', 'boutique-attente-limites', 'Centre', '+213555980002', 'en_attente', 'oran');
 insert into articles (id, boutique_id, titre, categorie, prix, genre) values
   ('e8000000-0000-0000-0000-000000000001', 'd8000000-0000-0000-0000-000000000001', 'Chemise limites', 'Chemises', 3000, 'homme'),
   ('e8000000-0000-0000-0000-000000000002', 'd8000000-0000-0000-0000-000000000001', 'Polo limites', 'Chemises', 2000, 'homme'),

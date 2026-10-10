@@ -36,9 +36,9 @@ insert into auth.users (id, email) values
   ('c2600000-0000-0000-0000-000000000002', 'client262@test.dz'),
   ('c2600000-0000-0000-0000-000000000003', 'client263@test.dz'),
   ('c2600000-0000-0000-0000-000000000004', 'client264@test.dz');
-insert into boutiques (id, nom, slug, quartier, adresse, whatsapp, statut) values
-  ('d2600000-0000-0000-0000-00000000000a', 'Boutique Retrait A', 'boutique-retrait-a', 'Gambetta', '12 rue de Mostaganem', '+213555260001', 'validee'),
-  ('d2600000-0000-0000-0000-00000000000b', 'Boutique Retrait B', 'boutique-retrait-b', 'Centre', null, '+213555260002', 'validee');
+insert into boutiques (id, nom, slug, quartier, adresse, whatsapp, statut, ville) values
+  ('d2600000-0000-0000-0000-00000000000a', 'Boutique Retrait A', 'boutique-retrait-a', 'Gambetta', '12 rue de Mostaganem', '+213555260001', 'validee', 'oran'),
+  ('d2600000-0000-0000-0000-00000000000b', 'Boutique Retrait B', 'boutique-retrait-b', 'Centre', null, '+213555260002', 'validee', 'oran');
 update profils set role = 'commercant', boutique_id = 'd2600000-0000-0000-0000-00000000000a' where id = 'b2600000-0000-0000-0000-00000000000a';
 update profils set role = 'commercant', boutique_id = 'd2600000-0000-0000-0000-00000000000b' where id = 'b2600000-0000-0000-0000-00000000000b';
 update profils set nom = 'Amine Benali', telephone = '+213555261001' where id = 'c2600000-0000-0000-0000-000000000001';

@@ -40,8 +40,8 @@ insert into auth.users (id, email) values
   ('c3000000-0000-0000-0000-00000000000c', 'ancien-c@test.dz'),
   ('c3000000-0000-0000-0000-00000000000d', 'ancien-d@test.dz');
 insert into auth.users (id, phone, phone_confirmed_at) values ('c3000000-0000-0000-0000-00000000000a', '213555400001', now());
-insert into boutiques (id, nom, slug, quartier, whatsapp, statut) values
-  ('d3000000-0000-0000-0000-000000000001', 'Boutique Blocage', 'boutique-blocage', 'Centre', '+213555930001', 'validee');
+insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
+  ('d3000000-0000-0000-0000-000000000001', 'Boutique Blocage', 'boutique-blocage', 'Centre', '+213555930001', 'validee', 'oran');
 update profils set role = 'admin' where id = 'a3000000-0000-0000-0000-000000000001';
 update profils set role = 'commercant', boutique_id = 'd3000000-0000-0000-0000-000000000001' where id = 'b3000000-0000-0000-0000-000000000001';
 update profils set nom = 'Client A' where id = 'c3000000-0000-0000-0000-00000000000a';

@@ -37,8 +37,8 @@ insert into prive.reglages (cle, valeur) values ('jeton_codes_telephone', encode
 insert into auth.users (id, email) values
   ('c2000000-0000-0000-0000-000000000001', 'ancien@test.dz'),
   ('b2000000-0000-0000-0000-000000000001', 'boutique@test.dz');
-insert into boutiques (id, nom, slug, quartier, whatsapp, statut) values
-  ('d2000000-0000-0000-0000-000000000001', 'Boutique Numero', 'boutique-numero', 'Centre', '+213555920001', 'validee');
+insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
+  ('d2000000-0000-0000-0000-000000000001', 'Boutique Numero', 'boutique-numero', 'Centre', '+213555920001', 'validee', 'oran');
 update profils set role = 'commercant', boutique_id = 'd2000000-0000-0000-0000-000000000001' where id = 'b2000000-0000-0000-0000-000000000001';
 insert into articles (id, boutique_id, titre, categorie, prix, genre) values
   ('e2000000-0000-0000-0000-000000000001', 'd2000000-0000-0000-0000-000000000001', 'Chemise numero', 'Chemises', 3000, 'homme');

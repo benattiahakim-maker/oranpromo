@@ -44,6 +44,15 @@ describe("US-24.2 : /espace, bloc « Position sur la carte »", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("contactez OranPromo");
   });
 
+  it("US-29.4 : ville affichée (Oran par défaut) et bornes de la ville de la boutique", () => {
+    render(<PositionEspace statut="en_attente" latitude={null} longitude={null} />); expect(screen.getByText("Ville : Oran")).toBeInTheDocument(); cleanup();
+    const tlemcen = { nom: "Tlemcen", lat_min: 34.08, lat_max: 35.25, lng_min: -2.23, lng_max: -0.75, centre_lat: 34.8818, centre_lng: -1.3167 };
+    render(<PositionEspace statut="en_attente" latitude={null} longitude={null} zone={tlemcen} />); expect(screen.getByText("Ville : Tlemcen")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Latitude"), { target: { value: "35,6971" } }); fireEvent.change(screen.getByLabelText("Longitude"), { target: { value: "-0,6337" } });
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer la position" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("La position doit être dans la wilaya de Tlemcen."); expect(enregistrerPositionMaBoutique).not.toHaveBeenCalled();
+  });
+
   it("une seule coordonnée saisie à la main : refusée à l'écran, rien d'envoyé", () => {
     render(<PositionEspace statut="en_attente" latitude={null} longitude={null} />);
     fireEvent.change(screen.getByLabelText("Latitude"), { target: { value: "35,73" } });

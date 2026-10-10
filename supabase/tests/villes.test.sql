@@ -1,4 +1,4 @@
--- Tests SQL de la migration 20261013090000_villes.sql (US-29.1 : villes, ville des boutiques, bornes par ville,
+-- Tests SQL des migrations 20261013090000_villes.sql (US-29.1) et 20261014090000_villes_admin.sql (US-29.4) : villes, ville des boutiques, bornes par ville,
 -- épingles par ville, villes ouvertes, ville d'un ambassadeur). Oran doit se comporter exactement comme avant.
 --   psql -v ON_ERROR_STOP=1 -f supabase/tests/villes.test.sql
 -- Tout se passe dans une transaction annulée à la fin : aucune donnée n'est gardée.
@@ -77,9 +77,9 @@ select pg_temp.ok((select ouverte and pays = 'DZ' and numero_wilaya = 31 and nom
                      and centre_lat = 35.6971 and centre_lng = -0.6337 and zoom = 12 from villes where code = 'oran'),
   'villes : Oran ouverte, wilaya 31, bornes et centre d''avant');
 select pg_temp.ok(not exists (select 1 from boutiques where ville <> 'oran'), 'boutiques : toutes les boutiques existantes sont à Oran');
-select pg_temp.ok((select column_default = '''oran''::text' and is_nullable = 'NO' from information_schema.columns
+select pg_temp.ok((select is_nullable = 'NO' from information_schema.columns
                     where table_schema = 'public' and table_name = 'boutiques' and column_name = 'ville'),
-  'boutiques : ville obligatoire, « oran » par défaut (US-29.1)');
+  'boutiques : ville obligatoire (défaut « oran » en US-29.1, retiré en US-29.4 : voir plus bas)');
 
 -- Comptes : admin, ambassadeur sans ville, ambassadeur de Tlemcen, commerçant validé, client.
 insert into auth.users (id, email) values
@@ -121,11 +121,11 @@ select pg_temp.erreur($$insert into villes (code, numero_wilaya, nom, nom_ar, la
 -- ---------------------------------------------------------------------------
 -- Oran : mêmes points acceptés et refusés, même message qu'avant
 -- ---------------------------------------------------------------------------
-insert into boutiques (id, nom, slug, quartier, whatsapp, latitude, longitude) values
-  ('d5000000-0000-0000-0000-000000000010', 'Coin SO', 'villes-coin-so', 'Centre', '+213555950010', 35.33, -1.15),
-  ('d5000000-0000-0000-0000-000000000011', 'Coin NE', 'villes-coin-ne', 'Centre', '+213555950011', 35.92, -0.10);
+insert into boutiques (id, nom, slug, quartier, whatsapp, latitude, longitude, ville) values
+  ('d5000000-0000-0000-0000-000000000010', 'Coin SO', 'villes-coin-so', 'Centre', '+213555950010', 35.33, -1.15, 'oran'),
+  ('d5000000-0000-0000-0000-000000000011', 'Coin NE', 'villes-coin-ne', 'Centre', '+213555950011', 35.92, -0.10, 'oran');
 select pg_temp.ok((select count(*) = 2 and bool_and(ville = 'oran') from boutiques where id in ('d5000000-0000-0000-0000-000000000010', 'd5000000-0000-0000-0000-000000000011')),
-  'Oran : coins exacts acceptés, ville « oran » par défaut');
+  'Oran : coins exacts acceptés');
 select pg_temp.erreur(pg_temp.position('d5000000-0000-0000-0000-000000000010', '35.9201', '-0.64'), '23514', 'La position doit être dans la wilaya d''Oran.', 'Oran : au nord refusé, message identique');
 select pg_temp.erreur(pg_temp.position('d5000000-0000-0000-0000-000000000010', '35.3299', '-0.64'), '23514', 'La position doit être dans la wilaya d''Oran.', 'Oran : au sud refusé');
 select pg_temp.erreur(pg_temp.position('d5000000-0000-0000-0000-000000000010', '35.69', '-1.1501'), '23514', 'La position doit être dans la wilaya d''Oran.', 'Oran : à l''ouest refusé');
@@ -190,7 +190,7 @@ select pg_temp.ok(exists (select 1 from boutiques where slug = 'villes-amb-tlemc
 select pg_temp.erreur($$insert into boutiques (nom, slug, quartier, whatsapp, ville) values ('Amb Oran', 'villes-amb-oran', 'Centre', '+213555950021', 'oran')$$,
   '42501', 'row-level security', 'ambassadeur de Tlemcen : ne crée pas à Oran');
 select pg_temp.erreur($$insert into boutiques (nom, slug, quartier, whatsapp) values ('Amb Defaut', 'villes-amb-defaut', 'Centre', '+213555950022')$$,
-  '42501', 'row-level security', 'ambassadeur de Tlemcen : ville oubliée (oran par défaut) refusée');
+  '23503', 'Ville inconnue.', 'ambassadeur de Tlemcen : ville oubliée refusée (plus de ville par défaut, US-29.4)');
 
 select pg_temp.compte('a5000000-0000-0000-0000-000000000002') \g /dev/null
 insert into boutiques (nom, slug, quartier, whatsapp, ville) values ('Amb Libre', 'villes-amb-libre', 'Centre', '+213555950023', 'mostaganem');
@@ -224,5 +224,37 @@ select pg_temp.ok(has_function_privilege('anon', 'public.villes_ouvertes()', 'ex
   'droits : lectures publiques permises à anon');
 select pg_temp.ok(not has_function_privilege('anon', 'prive.de_ville(text)', 'execute'), 'droits : fonctions internes fermées');
 
-select 'Tous les tests SQL des villes (US-29.1) passent.';
+-- ---------------------------------------------------------------------------
+-- US-29.4 (20261014090000_villes_admin.sql) : plus de ville par défaut, codes favicon et images réservés,
+-- ouverture et fermeture par l'admin seulement
+-- ---------------------------------------------------------------------------
+select pg_temp.ok((select column_default is null and is_nullable = 'NO' from information_schema.columns
+  where table_schema = 'public' and table_name = 'boutiques' and column_name = 'ville'), 'défaut : boutiques.ville obligatoire, sans valeur par défaut');
+select pg_temp.erreur($$insert into boutiques (nom, slug, quartier, whatsapp) values ('Sans Ville', 'villes-sans-ville', 'Centre', '+213555950030')$$,
+  '23503', 'Ville inconnue.', 'défaut : création sans ville refusée (le déclencheur des bornes répond avant le not null)');
+select pg_temp.erreur($$insert into boutiques (nom, slug, quartier, whatsapp, latitude, longitude, ville) values ('Oran Hors', 'villes-oran-hors', 'Centre', '+213555950031', 36.75, 3.05, 'oran')$$,
+  '23514', 'La position doit être dans la wilaya d''Oran.', 'défaut : Oran explicite, même message hors wilaya');
+insert into boutiques (nom, slug, quartier, whatsapp, latitude, longitude, ville) values ('Oran Explicite', 'villes-oran-explicite', 'Centre', '+213555950032', 35.6971, -0.6337, 'oran');
+select pg_temp.ok(exists (select 1 from boutiques where slug = 'villes-oran-explicite' and ville = 'oran'), 'défaut : Oran explicite acceptée comme avant');
+select pg_temp.erreur($$insert into villes (code, numero_wilaya, nom, nom_ar, lat_min, lat_max, lng_min, lng_max, centre_lat, centre_lng) values ('images', 99, 'Images', 'صور', 35, 36, -1, 0, 35.5, -0.5)$$,
+  '23514', 'villes_code_libre', 'code : « images » (dossier de public/) refusé');
+select pg_temp.erreur($$insert into villes (code, numero_wilaya, nom, nom_ar, lat_min, lat_max, lng_min, lng_max, centre_lat, centre_lng) values ('favicon', 98, 'Favicon', 'رمز', 35, 36, -1, 0, 35.5, -0.5)$$,
+  '23514', 'villes_code_libre', 'code : « favicon » refusé');
+select pg_temp.ok((select count(*) = 9 from villes), 'codes : les 9 villes passent la nouvelle règle');
+
+set local role authenticated;
+select pg_temp.compte('a5000000-0000-0000-0000-000000000003') \g /dev/null
+update villes set ouverte = true where code = 'relizane';
+select pg_temp.ok((select not ouverte from villes where code = 'relizane'), 'ouverture : l''ambassadeur n''ouvre pas une ville');
+select pg_temp.compte('a5000000-0000-0000-0000-000000000001') \g /dev/null
+update villes set ouverte = true where code = 'relizane';
+select pg_temp.ok((select ouverte from villes where code = 'relizane'), 'ouverture : l''admin ouvre Relizane');
+update villes set ouverte = false where code = 'relizane';
+select pg_temp.ok((select not ouverte from villes where code = 'relizane'), 'ouverture : l''admin referme Relizane');
+select pg_temp.erreur($$update villes set lat_min = 0 where code = 'oran'$$, '42501', 'permission denied', 'ouverture : l''admin ne change pas les bornes depuis le site');
+reset role;
+select pg_temp.compte(null) \g /dev/null
+select pg_temp.ok((select ouverte and lat_min = 35.33 and lat_max = 35.92 and lng_min = -1.15 and lng_max = -0.10 from villes where code = 'oran'), 'Oran : toujours ouverte, mêmes bornes');
+
+select 'Tous les tests SQL des villes (US-29.1, US-29.4) passent.';
 rollback;

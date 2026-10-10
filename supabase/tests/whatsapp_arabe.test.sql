@@ -34,8 +34,8 @@ insert into auth.users (id, email) values
   ('ca000000-0000-0000-0000-000000000001', 'client-ar1@test.dz'),
   ('ca000000-0000-0000-0000-000000000002', 'client-ar2@test.dz'),
   ('ca000000-0000-0000-0000-000000000003', 'client-ar3@test.dz');
-insert into boutiques (id, nom, slug, quartier, whatsapp, statut) values
-  ('da000000-0000-0000-0000-000000000001', 'Boutique Nour', 'boutique-nour-arabe', 'Centre', '+213555900001', 'validee');
+insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
+  ('da000000-0000-0000-0000-000000000001', 'Boutique Nour', 'boutique-nour-arabe', 'Centre', '+213555900001', 'validee', 'oran');
 update profils set role = 'commercant', boutique_id = 'da000000-0000-0000-0000-000000000001' where id = 'ba000000-0000-0000-0000-000000000001';
 update profils set nom = 'Samir', telephone = '+213555290001' where id = 'ca000000-0000-0000-0000-000000000001';
 update profils set nom = 'Karim', telephone = '+213555290002' where id = 'ca000000-0000-0000-0000-000000000002';

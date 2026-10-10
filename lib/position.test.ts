@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   BORNES_ORAN, CENTRE_ORAN, MESSAGE_HORS_ORAN, MESSAGE_LIEN_COURT, MESSAGE_LIEN_INTROUVABLE, MESSAGE_POSITION_INCOMPLETE,
   OPTIONS_LOCALISATION_BOUTIQUE, arrondirCoordonnee, coordonneesDepuisTexte, dansOran, formaterPosition, lireCoordonnee,
-  messageLecture, textePrecision, validerPosition,
+  messageLecture, textePrecision, validerPosition, dansZone, messageHorsVille, ZONE_ORAN, type ZoneVille,
 } from './position';
 
 const migration = readFileSync(
@@ -141,5 +141,27 @@ describe('US-24.2 : validation et affichage de la position', () => {
 
   it('localisation du commerçant : précise, jamais en cache, 20 s au plus', () => {
     expect(OPTIONS_LOCALISATION_BOUTIQUE).toEqual({ enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+  });
+});
+
+describe("US-29.4 : bornes par ville (Oran inchangée)", () => {
+  const tlemcen: ZoneVille = { nom: "Tlemcen", lat_min: 34.08, lat_max: 35.25, lng_min: -2.23, lng_max: -0.75, centre_lat: 34.8818, centre_lng: -1.3167 };
+  it("Oran : mêmes bornes, même message, mêmes résultats qu'avant", () => {
+    expect(messageHorsVille("Oran")).toBe(MESSAGE_HORS_ORAN);
+    expect([ZONE_ORAN.lat_min, ZONE_ORAN.lat_max, ZONE_ORAN.lng_min, ZONE_ORAN.lng_max, ZONE_ORAN.centre_lat, ZONE_ORAN.centre_lng]).toEqual([35.33, 35.92, -1.15, -0.10, CENTRE_ORAN.latitude, CENTRE_ORAN.longitude]);
+    for (const [lat, lng] of [[35.33, -1.15], [35.92, -0.10], [35.9201, -0.64], [35.69, -0.0999], [Number.NaN, 0]]) expect(dansZone(ZONE_ORAN, lat, lng)).toBe(dansOran(lat, lng));
+    expect(validerPosition(36.75, 3.05)).toEqual({ ok: false, message: MESSAGE_HORS_ORAN });
+  });
+  it("élision comme la base : d'Oran, d'Alger, d'Annaba, de Tlemcen, de Béjaïa", () => {
+    expect(["Oran", "Alger", "Annaba", "Tlemcen", "Béjaïa", "Constantine"].map(messageHorsVille)).toEqual([
+      "La position doit être dans la wilaya d'Oran.", "La position doit être dans la wilaya d'Alger.", "La position doit être dans la wilaya d'Annaba.",
+      "La position doit être dans la wilaya de Tlemcen.", "La position doit être dans la wilaya de Béjaïa.", "La position doit être dans la wilaya de Constantine."]);
+  });
+  it("une autre ville : ses bornes et son message, partout (validation, lien, lecture)", () => {
+    expect(dansZone(tlemcen, 34.88, -1.31)).toBe(true); expect(dansZone(tlemcen, 35.6971, -0.6337)).toBe(false);
+    expect(validerPosition(35.6971, -0.6337, tlemcen)).toEqual({ ok: false, message: "La position doit être dans la wilaya de Tlemcen." });
+    expect(validerPosition(34.88, -1.31, tlemcen)).toEqual({ ok: true, latitude: 34.88, longitude: -1.31 });
+    expect(coordonneesDepuisTexte("34.88, -1.31", tlemcen)).toMatchObject({ ok: true }); expect(coordonneesDepuisTexte("34.88, -1.31")).toEqual({ ok: false, raison: "hors_oran" });
+    expect(messageLecture("hors_oran", tlemcen)).toBe("La position doit être dans la wilaya de Tlemcen."); expect(messageLecture("hors_oran")).toBe(MESSAGE_HORS_ORAN);
   });
 });

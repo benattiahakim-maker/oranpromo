@@ -30,7 +30,7 @@ create function pg_temp.compte(id uuid) returns void language sql as $$
 $$;
 
 create function pg_temp.boutique(slug text) returns text language sql as $$
-  select format($q$insert into boutiques (nom, slug, quartier, whatsapp) values ('Boutique test', %L, 'Centre', '+213555930001')$q$, slug);
+  select format($q$insert into boutiques (nom, slug, quartier, whatsapp, ville) values ('Boutique test', %L, 'Centre', '+213555930001', 'oran')$q$, slug);
 $$;
 
 -- Comptes : un admin, un commerçant rattaché à une boutique validée et à une boutique en attente.
@@ -38,10 +38,10 @@ insert into auth.users (id, email) values
   ('a3000000-0000-0000-0000-000000000001', 'admin-slug@test.dz'),
   ('b3000000-0000-0000-0000-000000000001', 'commercant-slug@test.dz');
 update profils set role = 'admin' where id = 'a3000000-0000-0000-0000-000000000001';
-insert into boutiques (id, nom, slug, quartier, whatsapp, statut) values
-  ('d3000000-0000-0000-0000-000000000001', 'Boutique Lien', 'boutique-lien', 'Centre', '+213555930001', 'validee'),
-  ('d3000000-0000-0000-0000-000000000002', 'Boutique Cachee', 'boutique-cachee', 'Centre', '+213555930002', 'en_attente'),
-  ('d3000000-0000-0000-0000-000000000003', 'Boutique Suspendue', 'boutique-suspendue', 'Centre', '+213555930003', 'suspendue');
+insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
+  ('d3000000-0000-0000-0000-000000000001', 'Boutique Lien', 'boutique-lien', 'Centre', '+213555930001', 'validee', 'oran'),
+  ('d3000000-0000-0000-0000-000000000002', 'Boutique Cachee', 'boutique-cachee', 'Centre', '+213555930002', 'en_attente', 'oran'),
+  ('d3000000-0000-0000-0000-000000000003', 'Boutique Suspendue', 'boutique-suspendue', 'Centre', '+213555930003', 'suspendue', 'oran');
 update profils set role = 'commercant', boutique_id = 'd3000000-0000-0000-0000-000000000001' where id = 'b3000000-0000-0000-0000-000000000001';
 
 -- ---------------------------------------------------------------------------
@@ -56,7 +56,7 @@ select pg_temp.erreur(pg_temp.boutique('noûr'), '23514', 'check', 'format : acc
 select pg_temp.erreur(pg_temp.boutique('a'), '23514', 'check', 'format : 1 caractère refusé');
 select pg_temp.erreur(pg_temp.boutique(repeat('a', 61)), '23514', 'check', 'format : plus de 60 caractères refusé');
 select pg_temp.erreur(pg_temp.boutique('boutique-lien'), '23505', 'slug', 'unicité : slug déjà pris refusé');
-insert into boutiques (nom, slug, quartier, whatsapp) values ('Boutique Lien', 'boutique-lien-2', 'Centre', '+213555930004');
+insert into boutiques (nom, slug, quartier, whatsapp, ville) values ('Boutique Lien', 'boutique-lien-2', 'Centre', '+213555930004', 'oran');
 select pg_temp.ok(exists (select 1 from boutiques where slug = 'boutique-lien-2'), 'format : suffixe -2 accepté');
 
 -- ---------------------------------------------------------------------------

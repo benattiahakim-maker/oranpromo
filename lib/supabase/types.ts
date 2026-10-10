@@ -194,7 +194,7 @@ export type Database = {
           quartier: string
           slug: string
           statut?: Database["public"]["Enums"]["statut_boutique"]
-          ville?: string
+          ville: string
           whatsapp: string
         }
         Update: {

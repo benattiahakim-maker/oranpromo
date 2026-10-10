@@ -24,9 +24,9 @@ insert into auth.users (id, email) values
 insert into auth.users (id, phone, phone_confirmed_at) values
   ('a5000000-0000-0000-0000-000000000011', '213555275011', now()), ('a5000000-0000-0000-0000-000000000012', '213555275012', now()),
   ('a5000000-0000-0000-0000-000000000013', '213555275013', now());
-insert into boutiques (id, nom, slug, quartier, whatsapp, statut) values
-  ('a5100000-0000-0000-0000-00000000000a', 'Boutique Admin A', 'boutique-admin-a', 'Gambetta', '+213555275901', 'validee'),
-  ('a5100000-0000-0000-0000-00000000000b', 'Boutique Admin B', 'boutique-admin-b', 'Centre', '+213555275902', 'validee');
+insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
+  ('a5100000-0000-0000-0000-00000000000a', 'Boutique Admin A', 'boutique-admin-a', 'Gambetta', '+213555275901', 'validee', 'oran'),
+  ('a5100000-0000-0000-0000-00000000000b', 'Boutique Admin B', 'boutique-admin-b', 'Centre', '+213555275902', 'validee', 'oran');
 update profils set role = 'admin' where id = 'a5000000-0000-0000-0000-000000000001';
 update profils set role = 'commercant', boutique_id = 'a5100000-0000-0000-0000-00000000000a' where id = 'a5000000-0000-0000-0000-00000000000a';
 update profils set role = 'commercant', boutique_id = 'a5100000-0000-0000-0000-00000000000b' where id = 'a5000000-0000-0000-0000-00000000000b';
