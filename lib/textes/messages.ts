@@ -27,6 +27,12 @@ const FIXES: Record<string, string> = {
   "Impossible d'envoyer le code. Réessayez dans quelques instants.": "ما قدرناش نبعثو الكود. عاود جرّب من بعد شوية.",
   "Impossible de vérifier le code. Réessayez dans quelques instants.": "ما قدرناش نتأكدو من الكود. عاود جرّب من بعد شوية.",
   "Saisissez les 6 chiffres du code reçu.": "اكتب الأرقام الستة اللي جاوك.",
+  // US-34.2 : acceptation des conditions (n° 3 de la conception ; les autres : traduction à valider).
+  "Cochez la case pour créer votre compte.": "علّم على الخانة باش تدير الحساب نتاعك.",
+  "Nos conditions ont changé : acceptez-les pour commander.": "الشروط نتاعنا تبدلو: اقبلهم باش تطلب.",
+  "Les conditions ont changé : rechargez la page.": "الشروط تبدلو: عاود حمّل الصفحة.",
+  "Impossible de vérifier les conditions acceptées. Réessayez.": "ما قدرناش نشوفو الشروط اللي قبلتهم. عاود جرّب.",
+  "Impossible d'enregistrer votre accord. Réessayez.": "ما قدرناش نسجلو الموافقة نتاعك. عاود جرّب.",
   "Ce numéro est déjà vérifié sur votre compte.": "هاد الرقم راهو مأكّد في حسابك.",
   "Saisissez un numéro de mobile algérien : 05, 06 ou 07 suivi de 8 chiffres.": "اكتب رقم بورطابل جزائري: 05، 06 ولا 07 ومن بعدها 8 أرقام.",
   "Attendez une minute avant de demander un nouveau code.": "استنّى دقيقة قبل ما تطلب كود جديد.",

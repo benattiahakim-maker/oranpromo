@@ -64,4 +64,10 @@ describe("US-27.5 bloc boutique", () => {
     expect(html).toContain("Ce mois-ci : 4 bons · 1 200 DA"); expect(html).toContain("Septembre : 2 400 DA · à payer avant le 10/10");
     expect(html).toContain("N° 140 · 05/10/2026 14:32");
   });
+  it("code de retrait à 6 chiffres (depuis la PR #103), plus jamais « 4 chiffres »", () => {
+    const html = renderToStaticMarkup(<BonsBoutique maintenant={new Date("2026-10-09T12:00:00Z")} releves={[
+      { id: "c", mois: "2026-10-01", nombre: 0, montant: 0, statut: "en_cours", paye_le: null, reference_paiement: null, lignes: [] }]} />);
+    expect(html).toContain("Par code à 6 chiffres, le bon ne s’applique pas.");
+    expect(html).not.toContain("4 chiffres");
+  });
 });

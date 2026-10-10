@@ -3,6 +3,7 @@ import { enLangue } from "@/lib/langue-serveur";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { envoyerCodeConnexionClient, ErreurCode, MESSAGE_CODE_ENVOYE, verifierCodeConnexionClient } from "@/lib/codes-telephone";
 import { cheminSuiteClient } from "@/lib/connexion";
+import { accepterDocuments, documentsInscription, MESSAGE_CASE_INSCRIPTION } from "@/lib/acceptations";
 
 // US-21.2 : connexion du client par numéro et code à 6 chiffres (mode CONNEXION_CLIENT=telephone).
 export type ResultatCode = { succes: boolean; message: string; numero?: string; suite?: string };
@@ -16,9 +17,16 @@ async function envoyerCodeConnexionEnFrancais(telephone: string, jetonCaptcha: s
   }
 }
 
-async function verifierCodeConnexionEnFrancais(telephone: string, code: string, suite: string | null): Promise<ResultatCode> {
+// US-34.2 : sans la case des conditions, pas de compte (le code n'est même pas vérifié). Code validé : accord
+// enregistré (compte, texte, version, date). Un échec d'enregistrement ne bloque pas la connexion : le panier
+// redemandera l'accord avant la commande (documents_a_accepter).
+async function verifierCodeConnexionEnFrancais(telephone: string, code: string, suite: string | null, conditions: boolean): Promise<ResultatCode> {
+  if (conditions !== true) return { succes: false, message: MESSAGE_CASE_INSCRIPTION };
   try {
-    await verifierCodeConnexionClient(await creerClientServeur(), telephone, code);
+    const client = await creerClientServeur();
+    await verifierCodeConnexionClient(client, telephone, code);
+    try { await accepterDocuments(client, documentsInscription(), "inscription"); }
+    catch (erreurAccord) { console.error("Accord aux conditions non enregistré à l'inscription", erreurAccord instanceof Error ? erreurAccord.message : erreurAccord); }
     return { succes: true, message: "Vous êtes connecté.", suite: cheminSuiteClient(typeof suite === "string" ? suite : null) };
   } catch (error) {
     return { succes: false, message: error instanceof ErreurCode ? error.message : "Impossible de vérifier le code. Réessayez dans quelques instants." };
@@ -30,6 +38,6 @@ export async function envoyerCodeConnexion(telephone: string, jetonCaptcha: stri
   return enLangue(await envoyerCodeConnexionEnFrancais(telephone, jetonCaptcha));
 }
 
-export async function verifierCodeConnexion(telephone: string, code: string, suite: string | null): Promise<ResultatCode> {
-  return enLangue(await verifierCodeConnexionEnFrancais(telephone, code, suite));
+export async function verifierCodeConnexion(telephone: string, code: string, suite: string | null, conditions = false): Promise<ResultatCode> {
+  return enLangue(await verifierCodeConnexionEnFrancais(telephone, code, suite, conditions));
 }

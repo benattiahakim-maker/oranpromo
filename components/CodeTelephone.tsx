@@ -9,12 +9,16 @@ import Turnstile from "./Turnstile";
 import { remplir } from "@/lib/langue";
 import { useLangue, useTextes } from "./FournisseurTextes";
 import { traduireMessage } from "@/lib/textes/messages";
+import CaseConditions from "./CaseConditions";
 
 // US-21.2 : numéro → code à 6 chiffres (WhatsApp uniquement : pas de SMS, décision du propriétaire).
 // « connexion » : se connecter ou créer un compte (captcha Turnstile) ; « verification » : compte déjà connecté.
+// US-34.2 : en « connexion », case des conditions (non cochée) avant l'envoi du code ; l'accord est enregistré
+// par le serveur après le code validé (verifierCodeConnexion).
 export default function CodeTelephone({ usage, suite = null, numeroInitial = null, onVerifie }: { usage: "connexion" | "verification"; suite?: string | null; numeroInitial?: string | null; onVerifie?: () => void }) {
   const router = useRouter();
   const t = useTextes().code;
+  const tJuridique = useTextes().juridique;
   const langue = useLangue();
   const cleTurnstile = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
   const captcha = usage === "connexion" && cleTurnstile !== "";
@@ -27,6 +31,8 @@ export default function CodeTelephone({ usage, suite = null, numeroInitial = nul
   const [erreur, setErreur] = useState("");
   const [message, setMessage] = useState("");
   const [enCours, setEnCours] = useState(false);
+  const [conditions, setConditions] = useState(false);
+  const [caseManquante, setCaseManquante] = useState(false);
   const verrou = useRef(false);
 
   async function envoyer() {
@@ -34,6 +40,7 @@ export default function CodeTelephone({ usage, suite = null, numeroInitial = nul
     setMessage("");
     const normalise = normaliserTelephoneClient(saisie);
     if (!normalise) { setErreur(traduireMessage(MESSAGE_TELEPHONE_INVALIDE, langue)); return; }
+    if (usage === "connexion" && !conditions) { setCaseManquante(true); setErreur(tJuridique.caseRequise); return; }
     if (captcha && !jeton) { setErreur(t.antiRobot); return; }
     verrou.current = true; setEnCours(true); setErreur("");
     try {
@@ -55,7 +62,7 @@ export default function CodeTelephone({ usage, suite = null, numeroInitial = nul
     verrou.current = true; setEnCours(true); setErreur(""); setMessage("");
     try {
       if (usage === "connexion") {
-        const resultat = await verifierCodeConnexion(numero, propre, suite);
+        const resultat = await verifierCodeConnexion(numero, propre, suite, conditions);
         if (!resultat.succes) { setErreur(resultat.message); return; }
         router.replace(resultat.suite ?? "/compte/commandes");
         router.refresh();
@@ -86,6 +93,7 @@ export default function CodeTelephone({ usage, suite = null, numeroInitial = nul
     <input id="numero-telephone" dir="ltr" type="tel" inputMode="tel" autoComplete="tel" placeholder="0555 12 34 56" value={saisie} disabled={enCours}
       onChange={e => { setSaisie(e.target.value); setErreur(""); }} aria-invalid={Boolean(erreur)} aria-describedby="aide-numero-telephone" className={champ} />
     <p id="aide-numero-telephone" className="m-0 text-[13px] text-gris">{t.aide}</p>
+    {usage === "connexion" && <CaseConditions coche={conditions} invalide={caseManquante} desactive={enCours} onChange={oui => { setConditions(oui); setCaseManquante(false); setErreur(""); }} />}
     {captcha && <Turnstile cle={cleTurnstile} onJeton={setJeton} reinitialiser={reinitialiser} />}
     {erreur && <p role="alert" className="m-0 text-sm">{erreur}</p>}
     <button type="submit" disabled={enCours || (captcha && !jeton)} className="etiquette min-h-[54px] bg-noir px-3 text-xs text-blanc disabled:opacity-50">{enCours ? t.envoi : t.recevoir}</button>

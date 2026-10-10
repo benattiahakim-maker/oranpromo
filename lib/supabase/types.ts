@@ -53,6 +53,45 @@ export type Database = {
           },
         ]
       }
+      acceptations: {
+        Row: {
+          accepte_le: string
+          contexte: string
+          document: string
+          profil_id: string
+          version: string
+        }
+        Insert: {
+          accepte_le?: string
+          contexte: string
+          document: string
+          profil_id: string
+          version: string
+        }
+        Update: {
+          accepte_le?: string
+          contexte?: string
+          document?: string
+          profil_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acceptations_document_version_fkey"
+            columns: ["document", "version"]
+            isOneToOne: false
+            referencedRelation: "versions_documents"
+            referencedColumns: ["document", "version"]
+          },
+          {
+            foreignKeyName: "acceptations_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appels_ia: {
         Row: {
           date: string
@@ -1064,6 +1103,27 @@ export type Database = {
           },
         ]
       }
+      versions_documents: {
+        Row: {
+          document: string
+          en_vigueur_le: string
+          importante: boolean
+          version: string
+        }
+        Insert: {
+          document: string
+          en_vigueur_le?: string
+          importante?: boolean
+          version: string
+        }
+        Update: {
+          document?: string
+          en_vigueur_le?: string
+          importante?: boolean
+          version?: string
+        }
+        Relationships: []
+      }
       villes: {
         Row: {
           centre_lat: number
@@ -1124,6 +1184,10 @@ export type Database = {
     }
     Functions: {
       abonnes_boutique: { Args: never; Returns: Json }
+      accepter_documents: {
+        Args: { contexte: string; documents: string[]; versions: string[] }
+        Returns: undefined
+      }
       annuler_bons_parrainage: {
         Args: { filleul: string; motif: string }
         Returns: number
@@ -1180,6 +1244,13 @@ export type Database = {
       definir_langue_commande: {
         Args: { commande: string; langue: string }
         Returns: undefined
+      }
+      documents_a_accepter: {
+        Args: never
+        Returns: {
+          document: string
+          version: string
+        }[]
       }
       enregistrer_envoi_code: {
         Args: { jeton: string; numero: string }
