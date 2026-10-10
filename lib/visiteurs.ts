@@ -26,7 +26,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export class ErreurSignalement extends Error {}
 
 // Adresse IP du visiteur. Sur Vercel, x-real-ip et x-forwarded-for sont réécrits par l'hébergeur (pas falsifiables).
+// Relecture n°6, point 7 : ailleurs (serveur lancé à la main, autre hébergeur), ces en-têtes viennent du navigateur et
+// changeraient d'empreinte à chaque requête pour contourner les limites : ils ne sont lus que si process.env.VERCEL est
+// défini (variable posée par Vercel). Sinon tous les visiteurs anonymes partagent la clé « inconnue » (limite commune).
 export function adresseIp(entetes: Headers): string {
+  if (!process.env.VERCEL) return "inconnue";
   const reelle = entetes.get("x-real-ip")?.trim();
   if (reelle) return reelle;
   const transmise = entetes.get("x-forwarded-for")?.split(",")[0]?.trim();

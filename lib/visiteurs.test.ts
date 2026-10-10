@@ -10,7 +10,7 @@ const BOUTIQUE = "d8000000-0000-0000-0000-000000000001";
 const ARTICLE = "e8000000-0000-0000-0000-000000000001";
 const entetes = (valeurs: Record<string, string> = { "x-real-ip": "105.98.1.2" }) => new Headers(valeurs);
 
-beforeEach(() => { vi.clearAllMocks(); vi.stubEnv("VISITEURS_SECRET", SECRET); rpc.mockResolvedValue({ data: true, error: null }); });
+beforeEach(() => { vi.clearAllMocks(); vi.stubEnv("VISITEURS_SECRET", SECRET); vi.stubEnv("VERCEL", "1"); rpc.mockResolvedValue({ data: true, error: null }); });
 afterEach(() => { vi.unstubAllEnvs(); });
 
 describe("limites par visiteur : clé du visiteur anonyme", () => {
@@ -18,6 +18,14 @@ describe("limites par visiteur : clé du visiteur anonyme", () => {
     expect(adresseIp(entetes())).toBe("105.98.1.2");
     expect(adresseIp(entetes({ "x-forwarded-for": "41.200.3.4, 10.0.0.1" }))).toBe("41.200.3.4");
     expect(adresseIp(entetes({}))).toBe("inconnue");
+  });
+  it("relecture n°6, point 7 : hors de Vercel (VERCEL absent), x-real-ip et x-forwarded-for ne sont pas lus (falsifiables)", async () => {
+    vi.stubEnv("VERCEL", "");
+    expect(adresseIp(entetes())).toBe("inconnue");
+    expect(adresseIp(entetes({ "x-forwarded-for": "41.200.3.4" }))).toBe("inconnue");
+    expect(adresseIp(entetes({ "x-real-ip": "1.1.1.1", "x-forwarded-for": "2.2.2.2" }))).toBe("inconnue");
+    await mesurerEvenement(client, entetes({ "x-real-ip": "9.9.9.9" }), { type: "vue_boutique", boutiqueId: BOUTIQUE });
+    expect(rpc).toHaveBeenLastCalledWith("enregistrer_evenement", expect.objectContaining({ visiteur: cleVisiteur("inconnue", SECRET) }));
   });
   it("transforme l’IP en empreinte HMAC-SHA256 : jamais l’IP en clair, impossible à fabriquer sans le secret", () => {
     const cle = cleVisiteur("105.98.1.2", SECRET);
