@@ -24,7 +24,7 @@ export default function RelevesAdmin({ mois, moisPossibles, releves, deCote, auj
     </section>
     <section aria-labelledby="de-cote" className="mt-6">
       <h2 id="de-cote" className="etiquette">Lignes mises de côté ({deCote.length})</h2>
-      {deCote.length ? <ul>{deCote.map(l => <li key={l.id} className="border-b border-trait py-3"><p className="text-sm">N° {l.numero_commande} · {l.boutique?.nom ?? ""} · {montantDA(l.montant)}</p><p className="text-xs text-gris">{dateHeureAlger(l.remise_le)} · {l.client}{l.motif ? ` · motif : ${l.motif}` : ""}</p>
+      {deCote.length ? <ul>{deCote.map(l => <li key={l.id} className="border-b border-trait py-3"><p className="text-sm">N° {l.numero_commande} · {l.boutique?.nom ?? ""} · {montantDA(l.montant)}</p><p className="text-xs text-gris">{l.libelle_origine ? `${l.libelle_origine} · ` : ""}{dateHeureAlger(l.remise_le)} · {l.client}{l.motif ? ` · motif : ${l.motif}` : ""}</p>
         <div className="flex flex-wrap gap-x-2"><ActionMotif libelle="Rembourser" confirmer="Rembourser" etiquette={`Rembourser la ligne de la commande n° ${l.numero_commande}`} aide="La ligne revient sur le relevé en cours de la boutique." action={m => deciderLigneDeCote(l.id, "rembourser", m)} /><ActionMotif libelle="Refuser" confirmer="Refuser" etiquette={`Refuser la ligne de la commande n° ${l.numero_commande}`} aide="La ligne ne sera pas remboursée ; le motif est gardé." action={m => deciderLigneDeCote(l.id, "refuser", m)} /></div></li>)}</ul>
         : <p className="py-3 text-sm text-gris">Aucune ligne en attente de décision.</p>}
     </section>
@@ -43,7 +43,7 @@ function Releve({ releve: r, aujourdhui }: { releve: ReleveAdmin; aujourdhui: st
     <details className="mt-2"><summary className="inline-flex min-h-11 cursor-pointer items-center text-sm underline">Détail ({r.lignes.length})</summary>
       <ul>{r.lignes.map(l => <li key={l.id} className="border-t border-trait py-2.5">
         <div className="flex justify-between gap-3 text-sm"><span>N° {l.numero_commande} · {l.client}</span><span className="shrink-0">{l.statut === "a_rembourser" ? montantDA(l.montant) : ETATS_LIGNE[l.statut] ?? l.statut}</span></div>
-        <p className="text-xs text-gris">{dateHeureAlger(l.remise_le)} · {MODES[l.mode_remise] ?? l.mode_remise} · commande {montantDA(l.total_commande)}{l.motif ? ` · motif : ${l.motif}` : ""}</p>
+        <p className="text-xs text-gris">{l.libelle_origine ? `${l.libelle_origine} · ` : ""}{dateHeureAlger(l.remise_le)} · {MODES[l.mode_remise] ?? l.mode_remise} · commande {montantDA(l.total_commande)}{l.motif ? ` · motif : ${l.motif}` : ""}</p>
         {signalRemiseRapide(l.commande) && <p className="text-xs font-medium">Signal : {signalRemiseRapide(l.commande)}</p>}
         {l.statut === "a_rembourser" && r.statut !== "paye" && <ActionMotif libelle="Mettre de côté" confirmer="Mettre de côté" etiquette={`Mettre de côté la commande n° ${l.numero_commande}`} aide="La ligne sort du relevé à payer et attend une décision." action={m => mettreLigneDeCote(l.id, m)} />}
       </li>)}</ul>

@@ -83,6 +83,8 @@ type LigneOrigine = { origine?: string | null; programme_id?: string | null; mon
 export function origineLigne(l: Pick<LigneOrigine, "origine" | "programme_id">, noms: Map<string, string>): string {
   if (l.origine === "bienvenue") return "Bienvenue";
   if (l.origine === "campagne") return (l.programme_id && noms.get(l.programme_id)) || "Campagne";
+  // US-32.5 (bon offert pour un avis) : origine « avis » prévue par US-33.5.
+  if (l.origine === "avis") return (l.programme_id && noms.get(l.programme_id)) || "Avis";
   return "Parrainage";
 }
 

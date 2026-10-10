@@ -2,7 +2,7 @@
 // Le relevé des bons « Marquer comme payé » est dans parrainage.spec.ts (il a besoin d'un vrai bon utilisé).
 import { expect, test } from "@playwright/test";
 import { creerArticle, creerBoutique, creerCompte, fermerBase, sql, unique } from "./outils/donnees";
-import { connecterEspace } from "./outils/parcours";
+import { connecterClient, connecterEspace } from "./outils/parcours";
 
 test.afterAll(fermerBase);
 
@@ -86,5 +86,52 @@ test("admin : ouvrir puis refermer une ville", async ({ browser }) => {
   } finally {
     await sql("update villes set ouverte = false where code = 'mostaganem'");
     await page.context().close();
+  }
+});
+
+test("US-33.5 admin : créer une campagne, le client ajoute le code, arrêter la campagne", async ({ browser, page }) => {
+  test.setTimeout(90_000);
+  const code = `ADM${unique().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10)}`;
+  const jour = (decalage: number) => new Date(Date.now() + 3_600_000 + decalage * 86_400_000).toISOString().slice(0, 10); // Algérie : UTC+1
+  const admin = await creerCompte({ role: "admin", nom: "Hakim" });
+  const client = await creerCompte({ nom: "Yasmine" });
+  const espace = await connecterEspace(browser, admin.email);
+  try {
+    await espace.goto("/admin/bons");
+    await expect(espace.getByRole("heading", { name: "Bons", exact: true })).toBeVisible();
+    await expect(espace.getByLabel("Montant (DA)")).toHaveValue("500");
+    await expect(espace.getByLabel("Plafond par boutique (bons)")).toHaveValue("30");
+    await espace.getByLabel("Nom (français)").fill("Campagne admin");
+    await espace.getByLabel("Nom (arabe)").fill("حملة");
+    await espace.getByLabel("Code").fill(code.toLowerCase());
+    await espace.getByRole("checkbox", { name: "Oran" }).check();
+    await espace.getByLabel("Début").fill(jour(0));
+    await espace.getByLabel("Fin (incluse)").fill(jour(5));
+    await espace.getByLabel("Budget (DA)").fill("100000");
+    await espace.getByRole("button", { name: "Créer la campagne" }).click();
+    await expect(espace.getByRole("status").filter({ hasText: "créée" })).toHaveText(`Campagne Campagne admin créée (code ${code}).`);
+    const fiche = espace.getByRole("list", { name: "Programmes" }).getByRole("listitem").filter({ hasText: code });
+    await expect(fiche).toContainText("Active");
+    await expect(fiche).toContainText("0 émis");
+
+    await connecterClient(page, client.email);
+    await page.goto("/compte");
+    await page.getByRole("button", { name: "J’ai un code" }).click();
+    await page.getByRole("textbox", { name: "J’ai un code" }).fill(code);
+    await page.getByRole("button", { name: "Ajouter" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "ajouté" })).toHaveText(/^Bon Campagne admin ajouté : 500\sDA dès 4\s000\sDA d’achat\.$/);
+
+    await espace.reload();
+    await expect(fiche).toContainText("1 émis");
+    await fiche.getByRole("button", { name: "Arrêter" }).click();
+    await expect(fiche).toContainText("Plus aucun nouveau bon");
+    await fiche.getByRole("button", { name: "Arrêter" }).first().click();
+    await expect(fiche.getByRole("status")).toHaveText("Arrêté : plus aucun nouveau bon. Les bons déjà donnés restent valables jusqu’à leur échéance.");
+    await expect(fiche).toContainText("Arrêtée");
+    const etat = await sql<{ actif: boolean }>("select actif from programmes_bons where code = $1", [code]);
+    expect(etat).toEqual([{ actif: false }]);
+  } finally {
+    await sql("update programmes_bons set actif = false where code = $1", [code]);
+    await espace.context().close();
   }
 });

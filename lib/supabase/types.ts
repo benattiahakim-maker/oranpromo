@@ -1406,6 +1406,7 @@ export type Database = {
         Returns: number
       }
       annuler_no_show: { Args: { commande: string }; Returns: undefined }
+      arreter_programme: { Args: { programme: string }; Returns: boolean }
       avis_boutique: {
         Args: { boutique: string; decalage?: number; limite?: number }
         Returns: {
@@ -1477,6 +1478,23 @@ export type Database = {
       controler_envoi_code: {
         Args: { jeton: string; numero: string }
         Returns: undefined
+      }
+      creer_campagne: {
+        Args: {
+          budget: number
+          code: string
+          debut: string
+          fin: string
+          minimum_achat: number
+          montant: number
+          nom_ar: string
+          nom_fr: string
+          plafond_par_boutique: number
+          univers: string
+          validite_jours: number
+          villes: string[]
+        }
+        Returns: string
       }
       debloquer_client: { Args: { client: string }; Returns: undefined }
       decider_ligne: {
@@ -1572,6 +1590,7 @@ export type Database = {
         Returns: string
       }
       plafonds_bons_boutique: { Args: never; Returns: Json }
+      programmes_admin: { Args: never; Returns: Json }
       rattacher_commercant: {
         Args: { boutique: string; email_commercant: string }
         Returns: undefined
@@ -1662,6 +1681,7 @@ export type Database = {
           cinq_etoiles_comptes_recents: number
         }[]
       }
+      signaux_bons: { Args: { programme: string }; Returns: Json }
       signaux_fraude_avis: {
         Args: never
         Returns: {

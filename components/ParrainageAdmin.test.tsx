@@ -55,6 +55,15 @@ describe("US-27.5 admin", () => {
   });
 });
 
+describe("US-33.5 relevés : origine du bon", () => {
+  it("affiche l'origine de chaque ligne (campagne, mise de côté)", () => {
+    const l = { id: "l1", releve_id: "r1", numero_commande: 140, remise_le: "2026-10-05T13:32:00Z", mode_remise: "qr", client: "Samia B.", total_commande: 4500, montant: 500, statut: "a_rembourser", motif: null, commande: null, origine: "campagne", programme_id: "p1", libelle_origine: "Aïd 2026" };
+    const r = { id: "r1", mois: "2026-10-01", nombre: 1, montant: 500, statut: "en_cours", cloture_le: null, paye_le: null, reference_paiement: null, boutique: { id: "B", nom: "Boutique Nour", slug: "boutique-nour", bons_acceptes: true }, lignes: [l] };
+    const html = renderToStaticMarkup(<RelevesAdmin mois="2026-10-01" moisPossibles={["2026-10-01"]} releves={[r]} deCote={[{ ...l, id: "l2", statut: "de_cote", libelle_origine: "Bienvenue", boutique: { nom: "Boutique Nour" } }]} aujourdhui="2026-10-09" />);
+    expect(html).toContain("Aïd 2026 · "); expect(html).toContain("Bienvenue · ");
+  });
+});
+
 describe("US-27.5 bloc boutique", () => {
   it("rien sans relevé", () => { expect(renderToStaticMarkup(<BonsBoutique releves={[]} />)).toBe(""); });
   it("mois en cours, relevés passés, détail sans téléphone", () => {
