@@ -184,6 +184,11 @@ select pg_temp.compte('c2700000-0000-0000-0000-0000000000ff') \g /dev/null
 select pg_temp.erreur($$select choisir_parrain('+213555270001')$$, '23514', 'Vérifie ton numéro', 'filleul au numéro non vérifié refusé');
 select pg_temp.compte(:'p1') \g /dev/null
 select pg_temp.erreur($$select choisir_parrain('+213555270002')$$, '23514', '7 jours', 'inscrit depuis plus de 7 jours : refusé');
+-- Relecture n°6, point 1 (20261015090000_cree_le_protege.sql) : la date d'inscription ne se change pas en direct.
+select cree_le as cree_p1 from profils where id = :'p1' \gset
+update profils set cree_le = now() where id = :'p1';
+select pg_temp.ok((select cree_le = :'cree_p1'::timestamptz from profils where id = :'p1'), 'cree_le : remise à maintenant par le client sans effet');
+select pg_temp.erreur($$select choisir_parrain('+213555270002')$$, '23514', '7 jours', 'cree_le : choix du parrain toujours refusé après 7 jours');
 select pg_temp.compte(null) \g /dev/null
 -- Boucle : le parrain plus ancien choisit son filleul → aucun parrain (silencieux).
 reset role;
