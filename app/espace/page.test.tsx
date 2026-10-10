@@ -37,13 +37,13 @@ describe("US-11 : espace commerçant", () => {
     const html = renderToStaticMarkup(await Espace(props()));
     expect(html).not.toContain("Partager ma boutique");
   });
-  it("US-27.5 : bloc « Bons parrainage à rembourser » limité à sa boutique, absent sans relevé", async () => {
+  it("US-27.5 : bloc « Bons à rembourser » limité à sa boutique, absent sans relevé", async () => {
     let html = renderToStaticMarkup(await Espace(props()));
     expect(eqReleves).toHaveBeenCalledWith("boutique_id", "boutique");
-    expect(html).not.toContain("Bons parrainage à rembourser");
+    expect(html).not.toContain("Bons à rembourser");
     eqReleves.mockReturnValue({ order: () => ({ limit: async () => ({ data: [{ id: "r", mois: "2026-09-01", nombre: 8, montant: 2400, statut: "paye", paye_le: "2026-10-05", reference_paiement: "CCP-1234", lignes: [] }], error: null }) }) });
     html = renderToStaticMarkup(await Espace(props()));
-    expect(html).toContain("Bons parrainage à rembourser"); expect(html).toContain("Septembre : 2 400 DA · payé le 05/10, réf. CCP-1234");
+    expect(html).toContain("Bons à rembourser"); expect(html).toContain("Septembre : 2 400 DA · payé le 05/10, réf. CCP-1234");
   });
   it("US-27.5 : erreur de lecture des relevés : pas de bloc, la page reste", async () => {
     eqReleves.mockReturnValue({ order: () => ({ limit: async () => ({ data: null, error: { message: "Réseau" } }) }) });

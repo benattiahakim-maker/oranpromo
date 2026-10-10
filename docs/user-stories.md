@@ -1240,6 +1240,8 @@ En tant que BleDeal, je veux offrir un bon sur la 1re commande et lancer des cam
 - **Plafond par boutique et par campagne** (exemple : 30 bons utilisés) : au-delà, le bon ne s'applique plus dans cette boutique (raison au panier : « Ce bon n'est plus accepté dans cette boutique pour cette campagne. »).
 - Relevé mensuel inchangé, avec une colonne « Origine » (parrainage, bienvenue, Aïd 2026…).
 
+- **Codé le 10/10** (migration `20261018120000_bons_boutique.sql`, en production) : nom du bon dans les commandes reçues, au scan, sur le suivi et la page du proche ; bloc « Bons à rembourser » de `/espace` avec les totaux par origine et le plafond de chaque campagne ouverte. Le plafond lui-même est appliqué par la base depuis US-33.1 (raison `plafond_boutique`, texte au panier depuis US-33.3).
+
 ### US-33.5 — Admin : campagnes, fraude, paiement (pages `/admin/bons`, `/admin/remboursements`)
 - **`/admin/bons`** : liste des programmes (bienvenue, campagnes) avec émis, utilisés, montant remboursé, budget restant ; « Nouvelle campagne » (nom, code, montant, minimum, univers, villes, dates, validité, budget, plafond par boutique) ; « Arrêter » (plus de nouveau bon, les bons donnés restent valables jusqu'à leur échéance).
 - **Signaux** (jamais automatiques, l'admin décide avec « Mettre de côté » / « Refuser » existants) : article **créé** ou **prix augmenté** dans les 14 jours avant le début de la campagne (nouvel historique des prix) ; boutique qui atteint son plafond très vite ; beaucoup de bons utilisés par des comptes créés depuis moins de 7 jours ; commandes récupérées moins de 30 minutes après leur création.

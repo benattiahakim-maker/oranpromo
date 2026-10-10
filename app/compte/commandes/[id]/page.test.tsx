@@ -49,6 +49,15 @@ describe("US-27.3 et US-27.4 : bon et parrainage sur le suivi", () => {
     expect(html).toContain("Bon parrainage"); expect(html).toMatch(/−300\sDA/);
     expect(html.match(/6\s000\sDA/g)?.length).toBe(2);
   });
+  it("US-33.4 : bon de bienvenue : « Bon de bienvenue −300 DA » (sur le suivi et le QR code)", async () => {
+    lireCommande.mockResolvedValue({ ...commande("prete"), remise_bon: 300 });
+    rpc.mockImplementation(async (f: string) => f === "bons_des_commandes"
+      ? { data: [{ commande: "c1", origine: "bienvenue", nom_fr: null, nom_ar: null }], error: null }
+      : { data: [{ jeton: JETON, code: "048193" }], error: null });
+    const html = await afficher();
+    expect(rpc).toHaveBeenCalledWith("bons_des_commandes", { commandes: ["c1"] });
+    expect(html.match(/Bon de bienvenue/g)?.length).toBe(2); expect(html).not.toContain("Bon parrainage");
+  });
   it("bon coché mais non posé : la raison s'affiche sur une commande au prix plein ; valeur inconnue ignorée", async () => {
     lireCommande.mockResolvedValue(commande("demandee"));
     expect(await afficher("aucun_bon")).toContain("Bon non appliqué : il a expiré ou n’est plus disponible.");

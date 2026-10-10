@@ -16,6 +16,7 @@ import MerciParrainage from "@/components/MerciParrainage";
 import { aEncaisser, raisonBonNonApplique } from "@/lib/bons";
 import { lireMonParrainage, preparerInvitation } from "@/lib/parrainage";
 import { avisPossible, lireMesNotes } from "@/lib/avis";
+import { lireBonsDesCommandes, nomBon } from "@/lib/bons-boutique";
 
 export const metadata = { title: "Suivi de commande", robots: { index: false, follow: false } };
 
@@ -55,6 +56,8 @@ export default async function SuiviCommande({ params, searchParams }: { params: 
   const tAvis = textesDe(langue).avis;
   const tBon = textesDe(langue).parrainage;
   const remise = commande.remise_bon ?? 0;
+  // US-33.4 : nom du bon posé (« Bon Aïd 2026 », « Bon de bienvenue » ; en cas d'erreur : « Bon parrainage »).
+  const libelleBon = nomBon(remise > 0 ? (await lireBonsDesCommandes(client, [commande.id]).catch(() => null))?.get(commande.id) : null, tBon, langue);
   const motif = commande.motif_annulation && Object.hasOwn(t.motifs, commande.motif_annulation) ? traduire(t.motifs, commande.motif_annulation) : null;
   return <main className="mx-auto w-full max-w-lg bg-blanc pb-10 text-noir">
     <header className="border-b border-trait px-6 pb-5 pt-6 text-center"><p className="etiquette text-gris">{remplir(t.numero, { n: commande.numero })}{boutique ? ` · ${boutique.nom}` : ""}</p><h1 className="font-titre text-[28px] font-normal">{t.titresSuivi[commande.statut]}</h1></header>
@@ -62,14 +65,14 @@ export default async function SuiviCommande({ params, searchParams }: { params: 
     {commande.statut === "annulee" && motif && <p className="border-b border-trait px-6 py-3 text-center text-sm">{remplir(t.motif, { motif })}</p>}
     {commande.statut === "expiree" && <p className="border-b border-trait px-6 py-3 text-center text-sm">{t.expiree}</p>}
     {raisonBon && remise === 0 && commande.statut === "demandee" && <p role="status" className="mx-4 mt-4 border border-noir p-3 text-sm leading-[1.6]">{tBon.bonNonApplique[raisonBon]}</p>}
-    {retrait && <div className="px-4 pt-[18px]"><BlocRetrait qr={retrait.qr} code={retrait.code} numero={commande.numero} total={commande.total} remise={remise}
+    {retrait && <div className="px-4 pt-[18px]"><BlocRetrait qr={retrait.qr} code={retrait.code} numero={commande.numero} total={commande.total} remise={remise} libelleBon={libelleBon}
       partage={{ lien: retrait.lien, whatsapp: lienPartageRetrait(langue, commande.numero, boutique?.nom ?? "BleDeal", retrait.lien) }} /></div>}
     <div className="px-6 pt-5">
       <FriseCommande statut={commande.statut} suivi={commande.suivi_commandes} />
       <ul aria-label={t.articles} className="mt-2 border-t border-trait pt-3 text-[13px] font-light">{commande.lignes_commande.map(l => <li key={l.id} className="flex justify-between gap-3 py-1"><span>{l.article_id ? <Link href={`/a/${l.article_id}`} className="underline-offset-2 hover:underline">{l.titre}</Link> : l.titre} · {afficherTaille(l.taille, langue)} × {l.quantite}</span><span className="whitespace-nowrap">{formaterPrix(l.prix_unitaire * l.quantite, langue)}</span></li>)}</ul>
       <p className="flex justify-between pt-2"><span className="etiquette self-center">{t.total}</span><span>{formaterPrix(commande.total, langue)}</span></p>
       {remise > 0 && <>
-        <p className="flex justify-between pt-1 text-sm"><span>{tBon.ligneBon}</span><span dir="ltr">−{formaterPrix(remise, langue)}</span></p>
+        <p className="flex justify-between pt-1 text-sm"><span>{libelleBon}</span><span dir="ltr">−{formaterPrix(remise, langue)}</span></p>
         <p className="flex justify-between border-t border-noir pt-2 font-medium"><span>{textesDe(langue).retrait.aPayer}</span><span>{formaterPrix(aEncaisser(commande.total, remise), langue)}</span></p>
       </>}
       {merci && <MerciParrainage whatsapp={merci.whatsapp} />}

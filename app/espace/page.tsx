@@ -6,6 +6,7 @@ import PartagerBoutique from "@/components/PartagerBoutique";
 import PositionEspace, { type ProprietesPositionEspace } from "@/components/PositionEspace";
 import { preparerPartageBoutique, type PartageBoutique } from "@/lib/lien-boutique";
 import BonsBoutique from "@/components/BonsBoutique";
+import { lireNomsProgrammesReleve, lirePlafondsBoutique, type PlafondBoutique } from "@/lib/bons-boutique";
 import { lireRelevesBoutique, type ReleveBoutique } from "@/lib/parrainage-admin";
 import { villeLue } from "@/lib/ville";
 import AbonnesBoutique from "@/components/AbonnesBoutique";
@@ -23,6 +24,8 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
   let partage: PartageBoutique | null = null;
   let position: ProprietesPositionEspace | null = null;
   let releves: ReleveBoutique[] = [];
+  let nomsProgrammes = new Map<string, string>();
+  let plafonds: PlafondBoutique[] = [];
   let abonnes: NombreAbonnes | null = null;
   let resumeAvis: ResumeEspace | null = null;
   if (profil?.boutique_id) {
@@ -37,8 +40,13 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
     // US-24.2 : bloc « Position sur la carte ».
     // US-29.4 : avec la ville de la boutique (illisible : Oran, comme avant).
     if (boutique.data) position = { statut: boutique.data.statut, latitude: boutique.data.latitude ?? null, longitude: boutique.data.longitude ?? null, zone: villeLue(boutique.data.villes) ?? undefined };
-    // US-27.5 : bloc « Bons parrainage à rembourser » (seulement si la boutique a des relevés ; une erreur masque le bloc).
+    // US-27.5 : bloc « Bons à rembourser » (seulement si la boutique a des relevés ; une erreur masque le bloc).
     try { releves = await lireRelevesBoutique(supabase, profil.boutique_id); } catch { releves = []; }
+    // US-33.4 : origine des lignes (noms des campagnes) et plafond des campagnes ouvertes (une erreur : sans ces détails).
+    [nomsProgrammes, plafonds] = await Promise.all([
+      releves.length ? lireNomsProgrammesReleve(supabase).catch(() => new Map<string, string>()) : new Map<string, string>(),
+      lirePlafondsBoutique(supabase).catch(() => []),
+    ]);
     // US-31.3 : nombre de clients qui suivent la boutique (masqué si la lecture échoue).
     abonnes = await lireAbonnesBoutique(supabase);
     // US-32.4 : bloc « ★ 4,6 · 18 avis · 2 sans réponse » (masqué si la lecture échoue).
@@ -54,7 +62,7 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
       {profil?.boutique_id && <Link href="/espace/statistiques" className="etiquette my-6 flex min-h-[44px] items-center justify-center border border-noir px-4">Mes statistiques</Link>}
       {resumeAvis && <Link href="/espace/avis" aria-label={`Avis clients : ${texteResumeEspace(resumeAvis)}`} className="mb-6 flex min-h-[44px] flex-col items-center justify-center border border-trait p-4 text-center"><span className="etiquette text-gris">Avis clients</span><span className="mt-1 text-sm">{texteResumeEspace(resumeAvis)}</span></Link>}
       {abonnes && <AbonnesBoutique abonnes={abonnes} />}
-      <BonsBoutique releves={releves} />
+      <BonsBoutique releves={releves} noms={nomsProgrammes} plafonds={plafonds} />
       {position && <PositionEspace {...position} />}
       {partage && <div className="pb-10"><PartagerBoutique partage={partage} /></div>}
     </div>

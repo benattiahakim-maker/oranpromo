@@ -6,6 +6,7 @@ import { formaterDateHeure } from "@/lib/commandes";
 import { formaterPrix } from "@/lib/prix";
 import type { CleRetrait, ResumeRetrait } from "@/lib/retrait";
 import { aEncaisser, moisAlger, releveDuMois } from "@/lib/bons";
+import { nomBon } from "@/lib/bons-boutique";
 
 // US-26.3 : résumé d'une commande trouvée par QR code ou par code, puis « Remis au client » (maquette ⑥ et ⑦).
 // Bon parrainage (US-27.4) : déduit seulement par QR code (relecture n°6, point 2).
@@ -21,6 +22,8 @@ export default function RetraitBoutique({ resume, cle, onAutre }: { resume: Resu
   const bonReserve = resume.remise_bon ?? 0;
   const bon = parCode ? 0 : bonReserve;
   const total = resume.total ?? 0;
+  // US-33.4 : « Bon Aïd 2026 », « Bon de bienvenue », « Bon parrainage ».
+  const libelleBon = nomBon(resume.bon);
 
   async function remettre() {
     if (verrou.current) return;
@@ -41,7 +44,7 @@ export default function RetraitBoutique({ resume, cle, onAutre }: { resume: Resu
     <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-full border border-noir text-2xl">✓</span>
     <h2 role="status" className="font-titre text-[26px] font-normal">Commande remise</h2>
     <p className="text-sm">N° {remise.numero} · {formaterPrix(aEncaisser(remise.total ?? 0, remise.remise_bon ?? bon))} · Elle passe en « Récupérée ». Le stock était déjà à jour.</p>
-    {(remise.remise_bon ?? bon) > 0 && <p className="text-sm text-gris">Bon parrainage de {formaterPrix(remise.remise_bon ?? bon)} : BleDeal vous le rembourse ({releveDuMois(moisAlger(remise.terminee_le ? new Date(remise.terminee_le) : new Date()))}).</p>}
+    {(remise.remise_bon ?? bon) > 0 && <p className="text-sm text-gris">{libelleBon} de {formaterPrix(remise.remise_bon ?? bon)} : BleDeal vous le rembourse ({releveDuMois(moisAlger(remise.terminee_le ? new Date(remise.terminee_le) : new Date()))}).</p>}
     <div className="mt-3 w-full">{autre}</div>
     <Link href="/espace/commandes" className="text-sm underline">Voir les commandes</Link>
   </section>;
@@ -54,7 +57,7 @@ export default function RetraitBoutique({ resume, cle, onAutre }: { resume: Resu
       <li key={i} className="flex justify-between gap-3 border-b border-trait py-2"><span>{l.titre} · {l.taille} × {l.quantite}</span><span className="whitespace-nowrap">{formaterPrix(l.prix_unitaire * l.quantite)}</span></li>)}</ul>
     {bon > 0 && <dl className="mt-3 text-sm">
       <div className="flex justify-between py-1"><dt>Sous-total</dt><dd>{formaterPrix(total)}</dd></div>
-      <div className="flex justify-between py-1"><dt>Bon parrainage BleDeal</dt><dd>−{formaterPrix(bon)}</dd></div>
+      <div className="flex justify-between py-1"><dt>{libelleBon} BleDeal</dt><dd>−{formaterPrix(bon)}</dd></div>
     </dl>}
     <p className="mt-4 flex items-center justify-between gap-3 bg-noir px-4 py-3 text-blanc"><span className="etiquette">À encaisser en espèces</span><span className="text-[22px] font-medium whitespace-nowrap">{formaterPrix(aEncaisser(total, bon))}</span></p>
     {bon > 0 && <p className="mt-2 border border-noir p-3 text-sm">Ces {formaterPrix(bon)} vous sont remboursés par BleDeal ({releveDuMois(moisAlger())}).</p>}

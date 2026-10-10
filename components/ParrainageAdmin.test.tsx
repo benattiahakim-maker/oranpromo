@@ -62,7 +62,22 @@ describe("US-27.5 bloc boutique", () => {
       { id: "c", mois: "2026-10-01", nombre: 4, montant: 1200, statut: "en_cours", paye_le: null, reference_paiement: null, lignes: [{ id: "l", numero_commande: 140, remise_le: "2026-10-05T13:32:00Z", montant: 300, statut: "a_rembourser" }] },
       { id: "s", mois: "2026-09-01", nombre: 8, montant: 2400, statut: "a_payer", paye_le: null, reference_paiement: null, lignes: [] }]} />);
     expect(html).toContain("Ce mois-ci : 4 bons · 1 200 DA"); expect(html).toContain("Septembre : 2 400 DA · à payer avant le 10/10");
-    expect(html).toContain("N° 140 · 05/10/2026 14:32");
+    expect(html).toContain("N° 140 · Parrainage · 05/10/2026 14:32");
+  });
+  it("US-33.4 : totaux du mois par origine (la plus grosse d’abord), origine de chaque ligne, plafond des campagnes ouvertes", () => {
+    const ligne = (id: string, montant: number, origine: string | null, programme_id: string | null = null, statut = "a_rembourser") =>
+      ({ id, numero_commande: 200 + Number(id), remise_le: "2026-10-05T13:32:00Z", montant, statut, origine, programme_id });
+    const html = renderToStaticMarkup(<BonsBoutique maintenant={new Date("2026-10-09T12:00:00Z")} noms={new Map([["p1", "Aïd 2026"]])}
+      plafonds={[{ nom_fr: "Aïd 2026", nom_ar: "العيد 2026", plafond: 30, utilises: 14 }]} releves={[
+      { id: "c", mois: "2026-10-01", nombre: 4, montant: 1600, statut: "en_cours", paye_le: null, reference_paiement: null, lignes: [
+        ligne("1", 500, "campagne", "p1"), ligne("2", 500, "campagne", "p1"), ligne("3", 300, "bienvenue"), ligne("4", 300, "parrainage_filleul"), ligne("5", 300, null, null, "refuse")] }]} />);
+    expect(html).toMatch(/Aïd 2026 · 2 bons<\/span><span[^>]*>1\s000\sDA.*Bienvenue · 1 bon<\/span><span[^>]*>300\sDA.*Parrainage · 1 bon<\/span>/);
+    expect(html).toContain("Plafond Aïd 2026 : 14 / 30 bons dans votre boutique.");
+    expect(html).toContain("N° 201 · Aïd 2026 · "); expect(html).toContain("N° 203 · Bienvenue · "); expect(html).toContain("N° 205 · Parrainage · ");
+  });
+  it("US-33.4 : sans relevé mais avec une campagne ouverte : le plafond s’affiche", () => {
+    const html = renderToStaticMarkup(<BonsBoutique releves={[]} plafonds={[{ nom_fr: "Aïd 2026", nom_ar: "العيد 2026", plafond: 30, utilises: 0 }]} />);
+    expect(html).toContain("Ce mois-ci : 0 bon · 0 DA"); expect(html).toContain("Plafond Aïd 2026 : 0 / 30 bons dans votre boutique.");
   });
   it("code de retrait à 6 chiffres (depuis la PR #103), plus jamais « 4 chiffres »", () => {
     const html = renderToStaticMarkup(<BonsBoutique maintenant={new Date("2026-10-09T12:00:00Z")} releves={[

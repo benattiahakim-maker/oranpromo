@@ -62,8 +62,19 @@ describe("US-27.4 : bon parrainage sur la page du proche", () => {
     expect(html).toContain("Bon parrainage"); expect(html).toMatch(/−300\sDA/);
     expect(html).toMatch(/6\s000\sDA/); expect(html).not.toMatch(/6\s300\sDA/);
   });
+  it("US-33.4 : nom du bon lu par le lien (« Bon Aïd 2026 », en arabe « بون العيد 2026 »)", async () => {
+    rpc.mockImplementation(async (f: string) => f === "bon_par_lien"
+      ? { data: { origine: "campagne", nom_fr: "Aïd 2026", nom_ar: "العيد 2026" }, error: null }
+      : { data: { ...vue("prete"), remise_bon: 500 }, error: null });
+    const html = await afficher();
+    expect(rpc).toHaveBeenCalledWith("bon_par_lien", { jeton: JETON });
+    expect(html).toContain("Bon Aïd 2026"); expect(html).not.toContain("Bon parrainage");
+    langue.valeur = "ar";
+    expect(await afficher()).toContain("بون العيد 2026");
+  });
   it("sans bon : montant inchangé, pas de ligne de bon", async () => {
     const html = await afficher();
     expect(html).not.toContain("Bon parrainage"); expect(html).toMatch(/6\s300\sDA/);
+    expect(rpc).not.toHaveBeenCalledWith("bon_par_lien", expect.anything());
   });
 });

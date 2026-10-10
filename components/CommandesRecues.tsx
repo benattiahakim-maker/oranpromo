@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { changerStatutCommandeBoutique, declarerClientPasVenu } from "@/app/espace/commandes/actions";
+import { nomBon } from "@/lib/bons-boutique";
 import { ACTION_BOUTIQUE, annulableParBoutique, estStockInsuffisant, formaterDateHeure, peutDeclarerNoShow, libelleMotif, MOTIFS_ANNULATION, MOTIFS_BOUTIQUE, NOTE_SUIVI_MAX, quantiteTotale, STATUTS_COMMANDE, type CommandeRecue, type MotifBoutique, type StatutCommande } from "@/lib/commandes";
 import { telephoneLisible } from "@/lib/clients";
 import { formaterPrix } from "@/lib/prix";
@@ -63,8 +64,8 @@ export function CarteCommande({ commande, boutique, dansTableau = false }: { com
     <p className="text-xs text-gris">{formaterDateHeure(commande.cree_le)} · <a href={lienContactClient(commande.client_telephone, commande.numero, boutique)} target="_blank" rel="noopener noreferrer" className="underline">{telephoneLisible(commande.client_telephone)} · WhatsApp</a></p>
     <ul className="text-[13px] font-light">{commande.lignes_commande.map(l => <li key={l.id}>{l.titre} · {l.taille} × {l.quantite} · {formaterPrix(l.prix_unitaire * l.quantite)}</li>)}</ul>
     <p className="text-sm">Total {formaterPrix(commande.total)} · {quantiteTotale(commande.lignes_commande)} pièce{quantiteTotale(commande.lignes_commande) > 1 ? "s" : ""}</p>
-    {/* US-27.4 : bon parrainage BleDeal (300 DA remboursés à la boutique). */}
-    {(commande.remise_bon ?? 0) > 0 && <p className="text-sm font-medium">Bon parrainage −{formaterPrix(commande.remise_bon)} · à encaisser {formaterPrix(aEncaisser(commande.total, commande.remise_bon))}</p>}
+    {/* US-27.4, US-33.4 : bon BleDeal remboursé à la boutique, avec son nom. */}
+    {(commande.remise_bon ?? 0) > 0 && <p className="text-sm font-medium">{nomBon(commande.bon)} −{formaterPrix(commande.remise_bon)} · à encaisser {formaterPrix(aEncaisser(commande.total, commande.remise_bon))}</p>}
     {commande.note && <p className="text-sm text-gris">Note du client : « {commande.note} »</p>}
     {motifAffiche && <p className="text-sm text-gris">Motif : {motifAffiche}</p>}
     {commande.no_show_le && <p className="text-sm text-gris">Client pas venu · signalé le {formaterDateHeure(commande.no_show_le)}{commande.no_show_annule_le ? " (annulé par BleDeal)" : ""}</p>}

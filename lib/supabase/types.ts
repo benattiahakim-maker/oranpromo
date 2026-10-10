@@ -1433,6 +1433,8 @@ export type Database = {
         }[]
       }
       bloquer_client: { Args: { client: string }; Returns: undefined }
+      bon_par_lien: { Args: { jeton: string }; Returns: Json }
+      bons_des_commandes: { Args: { commandes: string[] }; Returns: Json }
       bons_panier: { Args: { boutique: string; lignes: Json }; Returns: Json }
       boutiques_carte: {
         Args: { code_ville?: string; limite?: number }
@@ -1563,11 +1565,13 @@ export type Database = {
       mon_code_parrainage: { Args: never; Returns: string }
       mon_parrainage: { Args: never; Returns: Json }
       ne_plus_suivre: { Args: { boutique: string }; Returns: boolean }
+      noms_programmes_releve: { Args: never; Returns: Json }
       parrainage_ouvert: { Args: never; Returns: boolean }
       passer_commande: {
         Args: { boutique: string; lignes: Json; note?: string }
         Returns: string
       }
+      plafonds_bons_boutique: { Args: never; Returns: Json }
       rattacher_commercant: {
         Args: { boutique: string; email_commercant: string }
         Returns: undefined
