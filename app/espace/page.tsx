@@ -49,7 +49,7 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
     try { releves = await lireRelevesBoutique(supabase, profil.boutique_id); } catch { releves = []; }
     // US-33.4 : origine des lignes (noms des campagnes) et plafond des campagnes ouvertes (une erreur : sans ces détails).
     [nomsProgrammes, plafonds] = await Promise.all([
-      releves.length ? lireNomsProgrammesReleve(supabase).catch(() => new Map<string, string>()) : new Map<string, string>(),
+      releves.length ? lireNomsProgrammesReleve(supabase, langue).catch(() => new Map<string, string>()) : new Map<string, string>(),
       lirePlafondsBoutique(supabase).catch(() => []),
     ]);
     // US-31.3 : nombre de clients qui suivent la boutique (masqué si la lecture échoue).

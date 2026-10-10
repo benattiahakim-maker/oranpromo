@@ -4,8 +4,8 @@ Règles (comme US-23) : arabe simple avec des mots de darja d’Oran ; le commer
 en français, on garde le **« vous »** (textes français inchangés). Nombres en chiffres 0-9 ; prix avec `Prix`, numéros avec `Numero`.
 Pas traduits : le texte juridique entier des conditions commerçants (avis « texte officiel en français » de #146 en arabe),
 l’affiche imprimée pour les clients (`/espace/affiche`), l’administration et la page « Confirmer » (décision de BOLOSS),
-ce que saisit la boutique (titres, descriptions), les noms français des campagnes dans le détail du relevé
-(la base ne donne que le nom français ; le plafond utilise le nom arabe).
+ce que saisit la boutique (titres, descriptions). Noms des campagnes : en arabe, le nom arabe saisi par l'admin dans
+« Nouvelle campagne » (`programmes_bons.nom_ar`), au plafond comme dans le relevé ; le nom français seulement s'il manque.
 
 **Ajouts du 10/10 après-midi** (BOLOSS) : bloc « Bons à rembourser » (`espace.bons`, 23 textes) et résumé des engagements
 des conditions commerçants (`espace.conditions.resume1` à `resume5`, plus `provisoire`) : 29 textes marqués **(nouveau)** ;
