@@ -22,7 +22,7 @@ select pg_temp.ok((select string_agg(p.proname || '=' || md5(pg_get_functiondef(
   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where (n.nspname, p.proname) in (('public','utiliser_bon'),('prive','raison_bon'),('prive','donner_bon_programme'),('public','passer_commande'),
     ('public','changer_statut_commande'),('prive','synchroniser_numero_verifie'),('prive','blocage_par_numero'),('prive','bons_apres_statut')))
-  = 'blocage_par_numero=66aa2dbfc2dd6cc37534a8c281362afb,bons_apres_statut=bdd1ffb334b87f6cef2fe350040f5ec0,changer_statut_commande=6b499f80b73eea92305eebcd2f88b1de,donner_bon_programme=07c68f57d8b60505e1b6fcbff0e750d0,passer_commande=d18a962833a100d12f0b317e46973640,raison_bon=84d557a918e400bd125a0349d62d64a2,synchroniser_numero_verifie=34d425c5a14821fe8236263c7c5717be,utiliser_bon=6ded97cf884bac444cf82f89b7f5a254', 'utiliser_bon, raison_bon, commandes, numéro, blocage : définitions inchangées');
+  = 'blocage_par_numero=66aa2dbfc2dd6cc37534a8c281362afb,bons_apres_statut=d8179836c23d7cd58776ced0dcd6daee,changer_statut_commande=6b499f80b73eea92305eebcd2f88b1de,donner_bon_programme=07c68f57d8b60505e1b6fcbff0e750d0,passer_commande=d18a962833a100d12f0b317e46973640,raison_bon=942b2b16db653e6d5141189457726de0,synchroniser_numero_verifie=34d425c5a14821fe8236263c7c5717be,utiliser_bon=6ded97cf884bac444cf82f89b7f5a254', 'utiliser_bon, raison_bon, commandes, numéro, blocage : définitions inchangées');
 
 -- Données : deux boutiques et leurs commerçants, deux clients, une campagne Aïd (plafond 30) et une fermée.
 insert into auth.users (id, phone, phone_confirmed_at)

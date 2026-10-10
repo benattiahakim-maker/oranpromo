@@ -8,7 +8,8 @@ type TextesBons = typeof fr.parrainage;
 
 /** « Bon parrainage », « Bon de bienvenue », « Bon Aïd 2026 » (nom du programme dans la langue de la page). */
 export function nomDuBon(bon: Pick<BonClient, "origine" | "nom_fr" | "nom_ar">, t: TextesBons, langue: Langue): string {
-  if (bon.origine === "bienvenue") return t.nomBienvenue;
+  // US-31.4 : le bon de l'inscription en boutique est un bon de bienvenue.
+  if (bon.origine === "bienvenue" || bon.origine === "inscription_boutique") return t.nomBienvenue;
   if (bon.origine === "campagne") return remplir(t.nomProgramme, { nom: (langue === "ar" ? bon.nom_ar : bon.nom_fr) ?? bon.nom_fr ?? "" });
   return t.nomBon;
 }
@@ -19,9 +20,17 @@ export function detailBonProgramme(bon: BonClient, t: TextesBons, langue: Langue
   return remplir(t.detailProgramme, { montant: formaterPrix(bon.montant, langue), minimum: formaterPrix(minimumBon(bon), langue), date: formaterJourMoisNumerique(bon.expire_le) });
 }
 
+/** US-31.4 : « Chez Boutique Nour : dès le 11/10. Ailleurs : tout de suite. » tant que le bon d'inscription n'est pas
+ *  utilisable dans la boutique d'origine (null sinon). */
+export function detailInscription(bon: BonClient, t: TextesBons, maintenant: Date = new Date()): string | null {
+  if (bon.origine !== "inscription_boutique" || bon.statut !== "disponible" || !bon.utilisable_des || !bon.boutique_origine) return null;
+  if (new Date(bon.utilisable_des).getTime() <= maintenant.getTime()) return null;
+  return remplir(t.detailInscription, { boutique: bon.boutique_origine, date: formaterJourMoisNumerique(bon.utilisable_des) });
+}
+
 /** Libellé de la case du panier. */
 export function libelleUtiliserBon(bon: BonClient, t: TextesBons, langue: Langue): string {
-  if (bon.origine === "bienvenue") return remplir(t.utiliserBonBienvenue, { montant: formaterPrix(bon.montant, langue) });
+  if (bon.origine === "bienvenue" || bon.origine === "inscription_boutique") return remplir(t.utiliserBonBienvenue, { montant: formaterPrix(bon.montant, langue) });
   if (bon.origine === "campagne") return remplir(t.utiliserBonProgramme, { nom: (langue === "ar" ? bon.nom_ar : bon.nom_fr) ?? bon.nom_fr ?? "", montant: formaterPrix(bon.montant, langue) });
   return t.utiliserBon;
 }
@@ -34,6 +43,7 @@ export function texteRaisonBon(bon: BonClient, raison: RaisonBonPanier, t: Texte
     case "ville": return t.raisonVille;
     case "plafond_boutique": return t.raisonPlafond;
     case "boutique_exclue": return t.raisonBoutique;
+    case "pas_aujourdhui": return t.raisonPasAujourdhui;
     default: return null;
   }
 }

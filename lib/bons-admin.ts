@@ -7,9 +7,11 @@ import { montantDA } from "./parrainage-admin";
 type Client = SupabaseClient<Database>;
 
 export type ProgrammeAdmin = {
-  id: string; type: "bienvenue" | "campagne" | "avis"; nom_fr: string; nom_ar: string; code: string | null; montant: number; minimum_achat: number;
+  id: string; type: "bienvenue" | "campagne" | "avis" | "inscription_boutique"; nom_fr: string; nom_ar: string; code: string | null; montant: number; minimum_achat: number;
   univers: string | null; villes: string[]; debut: string; fin: string | null; validite_jours: number; budget: number;
   plafond_par_boutique: number | null; actif: boolean; ouvert: boolean; emis: number; utilises: number; rembourse: number; restant: number;
+  /** US-31.4 : programme « inscription_boutique » (part de la boutique d'origine, plafond par boutique et par mois). */
+  part_boutique?: number; plafond_inscriptions_mois?: number | null;
 };
 export type SignalBoutique = {
   boutique_id: string; boutique: string; slug: string; servis: number; prix: number; prix_le: string | null; nouveaux: number;
@@ -56,6 +58,8 @@ export function conditionsProgramme(p: ProgrammeAdmin): string {
   morceaux.push(p.fin ? `du ${jourMois(p.debut)} au ${jourMois(new Date(new Date(p.fin).getTime() - 1).toISOString())}` : `depuis le ${jourMois(p.debut)}`);
   morceaux.push(`bon valable ${p.validite_jours} jours`);
   if (p.plafond_par_boutique) morceaux.push(`plafond ${p.plafond_par_boutique} bons par boutique`);
+  if (p.part_boutique) morceaux.push(`part de la boutique d’origine ${montantDA(p.part_boutique)}`);
+  if (p.plafond_inscriptions_mois) morceaux.push(`${p.plafond_inscriptions_mois} inscriptions récompensées par boutique et par mois`);
   return morceaux.join(" · ");
 }
 

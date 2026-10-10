@@ -60,7 +60,7 @@ describe("US-31.2 : boutiques suivies", () => {
 
   it("US-31.3 : compteur de l'espace (un nombre seulement), masqué si la lecture échoue", async () => {
     const rpc = vi.fn().mockResolvedValue({ data: { total: 12, sept_jours: 3 }, error: null });
-    expect(await lireAbonnesBoutique({ rpc } as never)).toEqual({ total: 12, sept_jours: 3 });
+    expect(await lireAbonnesBoutique({ rpc } as never)).toMatchObject({ total: 12, sept_jours: 3, inscrits: 0, bons_inscription_mois: null });
     expect(rpc).toHaveBeenCalledWith("abonnes_boutique");
     expect(await lireAbonnesBoutique({ rpc: vi.fn().mockResolvedValue({ data: null, error: { code: "42501" } }) } as never)).toBeNull();
     expect(await lireAbonnesBoutique({ rpc: vi.fn().mockResolvedValue({ data: { total: "x" }, error: null }) } as never)).toBeNull();
@@ -68,5 +68,8 @@ describe("US-31.2 : boutiques suivies", () => {
     expect(texteAbonnes({ total: 12, sept_jours: 3 })).toBe("12 clients suivent votre boutique · +3 cette semaine");
     expect(texteAbonnes({ total: 1, sept_jours: 0 })).toBe("1 client suit votre boutique");
     expect(texteAbonnes({ total: 0, sept_jours: 0 })).toBe("Aucun client ne suit encore votre boutique.");
+    // US-31.4 (maquette, écran ⑥) : « dont 9 inscrits en boutique ».
+    expect(texteAbonnes({ total: 12, sept_jours: 4, inscrits: 9 })).toBe("12 clients suivent votre boutique · +4 cette semaine · dont 9 inscrits en boutique");
+    expect(texteAbonnes({ total: 2, sept_jours: 0, inscrits: 1 })).toBe("2 clients suivent votre boutique · dont 1 inscrit en boutique");
   });
 });

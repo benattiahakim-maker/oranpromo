@@ -145,11 +145,11 @@ describe("US-27.5 export CSV", () => {
     const csv = csvReleves([releve({ lignes: [ligne(), ligne({ id: "l2", numero_commande: 131, statut: "de_cote", mode_remise: "code" })] }), releve({ boutique: { id: "C", nom: "Chez Amel", slug: "chez-amel", bons_acceptes: true }, statut: "paye", reference_paiement: "CCP 77" })]);
     expect(csv.startsWith("\uFEFF")).toBe(true);
     const lignes = csv.slice(1).trimEnd().split("\r\n");
-    expect(lignes[0]).toBe("mois;boutique;slug;numero_commande;date_remise;mode_remise;client;total_commande;bon;a_rembourser;etat_ligne;etat_releve;reference_paiement;origine");
-    expect(lignes[1]).toBe("2026-10;Boutique Nour;boutique-nour;128;05/10/2026 14:32;qr;Samia B.;3500;300;300;a_rembourser;a_payer;;Parrainage");
-    expect(lignes[2]).toBe("2026-10;Boutique Nour;boutique-nour;131;05/10/2026 14:32;code;Samia B.;3500;300;0;de_cote;a_payer;;Parrainage");
-    expect(lignes[3]).toBe("2026-10;Boutique Nour;boutique-nour;TOTAL;;;;;600;300;;a_payer;;");
-    expect(lignes[5]).toBe("2026-10;Chez Amel;chez-amel;TOTAL;;;;;300;300;;paye;CCP 77;");
+    expect(lignes[0]).toBe("mois;boutique;slug;numero_commande;date_remise;mode_remise;client;total_commande;bon;a_rembourser;etat_ligne;etat_releve;reference_paiement;origine;part_boutique");
+    expect(lignes[1]).toBe("2026-10;Boutique Nour;boutique-nour;128;05/10/2026 14:32;qr;Samia B.;3500;300;300;a_rembourser;a_payer;;Parrainage;0");
+    expect(lignes[2]).toBe("2026-10;Boutique Nour;boutique-nour;131;05/10/2026 14:32;code;Samia B.;3500;300;0;de_cote;a_payer;;Parrainage;0");
+    expect(lignes[3]).toBe("2026-10;Boutique Nour;boutique-nour;TOTAL;;;;;600;300;;a_payer;;;");
+    expect(lignes[5]).toBe("2026-10;Chez Amel;chez-amel;TOTAL;;;;;300;300;;paye;CCP 77;;");
     expect(lignes).toHaveLength(6);
     expect(csv).not.toMatch(/\+213|0555/);
   });
@@ -166,9 +166,16 @@ describe("US-27.5 export CSV", () => {
   it("US-33.5 : colonne origine (nom de la campagne, Bienvenue)", () => {
     const csv = csvReleves([releve({ lignes: [ligne({ origine: "campagne", programme_id: "p1", libelle_origine: "Aïd 2026" }), ligne({ id: "l2", origine: "bienvenue" })] })]);
     const lignes = csv.slice(1).trimEnd().split("\r\n");
-    expect(lignes[1].endsWith(";Aïd 2026")).toBe(true);
-    expect(lignes[2].endsWith(";Bienvenue")).toBe(true);
+    expect(lignes[1].endsWith(";Aïd 2026;0")).toBe(true);
+    expect(lignes[2].endsWith(";Bienvenue;0")).toBe(true);
     expect(lignes[3].endsWith(";")).toBe(true);
+  });
+  it("US-31.4 : bon d'inscription utilisé dans la boutique d'origine : à rembourser = bon − part de la boutique", () => {
+    const csv = csvReleves([releve({ lignes: [ligne({ montant: 500, origine: "inscription_boutique", part_boutique: 250 }), ligne({ id: "l2", montant: 500, origine: "inscription_boutique", part_boutique: 0 })] })]);
+    const lignes = csv.slice(1).trimEnd().split("\r\n");
+    expect(lignes[1]).toMatch(/;3500;500;250;a_rembourser;a_payer;;Inscription en boutique;250$/);
+    expect(lignes[2]).toMatch(/;3500;500;500;a_rembourser;a_payer;;Inscription en boutique;0$/);
+    expect(lignes[3]).toBe("2026-10;Boutique Nour;boutique-nour;TOTAL;;;;;1000;750;;a_payer;;;");
   });
   it("nom du fichier", () => { expect(nomFichierCsv("2026-11-01")).toBe("bledeal-bons-2026-11.csv"); });
 });

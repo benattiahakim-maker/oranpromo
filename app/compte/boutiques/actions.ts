@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { COOKIE_SUIVRE, DUREE_COOKIE_SUIVRE, erreurAbonnement, uuidValide, type ErreurAbonnement } from "@/lib/abonnements";
 import { slugValide } from "@/lib/lien-boutique";
-import { COOKIE_INSCRIPTION, lireResultatInscription } from "@/lib/inscription-boutique";
+import { COOKIE_INSCRIPTION, lireResultatInscription, type BonInscription } from "@/lib/inscription-boutique";
 
 // US-31.2 : suivre / ne plus suivre une boutique. La base contrôle tout (client seulement, boutique validée, 200 au plus) ;
 // le texte affiché est choisi par le composant (section « suivre » de lib/textes) à partir de la clé d'erreur.
@@ -57,7 +57,7 @@ export async function suivreApresConnexion(slug: string): Promise<ResultatSuivi>
  * US-31.3 : de retour sur la vitrine après le QR code de l'affiche (/i/<slug>) et la connexion : suit la boutique et
  * rattache un compte nouveau (règles dans rattacher_inscription), si le cookie désigne bien cette vitrine. Cookie effacé.
  */
-export async function rattacherInscription(slug: string): Promise<ResultatSuivi & { rattache?: boolean }> {
+export async function rattacherInscription(slug: string): Promise<ResultatSuivi & { rattache?: boolean; bon?: BonInscription }> {
   const magasin = await cookies();
   const garde = magasin.get(COOKIE_INSCRIPTION)?.value;
   if (!garde || garde !== slug || !slugValide(slug)) return { succes: false, suivie: false };
@@ -67,5 +67,6 @@ export async function rattacherInscription(slug: string): Promise<ResultatSuivi 
   magasin.delete(COOKIE_INSCRIPTION);
   const { data, error } = await supabase.rpc("rattacher_inscription", { slug_boutique: slug });
   if (error) return { succes: false, suivie: false, erreur: erreurAbonnement(error) };
-  return { succes: true, suivie: true, rattache: lireResultatInscription(data).rattache };
+  const resultat = lireResultatInscription(data);
+  return { succes: true, suivie: true, rattache: resultat.rattache, bon: resultat.bon }; // US-31.4 : bon de bienvenue
 }

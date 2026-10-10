@@ -75,10 +75,10 @@ select pg_temp.ok(suivre_boutique('d3100000-0000-0000-0000-000000000001'), 'clie
 -- 4. La boutique : un nombre seulement, jamais la table.
 select pg_temp.compte('b3100000-0000-0000-0000-000000000001');
 select pg_temp.ok((select count(*) from abonnements_boutique) = 0, 'boutique : ne lit aucune ligne (ne sait pas qui la suit)');
-select pg_temp.ok(abonnes_boutique() = '{"total": 3, "sept_jours": 3}'::jsonb, 'boutique : 3 abonnés, 3 cette semaine');
+select pg_temp.ok(abonnes_boutique() @> '{"total": 3, "sept_jours": 3}'::jsonb, 'boutique : 3 abonnés, 3 cette semaine'); -- US-31.4 : + inscrits et bons d'inscription
 select pg_temp.erreur($$select suivre_boutique('d3100000-0000-0000-0000-000000000004')$$, '42501', 'Seuls les clients', 'commerçant : ne suit pas');
 select pg_temp.compte('b3100000-0000-0000-0000-000000000002');
-select pg_temp.ok(abonnes_boutique() = '{"total": 0, "sept_jours": 0}'::jsonb, 'autre boutique : 0 (compte seulement les siens)');
+select pg_temp.ok(abonnes_boutique() @> '{"total": 0, "sept_jours": 0}'::jsonb, 'autre boutique : 0 (compte seulement les siens)');
 
 -- 5. Admin : lit tout.
 select pg_temp.compte('a3100000-0000-0000-0000-000000000001');
@@ -98,7 +98,7 @@ select pg_temp.compte(null);
 update abonnements_boutique set cree_le = now() - interval '8 days' where profil_id = 'c3100000-0000-0000-0000-000000000001';
 set local role authenticated;
 select pg_temp.compte('b3100000-0000-0000-0000-000000000001');
-select pg_temp.ok(abonnes_boutique() = '{"total": 3, "sept_jours": 2}'::jsonb, 'boutique : 3 au total, 2 cette semaine');
+select pg_temp.ok(abonnes_boutique() @> '{"total": 3, "sept_jours": 2}'::jsonb, 'boutique : 3 au total, 2 cette semaine');
 reset role;
 
 -- 8. Plafond de 200 boutiques par compte.

@@ -25,7 +25,8 @@ export function bonApplicable(total: number, bonDisponible: boolean): boolean {
 
 /** Réponses de utiliser_bon(). */
 // US-33.1 : « univers », « ville », « plafond_boutique » pour les bons de bienvenue et de campagne.
-export const RESULTATS_BON = ["applique", "aucun_bon", "minimum", "boutique_exclue", "deja", "univers", "ville", "plafond_boutique"] as const;
+// US-31.4 : « pas_aujourdhui » (bon d'inscription, boutique d'origine, le jour de l'inscription).
+export const RESULTATS_BON = ["applique", "aucun_bon", "minimum", "boutique_exclue", "deja", "univers", "ville", "plafond_boutique", "pas_aujourdhui"] as const;
 export type ResultatBon = (typeof RESULTATS_BON)[number];
 
 export function resultatBon(valeur: unknown): ResultatBon | null {
@@ -78,12 +79,14 @@ export function releveDuMois(mois: string): string {
 }
 
 /** Un bon tel que le renvoie mes_bons() (jamais d'autre compte). */
-export type OrigineBon = "parrainage_filleul" | "parrainage_parrain" | "bienvenue" | "campagne";
+export type OrigineBon = "parrainage_filleul" | "parrainage_parrain" | "bienvenue" | "campagne" | "inscription_boutique";
 export type BonClient = {
   id: string; montant: number; statut: StatutBon; origine: OrigineBon;
   cree_le: string; expire_le: string | null; utilise_le: string | null; commande: string | null; numero: number | null; boutique: string | null;
   /** US-33.1 : règles copiées du programme (parrainage : 1 000 DA sur le total, sans univers ni ville). */
   minimum_achat?: number; univers?: string | null; villes?: string[]; nom_fr?: string | null; nom_ar?: string | null;
+  /** US-31.4 : bon d'inscription en boutique, utilisable dans la boutique d'origine à partir de cette heure. */
+  utilisable_des?: string | null; boutique_origine?: string | null;
 };
 
 /** Bon utilisable au panier : disponible, pas expiré ; celui qui finit le plus tôt d'abord (comme utiliser_bon). */
@@ -94,7 +97,7 @@ export function bonDisponible(bons: BonClient[], maintenant: Date = new Date()):
 
 /** US-33.2 : bon d'un programme (bienvenue, campagne) ou de parrainage. */
 export function estBonProgramme(bon: Pick<BonClient, "origine">): boolean {
-  return bon.origine === "bienvenue" || bon.origine === "campagne";
+  return bon.origine === "bienvenue" || bon.origine === "campagne" || bon.origine === "inscription_boutique";
 }
 
 /** Achat minimum d'un bon (parrainage : 1 000 DA, fixé par la base ; programmes : copié du programme). */
@@ -116,7 +119,7 @@ export function bonPourTotal(bons: BonClient[], total: number, maintenant: Date 
 /** US-33.3 : bons proposés au panier, chacun avec sa raison (celle de la base quand elle est connue, sinon le
  *  minimum sur le total), et le bon retenu : celui choisi s'il s'applique, sinon le premier qui s'applique (le plus
  *  gros, comme utiliser_bon), sinon celui au plus petit minimum (non applicable). */
-export type RaisonBonPanier = "ok" | "minimum" | "univers" | "ville" | "plafond_boutique" | "boutique_exclue";
+export type RaisonBonPanier = "ok" | "minimum" | "univers" | "ville" | "plafond_boutique" | "boutique_exclue" | "pas_aujourdhui";
 export type OptionBon = { bon: BonClient; raison: RaisonBonPanier };
 export function choixBons(bons: BonClient[], total: number, raisons: Record<string, string> | null, choisi: string | null, maintenant: Date = new Date()):
   { options: OptionBon[]; retenu: BonPropose | null } {
@@ -124,7 +127,7 @@ export function choixBons(bons: BonClient[], total: number, raisons: Record<stri
     .sort((a, b) => b.montant - a.montant || a.expire_le!.localeCompare(b.expire_le!) || a.cree_le.localeCompare(b.cree_le));
   const options = valables.map(bon => {
     const r = raisons?.[bon.id];
-    const raison: RaisonBonPanier = r === "ok" || r === "minimum" || r === "univers" || r === "ville" || r === "plafond_boutique" || r === "boutique_exclue"
+    const raison: RaisonBonPanier = r === "ok" || r === "minimum" || r === "univers" || r === "ville" || r === "plafond_boutique" || r === "boutique_exclue" || r === "pas_aujourdhui"
       ? r : total >= minimumBon(bon) ? "ok" : "minimum";
     return { bon, raison };
   });
@@ -160,7 +163,7 @@ export function etatBon(bon: BonClient, langue: Langue = "fr", maintenant: Date 
 
 /** Raison affichée sur le suivi quand le bon coché n'a pas pu être posé (la commande reste au prix plein). */
 // US-33.3 : « univers », « ville », « plafond_boutique » (bons de campagne).
-const RAISONS_NON_APPLIQUE = ["aucun_bon", "minimum", "boutique_exclue", "univers", "ville", "plafond_boutique", "erreur"] as const;
+const RAISONS_NON_APPLIQUE = ["aucun_bon", "minimum", "boutique_exclue", "univers", "ville", "plafond_boutique", "pas_aujourdhui", "erreur"] as const;
 export type RaisonBonNonApplique = (typeof RAISONS_NON_APPLIQUE)[number];
 export function raisonBonNonApplique(valeur: unknown): RaisonBonNonApplique | null {
   return (RAISONS_NON_APPLIQUE as readonly unknown[]).includes(valeur) ? (valeur as RaisonBonNonApplique) : null;

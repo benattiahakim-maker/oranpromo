@@ -75,7 +75,11 @@ describe("US-31.2 : suivre une boutique", () => {
     expect(etat.rpc).not.toHaveBeenCalled();
     etat.inscription = "chez-amine";
     etat.rpc.mockResolvedValue({ data: { suivie_nouvelle: true, rattache: true }, error: null });
-    expect(await rattacherInscription("chez-amine")).toEqual({ succes: true, suivie: true, rattache: true });
+    expect(await rattacherInscription("chez-amine")).toEqual({ succes: true, suivie: true, rattache: true, bon: null });
+    // US-31.4 : bon de bienvenue donné au rattachement.
+    etat.inscription = "chez-amine";
+    etat.rpc.mockResolvedValue({ data: { suivie_nouvelle: false, rattache: true, bon: "donne" }, error: null });
+    expect(await rattacherInscription("chez-amine")).toEqual({ succes: true, suivie: true, rattache: true, bon: "donne" });
     expect(etat.rpc).toHaveBeenCalledWith("rattacher_inscription", { slug_boutique: "chez-amine" });
     expect(etat.supprimer).toHaveBeenCalledWith("inscription_boutique");
   });

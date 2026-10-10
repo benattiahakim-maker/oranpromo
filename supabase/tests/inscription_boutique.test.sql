@@ -50,12 +50,12 @@ insert into commandes (client_id, boutique_id, client_nom, client_telephone, tot
 -- 1. Compte nouveau (moins de 24 h, aucune commande) : suit la boutique et est rattaché, une seule fois.
 set local role authenticated;
 select pg_temp.compte('c3130000-0000-0000-0000-000000000001');
-select pg_temp.ok(rattacher_inscription('boutique-affiche-313') = '{"rattache": true, "suivie_nouvelle": true}'::jsonb, 'nouveau compte : suit et est rattaché');
+select pg_temp.ok(rattacher_inscription('boutique-affiche-313') @> '{"rattache": true, "suivie_nouvelle": true}'::jsonb, 'nouveau compte : suit et est rattaché');
 select pg_temp.ok((select source from abonnements_boutique where profil_id = 'c3130000-0000-0000-0000-000000000001') = 'inscription_boutique',
   'abonnement de source « inscription_boutique »');
 select pg_temp.ok((select boutique_id from inscriptions_boutique) = 'd3130000-0000-0000-0000-000000000001', 'le client lit son rattachement');
-select pg_temp.ok(rattacher_inscription('boutique-affiche-313') = '{"rattache": false, "suivie_nouvelle": false}'::jsonb, 'deuxième passage : rien de nouveau');
-select pg_temp.ok(rattacher_inscription('boutique-deux-313') = '{"rattache": false, "suivie_nouvelle": true}'::jsonb,
+select pg_temp.ok(rattacher_inscription('boutique-affiche-313') @> '{"rattache": false, "suivie_nouvelle": false}'::jsonb, 'deuxième passage : rien de nouveau');
+select pg_temp.ok(rattacher_inscription('boutique-deux-313') @> '{"rattache": false, "suivie_nouvelle": true}'::jsonb,
   'autre affiche : suit la 2e boutique, mais le rattachement reste à la première');
 select pg_temp.ok((select count(*) from inscriptions_boutique) = 1
   and (select boutique_id from inscriptions_boutique) = 'd3130000-0000-0000-0000-000000000001', 'un seul rattachement, définitif');
@@ -68,16 +68,16 @@ select pg_temp.erreur($$delete from inscriptions_boutique$$, '42501', 'permissio
 
 -- 2. Compte de plus de 24 h : suit, pas de rattachement.
 select pg_temp.compte('c3130000-0000-0000-0000-000000000002');
-select pg_temp.ok(rattacher_inscription('boutique-affiche-313') = '{"rattache": false, "suivie_nouvelle": true}'::jsonb, 'ancien compte : suit sans rattachement');
+select pg_temp.ok(rattacher_inscription('boutique-affiche-313') @> '{"rattache": false, "suivie_nouvelle": true}'::jsonb, 'ancien compte : suit sans rattachement');
 select pg_temp.ok((select count(*) from inscriptions_boutique) = 0, 'ancien compte : ne voit pas le rattachement des autres');
 
 -- 3. Compte avec une commande : suit, pas de rattachement.
 select pg_temp.compte('c3130000-0000-0000-0000-000000000003');
-select pg_temp.ok(rattacher_inscription('boutique-affiche-313') = '{"rattache": false, "suivie_nouvelle": true}'::jsonb, 'compte avec commande : suit sans rattachement');
+select pg_temp.ok(rattacher_inscription('boutique-affiche-313') @> '{"rattache": false, "suivie_nouvelle": true}'::jsonb, 'compte avec commande : suit sans rattachement');
 
 -- 4. Compte bloqué (nouveau) : suit et est rattaché, il ne peut toujours pas commander (blocage inchangé).
 select pg_temp.compte('c3130000-0000-0000-0000-000000000004');
-select pg_temp.ok(rattacher_inscription('boutique-affiche-313') = '{"rattache": true, "suivie_nouvelle": true}'::jsonb, 'compte bloqué : suit et est rattaché');
+select pg_temp.ok(rattacher_inscription('boutique-affiche-313') @> '{"rattache": true, "suivie_nouvelle": true}'::jsonb, 'compte bloqué : suit et est rattaché');
 select pg_temp.ok((select bloque from profils where id = 'c3130000-0000-0000-0000-000000000004'), 'compte bloqué : toujours bloqué');
 
 -- 5. Commerçant et admin : refusés (seuls les clients suivent), rien n'est rattaché.
@@ -105,7 +105,7 @@ insert into boutiques (nom, slug, quartier, whatsapp, statut, ville)
 insert into abonnements_boutique (profil_id, boutique_id) select 'c3130000-0000-0000-0000-000000000005', id from boutiques where slug like 'plafond-313-%';
 set local role authenticated;
 select pg_temp.compte('c3130000-0000-0000-0000-000000000005');
-select pg_temp.ok(rattacher_inscription('boutique-affiche-313') = '{"rattache": true, "suivie_nouvelle": false}'::jsonb, 'plafond atteint : rattaché, pas de 201e abonnement');
+select pg_temp.ok(rattacher_inscription('boutique-affiche-313') @> '{"rattache": true, "suivie_nouvelle": false}'::jsonb, 'plafond atteint : rattaché, pas de 201e abonnement');
 reset role;
 
 -- 8. La boutique ne lit que le nombre (abonnes_boutique), jamais les lignes.
