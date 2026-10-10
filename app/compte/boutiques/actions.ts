@@ -5,6 +5,8 @@ import { creerClientServeur } from "@/lib/supabase/server";
 import { COOKIE_SUIVRE, DUREE_COOKIE_SUIVRE, erreurAbonnement, uuidValide, type ErreurAbonnement } from "@/lib/abonnements";
 import { slugValide } from "@/lib/lien-boutique";
 import { COOKIE_INSCRIPTION, lireResultatInscription, type BonInscription } from "@/lib/inscription-boutique";
+import { erreurAlertes, type ErreurAlertes } from "@/lib/alertes-whatsapp";
+import { getLangue } from "@/lib/langue-serveur";
 
 // US-31.2 : suivre / ne plus suivre une boutique. La base contrôle tout (client seulement, boutique validée, 200 au plus) ;
 // le texte affiché est choisi par le composant (section « suivre » de lib/textes) à partir de la clé d'erreur.
@@ -69,4 +71,30 @@ export async function rattacherInscription(slug: string): Promise<ResultatSuivi 
   if (error) return { succes: false, suivie: false, erreur: erreurAbonnement(error) };
   const resultat = lireResultatInscription(data);
   return { succes: true, suivie: true, rattache: resultat.rattache, bon: resultat.bon }; // US-31.4 : bon de bienvenue
+}
+
+/**
+ * US-31.5 : accord aux alertes WhatsApp « nouvelles promos » (case séparée, jamais cochée d'office ; la base refuse si
+ * les alertes ne sont pas proposées). La langue du site est gardée pour le message ; la base journalise l'accord.
+ */
+export type ResultatAlertes = { succes: boolean; actives: boolean; erreur?: ErreurAlertes };
+
+export async function activerAlertes(source: "vitrine" | "compte"): Promise<ResultatAlertes> {
+  if (source !== "vitrine" && source !== "compte") return { succes: false, actives: false, erreur: "erreur" };
+  const supabase = await creerClientServeur();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { succes: false, actives: false, erreur: "connexion" };
+  const { error } = await supabase.rpc("activer_alertes_whatsapp", { langue: await getLangue(), source });
+  if (error) return { succes: false, actives: false, erreur: erreurAlertes(error) };
+  return { succes: true, actives: true };
+}
+
+/** Arrêt des alertes depuis le compte (toujours possible). */
+export async function desactiverAlertes(): Promise<ResultatAlertes> {
+  const supabase = await creerClientServeur();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { succes: false, actives: true, erreur: "connexion" };
+  const { error } = await supabase.rpc("desactiver_alertes_whatsapp");
+  if (error) return { succes: false, actives: true, erreur: erreurAlertes(error) };
+  return { succes: true, actives: false };
 }

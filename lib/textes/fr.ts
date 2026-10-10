@@ -229,6 +229,31 @@ export const fr = {
     bonDonne: "Votre bon de bienvenue est dans votre compte, « Mes bons ».",
     bonApresNumero: "Vérifiez votre numéro dans votre compte pour recevoir votre bon de bienvenue.",
   },
+  // US-31.5 : alerte WhatsApp « nouvelles promos » (maquette SuivreBoutique, écrans ②, ④ et ⑨). Proposée seulement quand
+  // le propriétaire l'allume (après la relecture de l'avocat et l'approbation du modèle par Meta).
+  alertes: {
+    vousSuivez: "Vous suivez {nom}. Retrouvez-la dans votre compte, « Mes boutiques ».",
+    caseAccord: "Recevoir sur WhatsApp les nouvelles promos des boutiques que je suis (un message par jour au plus). Je peux arrêter à tout moment.",
+    enregistrer: "Enregistrer",
+    enCours: "Un instant…",
+    activees: "Alertes WhatsApp activées : un message par jour au plus, quand une boutique que vous suivez a de nouvelles promos.",
+    pasDAlerte: "C’est noté : pas d’alerte WhatsApp.",
+    titre: "Alertes WhatsApp",
+    etatActives: "Activées : un message par jour au plus.",
+    etatDesactivees: "Désactivées.",
+    activer: "Activer",
+    desactiver: "Désactiver",
+    connexion: "Connectez-vous pour gérer les alertes.",
+    nonProposees: "Les alertes WhatsApp ne sont pas encore proposées.",
+    erreur: "Action impossible pour le moment. Réessayez.",
+    // Page du lien « Ne plus recevoir » (/alertes/<jeton>), sans connexion.
+    lienQuestion: "Ne plus recevoir sur WhatsApp les nouvelles promos des boutiques que vous suivez ?",
+    lienBouton: "Ne plus recevoir",
+    lienFait: "Vous ne recevrez plus d’alertes.",
+    lienToujours: "Vous suivez toujours vos boutiques.",
+    lienInvalide: "Ce lien n’est pas valide.",
+    mesBoutiques: "Mes boutiques",
+  },
   panier: {
     titre: "Mon panier",
     vide: "Votre panier est vide.",

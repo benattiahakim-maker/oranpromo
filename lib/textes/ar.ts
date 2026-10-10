@@ -225,6 +225,29 @@ export const ar: Textes = {
     bonDonne: "بون مرحبا راهو في الحساب نتاعك، « البونات نتاعي ».", // à valider
     bonApresNumero: "أكّد النمرة نتاعك في الحساب باش يجيك بون مرحبا.", // à valider
   },
+  // US-31.5 : textes arabes à faire valider par le propriétaire (n° 9 et 10 du module 17 ; les autres sont nouveaux).
+  alertes: {
+    vousSuivez: "راك تتبّع {nom}. تلقاه في الحساب نتاعك، « الحوانت نتاعي ».", // à valider
+    caseAccord: "نحب يجيني على الواتساب البروموات الجداد تاع الحوانت اللي نتبّعهم (ميساج واحد في النهار على الأكثر). نقدر نحبّس وقتما حبيت.",
+    enregistrer: "سجّل", // à valider
+    enCours: "لحظة…",
+    activees: "التنبيهات في الواتساب راهي خدّامة: ميساج واحد في النهار على الأكثر، كي يكون عند حانوت تتبّعو بروموات جداد.", // à valider
+    pasDAlerte: "مليح: ما يجيك حتى تنبيه في الواتساب.", // à valider
+    titre: "التنبيهات في الواتساب", // à valider
+    etatActives: "خدّامين: ميساج واحد في النهار على الأكثر.", // à valider
+    etatDesactivees: "محبوسين.", // à valider
+    activer: "شعّل", // à valider
+    desactiver: "حبّس", // à valider
+    connexion: "ادخل لحسابك باش تتحكّم في التنبيهات.", // à valider
+    nonProposees: "التنبيهات في الواتساب مازال ما كانوش.", // à valider
+    erreur: "ما قدرناش دابا. عاود جرّب.",
+    lienQuestion: "ما تحبش يجيوك على الواتساب البروموات الجداد تاع الحوانت اللي تتبّعهم؟", // à valider
+    lienBouton: "ما نحبش", // à valider
+    lienFait: "ما عادش يجيوك الميساجات.",
+    lienToujours: "مازال راك تتبّع الحوانت نتاعك.", // à valider
+    lienInvalide: "هاد الرابط ما يخدمش.", // à valider
+    mesBoutiques: "الحوانت نتاعي",
+  },
   panier: {
     titre: "السلة ديالي",
     vide: "السلة فارغة.",

@@ -5,6 +5,8 @@ import { useTextes } from "@/components/FournisseurTextes";
 import { remplir } from "@/lib/langue";
 import type { ErreurAbonnement } from "@/lib/abonnements";
 import { nePlusSuivre, rattacherInscription, seConnecterPourSuivre, suivreApresConnexion, suivreBoutique } from "@/app/compte/boutiques/actions";
+import { ETAT_ALERTES_ETEINTES, proposerApresSuivi, type EtatAlertes } from "@/lib/alertes-whatsapp";
+import AccordAlertes from "@/components/AccordAlertes";
 
 type Props = {
   boutiqueId: string;
@@ -18,16 +20,19 @@ type Props = {
    * connecter) ou « inscription » (il a scanné l'affiche, US-31.3 : suivi et rattachement d'un compte nouveau).
    */
   apresConnexion: "suivre" | "inscription" | null;
+  /** US-31.5 : alertes WhatsApp proposées (réglage de la base) et déjà actives pour ce compte. Éteintes par défaut. */
+  alertes?: EtatAlertes;
 };
 
 // US-31.2 : bouton « Suivre » / « ✓ Suivie » de la vitrine, avec confirmation avant d'arrêter de suivre.
-export default function BoutonSuivre({ boutiqueId, slug, nom, connecte, suivieAuDepart, apresConnexion }: Props) {
+export default function BoutonSuivre({ boutiqueId, slug, nom, connecte, suivieAuDepart, apresConnexion, alertes = ETAT_ALERTES_ETEINTES }: Props) {
   const t = useTextes().suivre;
   const router = useRouter();
   const [suivie, setSuivie] = useState(suivieAuDepart);
   const [confirmation, setConfirmation] = useState(false);
   const [erreur, setErreur] = useState<ErreurAbonnement | null>(null);
   const [bon, setBon] = useState<"donne" | "numero" | null>(null); // US-31.4 : bon de bienvenue de l'inscription en boutique
+  const [vientDeSuivre, setVientDeSuivre] = useState(false); // US-31.5 : l'alerte est proposée juste après « Suivre »
   const [enCours, demarrer] = useTransition();
   const termine = useRef(false);
 
@@ -37,11 +42,11 @@ export default function BoutonSuivre({ boutiqueId, slug, nom, connecte, suivieAu
     demarrer(async () => {
       if (apresConnexion === "inscription") {
         const resultat = await rattacherInscription(slug);
-        if (resultat.succes) { setSuivie(true); setBon(resultat.bon ?? null); router.refresh(); } else if (resultat.erreur) setErreur(resultat.erreur);
+        if (resultat.succes) { setSuivie(true); setVientDeSuivre(true); setBon(resultat.bon ?? null); router.refresh(); } else if (resultat.erreur) setErreur(resultat.erreur);
         return;
       }
       const resultat = await suivreApresConnexion(slug);
-      if (resultat.succes) { setSuivie(true); router.refresh(); } else if (resultat.erreur) setErreur(resultat.erreur);
+      if (resultat.succes) { setSuivie(true); setVientDeSuivre(true); router.refresh(); } else if (resultat.erreur) setErreur(resultat.erreur);
     });
   }, [apresConnexion, slug, router]);
 
@@ -49,7 +54,7 @@ export default function BoutonSuivre({ boutiqueId, slug, nom, connecte, suivieAu
     setErreur(null);
     demarrer(async () => {
       const resultat = await action();
-      if (resultat.succes) { setSuivie(resultat.suivie); setConfirmation(false); router.refresh(); } else setErreur(resultat.erreur ?? "erreur");
+      if (resultat.succes) { setSuivie(resultat.suivie); setVientDeSuivre(resultat.suivie); setConfirmation(false); router.refresh(); } else setErreur(resultat.erreur ?? "erreur");
     });
   }
 
@@ -67,5 +72,6 @@ export default function BoutonSuivre({ boutiqueId, slug, nom, connecte, suivieAu
       : <button type="button" aria-pressed="false" disabled={enCours} onClick={() => agir(() => suivreBoutique(boutiqueId))} className={`${classe} border border-noir`}>{enCours ? t.enCours : t.suivre}</button>}
     {bon && <p role="status" className="mt-2 text-sm">{bon === "donne" ? t.bonDonne : t.bonApresNumero}</p>}
     {erreur && <p role="alert" className="mt-2 text-sm text-erreur">{t[erreur]}</p>}
+    {suivie && vientDeSuivre && !confirmation && proposerApresSuivi(alertes) && <AccordAlertes nom={nom} />}
   </div>;
 }
