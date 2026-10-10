@@ -163,5 +163,5 @@ describe("US-27.5 export CSV", () => {
     const csv = csvReleves([releve({ boutique: { id: "B", nom: "=1+1", slug: "x", bons_acceptes: true } })]);
     expect(csv).toContain(";'=1+1;");
   });
-  it("nom du fichier", () => { expect(nomFichierCsv("2026-11-01")).toBe("oranpromo-bons-2026-11.csv"); });
+  it("nom du fichier", () => { expect(nomFichierCsv("2026-11-01")).toBe("bledeal-bons-2026-11.csv"); });
 });

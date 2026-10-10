@@ -15,7 +15,7 @@ export default function RetraitBoutique({ resume, cle, onAutre }: { resume: Resu
   const [enCours, setEnCours] = useState(false);
   const verrou = useRef(false);
   const parCode = "code" in cle;
-  // US-27.4 : bon parrainage OranPromo déduit du montant à encaisser, remboursé à la boutique sur le relevé du mois de la remise.
+  // US-27.4 : bon parrainage BleDeal déduit du montant à encaisser, remboursé à la boutique sur le relevé du mois de la remise.
   const bon = resume.remise_bon ?? 0;
   const total = resume.total ?? 0;
 
@@ -38,7 +38,7 @@ export default function RetraitBoutique({ resume, cle, onAutre }: { resume: Resu
     <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-full border border-noir text-2xl">✓</span>
     <h2 role="status" className="font-titre text-[26px] font-normal">Commande remise</h2>
     <p className="text-sm">N° {remise.numero} · {formaterPrix(aEncaisser(remise.total ?? 0, remise.remise_bon ?? bon))} · Elle passe en « Récupérée ». Le stock était déjà à jour.</p>
-    {(remise.remise_bon ?? bon) > 0 && <p className="text-sm text-gris">Bon parrainage de {formaterPrix(remise.remise_bon ?? bon)} : OranPromo vous le rembourse ({releveDuMois(moisAlger(remise.terminee_le ? new Date(remise.terminee_le) : new Date()))}).</p>}
+    {(remise.remise_bon ?? bon) > 0 && <p className="text-sm text-gris">Bon parrainage de {formaterPrix(remise.remise_bon ?? bon)} : BleDeal vous le rembourse ({releveDuMois(moisAlger(remise.terminee_le ? new Date(remise.terminee_le) : new Date()))}).</p>}
     <div className="mt-3 w-full">{autre}</div>
     <Link href="/espace/commandes" className="text-sm underline">Voir les commandes</Link>
   </section>;
@@ -51,10 +51,10 @@ export default function RetraitBoutique({ resume, cle, onAutre }: { resume: Resu
       <li key={i} className="flex justify-between gap-3 border-b border-trait py-2"><span>{l.titre} · {l.taille} × {l.quantite}</span><span className="whitespace-nowrap">{formaterPrix(l.prix_unitaire * l.quantite)}</span></li>)}</ul>
     {bon > 0 && <dl className="mt-3 text-sm">
       <div className="flex justify-between py-1"><dt>Sous-total</dt><dd>{formaterPrix(total)}</dd></div>
-      <div className="flex justify-between py-1"><dt>Bon parrainage OranPromo</dt><dd>−{formaterPrix(bon)}</dd></div>
+      <div className="flex justify-between py-1"><dt>Bon parrainage BleDeal</dt><dd>−{formaterPrix(bon)}</dd></div>
     </dl>}
     <p className="mt-4 flex items-center justify-between gap-3 bg-noir px-4 py-3 text-blanc"><span className="etiquette">À encaisser en espèces</span><span className="text-[22px] font-medium whitespace-nowrap">{formaterPrix(aEncaisser(total, bon))}</span></p>
-    {bon > 0 && <p className="mt-2 border border-noir p-3 text-sm">Ces {formaterPrix(bon)} vous sont remboursés par OranPromo ({releveDuMois(moisAlger())}).</p>}
+    {bon > 0 && <p className="mt-2 border border-noir p-3 text-sm">Ces {formaterPrix(bon)} vous sont remboursés par BleDeal ({releveDuMois(moisAlger())}).</p>}
     <p className="mt-3 text-sm text-gris">Vérifiez les articles avec le client avant de remettre. Un proche peut venir à sa place : c’est normal.</p>
     <button type="button" disabled={enCours} onClick={() => void remettre()} className="etiquette mt-4 min-h-12 w-full bg-noir text-blanc">Remis au client</button>
     {message && <p role="alert" className="mt-3 border border-trait p-3 text-sm">{message}</p>}

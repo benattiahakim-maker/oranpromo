@@ -61,7 +61,7 @@ async function contesterMonNoShowEnFrancais(id: string, motif: string): Promise<
   try {
     if (typeof id !== "string" || typeof motif !== "string") throw new Error("Contestation invalide.");
     await contesterNoShow(await creerClientServeur(), id, motif);
-    return { succes: true, message: "Contestation envoyée : OranPromo va l’examiner. En attendant, cette commande ne compte pas dans vos commandes non récupérées." };
+    return { succes: true, message: "Contestation envoyée : BleDeal va l’examiner. En attendant, cette commande ne compte pas dans vos commandes non récupérées." };
   } catch (error) { return { succes: false, message: error instanceof Error ? error.message : "Impossible d’envoyer votre contestation. Réessayez." }; }
 }
 

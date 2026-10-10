@@ -1,4 +1,4 @@
-// Adresse réellement utilisée par le navigateur (ex. http://127.0.0.1:3000 ou https://oranpromo.com).
+// Adresse réellement utilisée par le navigateur (ex. http://127.0.0.1:3000 ou https://bledeal.com).
 // request.url peut indiquer « localhost » en développement : rediriger vers une autre adresse
 // ferait perdre les cookies de session, qui sont liés à l'adresse exacte.
 // Les en-têtes Host / X-Forwarded-Host viennent du client : seuls les hôtes connus sont acceptés

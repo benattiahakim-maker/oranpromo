@@ -21,7 +21,7 @@ describe("US-27.5 export CSV", () => {
     const r = await GET(requete("?mois=2026-10"));
     expect(r.status).toBe(200);
     expect(r.headers.get("content-type")).toBe("text/csv; charset=utf-8");
-    expect(r.headers.get("content-disposition")).toBe('attachment; filename="oranpromo-bons-2026-10.csv"');
+    expect(r.headers.get("content-disposition")).toBe('attachment; filename="bledeal-bons-2026-10.csv"');
     expect(r.headers.get("cache-control")).toBe("no-store");
     const octets = new Uint8Array(await r.arrayBuffer());
     expect([...octets.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);

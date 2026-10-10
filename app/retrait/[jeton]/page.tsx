@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 function Cadre({ children }: { children: React.ReactNode }) {
   return <main className="mx-auto w-full max-w-lg bg-blanc pb-10 text-noir">
-    <header className="flex min-h-12 items-center border-b border-trait px-4"><Link href="/" className="font-titre text-[15px] tracking-[2.5px]">ORANPROMO</Link></header>
+    <header className="flex min-h-12 items-center border-b border-trait px-4"><Link href="/" dir="ltr" className="font-titre text-[22px] leading-none">BleDeal</Link></header>
     {children}
   </main>;
 }

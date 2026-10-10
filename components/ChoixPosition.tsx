@@ -76,7 +76,7 @@ export default function ChoixPosition({ id, latitude, longitude, onChange, desac
     <label className="etiquette" htmlFor={`${id}-lien`}>Coller un lien Google Maps</label>
     <div className="flex gap-2"><input id={`${id}-lien`} type="url" inputMode="url" value={lien} onChange={evenement => { setLien(evenement.target.value); setMessageLien(null); }} onKeyDown={evenement => { if (evenement.key === "Enter") { evenement.preventDefault(); lireLien(); } }} placeholder="https://www.google.com/maps/…/@35.69…" className="min-h-[44px] min-w-0 flex-1 border border-trait bg-blanc px-3 py-2 text-base text-noir" /><button type="button" onClick={lireLien} className="etiquette min-h-[44px] border border-noir px-4">Lire</button></div>
     {messageLien && <p role={messageLien.ok ? "status" : "alert"} className="text-sm">{messageLien.ok ? "✓ " : ""}{messageLien.texte}</p>}
-    <p className="text-sm text-gris">Dans Google Maps : Partager › Copier le lien, puis ouvrez-le et copiez l’adresse complète (avec « @35,… »). Le lien n’est jamais ouvert par OranPromo.</p>
+    <p className="text-sm text-gris">Dans Google Maps : Partager › Copier le lien, puis ouvrez-le et copiez l’adresse complète (avec « @35,… »). Le lien n’est jamais ouvert par BleDeal.</p>
     <details className="text-sm"><summary className="min-h-[44px] cursor-pointer py-3 underline">Saisir les coordonnées à la main</summary>
       <div className="flex flex-col gap-3">
         <label className="etiquette">Latitude<input name="latitude" type="text" inputMode="decimal" value={latitude} placeholder="35,697120" onChange={evenement => onChange(evenement.target.value, longitude)} className={champ} /></label>

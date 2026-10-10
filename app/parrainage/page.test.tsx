@@ -35,7 +35,7 @@ describe("US-27.3 : /parrainage", () => {
   it("invitation : bandeau, champ pré-rempli pour un nouveau client ; code gardé seulement s'il est bien formé", async () => {
     utilisateur.valeur = { id: "k2" }; cookie.parrain = "K7M2QX"; reponses(true, mon({ peut_parrainer: false, peut_choisir: true }));
     let html = await afficher("1");
-    expect(html).toContain("Un ami t’invite sur OranPromo"); expect(html).toContain('value="K7M2QX"');
+    expect(html).toContain("Un ami t’invite sur BleDeal"); expect(html).toContain('value="K7M2QX"');
     cookie.parrain = "<b>";
     html = await afficher("1");
     expect(html).toContain('value=""');

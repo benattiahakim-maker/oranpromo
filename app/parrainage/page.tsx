@@ -7,7 +7,7 @@ import { getLangue } from "@/lib/langue-serveur";
 import { textesDe } from "@/lib/textes";
 import { COOKIE_PARRAIN, lireMonParrainage, preparerInvitation, normaliserCodeParrainage, parrainageOuvert, type MonParrainage } from "@/lib/parrainage";
 
-export const metadata: Metadata = { title: "Parrainage", description: "Parraine tes amis sur OranPromo : un bon de 300 DA chacun, à déduire en boutique." };
+export const metadata: Metadata = { title: "Parrainage", description: "Parraine tes amis sur BleDeal : un bon de 300 DA chacun, à déduire en boutique." };
 export const dynamic = "force-dynamic";
 
 // US-27.3 : page publique du parrainage. Connecté avec un numéro vérifié : code, lien, WhatsApp, QR code.

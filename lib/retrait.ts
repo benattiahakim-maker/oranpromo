@@ -149,6 +149,6 @@ export function messageRetraitBoutique(resume: ResumeRetrait, parCode: boolean):
   }
 }
 
-export const MESSAGE_PAS_QR_RETRAIT = "Ce n’est pas un QR code de retrait OranPromo.";
+export const MESSAGE_PAS_QR_RETRAIT = "Ce n’est pas un QR code de retrait BleDeal.";
 export const MESSAGE_CAMERA_BLOQUEE = "La caméra est bloquée. Autorisez-la dans les réglages du navigateur (cadenas à côté de l’adresse), ou tapez le code.";
 export const NOTE_REMISE_SANS_QR = "Remise sans QR code";

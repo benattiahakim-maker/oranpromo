@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Charte OranPromo : style luxe monochrome (noir, blanc, gris). Angles droits, pas d'ombres. */
+/* Charte BleDeal : style luxe monochrome (noir, blanc, gris). Angles droits, pas d'ombres. */
 :root {
   --noir: #0a0a0a;
   --blanc: #ffffff;

@@ -329,12 +329,12 @@ export const fr = {
   },
   noShows: {
     titre: "Commandes non récupérées ({n})",
-    explication: "La boutique a signalé que vous n’êtes pas venu(e). Si c’est une erreur, contestez dans les {jours} jours : la commande ne compte plus tant qu’OranPromo n’a pas décidé (un compte déjà bloqué le reste jusqu’à cette décision). Une seule contestation à la fois.",
+    explication: "La boutique a signalé que vous n’êtes pas venu(e). Si c’est une erreur, contestez dans les {jours} jours : la commande ne compte plus tant que BleDeal n’a pas décidé (un compte déjà bloqué le reste jusqu’à cette décision). Une seule contestation à la fois.",
     enExamen: "Contestation en cours d’examen",
     refusee: "Contestation refusée : la commande compte",
     votreMotif: "Votre motif : {motif}",
     delaiDepasse: "Délai de contestation dépassé ({jours} jours).",
-    attendre: "Vous pourrez contester celle-ci quand OranPromo aura répondu à votre contestation en cours.",
+    attendre: "Vous pourrez contester celle-ci quand BleDeal aura répondu à votre contestation en cours.",
     contester: "Contester",
     pourquoi: "Pourquoi contestez-vous ?",
     envoi: "Envoi…",
@@ -401,7 +401,7 @@ export const fr = {
     reserveClients: "Le parrainage est réservé aux clients avec un numéro WhatsApp vérifié par code.",
     ferme: "Le parrainage n’est pas encore ouvert. Reviens bientôt !",
     bonTitre: "Ton bon de 300 DA",
-    bonTexte: "Au panier, coche « Utiliser mon bon » : tu paies 300 DA de moins en boutique. C’est OranPromo qui paie ces 300 DA à la boutique.",
+    bonTexte: "Au panier, coche « Utiliser mon bon » : tu paies 300 DA de moins en boutique. C’est BleDeal qui paie ces 300 DA à la boutique.",
     voirMesBons: "Voir mes bons et mes filleuls",
     reglesTitre: "Les règles",
     regle1: "Parrain et filleul ont un numéro vérifié par code WhatsApp.",
@@ -410,8 +410,8 @@ export const fr = {
     regle4: "Les bons arrivent après sa première commande d’au moins 2 000 DA, récupérée avec son QR code, pas à l’inscription.",
     regle5: "Bon valable 60 jours, un par commande, dès 1 000 DA d’achat.",
     regle6: "5 amis récompensés par mois au plus.",
-    regle7: "OranPromo n’écrit jamais à tes amis : c’est toi qui partages.",
-    invite: "Un ami t’invite sur OranPromo", // 12
+    regle7: "BleDeal n’écrit jamais à tes amis : c’est toi qui partages.",
+    invite: "Un ami t’invite sur BleDeal", // 12
     inviteConnexion: "Connecte-toi avec ton numéro WhatsApp, puis valide le code de ton ami.",
     // Saisie du parrain (US-27.2)
     tonParrain: "Ton parrain",
@@ -419,7 +419,7 @@ export const fr = {
     rappel: "Ton bon et celui de ton parrain arrivent après ta première commande d’au moins 2 000 DA, récupérée en boutique avec ton QR code.", // 24
     valider: "Valider",
     envoi: "Envoi…",
-    enregistre: "C’est noté. Si ce numéro est celui d’un client OranPromo, il deviendra ton parrain après ton premier retrait en boutique.", // 9
+    enregistre: "C’est noté. Si ce numéro est celui d’un client BleDeal, il deviendra ton parrain après ton premier retrait en boutique.", // 9
     impossible: "Impossible d’enregistrer ton parrain. Réessaie.",
     parrainEnregistre: "Parrain enregistré",
     modifier: "Modifier",
@@ -444,13 +444,13 @@ export const fr = {
     expire: "Expiré le {date}", // 23
     enFile: "Ton bon arrive le {date} (budget du mois atteint).", // 20
     annule: "Annulé",
-    aideBons: "À utiliser au panier : 300 DA de moins, payés par OranPromo à la boutique.",
+    aideBons: "À utiliser au panier : 300 DA de moins, payés par BleDeal à la boutique.",
     // Accueil et suivi (US-27.3)
     accueilTitre: "Parraine tes amis", // 13
     accueilTexte: "300 DA chacun", // 13
     accueilLien: "Voir",
     merciTitre: "Merci !", // 14
-    merciTexte: "Fais découvrir OranPromo à un ami : 300 DA chacun après sa première commande.", // 14
+    merciTexte: "Fais découvrir BleDeal à un ami : 300 DA chacun après sa première commande.", // 14
     partagerMonLien: "Partager mon lien",
     // Panier et suivi (US-27.4)
     utiliserBon: "Utiliser mon bon parrainage (−300 DA)", // 17

@@ -73,7 +73,7 @@ export async function generateMetadata({ params }: ArticlePageProps) {
     description: article.description || `Découvrez ${article.titre} à ${formaterPrix(prixAfficheValue)} chez ${boutiques?.nom || ''}`,
     openGraph: {
       title: `${article.titre} · ${formaterPrix(prixAfficheValue)}`,
-      description: `${formaterPrix(prixAfficheValue)} · ${article.description || boutiques?.nom || "OranPromo"}`,
+      description: `${formaterPrix(prixAfficheValue)} · ${article.description || boutiques?.nom || "BleDeal"}`,
       images: [...(article.photos ?? [])].sort((a, b) => a.ordre - b.ordre).slice(0, 1).map(photo => ({ url: photo.adresse, alt: article.titre })),
       url: `/a/${id}`,
       type: "website",

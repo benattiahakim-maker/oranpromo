@@ -56,7 +56,7 @@ describe("US-27.3 : lien et partage", () => {
   });
   it("message de partage WhatsApp sans destinataire, en français et en arabe", () => {
     const lien = "https://oranpromo.dz/p/K7M2QX";
-    expect(messagePartageParrainage("fr", lien)).toBe("Je t'invite sur OranPromo, les promos des boutiques d'Oran : https://oranpromo.dz/p/K7M2QX");
+    expect(messagePartageParrainage("fr", lien)).toBe("Je t'invite sur BleDeal, les promos des boutiques près de chez toi : https://oranpromo.dz/p/K7M2QX");
     expect(messagePartageParrainage("ar", lien)).toContain(lien);
     const wa = lienPartageParrainage("fr", lien);
     expect(wa.startsWith("https://wa.me/?text=")).toBe(true);
@@ -83,5 +83,11 @@ describe("US-27.3 : lien et partage", () => {
     expect(await parrainageOuvert(client(vi.fn().mockResolvedValue({ data: false, error: null })))).toBe(false);
     expect(await parrainageOuvert(client(vi.fn().mockResolvedValue({ data: null, error: { message: "x" } })))).toBe(false);
     expect(await parrainageOuvert(client(vi.fn().mockRejectedValue(new Error("réseau"))))).toBe(false);
+  });
+});
+
+describe("US-30.1 : invitation BleDeal (texte 13)", () => {
+  it("arabe : BleDeal en lettres latines, sans ville", () => {
+    expect(messagePartageParrainage("ar", "https://bledeal.com/p/K7M2QX")).toBe("نعرضك لـ BleDeal، التخفيضات تاع الحوانيت اللي قراب ليك: https://bledeal.com/p/K7M2QX");
   });
 });

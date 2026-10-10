@@ -19,8 +19,8 @@ export function essaisRestants(noShows: number): number {
 // Le compteur ne contient que les no-shows de ce compte (migration 20261009233000 : numéro non vérifié),
 // jamais ceux d’un autre compte avec le même numéro.
 export function messageNoShows(noShows: number, bloque: boolean): string | null {
-  if (bloque && noShows < NO_SHOWS_MAX) return "Votre compte est bloqué : vous ne pouvez plus commander. Contactez OranPromo pour le débloquer.";
-  if (bloque) return `Votre compte est bloqué après ${NO_SHOWS_MAX} commandes non récupérées : vous ne pouvez plus commander. Contactez OranPromo pour le débloquer.`;
+  if (bloque && noShows < NO_SHOWS_MAX) return "Votre compte est bloqué : vous ne pouvez plus commander. Contactez BleDeal pour le débloquer.";
+  if (bloque) return `Votre compte est bloqué après ${NO_SHOWS_MAX} commandes non récupérées : vous ne pouvez plus commander. Contactez BleDeal pour le débloquer.`;
   if (noShows <= 0) return null;
   const restants = essaisRestants(noShows);
   return `Attention : ${noShows} commande${noShows > 1 ? "s" : ""} non récupérée${noShows > 1 ? "s" : ""}. Il vous reste ${restants} essai${restants > 1 ? "s" : ""} avant le blocage de votre compte.`;

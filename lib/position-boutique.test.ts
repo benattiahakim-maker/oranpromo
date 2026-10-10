@@ -79,12 +79,12 @@ describe("US-24.2 : position de ma boutique (commerçant)", () => {
     expect(test.updateEq).toHaveBeenCalledWith("id", "ma-boutique");
     expect(test.update).toHaveBeenCalledWith({ latitude: 35.7303, longitude: -0.5784 });
   });
-  it.each(["validee", "suspendue"])("boutique %s : refusée avec « contactez OranPromo », sans écriture", async statut => {
+  it.each(["validee", "suspendue"])("boutique %s : refusée avec « contactez BleDeal », sans écriture", async statut => {
     const test = simulation({ role: "commercant", statut });
     await expect(modifierPositionMaBoutique(test.client, 35.7303, -0.5784)).rejects.toThrow(MESSAGE_POSITION_PUBLIEE);
     expect(test.update).not.toHaveBeenCalled();
   });
-  it("refus de la base (boutique publiée entre-temps) traduit en « contactez OranPromo »", async () => {
+  it("refus de la base (boutique publiée entre-temps) traduit en « contactez BleDeal »", async () => {
     const test = simulation({ role: "commercant", resultat: { data: null, error: { code: "42501", message: "Boutique publiée" } } });
     await expect(modifierPositionMaBoutique(test.client, 35.7303, -0.5784)).rejects.toThrow(MESSAGE_POSITION_PUBLIEE);
   });

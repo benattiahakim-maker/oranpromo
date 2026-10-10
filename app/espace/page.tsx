@@ -28,7 +28,7 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
     articles = resultat.data;
     erreurListe = Boolean(resultat.error);
     // US-22 : bloc « Partager ma boutique » (sans boutique lisible, pas de bloc, la liste reste affichée).
-    if (boutique.data) partage = await preparerPartageBoutique(boutique.data);
+    if (boutique.data) partage = await preparerPartageBoutique({ ...boutique.data, ville: villeLue(boutique.data.villes)?.nom });
     // US-24.2 : bloc « Position sur la carte ».
     // US-29.4 : avec la ville de la boutique (illisible : Oran, comme avant).
     if (boutique.data) position = { statut: boutique.data.statut, latitude: boutique.data.latitude ?? null, longitude: boutique.data.longitude ?? null, zone: villeLue(boutique.data.villes) ?? undefined };

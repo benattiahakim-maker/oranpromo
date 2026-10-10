@@ -15,7 +15,7 @@ describe("US-22 : affiche à imprimer", () => {
   it("affiche le nom, le QR code et le lien de ma boutique", async () => {
     const html = renderToStaticMarkup(await Affiche());
     expect(eqProfil).toHaveBeenCalledWith("id", "compte"); expect(eqBoutique).toHaveBeenCalledWith("id", "boutique");
-    expect(html).toContain("Boutique Nour"); expect(html).toContain("data:image/svg+xml"); expect(html).toContain("https://oranpromo.com/b/boutique-nour"); expect(html).toContain("Scannez pour voir nos articles et nos promos"); expect(html).toContain("Imprimer");
+    expect(html).toContain("Boutique Nour"); expect(html).toContain("data:image/svg+xml"); expect(html).toContain("https://oranpromo.com/b/boutique-nour"); expect(html).toContain("Scannez pour voir nos articles et nos promos"); expect(html).toContain("Imprimer"); expect(html).toContain("BleDeal · Oran");
   });
   it("protège la page même sans le proxy", async () => { getUser.mockResolvedValue({ data: { user: null }, error: null }); await expect(Affiche()).rejects.toThrow("redirection:/espace/connexion"); });
   it("pas d’affiche pour une boutique non validée", async () => { eqBoutique.mockReturnValue(boutique("suspendue")); const html = renderToStaticMarkup(await Affiche()); expect(html).toContain("dès que votre boutique sera validée"); expect(html).not.toContain("data:image/svg+xml"); });

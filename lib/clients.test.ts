@@ -103,7 +103,7 @@ describe("relecture point 11 : no-shows déclarés (admin)", () => {
 
 describe("relecture n°2 US-20 : numéro non vérifié", () => {
   it("n’affiche que le compteur du compte, et un message neutre pour un blocage décidé par l’admin", () => {
-    expect(messageNoShows(0, true)).toBe("Votre compte est bloqué : vous ne pouvez plus commander. Contactez OranPromo pour le débloquer.");
+    expect(messageNoShows(0, true)).toBe("Votre compte est bloqué : vous ne pouvez plus commander. Contactez BleDeal pour le débloquer.");
     expect(messageNoShows(2, true)).not.toContain("5 commandes");
     expect(messageNoShows(5, true)).toContain("après 5 commandes non récupérées");
   });

@@ -48,7 +48,7 @@ export function dansOran(latitude: number, longitude: number): boolean {
 // US-24.2 : saisie de la position (création, /admin/boutiques, /espace).
 // ---------------------------------------------------------------------------
 
-export const MESSAGE_POSITION_PUBLIEE = 'Pour déplacer votre boutique sur la carte, contactez OranPromo.';
+export const MESSAGE_POSITION_PUBLIEE = 'Pour déplacer votre boutique sur la carte, contactez BleDeal.';
 export const MESSAGE_LIEN_COURT =
   'Ce lien court ne contient pas la position. Ouvrez-le dans Google Maps, puis copiez l’adresse complète depuis la barre du navigateur (elle contient « @35,… »), ou utilisez « Je suis dans la boutique ».';
 export const MESSAGE_LIEN_INTROUVABLE = 'Coordonnées introuvables dans ce lien.';

@@ -38,7 +38,7 @@ describe("US-22 : lien public et partage", () => {
     expect(descriptionBoutique("Akid Lotfi", 0)).toContain("nouveaux articles bientôt");
     expect(descriptionBoutique("Akid Lotfi", null)).toBe("Boutique à Akid Lotfi, Oran. Réservez sur WhatsApp, payez en boutique.");
   });
-  it("nomme le fichier du QR code d’après le slug", () => expect(nomFichierQrCode("boutique-nour")).toBe("oranpromo-boutique-nour-qr.svg"));
+  it("nomme le fichier du QR code d’après le slug", () => expect(nomFichierQrCode("boutique-nour")).toBe("bledeal-boutique-nour-qr.svg"));
 });
 
 describe("US-22 : QR code", () => {
@@ -54,7 +54,7 @@ describe("US-22 : aperçu de la vitrine", () => {
     const m = metadonneesBoutique({ nom: "Boutique Nour", quartier: "Akid Lotfi", ville: "Oran", slug: "boutique-nour", photo: "https://x.supabase.co/storage/v1/object/public/photos/b/a/1.jpg", nombreArticles: 3 });
     expect(m.title).toBe("Boutique Nour"); expect(m.description).toContain("3 articles disponibles");
     expect(m.alternates?.canonical).toBe("/b/boutique-nour");
-    expect(m.openGraph).toMatchObject({ title: "Boutique Nour", url: "/b/boutique-nour", siteName: "OranPromo", locale: "fr_FR", type: "website", images: [{ url: "https://x.supabase.co/storage/v1/object/public/photos/b/a/1.jpg", alt: "Boutique Nour" }] });
+    expect(m.openGraph).toMatchObject({ title: "Boutique Nour", url: "/b/boutique-nour", siteName: "BleDeal", locale: "fr_FR", type: "website", images: [{ url: "https://x.supabase.co/storage/v1/object/public/photos/b/a/1.jpg", alt: "Boutique Nour" }] });
     expect(m.twitter).toMatchObject({ card: "summary_large_image", title: "Boutique Nour", images: [{ url: "https://x.supabase.co/storage/v1/object/public/photos/b/a/1.jpg" }] });
   });
   it("sans photo, renvoie vers l’image générée de 1200 × 630", () => {
@@ -88,7 +88,7 @@ describe("US-22 : bloc de partage", () => {
   it("prépare lien, WhatsApp et QR code pour une boutique validée", async () => {
     const partage = await preparerPartageBoutique({ nom: "Boutique Nour", slug: "boutique-nour", statut: "validee" }, "https://oranpromo.com");
     expect(partage.lien).toBe("https://oranpromo.com/b/boutique-nour"); expect(partage.lienWhatsApp).toBe(lienPartageWhatsApp("Boutique Nour", partage.lien));
-    expect(partage.qrCode).toMatch(/^data:image\/svg\+xml;charset=utf-8,%3Csvg/); expect(partage.fichierQrCode).toBe("oranpromo-boutique-nour-qr.svg");
+    expect(partage.qrCode).toMatch(/^data:image\/svg\+xml;charset=utf-8,%3Csvg/); expect(partage.fichierQrCode).toBe("bledeal-boutique-nour-qr.svg");
   });
   it.each(["en_attente", "suspendue"] as const)("ne prépare ni WhatsApp ni QR code pour une boutique %s", async statut => {
     const partage = await preparerPartageBoutique({ nom: "Boutique Nour", slug: "boutique-nour", statut }, "https://oranpromo.com");
@@ -101,5 +101,17 @@ describe("US-29.3 : ville dans l'aperçu", () => {
     expect(descriptionBoutique("Kiffane", 2, "Tlemcen")).toBe("Boutique à Kiffane, Tlemcen · 2 articles disponibles. Réservez sur WhatsApp, payez en boutique.");
     expect(descriptionBoutique("Akid Lotfi", null)).toBe("Boutique à Akid Lotfi, Oran. Réservez sur WhatsApp, payez en boutique.");
     expect(descriptionBoutique("Kiffane", null, null)).toBe("Boutique à Kiffane. Réservez sur WhatsApp, payez en boutique.");
+  });
+});
+
+describe("US-30.1 : BleDeal et ville dans le partage", () => {
+  it("message de partage : BleDeal et la ville de la boutique (Oran par défaut)", () => {
+    expect(messagePartageBoutique("Boutique Nour", "https://bledeal.com/b/boutique-nour")).toBe("Découvrez Boutique Nour sur BleDeal : nos articles et nos promos à Oran, à réserver sur WhatsApp. https://bledeal.com/b/boutique-nour");
+    expect(messagePartageBoutique("Kiffane Mode", "https://bledeal.com/b/kiffane-mode", "Tlemcen")).toContain("nos promos à Tlemcen");
+  });
+  it("bloc de partage : ville gardée pour l'affiche et le message", async () => {
+    const partage = await preparerPartageBoutique({ nom: "Kiffane Mode", slug: "kiffane-mode", statut: "validee", ville: "Tlemcen" }, "https://bledeal.com");
+    expect(partage.ville).toBe("Tlemcen"); expect(decodeURIComponent(partage.lienWhatsApp!)).toContain("nos promos à Tlemcen"); expect(partage.fichierQrCode).toBe("bledeal-kiffane-mode-qr.svg");
+    expect((await preparerPartageBoutique({ nom: "Nour", slug: "nour", statut: "en_attente", ville: null })).ville).toBe("Oran");
   });
 });

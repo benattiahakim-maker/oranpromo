@@ -21,10 +21,10 @@ export const MESSAGES_CONFIRMATION = {
   deja_confirmee: "Cette commande est déjà confirmée.",
   annulee: "Cette commande a été annulée : il n’y a rien à confirmer.",
   expiree: "Cette commande a expiré : il n’y a rien à confirmer.",
-  lien_expire: "Ce lien a expiré. Confirmez la commande dans votre espace OranPromo, rubrique Commandes.",
+  lien_expire: "Ce lien a expiré. Confirmez la commande dans votre espace BleDeal, rubrique Commandes.",
   invalide: "Ce lien n’est pas valide.",
-  indisponible: "La confirmation par lien n’est pas disponible pour le moment. Confirmez la commande dans votre espace OranPromo, rubrique Commandes.",
-  erreur: "La commande n’a pas pu être confirmée. Réessayez, ou confirmez-la dans votre espace OranPromo.",
+  indisponible: "La confirmation par lien n’est pas disponible pour le moment. Confirmez la commande dans votre espace BleDeal, rubrique Commandes.",
+  erreur: "La commande n’a pas pu être confirmée. Réessayez, ou confirmez-la dans votre espace BleDeal.",
 } as const;
 
 export function secretConfirmation(env: Env = process.env): string | null {

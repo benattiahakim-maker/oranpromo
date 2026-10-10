@@ -19,7 +19,7 @@ export default function EntetePublic({ ville, choixVille = false }: { ville?: Pi
   const nom = ville ? nomVille(ville, langue) : "";
   return <header className="mx-auto flex w-full max-w-lg items-center justify-between gap-1 border-b border-trait px-4 py-4">
     <div className="flex min-w-0 items-center gap-2">
-      <Link href={lien("/")} dir="ltr" className="font-titre text-lg tracking-[0.18em]">ORANPROMO</Link>
+      <Link href={lien("/")} dir="ltr" className="font-titre text-[26px] leading-none">BleDeal</Link>
       {ville && choixVille && <Link href={`/villes?${new URLSearchParams({ retour: chemin })}`} aria-label={remplir(t.entete.changerVille, { ville: nom })}
         className="etiquette inline-flex min-h-11 items-center gap-1 whitespace-nowrap px-1 text-[11px]">{nom} <span aria-hidden="true">▾</span></Link>}
     </div>

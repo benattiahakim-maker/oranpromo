@@ -3,7 +3,7 @@ import { CATEGORIES_ARTICLE, UNIVERS, type CleUnivers } from "./article";
 // Images de la page d'accueil : visuels fixes de la marque, rangés dans public/images/accueil/ (WebP).
 // - grande photo : vraie photo d'Oran (Santa Cruz au-dessus du port), Wikimedia Commons, licence libre :
 //   le crédit (auteur, licence, source) est affiché sur la page, voir CREDIT_GRANDE_PHOTO ;
-// - tuiles univers et « pièces phares » : images générées par IA pour OranPromo (propriété du projet).
+// - tuiles univers et « pièces phares » : images générées par IA pour BleDeal (propriété du projet).
 // Aucune image externe chargée à l'affichage.
 export const PIECES_PHARES = ["Robes", "Abayas, djellabas, kamis", "T-shirts et polos", "Pantalons et jeans", "Chaussures", "Parfums"] as const;
 
@@ -19,7 +19,7 @@ export const GRANDE_PHOTO: ImageAccueil & { position: string } = { adresse: `${D
 /** US-29.3 (question 7) : photo commune neutre pour les villes sans photo à elles (image du projet, sans crédit à afficher). */
 export const GRANDE_PHOTO_COMMUNE: ImageAccueil & { position: string } = { adresse: `${DOSSIER}/cat-robes.webp`, alt: "", position: "50% 40%" };
 
-/** Crédit obligatoire (CC BY-SA 4.0) de la grande photo, affiché sous le bouton. Photo recadrée et compressée par OranPromo. */
+/** Crédit obligatoire (CC BY-SA 4.0) de la grande photo, affiché sous le bouton. Photo recadrée et compressée par BleDeal. */
 export const CREDIT_GRANDE_PHOTO: CreditPhoto = {
   auteur: "Bachounda",
   licence: "CC BY-SA 4.0",

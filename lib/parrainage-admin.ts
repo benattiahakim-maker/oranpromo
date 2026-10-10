@@ -289,7 +289,7 @@ export function csvReleves(releves: Pick<ReleveAdmin, "mois" | "statut" | "refer
   return `\uFEFF${lignes.join("\r\n")}\r\n`;
 }
 
-export function nomFichierCsv(mois: string): string { return `oranpromo-bons-${parametreMois(mois)}.csv`; }
+export function nomFichierCsv(mois: string): string { return `bledeal-bons-${parametreMois(mois)}.csv`; }
 
 // ---------- Boutique (/espace) ----------
 export type ReleveBoutique = Pick<ReleveAdmin, "id" | "mois" | "nombre" | "montant" | "statut" | "paye_le" | "reference_paiement"> & { lignes: Pick<LigneReleveAdmin, "id" | "numero_commande" | "remise_le" | "montant" | "statut">[] };

@@ -38,7 +38,7 @@ describe("US-20.6 : bouton « Confirmer la commande »", () => {
     render(<ConfirmerCommande jeton="lien" />);
     const bouton = screen.getByRole("button", { name: "Confirmer la commande" });
     fireEvent.click(bouton); fireEvent.click(bouton);
-    fin({ succes: false, etat: "erreur", message: "La commande n’a pas pu être confirmée. Réessayez, ou confirmez-la dans votre espace OranPromo." });
+    fin({ succes: false, etat: "erreur", message: "La commande n’a pas pu être confirmée. Réessayez, ou confirmez-la dans votre espace BleDeal." });
     expect((await screen.findByRole("alert")).textContent).toContain("Réessayez");
     expect(confirmer).toHaveBeenCalledTimes(1);
     await waitFor(() => expect((screen.getByRole("button", { name: "Confirmer la commande" }) as HTMLButtonElement).disabled).toBe(false));

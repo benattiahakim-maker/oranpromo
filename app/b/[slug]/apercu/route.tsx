@@ -16,7 +16,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
       <div style={{ fontSize: 28, letterSpacing: 8, color: "#6F6F6F", textTransform: "uppercase" }}>{villeLue(boutique.villes)?.nom ? `${boutique.quartier} · ${villeLue(boutique.villes)?.nom}` : boutique.quartier}</div>
       <div style={{ fontSize: boutique.nom.length > 30 ? 64 : 88, marginTop: 28, textAlign: "center", lineHeight: 1.1 }}>{boutique.nom}</div>
       <div style={{ width: 120, height: 2, backgroundColor: "#0A0A0A", marginTop: 40 }} />
-      <div style={{ fontSize: 30, letterSpacing: 10, marginTop: 40, textTransform: "uppercase" }}>OranPromo</div>
+      <div style={{ fontSize: 40, marginTop: 40 }}>BleDeal</div>
       <div style={{ fontSize: 26, color: "#6F6F6F", marginTop: 12 }}>Réservez sur WhatsApp, payez en boutique</div>
     </div>,
     { width: 1200, height: 630, headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400" } },

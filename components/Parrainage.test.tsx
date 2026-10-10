@@ -115,7 +115,7 @@ describe("US-27.3 : page /parrainage", () => {
     expect(html).toContain(invitation.whatsapp.replace(/'/g, "&#x27;")); expect(html).toContain("Copier le lien");
   });
   it("invitation : « Un ami t'invite » ; connecté et encore libre de choisir : champ pré-rempli", () => {
-    expect(page(vue({ invite: true }))).toContain("Un ami t’invite sur OranPromo");
+    expect(page(vue({ invite: true }))).toContain("Un ami t’invite sur BleDeal");
     const html = page(vue({ invite: true, visiteur: "autre", choix: { initial: "K7M2QX", parrainSaisi: false, saisies: 0 } }));
     expect(html).toContain('value="K7M2QX"');
   });
