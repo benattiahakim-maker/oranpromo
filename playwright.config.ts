@@ -40,7 +40,11 @@ export default defineConfig({
     // BLEDEAL_E2E=1 : construction à part dans .next-e2e (next.config.ts).
     command: `npx next build && npx next start -p ${port} -H 127.0.0.1`,
     url: `${site}/villes`,
-    reuseExistingServer: !env.CI,
+    // Jamais de serveur déjà lancé par défaut : Playwright jouait sinon les parcours en silence contre le site qui
+    // occupait le port, construit depuis un AUTRE commit (ou un autre dossier) : les écrans récents manquaient et le
+    // test s'arrêtait sur « Test timeout » (cause de l'échec ponctuel de e2e/avis.spec.ts, « Mots interdits »). Port
+    // occupé : erreur immédiate. Réutilisation seulement demandée exprès : E2E_REUTILISER=1 (site construit de ce commit).
+    reuseExistingServer: env.E2E_REUTILISER === "1",
     timeout: 600_000,
     env: {
       BLEDEAL_E2E: "1",

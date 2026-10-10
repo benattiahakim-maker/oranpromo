@@ -105,7 +105,8 @@ test("avis affichés : vitrine (note à partir de 3 avis, critères), fiche, cat
   await avisDirect(notee.id, 5, "Amine Benali", ["accueil"], "Très bon accueil.");
   await avisDirect(notee.id, 4, "Sara Kaci", ["accueil", "rapidite"], "Un peu d'attente au retrait.");
   await avisDirect(notee.id, 4, "Nadia Mansouri", [], null);
-  const mois = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric", timeZone: "Africa/Algiers" }).format(new Date(Date.now() - 24 * 3600 * 1000));
+  // Mois de l'avis (posé maintenant), pas celui du retrait (la veille) : faux le 1er de chaque mois sinon.
+  const mois = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric", timeZone: "Africa/Algiers" }).format(new Date());
 
   await test.step("vitrine : « ★ 4,3 · 3 avis », critères les plus cités, derniers avis (prénom et initiale, mois)", async () => {
     await page.goto(`/b/${notee.slug}`);
@@ -126,13 +127,14 @@ test("avis affichés : vitrine (note à partir de 3 avis, critères), fiche, cat
   });
 
   await test.step("catalogue : « Mieux notées » met la boutique notée devant, la boutique sans avis à la fin", async () => {
-    const titres = async () => page.getByRole("main").getByRole("heading", { level: 3 }).allInnerTexts();
+    // Assertions qui attendent (le formulaire de tri est un GET classique : la page change après l'adresse).
+    const titres = page.getByRole("main").getByRole("heading", { level: 3 });
     await page.goto(`/oran/catalogue?q=${u}`);
-    expect(await titres()).toEqual([`Abaya ${u} récente`, `Abaya ${u} notée`]);
+    await expect(titres).toHaveText([`Abaya ${u} récente`, `Abaya ${u} notée`]);
     await page.getByLabel("Trier").selectOption({ label: "Mieux notées" });
     await page.getByRole("button", { name: "Rechercher", exact: true }).click();
     await expect(page).toHaveURL(/tri=notes/);
-    expect(await titres()).toEqual([`Abaya ${u} notée`, `Abaya ${u} récente`]);
+    await expect(titres).toHaveText([`Abaya ${u} notée`, `Abaya ${u} récente`]);
     await expect(page.getByText("★ 4,3 · 3 avis")).toBeVisible();
   });
 
