@@ -133,6 +133,10 @@ const FIXES: Record<string, string> = {
   "Un avis est possible seulement sur une commande récupérée avec votre QR code.": "تقدر تعطي رايك غير على طلب ديتو بالـ QR code نتاعك.",
   "Le délai de 14 jours pour donner votre avis est dépassé.": "فاتو 14 يوم: ما بقاش تقدر تعطي رايك على هاد الطلب.",
   "Vous avez déjà donné votre avis sur cette commande.": "راك عطيت رايك على هاد الطلب.",
+  // US-32.4 : signaler un avis (traduction à valider par le propriétaire).
+  "Cet avis n'est plus en ligne.": "هاد الراي ما بقاش في الموقع.",
+  "Vous avez déjà signalé cet avis, merci. Il sera examiné rapidement.": "راك بلّغت على هاد الراي، يعطيك الصحة. راح يتشاف قريب.",
+  "Cet avis a déjà été signalé plusieurs fois, merci. Il sera examiné rapidement.": "هاد الراي تبلّغ عليه بزاف المرات، يعطيك الصحة. راح يتشاف قريب.",
   "Vous ne pouvez pas donner un avis sur votre propre boutique.": "ما تقدرش تعطي رايك على الحانوت نتاعك.",
   "Choisissez une note de 1 à 5 étoiles.": "اختار نقطة من 1 حتى 5 نجوم.",
   "Critère inconnu.": "هاد الاختيار ما كاينش.",

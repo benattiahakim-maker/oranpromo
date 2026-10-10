@@ -1,10 +1,11 @@
 // US-32.3 : avis sur la vitrine (maquette docs/maquettes/AvisBoutiques.dc.html, vues ④ ⑤ ⑩) : note, critères les
-// plus cités, derniers commentaires, « Voir tous les avis ». La mention du bon (US-32.5) n'est pas affichée.
+// plus cités, derniers commentaires, « Voir tous les avis ». US-32.4 : « Signaler » sous chaque avis. La mention du bon (US-32.5) n'est pas affichée.
 import Link from "next/link";
 import { criteresCites, etoiles, formaterMois, type AvisPublic, type ResumeAvis } from "@/lib/avis";
 import { remplir } from "@/lib/langue";
 import type { Textes } from "@/lib/textes";
 import NoteBoutique from "./NoteBoutique";
+import SignalerAvis from "./SignalerAvis";
 
 export function ListeAvis({ avis, t, langue }: { avis: AvisPublic[]; t: Textes["avis"]; langue: "fr" | "ar" }) {
   return <ul className="text-start">{avis.map(a => <li key={a.id} className="border-b border-trait py-4">
@@ -13,6 +14,7 @@ export function ListeAvis({ avis, t, langue }: { avis: AvisPublic[]; t: Textes["
       <span className="text-gris"> · {formaterMois(a.mois, langue)}</span></p>
     {a.commentaire && <p dir="auto" className="mt-1 text-sm font-light leading-[1.6]">{a.commentaire}</p>}
     {a.reponse && <p dir="auto" className="mt-2 border-s-2 border-noir ps-3 text-sm text-gris">{remplir(t.reponseBoutique, { reponse: a.reponse })}</p>}
+    <SignalerAvis avisId={a.id} auteur={a.auteur} t={t} />
   </li>)}</ul>;
 }
 

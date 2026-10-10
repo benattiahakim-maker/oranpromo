@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { adresseIp, cleVisiteur, evenementValide, MESSAGE_SIGNALEMENT_ECHEC, MESSAGE_SIGNALEMENT_INDISPONIBLE, mesurerEvenement, signalerArticle } from "./visiteurs";
+import { adresseIp, cleVisiteur, evenementValide, MESSAGE_SIGNALEMENT_ECHEC, MESSAGE_SIGNALEMENT_INDISPONIBLE, mesurerEvenement, signalerArticle, signalerAvis } from "./visiteurs";
 
 const rpc = vi.fn();
 const client = { rpc } as unknown as SupabaseClient<Database>;
@@ -94,6 +94,34 @@ describe("limites par visiteur : signalements", () => {
     vi.stubEnv("VISITEURS_SECRET", "");
     rpc.mockClear();
     await expect(signalerArticle(client, entetes(), { articleId: ARTICLE, motif: "autre" })).rejects.toThrow(MESSAGE_SIGNALEMENT_INDISPONIBLE);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe("US-32.4 : signaler un avis (mêmes limites que les articles)", () => {
+  const AVIS = "f3240000-0000-0000-0000-000000000002";
+  it("passe par signaler_avis avec le secret, l’empreinte et le commentaire nettoyé", async () => {
+    await signalerAvis(client, entetes(), { avisId: AVIS, motif: "faux_avis", commentaire: "  Pas une cliente  " });
+    expect(rpc).toHaveBeenCalledWith("signaler_avis", { jeton: SECRET, visiteur: cleVisiteur("105.98.1.2", SECRET), avis: AVIS, motif: "faux_avis", commentaire: "Pas une cliente" });
+  });
+  it("motifs des avis seulement (un motif d’article est refusé avant la base)", async () => {
+    await expect(signalerAvis(client, entetes(), { avisId: AVIS, motif: "arnaque" })).rejects.toThrow("Choisissez un motif.");
+    await expect(signalerAvis(client, entetes(), { avisId: AVIS, motif: "autre", commentaire: "a".repeat(1001) })).rejects.toThrow("1000 caractères au plus");
+    await expect(signalerAvis(client, entetes(), { avisId: "x", motif: "autre" })).rejects.toThrow(MESSAGE_SIGNALEMENT_ECHEC);
+    await expect(signalerArticle(client, entetes(), { articleId: ARTICLE, motif: "faux_avis" })).rejects.toThrow("Choisissez un motif.");
+    expect(rpc).not.toHaveBeenCalled();
+  });
+  it.each(["faux_avis", "insulte", "informations_personnelles", "autre"])("accepte le motif %s", async motif => {
+    await signalerAvis(client, entetes(), { avisId: AVIS, motif });
+    expect(rpc).toHaveBeenCalledWith("signaler_avis", expect.objectContaining({ motif }));
+  });
+  it("relaie les refus de la base ; secret absent : « pas disponible »", async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: "54000", message: "Vous avez déjà signalé cet avis, merci. Il sera examiné rapidement." } });
+    await expect(signalerAvis(client, entetes(), { avisId: AVIS, motif: "autre" })).rejects.toThrow("déjà signalé cet avis");
+    rpc.mockResolvedValue({ data: null, error: { code: "22023", message: "Cet avis n'est plus en ligne." } });
+    await expect(signalerAvis(client, entetes(), { avisId: AVIS, motif: "autre" })).rejects.toThrow("plus en ligne");
+    vi.stubEnv("VISITEURS_SECRET", ""); rpc.mockClear();
+    await expect(signalerAvis(client, entetes(), { avisId: AVIS, motif: "autre" })).rejects.toThrow(MESSAGE_SIGNALEMENT_INDISPONIBLE);
     expect(rpc).not.toHaveBeenCalled();
   });
 });

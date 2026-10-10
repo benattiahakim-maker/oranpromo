@@ -138,3 +138,67 @@ export function trierMieuxNotees<T>(liste: T[], boutiqueDe: (element: T) => stri
     return a.rang - b.rang;
   }).map(x => x.element);
 }
+
+// ---------------------------------------------------------------------------
+// US-32.4 : réponse de la boutique et avis dans l'espace commerçant (en français seulement).
+// La base décide (repondre_avis : une réponse, non modifiable, même filtre que les avis).
+// ---------------------------------------------------------------------------
+export const REPONSE_AVIS_MAX = 300;
+export const MESSAGES_REPONSE = {
+  publiee: "Réponse publiée.",
+  vide: "Écrivez votre réponse.",
+  longue: `La réponse doit contenir ${REPONSE_AVIS_MAX} caractères au plus.`,
+  impossible: "Impossible de publier la réponse. Réessayez.",
+  chargement: "Impossible de charger vos avis. Réessayez.",
+} as const;
+
+export type AvisEspace = { id: string; auteur: string; note: number; criteres: CritereAvis[]; commentaire: string | null; creeLe: string; reponse: string | null; reponseLe: string | null; reponseMasquee: boolean };
+export type ResumeEspace = { nombre: number; moyenne: number | null; sansReponse: number };
+
+/** Réponse vérifiée avant l'envoi (non vide, 300 caractères au plus, sans espaces autour). */
+export function verifierReponse(texte: unknown): string {
+  const reponse = typeof texte === "string" ? texte.trim() : "";
+  if (!reponse) throw new Error(MESSAGES_REPONSE.vide);
+  if (Array.from(reponse).length > REPONSE_AVIS_MAX) throw new Error(MESSAGES_REPONSE.longue);
+  return reponse;
+}
+
+export async function repondreAvis(client: SupabaseClient<Database>, avis: string, texte: unknown): Promise<void> {
+  if (typeof avis !== "string" || !UUID.test(avis)) throw new Error("Avis introuvable.");
+  const reponse = verifierReponse(texte);
+  const { error } = await client.rpc("repondre_avis", { avis, texte: reponse });
+  if (error) throw new Error(messageErreurAvis(error, MESSAGES_REPONSE.impossible));
+}
+
+/** Avis publiés de la boutique du commerçant connecté, sans réponse d'abord. */
+export async function lireAvisMaBoutique(client: SupabaseClient<Database>, limite = 50): Promise<AvisEspace[]> {
+  const { data, error } = await client.rpc("avis_ma_boutique", { limite });
+  if (error) throw new Error(MESSAGES_REPONSE.chargement);
+  return (data ?? []).map(a => ({ id: a.id, auteur: a.auteur, note: a.note, criteres: (a.criteres ?? []).filter((c): c is CritereAvis => (CRITERES_AVIS as readonly string[]).includes(c)), commentaire: a.commentaire, creeLe: a.cree_le, reponse: a.reponse, reponseLe: a.reponse_le, reponseMasquee: Boolean(a.reponse_masquee) }));
+}
+
+/** « ★ 4,6 · 18 avis · 2 sans réponse » (moyenne vide sous le seuil de 3 avis). */
+export async function lireResumeMaBoutique(client: SupabaseClient<Database>): Promise<ResumeEspace> {
+  const { data, error } = await client.rpc("resume_ma_boutique");
+  const ligne = data?.[0];
+  if (error || !ligne) throw new Error(MESSAGES_REPONSE.chargement);
+  return { nombre: ligne.nombre, moyenne: ligne.moyenne === null ? null : Number(ligne.moyenne), sansReponse: ligne.sans_reponse };
+}
+
+/** Texte du bloc de l'espace : « ★ 4,6 · 18 avis · 2 sans réponse » ; « 2 avis · 1 sans réponse » sous le seuil. */
+export function texteResumeEspace(resume: ResumeEspace): string {
+  if (!resume.nombre) return "Pas encore d’avis";
+  const parties = [`${resume.nombre} avis`];
+  if (resume.moyenne !== null) parties.unshift(`★ ${formaterMoyenne(resume.moyenne)}`);
+  if (resume.sansReponse) parties.push(`${resume.sansReponse} sans réponse`);
+  return parties.join(" · ");
+}
+
+/** « 2/10 » (jour et mois, heure d'Alger), comme dans la maquette ⑦. */
+export function formaterJourMois(date: string): string {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  const parties = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "numeric", timeZone: "Africa/Algiers" }).formatToParts(d);
+  const nombre = (type: string) => Number(parties.find(p => p.type === type)?.value);
+  return `${nombre("day")}/${nombre("month")}`;
+}
