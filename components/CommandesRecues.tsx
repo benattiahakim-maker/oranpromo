@@ -1,11 +1,11 @@
 "use client";
 import { useRef, useState } from "react";
+import Numero from "@/components/Numero";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { changerStatutCommandeBoutique, declarerClientPasVenu } from "@/app/espace/commandes/actions";
 import { nomBon } from "@/lib/bons-boutique";
 import { ACTION_BOUTIQUE, annulableParBoutique, estStockInsuffisant, formaterDateHeure, peutDeclarerNoShow, libelleMotif, MOTIFS_ANNULATION, MOTIFS_BOUTIQUE, NOTE_SUIVI_MAX, quantiteTotale, STATUTS_COMMANDE, type CommandeRecue, type MotifBoutique, type StatutCommande } from "@/lib/commandes";
-import { telephoneLisible } from "@/lib/clients";
 import { formaterPrix } from "@/lib/prix";
 import { lienContactClient } from "@/lib/whatsapp";
 import { aEncaisser } from "@/lib/bons";
@@ -61,7 +61,7 @@ export function CarteCommande({ commande, boutique, dansTableau = false }: { com
     {!dansTableau && <div className="flex items-start justify-between gap-3"><span className="min-w-0 break-words text-sm">N° {commande.numero} · {commande.client_nom}</span><span className="etiquette shrink-0 whitespace-nowrap text-right">{STATUTS_COMMANDE[commande.statut]}</span></div>}
     {dansTableau && <p className="text-sm">{commande.client_nom} · {STATUTS_COMMANDE[commande.statut]}</p>}
     {commande.statut === "prete" && commande.expire_le && <p className="text-xs text-gris">À récupérer jusqu’au {formaterDateHeure(commande.expire_le)}</p>}
-    <p className="text-xs text-gris">{formaterDateHeure(commande.cree_le)} · <a href={lienContactClient(commande.client_telephone, commande.numero, boutique)} target="_blank" rel="noopener noreferrer" className="underline">{telephoneLisible(commande.client_telephone)} · WhatsApp</a></p>
+    <p className="text-xs text-gris">{formaterDateHeure(commande.cree_le)} · <a href={lienContactClient(commande.client_telephone, commande.numero, boutique)} target="_blank" rel="noopener noreferrer" className="underline"><Numero telephone={commande.client_telephone} lisible /> · WhatsApp</a></p>
     <ul className="text-[13px] font-light">{commande.lignes_commande.map(l => <li key={l.id}>{l.titre} · {l.taille} × {l.quantite} · {formaterPrix(l.prix_unitaire * l.quantite)}</li>)}</ul>
     <p className="text-sm">Total {formaterPrix(commande.total)} · {quantiteTotale(commande.lignes_commande)} pièce{quantiteTotale(commande.lignes_commande) > 1 ? "s" : ""}</p>
     {/* US-27.4, US-33.4 : bon BleDeal remboursé à la boutique, avec son nom. */}

@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import Numero from "@/components/Numero";
 import { useRouter } from "next/navigation";
 import ActionMotif from "@/components/ActionMotif";
 import { annulerBonsParrainage, exclureCompteDuParrainage, retirerBoutiqueDesBons } from "@/app/admin/parrainages/actions";
@@ -20,7 +21,7 @@ export default function ParrainagesAdmin({ parrainages, signaux }: { parrainages
 }
 
 function Personne({ titre, personne, absent = "Compte supprimé" }: { titre: string; personne: ParrainageAdmin["filleul"]; absent?: string }) {
-  return <p className="text-xs text-gris"><span className="text-noir">{titre} : {personne?.nom ?? absent}</span>{personne && ` · ${masquerTelephone(personne.telephone)} · inscrit le ${formaterDateHeure(personne.cree_le)}`}{personne?.parrainage_exclu ? " · exclu" : ""}{personne?.bloque ? " · bloqué" : ""}</p>;
+  return <p className="text-xs text-gris"><span className="text-noir">{titre} : {personne?.nom ?? absent}</span>{personne && <> · <Numero telephone={masquerTelephone(personne.telephone)} />{` · inscrit le ${formaterDateHeure(personne.cree_le)}`}</>}{personne?.parrainage_exclu ? " · exclu" : ""}{personne?.bloque ? " · bloqué" : ""}</p>;
 }
 
 function Bascule({ libelle, etiquette, action }: { libelle: string; etiquette: string; action: () => Promise<{ succes: boolean; message: string }> }) {

@@ -1,8 +1,9 @@
 "use client";
 import { useRef, useState } from "react";
+import Numero from "@/components/Numero";
 import { useRouter } from "next/navigation";
 import { annulerNoShowClient, bloquerCompteClient, debloquerCompteClient, validerNoShowClient } from "@/app/admin/clients/actions";
-import { essaisRestants, noShowsDuClient, telephoneLisible, type ClientSurveille, type ContestationEnAttente, type NoShowDeclare } from "@/lib/clients";
+import { essaisRestants, noShowsDuClient, type ClientSurveille, type ContestationEnAttente, type NoShowDeclare } from "@/lib/clients";
 import { formaterDateHeure } from "@/lib/commandes";
 
 // US-20.4 : contestations, clients bloqués (Débloquer), clients avec des no-shows (Bloquer).
@@ -41,7 +42,7 @@ function LigneClient({ client, noShows }: { client: ClientSurveille; noShows: No
   }
   const etat = client.bloque ? `Bloqué${client.bloque_le ? ` le ${new Date(client.bloque_le).toLocaleDateString("fr-FR")}` : ""}` : `${essaisRestants(client.no_shows)} essai${essaisRestants(client.no_shows) > 1 ? "s" : ""} restant${essaisRestants(client.no_shows) > 1 ? "s" : ""}`;
   return <div className="border-b border-trait py-3.5"><div className="flex items-center justify-between gap-3">
-    <div className="flex min-w-0 flex-col gap-1"><span className="break-words text-sm font-light">{client.nom ?? "Client sans nom"}</span><span className="text-xs text-gris">{client.telephone ? `${telephoneLisible(client.telephone)}${client.telephone_verifie_le ? " (vérifié)" : ""}` : "Sans téléphone"} · {client.no_shows} no-show{client.no_shows > 1 ? "s" : ""}</span><span className="etiquette">{etat}</span>{message && <span role="status" className="text-sm">{message}</span>}</div>
+    <div className="flex min-w-0 flex-col gap-1"><span className="break-words text-sm font-light">{client.nom ?? "Client sans nom"}</span><span className="text-xs text-gris">{client.telephone ? <><Numero telephone={client.telephone} lisible />{client.telephone_verifie_le ? " (vérifié)" : ""}</> : "Sans téléphone"} · {client.no_shows} no-show{client.no_shows > 1 ? "s" : ""}</span><span className="etiquette">{etat}</span>{message && <span role="status" className="text-sm">{message}</span>}</div>
     <button type="button" disabled={enCours} onClick={() => void basculerBlocage()} aria-label={`${client.bloque ? "Débloquer" : "Bloquer"} ${client.nom ?? "ce client"}`} className="etiquette min-h-11 shrink-0 border border-noir px-3">{client.bloque ? "Débloquer" : "Bloquer"}</button>
   </div>
     {noShows.length > 0 && <ul className="mt-2 flex flex-col gap-1.5">{noShows.map(n => <li key={n.id} className="flex items-center justify-between gap-3 text-xs text-gris"><span>Commande n° {n.numero}{n.boutiques ? ` · ${n.boutiques.nom}` : ""}{n.no_show_le ? ` · ${formaterDateHeure(n.no_show_le)}` : ""}</span><button type="button" disabled={enCours} onClick={() => void annuler(n.id)} aria-label={`Annuler le no-show de la commande n° ${n.numero}`} className="etiquette min-h-11 shrink-0 border border-trait px-2.5 text-noir">Annuler</button></li>)}</ul>}
@@ -60,7 +61,7 @@ function LigneContestation({ contestation: c }: { contestation: ContestationEnAt
     finally { verrou.current = false; setEnCours(false); }
   }
   return <div className="border-b border-trait py-3.5">
-    <p className="text-sm font-light">{c.client_nom} · {telephoneLisible(c.client_telephone)}</p>
+    <p className="text-sm font-light">{c.client_nom} · <Numero telephone={c.client_telephone} lisible /></p>
     <p className="text-xs text-gris">Commande n° {c.numero}{c.boutiques ? ` · ${c.boutiques.nom}` : ""}{c.no_show_le ? ` · no-show du ${formaterDateHeure(c.no_show_le)}` : ""}{c.contestee_le ? ` · contesté le ${formaterDateHeure(c.contestee_le)}` : ""}</p>
     {c.contestations?.motif && <p className="mt-1 break-words text-sm">« {c.contestations.motif} »</p>}
     <div className="mt-2 flex gap-2">

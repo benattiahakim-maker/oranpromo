@@ -13,7 +13,8 @@ describe("clients bloqués (US-20.4)", () => {
   it("liste les bloqués avec Débloquer et les no-shows avec les essais restants", async () => {
     render(<ClientsSurveilles bloques={[{ id: "k1", nom: "Yacine M.", telephone: "+213550112233", telephone_verifie_le: null, no_shows: 5, bloque: true, bloque_le: "2026-10-08T10:00:00Z" }]} avecNoShows={[{ id: "k2", nom: "Samia B.", telephone: "+213555123456", telephone_verifie_le: null, no_shows: 1, bloque: false, bloque_le: null }]} />);
     expect(screen.getByText("Bloqués (1)")).toBeInTheDocument();
-    expect(screen.getByText("0550 11 22 33 · 5 no-shows")).toBeInTheDocument();
+    expect(screen.getByText("0550 11 22 33").closest("span:not(bdi)")).toHaveTextContent(/^0550 11 22 33 · 5 no-shows/);
+    expect(screen.getByText("0550 11 22 33").tagName).toBe("BDI"); // isolé de gauche à droite (page en arabe)
     expect(screen.getByText("4 essais restants")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^Débloquer/ })).toHaveLength(1);
     expect(screen.getByRole("button", { name: "Bloquer Samia B." })).toBeInTheDocument();
@@ -46,7 +47,7 @@ describe("clients bloqués (US-20.4)", () => {
     bloquerCompteClient.mockResolvedValue({ succes: true, message: "Client bloqué : il ne peut plus commander." });
     render(<ClientsSurveilles bloques={[]} avecNoShows={[{ id: "k2", nom: "Samia B.", telephone: "+213555123456", telephone_verifie_le: "2026-10-10T08:00:00Z", no_shows: 2, bloque: false, bloque_le: null }]} />);
     expect(screen.queryByText(/Numéro partagé/)).not.toBeInTheDocument();
-    expect(screen.getByText(/0555 12 34 56 \(vérifié\)/)).toBeInTheDocument();
+    expect(screen.getByText("0555 12 34 56").parentElement).toHaveTextContent(/0555 12 34 56 \(vérifié\)/);
     fireEvent.click(screen.getByRole("button", { name: "Bloquer Samia B." }));
     await waitFor(() => expect(bloquerCompteClient).toHaveBeenCalledWith("k2"));
     expect(await screen.findByRole("status")).toHaveTextContent("Client bloqué");
@@ -67,7 +68,8 @@ describe("clients bloqués (US-20.4)", () => {
     render(<ClientsSurveilles bloques={[]} avecNoShows={[]} contestations={[{ id: "c9", numero: 9, client_id: "k2", client_nom: "Samia B.", client_telephone: "+213555123456", no_show_le: "2026-10-09T10:00:00Z", contestee_le: "2026-10-09T12:00:00Z", boutiques: { nom: "Boutique Amine" }, contestations: { motif: "La boutique était fermée" } }]} />);
     expect(screen.getByText("Contestations en attente (1)")).toBeInTheDocument();
     expect(screen.getByText("« La boutique était fermée »")).toBeInTheDocument();
-    expect(screen.getByText("Samia B. · 0555 12 34 56")).toBeInTheDocument();
+    expect(screen.getByText("0555 12 34 56").parentElement).toHaveTextContent("Samia B. · 0555 12 34 56");
+    expect(screen.getByText("0555 12 34 56")).toHaveAttribute("dir", "ltr");
     fireEvent.click(screen.getByRole("button", { name: "Valider le no-show de la commande n° 9" }));
     await waitFor(() => expect(validerNoShowClient).toHaveBeenCalledWith("c9"));
     expect(await screen.findByRole("status")).toHaveTextContent("No-show confirmé");
