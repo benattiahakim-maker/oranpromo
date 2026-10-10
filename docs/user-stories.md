@@ -1248,6 +1248,8 @@ En tant que BleDeal, je veux offrir un bon sur la 1re commande et lancer des cam
 - **Paiement** : relevé clôturé le 1er du mois (inchangé), payé par CCP / BaridiMob ou en espèces (référence obligatoire) ; délai : « avant le 10 » (US-27) ou « environ 15 jours après la fin du mois » (carte) — question 6. Déduction d'un futur abonnement : plus tard (il n'y a pas d'abonnement aujourd'hui).
 - **À vérifier avec le comptable** (carte) : comment BleDeal enregistre ces remboursements (charge de promotion), justificatifs à garder (relevé, référence de paiement), et la manière dont la boutique déclare la vente (prix total ou montant encaissé).
 
+- **Codé le 10/10** (migration `20261018130000_bons_admin.sql`, en production) : `/admin/bons` (programmes avec chiffres et état, « Arrêter », signaux, « Nouvelle campagne » pré-remplie à 500 DA et 30 bons par boutique), historique des prix, origine du bon dans `/admin/remboursements` et colonne `origine` à la fin du CSV. Le type de programme et l'origine « avis » sont acceptés par la base pour US-32.5. Paiement inchangé (« avant le 10 ») ; question 6 toujours ouverte.
+
 ### Textes nouveaux (français / arabe, à valider)
 
 | # | Où | Français | Arabe (darja, à valider) |

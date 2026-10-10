@@ -47,6 +47,7 @@ describe("US-33.4 : relevé par origine et plafond", () => {
     expect(origineLigne({ origine: "bienvenue", programme_id: "pb" }, noms)).toBe("Bienvenue");
     expect(origineLigne({ origine: "parrainage_parrain" }, noms)).toBe("Parrainage");
     expect(origineLigne({ origine: null }, noms)).toBe("Parrainage");
+    expect(origineLigne({ origine: "avis", programme_id: "p9" }, noms)).toBe("Avis");
   });
   it("totaux : lignes à rembourser seulement, la plus grosse origine d'abord", () => {
     expect(totauxParOrigine([

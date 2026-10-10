@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
 import { MINIMUM_PREMIERE_COMMANDE, moisAlger, nomMois } from "./bons";
+import { origineLigne } from "./bons-boutique";
 
 // US-27.5 : administration du parrainage (budget, parrainages et signaux, relevés des boutiques, export CSV).
 // Les règles (budget, annulation, exclusion, relevé payé figé…) sont dans la base ; ici : lecture, signaux, mise en forme.
@@ -211,12 +212,23 @@ export type LigneReleveAdmin = {
   id: string; releve_id: string; numero_commande: number; remise_le: string; mode_remise: string; client: string;
   total_commande: number; montant: number; statut: string; motif: string | null;
   commande: { cree_le: string; prete_le: string | null; terminee_le: string | null } | null;
+  /** US-33.5 : origine du bon (« Parrainage », « Bienvenue », nom de la campagne). */
+  origine?: string | null; programme_id?: string | null; libelle_origine?: string;
 };
 export type ReleveAdmin = {
   id: string; mois: string; nombre: number; montant: number; statut: string; cloture_le: string | null; paye_le: string | null; reference_paiement: string | null;
   boutique: { id: string; nom: string; slug: string; bons_acceptes: boolean } | null;
   lignes: LigneReleveAdmin[];
 };
+
+/** US-33.5 : noms des programmes (lecture admin) ; en cas d'erreur, les campagnes s'affichent « Campagne ». */
+async function lireNomsProgrammes(client: Client): Promise<Map<string, string>> {
+  const { data, error } = await client.from("programmes_bons").select("id, nom_fr");
+  return new Map(error ? [] : (data ?? []).map(p => [p.id, p.nom_fr] as [string, string]));
+}
+function avecOrigine<L extends LigneReleveAdmin>(lignes: L[], noms: Map<string, string>): L[] {
+  return lignes.map(l => ({ ...l, libelle_origine: origineLigne(l, noms) }));
+}
 
 export async function listerReleves(client: Client, mois: string, boutique?: string | null): Promise<ReleveAdmin[]> {
   let requete = client.from("releves_bons")
@@ -228,10 +240,10 @@ export async function listerReleves(client: Client, mois: string, boutique?: str
   const releves = (data ?? []) as unknown as Omit<ReleveAdmin, "lignes">[];
   if (!releves.length) return [];
   const { data: lignes, error: erreurLignes } = await client.from("lignes_releve")
-    .select("id, releve_id, numero_commande, remise_le, mode_remise, client, total_commande, montant, statut, motif, commande:commandes!lignes_releve_commande_id_fkey(cree_le, prete_le, terminee_le)")
+    .select("id, releve_id, numero_commande, remise_le, mode_remise, client, total_commande, montant, statut, motif, origine, programme_id, commande:commandes!lignes_releve_commande_id_fkey(cree_le, prete_le, terminee_le)")
     .in("releve_id", releves.map(r => r.id)).order("remise_le", { ascending: true });
   if (erreurLignes) throw new Error("Impossible de charger les relevés. Réessayez.");
-  const toutes = (lignes ?? []) as unknown as LigneReleveAdmin[];
+  const toutes = avecOrigine((lignes ?? []) as unknown as LigneReleveAdmin[], await lireNomsProgrammes(client));
   return releves.map(r => ({ ...r, lignes: toutes.filter(l => l.releve_id === r.id) }))
     .sort((a, b) => (a.boutique?.nom ?? "").localeCompare(b.boutique?.nom ?? "", "fr"));
 }
@@ -239,10 +251,10 @@ export async function listerReleves(client: Client, mois: string, boutique?: str
 /** Lignes mises de côté, tous mois confondus (elles attendent une décision). */
 export async function listerLignesDeCote(client: Client): Promise<(LigneReleveAdmin & { boutique: { nom: string } | null })[]> {
   const { data, error } = await client.from("lignes_releve")
-    .select("id, releve_id, numero_commande, remise_le, mode_remise, client, total_commande, montant, statut, motif, commande:commandes!lignes_releve_commande_id_fkey(cree_le, prete_le, terminee_le), boutique:boutiques!lignes_releve_boutique_id_fkey(nom)")
+    .select("id, releve_id, numero_commande, remise_le, mode_remise, client, total_commande, montant, statut, motif, origine, programme_id, commande:commandes!lignes_releve_commande_id_fkey(cree_le, prete_le, terminee_le), boutique:boutiques!lignes_releve_boutique_id_fkey(nom)")
     .eq("statut", "de_cote").order("remise_le", { ascending: true });
   if (error) throw new Error("Impossible de charger les lignes mises de côté. Réessayez.");
-  return (data ?? []) as unknown as (LigneReleveAdmin & { boutique: { nom: string } | null })[];
+  return avecOrigine((data ?? []) as unknown as (LigneReleveAdmin & { boutique: { nom: string } | null })[], await lireNomsProgrammes(client));
 }
 
 /** « 4 bons · 1 200 DA ». */
@@ -262,7 +274,7 @@ export function signauxReleve(r: Pick<ReleveAdmin, "montant" | "lignes">): strin
 }
 
 // ---------- Export CSV ----------
-export const COLONNES_CSV = ["mois", "boutique", "slug", "numero_commande", "date_remise", "mode_remise", "client", "total_commande", "bon", "a_rembourser", "etat_ligne", "etat_releve", "reference_paiement"] as const;
+export const COLONNES_CSV = ["mois", "boutique", "slug", "numero_commande", "date_remise", "mode_remise", "client", "total_commande", "bon", "a_rembourser", "etat_ligne", "etat_releve", "reference_paiement", "origine"] as const;
 
 /** Champ CSV : apostrophe devant =, +, -, @ (formules Excel), guillemets si ; " ou retour à la ligne. */
 export function champCsv(valeur: string | number | null | undefined): string {
@@ -282,9 +294,9 @@ export function csvReleves(releves: Pick<ReleveAdmin, "mois" | "statut" | "refer
     for (const l of r.lignes) {
       const aRembourser = l.statut === "a_rembourser" ? l.montant : 0;
       totalBons += l.montant; totalARembourser += aRembourser;
-      lignes.push([mois, nom, slug, l.numero_commande, dateHeureAlger(l.remise_le), l.mode_remise, l.client, l.total_commande, l.montant, aRembourser, l.statut, r.statut, r.reference_paiement].map(champCsv).join(";"));
+      lignes.push([mois, nom, slug, l.numero_commande, dateHeureAlger(l.remise_le), l.mode_remise, l.client, l.total_commande, l.montant, aRembourser, l.statut, r.statut, r.reference_paiement, l.libelle_origine ?? origineLigne(l, new Map())].map(champCsv).join(";"));
     }
-    lignes.push([mois, nom, slug, "TOTAL", "", "", "", "", totalBons, totalARembourser, "", r.statut, r.reference_paiement].map(champCsv).join(";"));
+    lignes.push([mois, nom, slug, "TOTAL", "", "", "", "", totalBons, totalARembourser, "", r.statut, r.reference_paiement, ""].map(champCsv).join(";"));
   }
   return `\uFEFF${lignes.join("\r\n")}\r\n`;
 }
