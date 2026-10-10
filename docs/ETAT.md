@@ -162,6 +162,7 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
    - `npm run test:e2e` (8 tests, environ 45 s une fois le site construit), `npm run test:e2e:voir`, `npm run test:e2e:rapport`. Nouveaux fichiers : `playwright.config.ts`, `supabase/config.toml`, `e2e/`. Dépendances de développement : `@playwright/test`, `pg`, `@types/pg`.
    - Au passage : `supabase/tests/retirer_donnees_demo.test.sql` posait des codes de retrait à 4 chiffres, refusés depuis le code à 6 chiffres (PR #103) ; corrigé (`111111`, `333333`).
    - **Au propriétaire** : pour lancer les tests sur le PC, installer Docker Desktop puis suivre `docs/tests-parcours.md` ; pour bloquer la fusion d'une PR qui casse un parcours, ajouter le fichier GitHub Actions proposé et la règle de branche (facultatif, non activé). Agents IA par personnage : proposition manuelle (abonnement Claude, site local ou de dev, fiches des 5 personnages), sans appel payant.
+34. **Environnements prod et dev** (carte Trello « Mise en ligne · Environnements prod et dev (Vercel + Supabase) », 10/10) : **documentation seulement**, rien n'est créé. `docs/environnements.md` : second projet Supabase gratuit `bledeal-dev` dans une organisation Free à part (sinon environ 10 $ / mois dans l'organisation Pro), toutes les migrations rejouées sur le dev, adresses autorisées du dev, données de démo, variables Vercel Production / Preview (base de dev, secrets différents, WhatsApp et IA vides en Preview), `.env.local` du PC sur le dev, migrations « dev d'abord, production ensuite » (jamais `supabase db push` sur la production). Liste à cocher du propriétaire en tête du document. Règle 6 du guide de mise en ligne annotée.
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
 
@@ -360,7 +361,7 @@ Mode d'emploi (Supabase > SQL Editor) :
 14. ~~**Tableau des commandes (US-28)**~~ : fait le 9/10 (US-28.1 à 28.4, point 25 du journal). Plus tard si demandé : Supabase Realtime (option B de `architecture.md`), textes dans `lib/textes` pour l’arabe.
 15. **BleDeal et plusieurs villes (US-29, US-30)** : **codé** le 10/10 (US-29.1 à 29.4, US-30.1 à 30.3, point 27 du journal). Au propriétaire : la liste « BleDeal : à faire par le propriétaire (US-30.3) » (achat de `bledeal.com` en premier). **Feuille de route des villes** (10/10) : Ouest (Oran, Mostaganem, Relizane, Tlemcen), puis Centre (Alger, Tizi Ouzou, Béjaïa), puis Est (Annaba, Constantine) ; les 9 sont créées, seule Oran est ouverte ; ouvrir une ville = l'admin (`/admin/villes`). Aucun ancien domaine ni affiche imprimée : pas de redirection.
 
-Backlog : mise en ligne (Vercel, domaine, envoi d'e-mails), environnements prod et dev (Vercel + second projet Supabase), suppression des données de test, conditions d'utilisation, marketing.
+Backlog : mise en ligne (Vercel, domaine, envoi d'e-mails), environnements prod et dev (Vercel + second projet Supabase : plan pas à pas dans `docs/environnements.md`, à faire par le propriétaire), suppression des données de test, conditions d'utilisation, marketing.
 
 ## Documents de référence
 
