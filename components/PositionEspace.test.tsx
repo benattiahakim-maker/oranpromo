@@ -61,7 +61,7 @@ describe("US-24.2 : /espace, bloc « Position sur la carte »", () => {
   });
 });
 
-const boutique: Tables<"boutiques"> = { id: "b1", nom: "Boutique Nour", quartier: "Akid Lotfi", statut: "validee", slug: "boutique-nour", adresse: "Oran", whatsapp: "+213555123456", latitude: 35.7303, longitude: -0.5784, horaires: null, instagram: null, facebook: null, cree_le: "2026-10-09T00:00:00Z", bons_acceptes: true };
+const boutique: Tables<"boutiques"> = { id: "b1", nom: "Boutique Nour", quartier: "Akid Lotfi", statut: "validee", slug: "boutique-nour", adresse: "Oran", whatsapp: "+213555123456", latitude: 35.7303, longitude: -0.5784, horaires: null, instagram: null, facebook: null, cree_le: "2026-10-09T00:00:00Z", bons_acceptes: true, ville: "oran" };
 describe("US-24.2 : /admin/boutiques, bouton « Position »", () => {
   it("admin : affiche la position, ouvre le bloc et enregistre même une boutique validée", async () => {
     render(<BoutiquesAdministration boutiques={[boutique]} role="admin" />);
