@@ -6,7 +6,8 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { fondDeCarte, ZOOM_MAX_AUTOUR, type BoutiqueCarte } from "@/lib/carte";
-import { BORNES_ORAN, CENTRE_ORAN, type Position } from "@/lib/position";
+import type { Position } from "@/lib/position";
+import { VILLE_ORAN, type Ville } from "@/lib/ville";
 
 export type ProprietesCarteLeaflet = {
   boutiques: (BoutiqueCarte & Position)[];
@@ -16,6 +17,8 @@ export type ProprietesCarteLeaflet = {
   onSelection: (id: string | null) => void;
   onIndisponible: () => void;
   libelles: { region: string; vous: string; epingle: (boutique: BoutiqueCarte) => string };
+  /** US-29.3 : bornes, centre et zoom de la ville (Oran par défaut, comme avant). */
+  cadre?: Pick<Ville, "lat_min" | "lat_max" | "lng_min" | "lng_max" | "centre_lat" | "centre_lng" | "zoom">;
 };
 
 function icone(promos: number, choisie: boolean): L.DivIcon {
@@ -29,7 +32,7 @@ function icone(promos: number, choisie: boolean): L.DivIcon {
   });
 }
 
-export default function CarteLeaflet({ boutiques, origine, proches, selection, onSelection, onIndisponible, libelles }: ProprietesCarteLeaflet) {
+export default function CarteLeaflet({ boutiques, origine, proches, selection, onSelection, onIndisponible, libelles, cadre = VILLE_ORAN }: ProprietesCarteLeaflet) {
   const conteneur = useRef<HTMLDivElement>(null);
   const carte = useRef<L.Map | null>(null);
   const calque = useRef<L.LayerGroup | null>(null);
@@ -40,19 +43,19 @@ export default function CarteLeaflet({ boutiques, origine, proches, selection, o
   useEffect(() => {
     if (!conteneur.current) return;
     const fond = fondDeCarte(process.env.NEXT_PUBLIC_CARTO_CLE);
-    const map = L.map(conteneur.current, { scrollWheelZoom: false, maxBounds: L.latLngBounds([BORNES_ORAN.latMin - 0.2, BORNES_ORAN.lngMin - 0.3], [BORNES_ORAN.latMax + 0.2, BORNES_ORAN.lngMax + 0.3]) });
+    const map = L.map(conteneur.current, { scrollWheelZoom: false, maxBounds: L.latLngBounds([cadre.lat_min - 0.2, cadre.lng_min - 0.3], [cadre.lat_max + 0.2, cadre.lng_max + 0.3]) });
     map.attributionControl.setPrefix(false);
     let chargees = 0, erreurs = 0;
     L.tileLayer(fond.url, { attribution: fond.attribution, subdomains: fond.sousDomaines, maxZoom: fond.zoomMax, minZoom: 9 })
       .on("tileload", () => { chargees++; })
       .on("tileerror", () => { erreurs++; if (erreurs >= 4 && chargees === 0) rappels.current.onIndisponible(); })
       .addTo(map);
-    map.setView([CENTRE_ORAN.latitude, CENTRE_ORAN.longitude], 12);
+    map.setView([cadre.centre_lat, cadre.centre_lng], cadre.zoom);
     map.on("click", () => rappels.current.onSelection(null));
     calque.current = L.layerGroup().addTo(map);
     carte.current = map;
     return () => { map.remove(); carte.current = null; calque.current = null; point.current = null; };
-  }, []);
+  }, [cadre]);
 
   // Épingles (une par boutique placée du filtre), cadrées au départ sur toutes les épingles.
   const premierCadrage = useRef(true);

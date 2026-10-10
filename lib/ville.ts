@@ -51,6 +51,11 @@ export function deVille(nom: string): string {
   return /^[aeiouyàâäéèêëîïôöùûüh]/i.test(nom) ? `d’${nom}` : `de ${nom}`;
 }
 
+/** Valeur de {deVille} dans les textes : « d’Oran » en français, le nom seul en arabe (« بروموات وهران »). */
+export function deVilleEnLangue(ville: Pick<Ville, "nom" | "nom_ar">, langue: "fr" | "ar"): string {
+  return langue === "ar" ? ville.nom_ar : deVille(ville.nom);
+}
+
 /** Ville contenant la position (bornes de la base) ; la première dans l'ordre si plusieurs se recouvrent. */
 export function villeDeLaPosition<V extends Pick<Ville, "lat_min" | "lat_max" | "lng_min" | "lng_max">>(villes: readonly V[], latitude: number, longitude: number): V | null {
   return villes.find(v => latitude >= v.lat_min && latitude <= v.lat_max && longitude >= v.lng_min && longitude <= v.lng_max) ?? null;
@@ -83,4 +88,9 @@ export function cheminApresChoix(code: string, retour: string | null | undefined
 /** Chemin d'une page de la ville : cheminVille("oran", "/catalogue?promo=1") → « /oran/catalogue?promo=1 ». */
 export function cheminVille(code: string, suite = ""): string {
   return `/${code}${suite === "/" ? "" : suite}`;
+}
+
+/** Ville lue avec une boutique (« villes(nom) ») : objet, tableau d'un élément selon le client, ou rien (ville fermée). */
+export function villeLue<T>(valeur: T | T[] | null | undefined): T | null {
+  return Array.isArray(valeur) ? valeur[0] ?? null : valeur ?? null;
 }

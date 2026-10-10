@@ -3,9 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 import Accueil from "./page";
 const { langue } = vi.hoisted(() => ({ langue: { valeur: "fr" as "fr" | "ar" } }));
 vi.mock("@/lib/langue-serveur", async () => { const { textesDe } = await import("@/lib/textes"); return { getLangue: async () => langue.valeur, getTextes: async () => textesDe(langue.valeur) }; });
-vi.mock("@/lib/ville-serveur", async () => { const { VILLE_ORAN } = await import("@/lib/ville"); return { getVilleOuverte: async (code: string) => (code === "oran" ? VILLE_ORAN : null), getVillesOuvertes: async () => [VILLE_ORAN] }; });
+vi.mock("@/lib/ville-serveur", async () => { const { VILLE_ORAN } = await import("@/lib/ville"); const TLEMCEN = { ...VILLE_ORAN, code: "tlemcen", nom: "Tlemcen", nom_ar: "تلمسان", lat_min: 34.08, lat_max: 35.25, lng_min: -2.23, lng_max: -0.75, centre_lat: 34.8818, centre_lng: -1.3167 }; return { getVilleOuverte: async (code: string) => ({ oran: VILLE_ORAN, tlemcen: TLEMCEN } as Record<string, typeof VILLE_ORAN>)[code] ?? null, getVillesOuvertes: async () => [VILLE_ORAN] }; });
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({}) }));
-vi.mock("@/lib/catalogue", () => ({ chargerPromos: async () => [] }));
+const { chargerPromos } = vi.hoisted(() => ({ chargerPromos: vi.fn(async () => []) }));
+vi.mock("@/lib/catalogue", () => ({ chargerPromos }));
 vi.mock("@/components/Promos", () => ({ default: () => null }));
 vi.mock("@/components/EntetePublic", () => ({ default: () => null }));
 vi.mock("next/image", () => ({ default: (props: { src: string; alt: string }) => <span data-src={props.src} data-alt={props.alt} /> }));
@@ -72,9 +73,33 @@ describe("US-29.2 : accueil d'une ville (/oran)", () => {
     expect(html).toContain('href="/oran/catalogue"');
     expect(html).not.toMatch(/href="\/catalogue/);
     const { generateMetadata } = await import("./page");
-    expect(await generateMetadata({ params: Promise.resolve({ ville: "oran" }) })).toEqual({ alternates: { canonical: "/oran" } });
+    expect(await generateMetadata({ params: Promise.resolve({ ville: "oran" }) })).toEqual({ title: "Promos à Oran", description: "Les promos des boutiques de vêtements d’Oran. Réservez sur WhatsApp, payez en boutique.", alternates: { canonical: "/oran" } });
   });
   it("ville fermée ou inconnue (sans passer par le layout) : page introuvable", async () => {
-    await expect(Accueil({ params: Promise.resolve({ ville: "tlemcen" }) })).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+    await expect(Accueil({ params: Promise.resolve({ ville: "alger" }) })).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+  });
+});
+
+describe("US-29.3 : accueil d'une autre ville (Tlemcen)", () => {
+  it("« Les promos de Tlemcen », promos de Tlemcen seulement, photo commune sans crédit, liens /tlemcen/…", async () => {
+    const html = renderToStaticMarkup(await Accueil({ params: Promise.resolve({ ville: "tlemcen" }) }));
+    expect(html).toContain("Les promos de Tlemcen");
+    expect(chargerPromos).toHaveBeenLastCalledWith(expect.anything(), "tlemcen");
+    expect(html).toContain('data-src="/images/accueil/cat-robes.webp"');
+    expect(html).not.toContain("Santa"); expect(html).not.toContain("Bachounda");
+    expect(html).toContain('href="/tlemcen/carte"'); expect(html).toContain('href="/tlemcen/catalogue?promo=1"');
+    const { generateMetadata } = await import("./page");
+    expect(await generateMetadata({ params: Promise.resolve({ ville: "tlemcen" }) })).toMatchObject({ title: "Promos à Tlemcen", description: "Les promos des boutiques de vêtements de Tlemcen. Réservez sur WhatsApp, payez en boutique." });
+  });
+  it("en arabe : « بروموات تلمسان »", async () => {
+    langue.valeur = "ar";
+    const html = renderToStaticMarkup(await Accueil({ params: Promise.resolve({ ville: "tlemcen" }) }));
+    langue.valeur = "fr";
+    expect(html).toContain("بروموات تلمسان");
+  });
+  it("Oran : promos d'Oran, Santa Cruz et son crédit (comme avant)", async () => {
+    const html = renderToStaticMarkup(await Accueil({ params: Promise.resolve({ ville: "oran" }) }));
+    expect(chargerPromos).toHaveBeenLastCalledWith(expect.anything(), "oran");
+    expect(html).toContain("Les promos d’Oran"); expect(html).toContain(">Bachounda</a>");
   });
 });

@@ -51,14 +51,14 @@ describe("US-22 : QR code", () => {
 
 describe("US-22 : aperçu de la vitrine", () => {
   it("utilise la grande photo du dernier article, avec Open Graph, Twitter et l’adresse canonique", () => {
-    const m = metadonneesBoutique({ nom: "Boutique Nour", quartier: "Akid Lotfi", slug: "boutique-nour", photo: "https://x.supabase.co/storage/v1/object/public/photos/b/a/1.jpg", nombreArticles: 3 });
+    const m = metadonneesBoutique({ nom: "Boutique Nour", quartier: "Akid Lotfi", ville: "Oran", slug: "boutique-nour", photo: "https://x.supabase.co/storage/v1/object/public/photos/b/a/1.jpg", nombreArticles: 3 });
     expect(m.title).toBe("Boutique Nour"); expect(m.description).toContain("3 articles disponibles");
     expect(m.alternates?.canonical).toBe("/b/boutique-nour");
     expect(m.openGraph).toMatchObject({ title: "Boutique Nour", url: "/b/boutique-nour", siteName: "OranPromo", locale: "fr_FR", type: "website", images: [{ url: "https://x.supabase.co/storage/v1/object/public/photos/b/a/1.jpg", alt: "Boutique Nour" }] });
     expect(m.twitter).toMatchObject({ card: "summary_large_image", title: "Boutique Nour", images: [{ url: "https://x.supabase.co/storage/v1/object/public/photos/b/a/1.jpg" }] });
   });
   it("sans photo, renvoie vers l’image générée de 1200 × 630", () => {
-    const m = metadonneesBoutique({ nom: "Boutique Nour", quartier: "Akid Lotfi", slug: "boutique-nour", photo: null, nombreArticles: 0 });
+    const m = metadonneesBoutique({ nom: "Boutique Nour", quartier: "Akid Lotfi", ville: "Oran", slug: "boutique-nour", photo: null, nombreArticles: 0 });
     expect(m.openGraph?.images).toEqual([expect.objectContaining({ url: "/b/boutique-nour/apercu", width: 1200, height: 630 })]);
     expect(cheminImageApercu("boutique-nour")).toBe("/b/boutique-nour/apercu");
   });
@@ -79,8 +79,8 @@ describe("US-22 : lecture de l’aperçu", () => {
     const invalide = client({ id: "b" }); expect(await chargerApercuBoutique(invalide.client, "Nour--x")).toBeNull(); expect(invalide.from).not.toHaveBeenCalled();
   });
   it("prend la première photo du dernier article et le nombre d’articles disponibles", async () => {
-    const test = client({ id: "b", nom: "Boutique Nour", quartier: "Akid Lotfi" }, [{ adresse: "https://p/2.jpg", ordre: 2 }, { adresse: "https://p/1.jpg", ordre: 1 }], 4);
-    expect(await chargerApercuBoutique(test.client, "boutique-nour")).toEqual({ nom: "Boutique Nour", quartier: "Akid Lotfi", slug: "boutique-nour", photo: "https://p/1.jpg", nombreArticles: 4 });
+    const test = client({ id: "b", nom: "Boutique Nour", quartier: "Akid Lotfi", villes: { nom: "Oran" } }, [{ adresse: "https://p/2.jpg", ordre: 2 }, { adresse: "https://p/1.jpg", ordre: 1 }], 4);
+    expect(await chargerApercuBoutique(test.client, "boutique-nour")).toEqual({ nom: "Boutique Nour", quartier: "Akid Lotfi", ville: "Oran", slug: "boutique-nour", photo: "https://p/1.jpg", nombreArticles: 4 });
   });
 });
 
@@ -93,5 +93,13 @@ describe("US-22 : bloc de partage", () => {
   it.each(["en_attente", "suspendue"] as const)("ne prépare ni WhatsApp ni QR code pour une boutique %s", async statut => {
     const partage = await preparerPartageBoutique({ nom: "Boutique Nour", slug: "boutique-nour", statut }, "https://oranpromo.com");
     expect(partage.lienWhatsApp).toBeNull(); expect(partage.qrCode).toBeNull(); expect(partage.lien).toBe("https://oranpromo.com/b/boutique-nour");
+  });
+});
+
+describe("US-29.3 : ville dans l'aperçu", () => {
+  it("« Boutique à Kiffane, Tlemcen » ; Oran comme avant ; ville illisible (fermée) : sans ville", () => {
+    expect(descriptionBoutique("Kiffane", 2, "Tlemcen")).toBe("Boutique à Kiffane, Tlemcen · 2 articles disponibles. Réservez sur WhatsApp, payez en boutique.");
+    expect(descriptionBoutique("Akid Lotfi", null)).toBe("Boutique à Akid Lotfi, Oran. Réservez sur WhatsApp, payez en boutique.");
+    expect(descriptionBoutique("Kiffane", null, null)).toBe("Boutique à Kiffane. Réservez sur WhatsApp, payez en boutique.");
   });
 });

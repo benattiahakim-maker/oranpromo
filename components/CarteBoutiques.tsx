@@ -11,13 +11,15 @@ import { UNIVERS, type CleUnivers } from "@/lib/article";
 import { remplir } from "@/lib/langue";
 import type { Position } from "@/lib/position";
 import { useLangue, useTextes } from "./FournisseurTextes";
+import { deVilleEnLangue, nomVille, VILLE_ORAN, type Ville } from "@/lib/ville";
 
 const CarteLeaflet = dynamic(() => import("./CarteLeaflet"), { ssr: false, loading: () => <div className="h-[340px] w-full border-y border-trait bg-[#F2F2F2]" aria-hidden="true" /> });
 
 type EtatLocalisation = "aucun" | "recherche" | "actif" | "refus" | "introuvable";
 
 // US-29.2 : « chemin » = adresse de la carte de la ville (/oran/carte), pour les liens du filtre.
-export default function CarteBoutiques({ boutiques, univers: universInitial, chemin = "/carte" }: { boutiques: BoutiqueCarte[]; univers: CleUnivers | null; chemin?: string }) {
+// US-29.3 : « ville » = nom (compteur, nom de la carte), bornes, centre et zoom de la carte (Oran par défaut).
+export default function CarteBoutiques({ boutiques, univers: universInitial, chemin = "/carte", ville = VILLE_ORAN }: { boutiques: BoutiqueCarte[]; univers: CleUnivers | null; chemin?: string; ville?: Ville }) {
   const t = useTextes(), langue = useLangue(), c = t.carteBoutiques;
   const [univers, setUnivers] = useState<CleUnivers | null>(universInitial);
   const [selection, setSelection] = useState<string | null>(null);
@@ -36,7 +38,8 @@ export default function CarteBoutiques({ boutiques, univers: universInitial, che
 
   const textePromos = useCallback((n: number) => (n === 0 ? c.aucunePromo : remplir(n === 1 ? c.promosUne : c.promos, { n })), [c]);
   const texteDistance = (id: string) => { const d = distances.get(id); return d === undefined ? null : remplir(c.distance, { d: formaterDistance(d, langue) }); };
-  const libelles = useMemo(() => ({ region: c.region, vous: c.vous, epingle: (b: BoutiqueCarte) => `${b.nom} · ${textePromos(b.promos)}` }), [c, textePromos]);
+  const nom = nomVille(ville, langue);
+  const libelles = useMemo(() => ({ region: remplir(c.region, { deVille: deVilleEnLangue(ville, langue) }), vous: c.vous, epingle: (b: BoutiqueCarte) => `${b.nom} · ${textePromos(b.promos)}` }), [c, textePromos, ville, langue]);
 
   // Filtre : un lien (fonctionne sans JavaScript), et avec JavaScript l'adresse change sans recharger ni relire la base.
   function choisirUnivers(evenement: MouseEvent<HTMLAnchorElement>, cle: CleUnivers | null) {
@@ -59,7 +62,7 @@ export default function CarteBoutiques({ boutiques, univers: universInitial, che
   const total = filtrees.length;
   return <>
     <header className="px-5 pb-4 pt-6 text-center">
-      <p className="etiquette text-gris">{remplir(total === 1 ? c.nombreUn : c.nombre, { n: total })}</p>
+      <p className="etiquette text-gris">{remplir(total === 1 ? c.nombreUn : c.nombre, { n: total, ville: nom })}</p>
       <h1 className="mt-2 font-titre text-[28px] font-normal">{c.titre}</h1>
     </header>
     <nav aria-label={c.filtre} className="flex flex-wrap justify-center gap-1 px-3 pb-4">
@@ -80,7 +83,7 @@ export default function CarteBoutiques({ boutiques, univers: universInitial, che
       {localisation === "introuvable" && <div role="alert" className="mt-2 text-center text-sm"><p>{c.introuvable}</p><button type="button" onClick={autourDeMoi} className="etiquette mt-2 min-h-11 border border-noir px-4">{c.reessayer}</button></div>}
     </div>
 
-    {!indisponible && <CarteLeaflet boutiques={placees} origine={origine} proches={proches} selection={selection} onSelection={setSelection} onIndisponible={() => setIndisponible(true)} libelles={libelles} />}
+    {!indisponible && <CarteLeaflet boutiques={placees} origine={origine} proches={proches} selection={selection} onSelection={setSelection} onIndisponible={() => setIndisponible(true)} libelles={libelles} cadre={ville} />}
     {indisponible && <p role="status" className="border-y border-trait px-5 py-6 text-center text-sm">{c.indisponible}</p>}
 
     {choisie && <section aria-label={choisie.nom} className="border-b border-trait px-5 py-4">
@@ -94,7 +97,7 @@ export default function CarteBoutiques({ boutiques, univers: universInitial, che
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Link href={`/b/${choisie.slug}`} className="etiquette flex min-h-11 items-center justify-center bg-noir px-2 text-center text-blanc">{c.voirBoutique}</Link>
-        <a href={lienItineraire(choisie)} target="_blank" rel="noopener noreferrer" className="etiquette flex min-h-11 items-center justify-center border border-noir px-2 text-center">{c.itineraire}</a>
+        <a href={lienItineraire({ ...choisie, ville: ville.nom })} target="_blank" rel="noopener noreferrer" className="etiquette flex min-h-11 items-center justify-center border border-noir px-2 text-center">{c.itineraire}</a>
       </div>
     </section>}
 

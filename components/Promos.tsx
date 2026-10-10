@@ -6,7 +6,8 @@ import { chargerPromos, type CarteArticle as Article } from "@/lib/catalogue";
 import CarteArticle from "./CarteArticle";
 import { useTextes } from "./FournisseurTextes";
 
-export default function Promos({ initiales }: { initiales: Article[] }) {
+// US-29.3 : « Voir plus » charge les promos de la même ville.
+export default function Promos({ initiales, ville }: { initiales: Article[]; ville: string }) {
   const t = useTextes();
   const [articles, setArticles] = useState(initiales);
   const [page, setPage] = useState(1);
@@ -19,12 +20,12 @@ export default function Promos({ initiales }: { initiales: Article[] }) {
     if (!suite || enCours.current) return;
     enCours.current = true; setChargement(true); setErreur("");
     try {
-      const nouveaux = await chargerPromos(creerClientNavigateur(), page);
+      const nouveaux = await chargerPromos(creerClientNavigateur(), ville, page);
       setArticles(liste => [...liste, ...nouveaux.filter(a => !liste.some(b => b.id === a.id))]);
       setSuite(nouveaux.length === 20); setPage(p => p + 1);
     } catch { setErreur(t.promos.erreurSuite); }
     finally { enCours.current = false; setChargement(false); }
-  }, [page, suite, t]);
+  }, [page, suite, t, ville]);
   useEffect(() => {
     if (!sentinelle.current || !suite || erreur) return;
     const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) void charger(); }, { rootMargin: "200px" });

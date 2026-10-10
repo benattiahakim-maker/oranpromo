@@ -4,7 +4,7 @@ import Catalogue from "./page";
 
 const { chargerCatalogue, chargerOptionsCatalogue, langue } = vi.hoisted(() => ({ chargerCatalogue: vi.fn(), chargerOptionsCatalogue: vi.fn(), langue: { valeur: "fr" as "fr" | "ar" } }));
 vi.mock("@/lib/catalogue", async importOriginal => ({ ...(await importOriginal<typeof import("@/lib/catalogue")>()), chargerCatalogue, chargerOptionsCatalogue }));
-vi.mock("@/lib/ville-serveur", async () => { const { VILLE_ORAN } = await import("@/lib/ville"); return { getVilleOuverte: async (code: string) => (code === "oran" ? VILLE_ORAN : null), getVillesOuvertes: async () => [VILLE_ORAN] }; });
+vi.mock("@/lib/ville-serveur", async () => { const { VILLE_ORAN } = await import("@/lib/ville"); const TLEMCEN = { ...VILLE_ORAN, code: "tlemcen", nom: "Tlemcen", nom_ar: "تلمسان", lat_min: 34.08, lat_max: 35.25, lng_min: -2.23, lng_max: -0.75, centre_lat: 34.8818, centre_lng: -1.3167 }; return { getVilleOuverte: async (code: string) => ({ oran: VILLE_ORAN, tlemcen: TLEMCEN } as Record<string, typeof VILLE_ORAN>)[code] ?? null, getVillesOuvertes: async () => [VILLE_ORAN] }; });
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({}) }));
 vi.mock("@/lib/langue-serveur", async () => { const { textesDe } = await import("@/lib/textes"); return { getLangue: async () => langue.valeur, getTextes: async () => textesDe(langue.valeur) }; });
 vi.mock("@/components/EntetePublic", () => ({ default: () => null }));
@@ -54,5 +54,20 @@ describe("US-25.2 : hors Beauté, rien ne change", () => {
   });
   it("une catégorie beauté sans univers passe aussi en « Contenance »", async () => {
     expect(await page({ categorie: "Parfums" })).toContain("Contenance<select");
+  });
+});
+
+describe("US-29.3 : catalogue d'une ville", () => {
+  it("articles et options de la ville ; vide sans filtre : « Pas encore d’articles à Tlemcen. »", async () => {
+    const html = renderToStaticMarkup(await Catalogue({ params: Promise.resolve({ ville: "tlemcen" }), searchParams: Promise.resolve({}) }));
+    expect(chargerCatalogue).toHaveBeenCalledWith(expect.anything(), "tlemcen", expect.anything());
+    expect(chargerOptionsCatalogue).toHaveBeenCalledWith(expect.anything(), "tlemcen");
+    expect(html).toContain("Pas encore d’articles à Tlemcen.");
+    expect(html).toContain('action="/tlemcen/catalogue"');
+  });
+  it("vide avec un filtre : message habituel ; en arabe sans filtre : « مازال ما كاش سلعة في وهران. »", async () => {
+    expect(await page({ q: "robe" })).toContain("Aucun article ne correspond");
+    langue.valeur = "ar";
+    expect(await page({})).toContain("مازال ما كاش سلعة في وهران.");
   });
 });

@@ -76,7 +76,7 @@ export const fr = {
   },
   accueil: {
     univers: "Univers",
-    titre: "Les promos d’Oran",
+    titre: "Les promos {deVille}", // US-29.3 : « Les promos d’Oran », « Les promos de Tlemcen »
     sousTitre: "Réservez sur WhatsApp · Payez en boutique",
     voirPromos: "Voir les promos",
     creditPhoto: "Photo :",
@@ -118,6 +118,7 @@ export const fr = {
     resultats: "{n} résultats",
     aucun: "Aucun article ne correspond à votre recherche. Essayez d’autres critères ou effacez les filtres.",
     aucunBeaute: "Aucun produit de beauté pour le moment.",
+    aucunVille: "Pas encore d’articles à {ville}.", // US-29.3 (texte 11)
     contenance: "Contenance",
     pour: "Pour",
     tout: "Tout",
@@ -344,8 +345,8 @@ export const fr = {
     // US-24.3 : page /carte et bloc de l'accueil.
     metaTitre: "Carte des boutiques",
     titre: "Les boutiques sur la carte",
-    nombreUn: "{n} boutique à Oran",
-    nombre: "{n} boutiques à Oran",
+    nombreUn: "{n} boutique à {ville}",
+    nombre: "{n} boutiques à {ville}",
     filtre: "Filtrer par univers",
     tous: "Tous",
     univers: { femme: "Femme", homme: "Homme", enfant: "Enfant", beaute: "Beauté" },
@@ -356,7 +357,7 @@ export const fr = {
     refus: "Localisation refusée : la liste reste triée par nom. Vous pouvez l’autoriser dans les réglages du navigateur.",
     introuvable: "Position introuvable pour le moment. Réessayez dehors ou près d’une fenêtre.",
     reessayer: "Réessayer",
-    region: "Carte des boutiques d’Oran",
+    region: "Carte des boutiques {deVille}",
     vous: "Vous",
     indisponible: "La carte ne peut pas s’afficher. La liste des boutiques reste ci-dessous.",
     promosUne: "{n} promo en cours",
@@ -382,7 +383,7 @@ export const fr = {
     metaTitre: "Parrainage",
     etiquette: "Parrainage",
     titre: "Parraine tes amis", // 1
-    intro: "Fais découvrir les promos des boutiques d’Oran. Quand ton ami récupère sa première commande en boutique, vous recevez chacun un bon de 300 DA.",
+    intro: "Fais découvrir les promos des boutiques de ta ville. Quand ton ami récupère sa première commande en boutique, vous recevez chacun un bon de 300 DA.",
     commentCaMarche: "Comment ça marche",
     etape1: "Partage ton lien sur WhatsApp.", // 2
     etape2: "Ton ami s’inscrit avec son numéro et te choisit comme parrain.", // 3

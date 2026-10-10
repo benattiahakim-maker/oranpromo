@@ -7,6 +7,7 @@ import { formaterPrix, prixAffiche, promoActive } from "@/lib/prix";
 import { numeroWhatsApp } from "@/lib/whatsapp";
 import { positionBoutique, trierArticlesVitrine } from "@/lib/vitrine";
 import { lienItineraire } from "@/lib/carte";
+import { villeLue } from "@/lib/ville";
 import PartagerArticle from "@/components/PartagerArticle";
 import EnregistrerVue from "@/components/EnregistrerVue";
 import { getLangue } from "@/lib/langue-serveur";
@@ -29,7 +30,7 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
   const langue = await getLangue();
   const t = textesDe(langue).vitrine;
   const { data: boutique, error } = await supabase.from("boutiques")
-    .select("id, nom, quartier, adresse, horaires, whatsapp, latitude, longitude")
+    .select("id, nom, quartier, adresse, horaires, whatsapp, latitude, longitude, villes(nom, nom_ar)")
     .eq("slug", slug).eq("statut", "validee").maybeSingle();
   if (error) throw new Error("Impossible de charger la boutique. Réessayez dans quelques instants.");
   if (!boutique) return <><EntetePublic /><main className="mx-auto w-full max-w-lg px-6 py-16 text-center"><h1 className="font-titre text-3xl">{t.indisponible}</h1><Link href="/" className="mt-6 inline-block underline">{t.retour}</Link></main></>;
@@ -43,14 +44,17 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
     const promotion = Array.isArray(article.promos) ? article.promos[0] : article.promos;
     return { ...article, promo: promotion ? { prixPromo: promotion.prix_promo, dateFin: promotion.date_fin } : null };
   }), maintenant);
-  const position = positionBoutique(boutique.latitude, boutique.longitude, boutique.adresse, boutique.quartier);
-  const itineraire = lienItineraire(boutique); // US-24.3 : même lien que la mini-fiche de /carte
+  // US-29.3 : ville de la boutique (null si elle est fermée : le lien reste ouvert, sans nom de ville).
+  const villeBoutique = villeLue(boutique.villes);
+  const ville = villeBoutique?.nom ?? null;
+  const position = positionBoutique(boutique.latitude, boutique.longitude, boutique.adresse, boutique.quartier, ville);
+  const itineraire = lienItineraire({ ...boutique, ville }); // US-24.3 : même lien que la mini-fiche de /carte
 
   return <div className="mx-auto w-full max-w-lg pb-10">
     <EnregistrerVue boutiqueId={boutique.id} />
     <EntetePublic /><div className="relative h-11"><PartagerArticle titre={boutique.nom} boutiqueId={boutique.id} libelle={t.partager} /></div>
     <section className="flex flex-col gap-3 px-6 py-8 text-center">
-      <p className="etiquette text-gris">{boutique.quartier}</p>
+      <p className="etiquette text-gris">{boutique.quartier}{villeBoutique && ` · ${langue === "ar" ? villeBoutique.nom_ar : villeBoutique.nom}`}</p>
       <h1 dir="auto" className="font-titre break-words text-3xl">{boutique.nom}</h1>
       <p dir="auto" className="text-sm font-light">{boutique.adresse ?? t.adresseInconnue}</p>
       <p dir="auto" className="whitespace-pre-line text-sm text-gris">{boutique.horaires ?? t.horairesInconnus}</p>

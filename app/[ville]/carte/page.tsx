@@ -22,12 +22,13 @@ export default async function Carte({ params, searchParams }: { params: Promise<
   const [{ ville: code }, { univers }, client, t] = await Promise.all([params, searchParams, creerClientServeur(), getTextes()]);
   const [ville, ouvertes] = await Promise.all([getVilleOuverte(code), getVillesOuvertes()]);
   if (!ville) notFound();
-  const { data, error } = await client.rpc("boutiques_carte");
+  // US-29.3 : épingles de la ville seulement.
+  const { data, error } = await client.rpc("boutiques_carte", { code_ville: ville.code });
   const filtre = typeof univers === "string" && estUnivers(univers) ? univers : null;
   return <div className="mx-auto w-full max-w-lg">
     <EntetePublic ville={ville} choixVille={ouvertes.length > 1} />
     <main>
-      {error || !data ? <p role="alert" className="px-6 py-10 text-center">{t.carteBoutiques.erreur}</p> : <CarteBoutiques boutiques={versBoutiquesCarte(data)} univers={filtre} chemin={cheminVille(ville.code, "/carte")} />}
+      {error || !data ? <p role="alert" className="px-6 py-10 text-center">{t.carteBoutiques.erreur}</p> : <CarteBoutiques boutiques={versBoutiquesCarte(data)} univers={filtre} chemin={cheminVille(ville.code, "/carte")} ville={ville} />}
     </main>
   </div>;
 }

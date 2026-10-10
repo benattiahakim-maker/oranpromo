@@ -86,3 +86,13 @@ describe('US-24.3 : itinéraire (même lien que la vitrine), sans la position de
     expect(lienItineraire({ latitude: 35.7303, longitude: -0.5784, quartier: 'Q' })).not.toContain('origin');
   });
 });
+
+describe("US-29.3 : itinéraire sans position, avec la ville", () => {
+  it("« quartier, Tlemcen, Algérie » ; Oran par défaut (comme avant) ; ville inconnue : « quartier, Algérie »", async () => {
+    const { lienItineraire } = await import("./carte");
+    const base = { latitude: null, longitude: null, quartier: "Kiffane" };
+    expect(decodeURIComponent(lienItineraire({ ...base, ville: "Tlemcen" }))).toContain("destination=Kiffane, Tlemcen, Algérie");
+    expect(decodeURIComponent(lienItineraire(base))).toContain("destination=Kiffane, Oran, Algérie");
+    expect(decodeURIComponent(lienItineraire({ ...base, ville: null }))).toContain("destination=Kiffane, Algérie");
+  });
+});

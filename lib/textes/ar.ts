@@ -74,7 +74,7 @@ export const ar: Textes = {
   },
   accueil: {
     univers: "الأقسام",
-    titre: "بروموات وهران",
+    titre: "بروموات {deVille}", // {deVille} : en arabe, le nom seul (« وهران »)
     sousTitre: "احجز على واتساب · خلّص في الحانوت",
     voirPromos: "شوف التخفيضات", // validé
     creditPhoto: "الصورة:",
@@ -116,6 +116,7 @@ export const ar: Textes = {
     resultats: "النتائج: {n}",
     aucun: "ما لقينا حتى سلعة. جرّب كلمات أخرى ولا امسح الفلاتر.",
     aucunBeaute: "ما كاين حتى منتوج تجميل دابا.",
+    aucunVille: "مازال ما كاش سلعة في {ville}.",
     contenance: "الحجم",
     pour: "لمن",
     tout: "كامل",
@@ -342,8 +343,8 @@ export const ar: Textes = {
     // US-24.3 : textes de la carte proposés dans US-24 (gardés tels quels, relecture du propriétaire à venir).
     metaTitre: "خريطة الحوانت",
     titre: "الحوانت في الخريطة", // 2
-    nombreUn: "{n} حانوت في وهران",
-    nombre: "{n} حانوت في وهران",
+    nombreUn: "{n} حانوت في {ville}",
+    nombre: "{n} حانوت في {ville}",
     filtre: "اختار القسم",
     tous: "الكل", // 11
     univers: { femme: "نسا", homme: "رجال", enfant: "ذراري", beaute: "تجميل" }, // 11
@@ -354,7 +355,7 @@ export const ar: Textes = {
     refus: "ما عطيتش الإذن بالموقع: القائمة تبقى مرتّبة بالاسم.", // 10
     introuvable: "ما لقيناش البلاصة نتاعك دابا. عاود جرّب برّا ولا قريب من طاقة.",
     reessayer: "عاود جرّب",
-    region: "خريطة حوانت وهران",
+    region: "خريطة حوانت {deVille}",
     vous: "أنت",
     indisponible: "الخريطة ما قدرتش تبان. قائمة الحوانت راهي لتحت.",
     promosUne: "{n} تخفيض دابا",
@@ -380,7 +381,7 @@ export const ar: Textes = {
     metaTitre: "العرضة",
     etiquette: "العرضة",
     titre: "عرّض صحابك", // 1
-    intro: "عرّف صحابك بالتخفيضات تاع حوانيت وهران. كي صاحبك يدّي أول طلب من الحانوت، كل واحد فيكم يربح بون تاع 300 دج.",
+    intro: "عرّف صحابك بالتخفيضات تاع حوانيت مدينتك. كي صاحبك يدّي أول طلب من الحانوت، كل واحد فيكم يربح بون تاع 300 دج.",
     commentCaMarche: "كيفاش تخدم",
     etape1: "ابعث الرابط نتاعك لصحابك على واتساب.", // 2
     etape2: "صاحبك يتسجّل بنمرتو ويكتب نمرتك ولا الكود نتاعك.", // 3

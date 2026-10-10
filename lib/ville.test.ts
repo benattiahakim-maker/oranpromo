@@ -68,3 +68,12 @@ describe("US-29.2 : noms et position", () => {
     expect(VILLE_ORAN).toMatchObject({ code: "oran", lat_min: 35.33, lat_max: 35.92, lng_min: -1.15, lng_max: -0.10, centre_lat: 35.6971, centre_lng: -0.6337, zoom: 12 });
   });
 });
+
+describe("US-29.3 : ville lue avec une boutique", () => {
+  it("objet, tableau ou rien", async () => {
+    const { villeLue } = await import("./ville");
+    expect(villeLue({ nom: "Oran" })).toEqual({ nom: "Oran" });
+    expect(villeLue([{ nom: "Oran" }])).toEqual({ nom: "Oran" });
+    expect(villeLue([])).toBeNull(); expect(villeLue(null)).toBeNull();
+  });
+});
