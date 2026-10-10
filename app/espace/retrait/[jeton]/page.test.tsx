@@ -1,18 +1,23 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import Page, { metadata } from "./page";
+import Page, { generateMetadata } from "./page";
+import { textesDe } from "@/lib/textes";
 
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ rpc }) }));
 vi.mock("@/app/espace/retrait/actions", () => ({ remettreCommandeRetrait: vi.fn() }));
+const langue = vi.hoisted(() => ({ valeur: "fr" as "fr" | "ar" }));
+vi.mock("@/lib/langue-serveur", () => ({ getLangue: async () => langue.valeur, getTextes: async () => textesDe(langue.valeur) }));
 const JETON = "q7Kx2mPZ9vTfW8LrB4n1aE";
 const resume = { etat: "ok", commande: "c1", numero: 128, prenom: "Amine", total: 6300, expire_le: "2026-10-10T17:30:00Z", terminee_le: null, mode_remise: null,
   lignes: [{ titre: "Eau de parfum rose et musc", taille: "50 ml", quantite: 1, prix_unitaire: 3900 }, { titre: "Huile parfumée musc blanc", taille: "10 ml", quantite: 2, prix_unitaire: 1200 }] };
 const afficher = async (jeton = JETON) => renderToStaticMarkup(await Page({ params: Promise.resolve({ jeton }) }));
-beforeEach(() => { rpc.mockReset(); rpc.mockResolvedValue({ data: resume, error: null }); });
+beforeEach(() => { langue.valeur = "fr"; rpc.mockReset(); rpc.mockResolvedValue({ data: resume, error: null }); });
 
 describe("US-26.3 : /espace/retrait/[jeton]", () => {
-  it("non indexée, sans Referer", () => {
+  it("non indexée, sans Referer", async () => {
+    const metadata = await generateMetadata();
+    expect(metadata.title).toBe("Retrait d’une commande");
     expect(metadata.robots).toEqual({ index: false, follow: false }); expect(metadata.referrer).toBe("no-referrer");
   });
   it("ouvrir la page lit seulement (retrait_boutique) : résumé, prénom, montant à encaisser, bouton « Remis au client »", async () => {
@@ -42,5 +47,14 @@ describe("US-26.3 : /espace/retrait/[jeton]", () => {
     expect(rpc).not.toHaveBeenCalled();
     rpc.mockResolvedValue({ data: null, error: { code: "42501", message: "x" } });
     expect(await afficher()).toContain("Connectez-vous à votre espace boutique.");
+  });
+  it("US-35 : en arabe, titre et message d'erreur en arabe", async () => {
+    langue.valeur = "ar";
+    expect((await generateMetadata()).title).toBe(textesDe("ar").espace.retrait.titrePage);
+    rpc.mockResolvedValue({ data: null, error: { message: "boom" } });
+    const html = await afficher();
+    expect(html).toContain(textesDe("ar").espace.retrait.titre);
+    expect(html).toContain(textesDe("ar").espace.retrait.scannerAutre);
+    expect(html).not.toContain("Scanner une autre commande");
   });
 });

@@ -1,5 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+// US-35 : langue de la requête (cookie) : français dans ces tests.
+vi.mock("@/lib/langue-serveur", async () => { const { textesDe } = await import("@/lib/textes"); return { getLangue: async () => "fr", getTextes: async () => textesDe("fr"), enLangue: async <T,>(r: T) => r }; });
 import Statistiques from "./page";
 const { getUser, eq, maybeSingle, chargerStatistiques } = vi.hoisted(() => ({ getUser: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn(), chargerStatistiques: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ auth: { getUser }, from: () => ({ select: () => ({ eq: (champ: string, id: string) => { eq(champ, id); return { maybeSingle }; } }) }) }) }));

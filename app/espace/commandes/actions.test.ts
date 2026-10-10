@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+// US-35 : langue de la requête (cookie) : français dans ces tests.
+vi.mock("@/lib/langue-serveur", async () => { const { textesDe } = await import("@/lib/textes"); return { getLangue: async () => "fr", getTextes: async () => textesDe("fr"), enLangue: async <T,>(r: T) => r }; });
 import { changerStatutCommandeBoutique, declarerClientPasVenu } from "./actions";
 
 const { rpc, commande, boutique } = vi.hoisted(() => ({ rpc: vi.fn(), commande: { valeur: null as unknown }, boutique: { valeur: "b1" } }));

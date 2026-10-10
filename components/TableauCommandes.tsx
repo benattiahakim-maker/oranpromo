@@ -9,12 +9,16 @@ import { CarteCommande } from "@/components/CommandesRecues";
 import { useEstNouvelle } from "@/components/MiseAJourCommandes";
 import { ACTION_BOUTIQUE, estStockInsuffisant, quantiteTotale, type CommandeRecue } from "@/lib/commandes";
 import { aEncaisser } from "@/lib/bons";
-import { ACTION_GROUPEE, compteRendu, ETAPES, etapeDeStatut, GROUPE_MAX, heureCourte, heureEtape, prenom, urgence, type EtapeCommande } from "@/lib/tableau-commandes";
+import { useLangue, useTextes } from "@/components/FournisseurTextes";
+import { isolerGaucheDroite, remplir } from "@/lib/langue";
+import { traduireMessage } from "@/lib/textes/messages";
+import { ACTION_GROUPEE, compteRendu, etapeDeStatut, GROUPE_MAX, heureCourte, heureEtape, prenom, urgence, type EtapeCommande } from "@/lib/tableau-commandes";
 
 const COLONNES = "lg:grid-cols-[56px_minmax(0,1fr)_64px_104px_96px_180px_88px]";
 
 export default function TableauCommandes({ commandes, etape, boutique, maintenant }: { commandes: CommandeRecue[]; etape: EtapeCommande | null; boutique: string; maintenant: number }) {
   const router = useRouter();
+  const textes = useTextes(), t = textes.espace.tableau, etapes = textes.espace.commandes.etapes, langue = useLangue();
   const [ouverte, setOuverte] = useState<string | null>(null);
   const [alertes, setAlertes] = useState<Record<string, string>>({});
   // US-28.2 : cases à cocher sur « À confirmer » et « À préparer » seulement.
@@ -25,7 +29,7 @@ export default function TableauCommandes({ commandes, etape, boutique, maintenan
   const verrou = useRef(false);
   const cochees = commandes.filter(c => selection.has(c.id));
   const trop = cochees.length > GROUPE_MAX;
-  const vide = etape ? ETAPES[etape].vide : "Aucune commande ne correspond.";
+  const vide = etape ? etapes[etape].vide : t.aucune;
 
   function cocher(id: string) { setSelection(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); }
   function toutCocher() { setSelection(cochees.length === commandes.length ? new Set() : new Set(commandes.map(c => c.id))); }
@@ -35,29 +39,29 @@ export default function TableauCommandes({ commandes, etape, boutique, maintenan
     verrou.current = true; setEnvoi(true); setRapport(null);
     try {
       const resultat = await changerStatutCommandesBoutique(cochees.map(c => c.id), statutGroupe);
-      setRapport(compteRendu(resultat, statutGroupe));
+      setRapport(compteRendu(resultat, statutGroupe, t, m => traduireMessage(m, langue)));
       // Les échouées restent cochées ; les réussies quittent l’étape au rafraîchissement.
       setSelection(new Set(resultat.succes ? resultat.echecs.map(e => e.id) : cochees.map(c => c.id)));
       if (resultat.reussies.length) router.refresh();
-    } catch { setRapport({ titre: "Impossible de modifier les commandes. Vérifiez votre connexion.", lignes: [] }); }
+    } catch { setRapport({ titre: t.groupeImpossible, lignes: [] }); }
     finally { verrou.current = false; setEnvoi(false); }
   }
 
-  const libelleAction = statutGroupe === "confirmee" ? `Confirmer ${cochees.length > 1 ? `les ${cochees.length}` : "la commande"}` : `Marquer prête${cochees.length > 1 ? "s" : ""} (${cochees.length})`;
+  const libelleAction = statutGroupe === "confirmee" ? (cochees.length > 1 ? remplir(t.confirmerLes, { n: cochees.length }) : t.confirmerUne) : remplir(cochees.length > 1 ? t.marquerPretes : t.marquerPrete, { n: cochees.length });
   return <div className="flex flex-col">
     {rapport && <div role="status" className="mx-4 my-2 border border-noir px-3 py-2.5 text-sm lg:mx-0">
       <p className="font-medium">{rapport.titre}</p>
-      {rapport.lignes.map(l => <p key={l.id} className="mt-1.5 text-erreur">{l.texte} {commandes.some(c => c.id === l.id) && <button type="button" onClick={() => setOuverte(l.id)} className="text-noir underline">Voir</button>}</p>)}
+      {rapport.lignes.map(l => <p key={l.id} className="mt-1.5 text-erreur">{l.texte} {commandes.some(c => c.id === l.id) && <button type="button" onClick={() => setOuverte(l.id)} className="text-noir underline">{textes.espace.commun.voir}</button>}</p>)}
     </div>}
     {!commandes.length ? <p className="py-8 text-center text-sm text-gris">{vide}</p> : <>
       {statutGroupe && <label className="flex min-h-11 cursor-pointer items-center gap-3 border-b border-trait px-3 text-xs text-gris">
-        <input type="checkbox" checked={cochees.length === commandes.length} onChange={toutCocher} className="size-5" />Tout cocher ({commandes.length})
-        <span className="ml-auto">Les plus urgentes en haut</span>
+        <input type="checkbox" checked={cochees.length === commandes.length} onChange={toutCocher} className="size-5" />{remplir(t.toutCocher, { n: commandes.length })}
+        <span className="ms-auto">{t.urgentes}</span>
       </label>}
       {/* En-têtes du tableau, sur ordinateur seulement. */}
       <div aria-hidden="true" className="etiquette hidden min-h-10 items-center border-b border-noir text-[10px] text-gris lg:flex">
         {statutGroupe && <span className="w-11 shrink-0" />}
-        <span className={`grid flex-1 ${COLONNES} gap-x-3 ${statutGroupe ? "" : "pl-3"}`}><span>N°</span><span>Prénom</span><span>Articles</span><span className="text-right">À encaisser</span><span>{etape ? ETAPES[etape].heure : "Étape"}</span><span>Échéance</span><span>Bon</span></span>
+        <span className={`grid flex-1 ${COLONNES} gap-x-3 ${statutGroupe ? "" : "pl-3"}`}><span>{t.colNumero}</span><span>{t.colPrenom}</span><span>{t.colArticles}</span><span className="text-end">{t.colAEncaisser}</span><span>{etape ? etapes[etape].heure : t.colEtape}</span><span>{t.colEcheance}</span><span>{t.colBon}</span></span>
         <span className="w-[158px]" />
       </div>
       <ul>{commandes.map(c => <Ligne key={c.id} commande={c} etape={etape} boutique={boutique} maintenant={maintenant} ouverte={ouverte === c.id} alerte={alertes[c.id]}
@@ -66,21 +70,22 @@ export default function TableauCommandes({ commandes, etape, boutique, maintenan
         signaler={message => { setAlertes(a => ({ ...a, [c.id]: message })); setOuverte(c.id); }} />)}</ul>
     </>}
     {statutGroupe && cochees.length > 0 && <div className="sticky bottom-0 z-10 mt-3 flex items-center gap-3 bg-noir px-3 py-2.5 text-blanc lg:sticky lg:top-0 lg:bottom-auto lg:order-first lg:mb-2 lg:mt-0 lg:pl-4">
-      <p className="flex-1 text-[13px] lg:flex lg:flex-none lg:gap-4 lg:text-sm">{cochees.length} commande{cochees.length > 1 ? "s" : ""} cochée{cochees.length > 1 ? "s" : ""}<br className="lg:hidden" /><button type="button" onClick={() => setSelection(new Set())} className="text-xs text-[#CFCFCF] underline lg:text-[13px]">Décocher</button></p>
-      <button type="button" disabled={envoi || trop} onClick={() => void agirGroupe()} className="etiquette min-h-11 bg-blanc px-3.5 text-noir lg:ml-auto">{trop ? `${GROUPE_MAX} au plus à la fois` : libelleAction}</button>
+      <p className="flex-1 text-[13px] lg:flex lg:flex-none lg:gap-4 lg:text-sm">{remplir(cochees.length > 1 ? t.cochees : t.cochee, { n: cochees.length })}<br className="lg:hidden" /><button type="button" onClick={() => setSelection(new Set())} className="text-xs text-[#CFCFCF] underline lg:text-[13px]">{t.decocher}</button></p>
+      <button type="button" disabled={envoi || trop} onClick={() => void agirGroupe()} className="etiquette min-h-11 bg-blanc px-3.5 text-noir lg:ms-auto">{trop ? remplir(t.auPlus, { n: GROUPE_MAX }) : libelleAction}</button>
     </div>}
   </div>;
 }
 
 function Ligne({ commande, etape, boutique, maintenant, ouverte, alerte, cochable, cochee, cocher, basculer, signaler }: { commande: CommandeRecue; etape: EtapeCommande | null; boutique: string; maintenant: number; ouverte: boolean; alerte?: string; cochable: boolean; cochee: boolean; cocher: () => void; basculer: () => void; signaler: (message: string) => void }) {
   const router = useRouter();
+  const textes = useTextes(), t = textes.espace.tableau, etapes = textes.espace.commandes.etapes, langue = useLangue();
   const [enCours, setEnCours] = useState(false);
   const verrou = useRef(false);
   const estNouvelle = useEstNouvelle();
-  const u = urgence(commande, maintenant);
+  const u = urgence(commande, maintenant, t, textes.commandes.statuts);
   const pieces = quantiteTotale(commande.lignes_commande);
   const remise = commande.remise_bon ?? 0;
-  const heure = heureCourte(heureEtape(commande), maintenant);
+  const heure = heureCourte(heureEtape(commande), maintenant, t);
   const etapeLigne = etapeDeStatut(commande.statut);
   const action = ACTION_BOUTIQUE[commande.statut];
   const idDetail = `detail-${commande.id}`;
@@ -91,36 +96,36 @@ function Ligne({ commande, etape, boutique, maintenant, ouverte, alerte, cochabl
     verrou.current = true; setEnCours(true);
     try {
       const resultat = await changerStatutCommandeBoutique(commande.id, action.statut, null, "");
-      if (resultat.succes) router.refresh(); else signaler(resultat.message);
-    } catch { signaler("Impossible de modifier la commande. Vérifiez votre connexion."); }
+      if (resultat.succes) router.refresh(); else signaler(traduireMessage(resultat.message, langue));
+    } catch { signaler(t.ligneImpossible); }
     finally { verrou.current = false; setEnCours(false); }
   }
 
   return <li className={`border-b border-trait ${cochee ? "bg-[#F5F5F5]" : ""}`}>
     <div className="flex items-stretch">
-      {cochable && <label className="flex w-11 shrink-0 cursor-pointer items-center justify-center"><input type="checkbox" checked={cochee} onChange={cocher} aria-label={`Cocher la commande n° ${commande.numero}`} className="size-5" /></label>}
-      <button type="button" aria-expanded={ouverte} aria-controls={idDetail} onClick={basculer} className={`grid min-h-16 flex-1 grid-cols-[minmax(0,1fr)_auto] content-center gap-x-3 py-2 ${cochable ? "pl-0" : "pl-3"} text-left lg:min-h-11 lg:py-1.5 ${COLONNES} lg:items-center`}>
+      {cochable && <label className="flex w-11 shrink-0 cursor-pointer items-center justify-center"><input type="checkbox" checked={cochee} onChange={cocher} aria-label={remplir(t.cocher, { n: commande.numero })} className="size-5" /></label>}
+      <button type="button" aria-expanded={ouverte} aria-controls={idDetail} onClick={basculer} className={`grid min-h-16 flex-1 grid-cols-[minmax(0,1fr)_auto] content-center gap-x-3 py-2 ${cochable ? "ps-0" : "ps-3"} text-start lg:min-h-11 lg:py-1.5 ${COLONNES} lg:items-center`}>
         <span className="col-start-1 row-start-1 min-w-0 truncate text-[15px] lg:contents">
-          <span className="font-medium lg:col-start-1 lg:row-start-1"><span className="lg:hidden">N° </span>{commande.numero}</span>
-          <span className="lg:col-start-2 lg:row-start-1 lg:flex lg:min-w-0 lg:items-center"><span className="lg:hidden"> · </span><span className="lg:min-w-10 lg:truncate">{prenom(commande.client_nom)}</span>{estNouvelle(commande) && <span className="ml-1.5 shrink-0 bg-noir px-1 py-px align-middle text-[9px] uppercase tracking-[1.2px] text-blanc lg:tracking-[0.4px]">Nouveau</span>}</span>
+          <span className="font-medium lg:col-start-1 lg:row-start-1"><span className="lg:hidden">{remplir(t.numeroCourt, { n: "" })}</span>{commande.numero}</span>
+          <span className="lg:col-start-2 lg:row-start-1 lg:flex lg:min-w-0 lg:items-center"><span className="lg:hidden"> · </span><span className="lg:min-w-10 lg:truncate">{prenom(commande.client_nom)}</span>{estNouvelle(commande) && <span className="ms-1.5 shrink-0 bg-noir px-1 py-px align-middle text-[9px] uppercase tracking-[1.2px] text-blanc lg:tracking-[0.4px]">{t.nouveau}</span>}</span>
         </span>
         <span className="col-start-1 row-start-2 text-xs text-gris lg:contents lg:text-sm lg:text-noir">
-          <span className="lg:col-start-3 lg:row-start-1">{pieces}<span className="lg:hidden"> article{pieces > 1 ? "s" : ""}</span></span>
+          <span className="lg:col-start-3 lg:row-start-1">{pieces}<span className="lg:hidden"> {remplir(pieces > 1 ? t.articles : t.article, { n: "" }).trim()}</span></span>
           <span className="lg:hidden"> · </span>
-          <span className="lg:col-start-5 lg:row-start-1">{etape ? <><span className="lg:hidden">{ETAPES[etape].heure.toLowerCase()} {/^\d/.test(heure) ? "à " : ""}</span>{heure}</> : ETAPES[etapeLigne].libelle}</span>
+          <span className="lg:col-start-5 lg:row-start-1">{etape ? <><span className="lg:hidden">{/^\d/.test(heure) ? remplir(t.heureA, { etape: etapes[etape].heure.toLowerCase(), heure: "" }) : `${etapes[etape].heure.toLowerCase()} `}</span>{heure}</> : etapes[etapeLigne].libelle}</span>
         </span>
         <span className={`col-start-1 row-start-3 text-xs lg:col-start-6 lg:row-start-1 lg:text-sm ${u.rouge ? "font-medium text-erreur" : "text-gris"}`}>{u.rouge && <span aria-hidden="true">● </span>}{u.texte}</span>
-        <span className="col-start-2 row-start-1 whitespace-nowrap text-right text-[15px] lg:col-start-4 lg:row-start-1 lg:text-sm"><Prix montant={aEncaisser(commande.total, remise)} /></span>
-        {remise > 0 && <span className="col-start-2 row-start-2 justify-self-end lg:col-start-7 lg:row-start-1 lg:justify-self-start"><span className="etiquette whitespace-nowrap border border-noir px-1 text-[9px]">Bon −{remise}</span></span>}
+        <span className="col-start-2 row-start-1 whitespace-nowrap text-end text-[15px] lg:col-start-4 lg:row-start-1 lg:text-sm"><Prix montant={aEncaisser(commande.total, remise)} langue={langue} /></span>
+        {remise > 0 && <span className="col-start-2 row-start-2 justify-self-end lg:col-start-7 lg:row-start-1 lg:justify-self-start"><span className="etiquette whitespace-nowrap border border-noir px-1 text-[9px]">{remplir(t.bon, { n: langue === "ar" ? isolerGaucheDroite(`−${remise}`) : `−${remise}` })}</span></span>}
       </button>
-      <span className="hidden w-[130px] items-center justify-end pr-1 lg:flex">
-        {action && commande.statut !== "prete" && <button type="button" disabled={enCours} onClick={() => void agir()} className="etiquette min-h-9 border border-noir px-3 text-[10px]">{action.libelle}</button>}
-        {commande.statut === "prete" && <Link href="/espace/scanner" className="etiquette inline-flex min-h-9 items-center border border-noir px-3 text-[10px]">Scanner</Link>}
+      <span className="hidden w-[130px] items-center justify-end pe-1 lg:flex">
+        {action && commande.statut !== "prete" && <button type="button" disabled={enCours} onClick={() => void agir()} className="etiquette min-h-9 border border-noir px-3 text-[10px]">{textes.espace.carte.actions[action.statut as keyof typeof textes.espace.carte.actions]}</button>}
+        {commande.statut === "prete" && <Link href="/espace/scanner" className="etiquette inline-flex min-h-9 items-center border border-noir px-3 text-[10px]">{textes.espace.commun.scanner}</Link>}
       </span>
       <button type="button" aria-hidden="true" tabIndex={-1} onClick={basculer} className="w-7 shrink-0 text-gris">{ouverte ? "⌃" : "⌄"}</button>
     </div>
     {ouverte && <div id={idDetail} className="bg-[#FAFAFA] px-4 pb-4 pt-2 lg:pl-[68px]">
-      {alerte && <p role="alert" className="mb-2 text-sm text-erreur">{alerte}{estStockInsuffisant(alerte) && <> <Link href="/espace" className="underline">Corriger le stock dans Mes articles</Link></>}</p>}
+      {alerte && <p role="alert" className="mb-2 text-sm text-erreur">{alerte}{estStockInsuffisant(alerte) && <> <Link href="/espace" className="underline">{t.corrigerStock}</Link></>}</p>}
       <CarteCommande commande={commande} boutique={boutique} dansTableau />
     </div>}
   </li>;

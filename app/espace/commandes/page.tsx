@@ -4,8 +4,9 @@ import type { CommandeRecue } from "@/lib/commandes";
 import { lireBonsDesCommandes } from "@/lib/bons-boutique";
 import { chercherCommandes, etapeParDefaut, lireEtatCommandes, lireEtape, lireRecherche, listerEtape, RECHERCHE_MAX, type CompteursEtapes, type EtapeCommande } from "@/lib/tableau-commandes";
 import VueCommandesRecues from "@/components/VueCommandesRecues";
+import { getLangue, getTextes } from "@/lib/langue-serveur";
 
-export const metadata = { title: "Commandes reçues", robots: { index: false, follow: false } };
+export async function generateMetadata() { return { title: (await getTextes()).espace.commandes.titre, robots: { index: false, follow: false } }; }
 
 type Parametres = { etape?: string | string[]; vue?: string | string[]; q?: string | string[] };
 
@@ -41,5 +42,5 @@ export default async function PageCommandesRecues({ searchParams }: { searchPara
   const parametres = await searchParams;
   const { boutiqueId, boutique, maintenant, recherche, compteurs, derniere, etape, commandes, erreur } = await charger(parametres);
   const texteRecherche = typeof parametres.q === "string" ? parametres.q.trim().slice(0, RECHERCHE_MAX) : "";
-  return <VueCommandesRecues {...{ boutiqueId, boutique, maintenant, recherche: Boolean(recherche), texteRecherche, compteurs, derniere, etape, commandes, erreur }} />;
+  return <VueCommandesRecues {...{ boutiqueId, boutique, maintenant, recherche: Boolean(recherche), texteRecherche, compteurs, derniere, etape, commandes, erreur, langue: await getLangue() }} />;
 }

@@ -1,4 +1,5 @@
 "use server";
+import { enLangue } from "@/lib/langue-serveur";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { acceptationCouvre, accepterDocuments, documentsValides, lireDocumentsAAccepter, MESSAGE_CONDITIONS_CHANGEES } from "@/lib/acceptations";
 
@@ -6,7 +7,8 @@ import { acceptationCouvre, accepterDocuments, documentsValides, lireDocumentsAA
 // dans la version affichée (jamais un ambassadeur à sa place : la base n'accepte que pour le compte connecté).
 export type ResultatAcceptation = { ok?: true; erreur?: string };
 
-export async function accepterConditionsEspace(documents: unknown): Promise<ResultatAcceptation> {
+export async function accepterConditionsEspace(...a: Parameters<typeof accepterConditionsEspaceInterne>): Promise<ResultatAcceptation> { return enLangue(await accepterConditionsEspaceInterne(...a)); }
+async function accepterConditionsEspaceInterne(documents: unknown): Promise<ResultatAcceptation> {
   try {
     const acceptes = documentsValides(documents);
     if (!acceptes || acceptes.length === 0) return { erreur: "Cochez la case pour accepter les conditions." };

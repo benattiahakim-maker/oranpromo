@@ -1,4 +1,5 @@
 "use server";
+import { enLangue } from "@/lib/langue-serveur";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { avecNomBon } from "@/lib/bons-boutique";
 import { codeRetraitValide, jetonRetraitValide, lireRetraitBoutique, MESSAGE_CODE_FAUX, messageRetraitBoutique, remettreRetrait, type ResumeRetrait } from "@/lib/retrait";
@@ -11,7 +12,8 @@ import { codeRetraitValide, jetonRetraitValide, lireRetraitBoutique, MESSAGE_COD
 export type ResultatRetrait = { succes: boolean; message: string; resume?: ResumeRetrait };
 
 /** Code à 6 chiffres tapé : résumé affiché dans la page du scanner (le jeton n'est jamais renvoyé au navigateur). */
-export async function lireRetraitParCode(code: string): Promise<ResultatRetrait> {
+export async function lireRetraitParCode(...a: Parameters<typeof lireRetraitParCodeInterne>): Promise<ResultatRetrait> { return enLangue(await lireRetraitParCodeInterne(...a)); }
+async function lireRetraitParCodeInterne(code: string): Promise<ResultatRetrait> {
   try {
     if (!codeRetraitValide(code)) return { succes: false, message: "Tapez les 6 chiffres du code." };
     const client = await creerClientServeur();
@@ -22,7 +24,8 @@ export async function lireRetraitParCode(code: string): Promise<ResultatRetrait>
 }
 
 /** « Remis au client » : par le jeton (QR code) ou par le code à 6 chiffres. Ouvrir ou scanner ne remet jamais rien. */
-export async function remettreCommandeRetrait(cle: { jeton: string } | { code: string }): Promise<ResultatRetrait> {
+export async function remettreCommandeRetrait(...a: Parameters<typeof remettreCommandeRetraitInterne>): Promise<ResultatRetrait> { return enLangue(await remettreCommandeRetraitInterne(...a)); }
+async function remettreCommandeRetraitInterne(cle: { jeton: string } | { code: string }): Promise<ResultatRetrait> {
   try {
     const parCode = typeof cle === "object" && cle !== null && "code" in cle;
     const valide = parCode ? codeRetraitValide((cle as { code: unknown }).code) : jetonRetraitValide((cle as { jeton?: unknown })?.jeton);

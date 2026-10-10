@@ -1,4 +1,5 @@
 "use server";
+import { enLangue } from "@/lib/langue-serveur";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { publierArticle } from "@/lib/publication-article";
 import { articleDeMaBoutique, boutiqueDuCompte, modifierArticle, type TailleModifiee } from "@/lib/gestion-articles";
@@ -20,7 +21,8 @@ async function lire(corps: FormData) {
   const paires = new Map((fichiers as File[]).map((fichier, i) => [fichier, vignettes[i] as File]));
   return { saisie: { ...v, photos: fichiers } as SaisieArticle, fichiers: fichiers as File[], dejaCompressee: async (fichier: File): Promise<PhotoPreparee> => ({ photo: fichier, vignette: paires.get(fichier) ?? null }) };
 }
-export async function publierArticleServeur(corps: FormData): Promise<{ id?: string; erreur?: string }> {
+export async function publierArticleServeur(...a: Parameters<typeof publierArticleServeurInterne>): Promise<{ id?: string; erreur?: string }> { return enLangue(await publierArticleServeurInterne(...a)); }
+async function publierArticleServeurInterne(corps: FormData): Promise<{ id?: string; erreur?: string }> {
   try {
     const client = await creerClientServeur(), boutiqueId = await boutiqueDuCompte(client);
     if (boutiqueId !== corps.get("boutiqueId")) throw new Error("Votre compte n’est pas rattaché à cette boutique.");
@@ -30,7 +32,8 @@ export async function publierArticleServeur(corps: FormData): Promise<{ id?: str
     return { id };
   } catch (error) { return { erreur: error instanceof Error ? error.message : "Impossible de publier l’article. Réessayez." }; }
 }
-export async function modifierArticleServeur(corps: FormData): Promise<{ erreur?: string; photos?: { id: string; adresse: string; ordre: number }[] }> {
+export async function modifierArticleServeur(...a: Parameters<typeof modifierArticleServeurInterne>): Promise<{ erreur?: string; photos?: { id: string; adresse: string; ordre: number }[] }> { return enLangue(await modifierArticleServeurInterne(...a)); }
+async function modifierArticleServeurInterne(corps: FormData): Promise<{ erreur?: string; photos?: { id: string; adresse: string; ordre: number }[] }> {
   try {
     const client = await creerClientServeur(); await boutiqueDuCompte(client);
     const { saisie, fichiers, dejaCompressee } = await lire(corps);

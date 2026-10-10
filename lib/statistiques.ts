@@ -29,9 +29,12 @@ export function calculerStatistiques(evenements: EvenementStatistique[], boutiqu
     if (evenement.type === "vue_article") compte.vues++; else compte.clics++;
     comptes.set(evenement.article_id, compte);
   }
-  resultat.topArticles = [...comptes].filter(([, compte]) => compte.vues > 0).sort(([idA, a], [idB, b]) => b.vues - a.vues || idA.localeCompare(idB)).slice(0, 5).map(([id, compte]) => ({ id, titre: titres.get(id) ?? "Article indisponible", ...compte }));
+  resultat.topArticles = [...comptes].filter(([, compte]) => compte.vues > 0).sort(([idA, a], [idB, b]) => b.vues - a.vues || idA.localeCompare(idB)).slice(0, 5).map(([id, compte]) => ({ id, titre: titres.get(id) ?? TITRE_INDISPONIBLE, ...compte }));
   return resultat;
 }
+
+/** Titre d’un article supprimé (traduit à l’affichage, US-35). */
+export const TITRE_INDISPONIBLE = "Article indisponible";
 
 export async function chargerStatistiques(client: SupabaseClient<Database>, boutiqueId: string, jours: DureeStatistiques, maintenant = new Date()) {
   const bornes = bornesStatistiques(jours, maintenant);

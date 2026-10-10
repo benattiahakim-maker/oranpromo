@@ -75,14 +75,12 @@ export function formaterPosition(position: Position): string {
 }
 
 // « Position trouvée · précision ± 12 m » ; avertissement au-delà de 100 m.
-export function textePrecision(precisionMetres: number): { texte: string; avertissement: string | null } {
-  const metres = Math.max(1, Math.round(precisionMetres));
+/** US-35 : `t` = textes de l'espace dans la langue choisie (français par défaut). */
+export function textePrecision(precisionMetres: number, t: { trouvee: string; peuPrecise: string } = { trouvee: "Position trouvée · précision ± {m} m", peuPrecise: "Position peu précise (± {m} m) : activez la localisation précise ou le GPS, approchez-vous de la porte, ou déplacez l’épingle." }): { texte: string; avertissement: string | null } {
+  const metres = String(Math.max(1, Math.round(precisionMetres)));
   return {
-    texte: `Position trouvée · précision ± ${metres} m`,
-    avertissement:
-      precisionMetres > PRECISION_MAX_METRES
-        ? `Position peu précise (± ${metres} m) : activez la localisation précise ou le GPS, approchez-vous de la porte, ou déplacez l’épingle.`
-        : null,
+    texte: t.trouvee.replace("{m}", metres),
+    avertissement: precisionMetres > PRECISION_MAX_METRES ? t.peuPrecise.replace("{m}", metres) : null,
   };
 }
 

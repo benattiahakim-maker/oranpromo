@@ -3,6 +3,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { STATUTS_COMMANDE, type CommandeRecue, type StatutCommande } from "@/lib/commandes";
+import { fr, type Textes } from "@/lib/textes/fr";
+import { remplir, type Langue } from "@/lib/langue";
+
+/** US-35 : textes du tableau (français par défaut ; l'espace passe ceux de la langue choisie). */
+export type TextesTableau = Textes["espace"]["tableau"];
 
 export type EtapeCommande = "a_confirmer" | "a_preparer" | "pretes" | "terminees";
 export const ORDRE_ETAPES: EtapeCommande[] = ["a_confirmer", "a_preparer", "pretes", "terminees"];
@@ -52,41 +57,41 @@ export function debutJourOran(maintenant: number): string {
 }
 
 /** « 13 h 23 » aujourd’hui, « hier 13 h 23 », sinon « 08/10 13 h 23 » (heure d’Oran). */
-export function heureCourte(iso: string, maintenant: number): string {
+export function heureCourte(iso: string, maintenant: number, t: TextesTableau = fr.espace.tableau): string {
   const ms = Date.parse(iso);
   const parts = new Intl.DateTimeFormat("fr-FR", { timeZone: FUSEAU, hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", hourCycle: "h23" }).formatToParts(new Date(ms));
   const p = (t: string) => parts.find(x => x.type === t)?.value ?? "";
-  const heure = `${Number(p("hour"))} h ${p("minute")}`;
+  const heure = remplir(t.heure, { h: Number(p("hour")), m: p("minute") });
   const jour = jourOran(ms);
   if (jour === jourOran(maintenant)) return heure;
-  if (jour === jourOran(maintenant - 86_400_000)) return `hier ${heure}`;
+  if (jour === jourOran(maintenant - 86_400_000)) return remplir(t.hier, { heure });
   return `${p("day")}/${p("month")} ${heure}`;
 }
 
 /** « 42 min », « 2 h », « 2 h 05 ». */
-export function formaterDuree(minutes: number): string {
+export function formaterDuree(minutes: number, t: TextesTableau = fr.espace.tableau): string {
   const m = Math.max(0, Math.floor(minutes));
-  if (m < 1) return "moins d’1 min";
-  if (m < 60) return `${m} min`;
+  if (m < 1) return t.moinsUneMinute;
+  if (m < 60) return remplir(t.minutes, { m });
   const h = Math.floor(m / 60), reste = m % 60;
-  return reste ? `${h} h ${String(reste).padStart(2, "0")}` : `${h} h`;
+  return reste ? remplir(t.heuresMinutes, { h, m: String(reste).padStart(2, "0") }) : remplir(t.heures, { h });
 }
 
 export type Urgence = { texte: string; rouge: boolean };
 type ChampsUrgence = Pick<CommandeRecue, "statut" | "cree_le" | "confirmee_le" | "expire_le">;
 
 /** Texte d’urgence de la ligne ; le rouge est toujours accompagné de ce texte. */
-export function urgence(commande: ChampsUrgence, maintenant: number): Urgence {
+export function urgence(commande: ChampsUrgence, maintenant: number, t: TextesTableau = fr.espace.tableau, statuts: Record<StatutCommande, string> = STATUTS_COMMANDE): Urgence {
   const depuis = (iso: string) => (maintenant - Date.parse(iso)) / MINUTE;
   switch (commande.statut) {
-    case "demandee": { const m = depuis(commande.cree_le); return { texte: `attend depuis ${formaterDuree(m)}`, rouge: m >= SEUIL_CONFIRMER_MIN }; }
-    case "confirmee": { const m = depuis(commande.confirmee_le ?? commande.cree_le); return { texte: `confirmée il y a ${formaterDuree(m)}`, rouge: m >= SEUIL_PREPARER_MIN }; }
+    case "demandee": { const m = depuis(commande.cree_le); return { texte: remplir(t.attend, { duree: formaterDuree(m, t) }), rouge: m >= SEUIL_CONFIRMER_MIN }; }
+    case "confirmee": { const m = depuis(commande.confirmee_le ?? commande.cree_le); return { texte: remplir(t.confirmeeIlYa, { duree: formaterDuree(m, t) }), rouge: m >= SEUIL_PREPARER_MIN }; }
     case "prete": {
-      if (!commande.expire_le) return { texte: "prête", rouge: false };
+      if (!commande.expire_le) return { texte: t.prete, rouge: false };
       const reste = (Date.parse(commande.expire_le) - maintenant) / MINUTE;
-      return reste <= 0 ? { texte: "expirée, en attente", rouge: true } : { texte: `expire dans ${formaterDuree(reste)}`, rouge: reste < SEUIL_PRETE_MIN };
+      return reste <= 0 ? { texte: t.expiree, rouge: true } : { texte: remplir(t.expireDans, { duree: formaterDuree(reste, t) }), rouge: reste < SEUIL_PRETE_MIN };
     }
-    default: return { texte: STATUTS_COMMANDE[commande.statut], rouge: false };
+    default: return { texte: statuts[commande.statut], rouge: false };
   }
 }
 
@@ -174,13 +179,13 @@ export function lireDemandeGroupee(ids: unknown, statut: unknown): { ids: string
 }
 
 /** Compte rendu : « 3 commandes confirmées. », puis une ligne par échec. */
-export function compteRendu(resultat: ResultatGroupe, statut: StatutGroupe): { titre: string; lignes: { id: string; texte: string }[] } {
+export function compteRendu(resultat: ResultatGroupe, statut: StatutGroupe, t: TextesTableau = fr.espace.tableau, traduire: (message: string) => string = m => m): { titre: string; lignes: { id: string; texte: string }[] } {
   const n = resultat.reussies.length;
-  const fait = statut === "confirmee" ? (n > 1 ? "confirmées" : "confirmée") : (n > 1 ? "marquées prêtes" : "marquée prête");
-  const titre = !resultat.succes ? resultat.message : n === 0 ? "Aucune commande modifiée." : `${n} commande${n > 1 ? "s" : ""} ${fait}.`;
-  const deja = statut === "confirmee" ? "déjà confirmée" : "déjà prête";
-  const non = statut === "confirmee" ? "non confirmée" : "non marquée prête";
-  const lignes = resultat.echecs.map(e => ({ id: e.id, texte: e.numero === null ? e.message : e.deja ? `N° ${e.numero} : ${deja}.` : `N° ${e.numero} ${non} : ${e.message}` }));
+  const fait = statut === "confirmee" ? (n > 1 ? t.confirmeesPlusieurs : t.confirmees) : (n > 1 ? t.pretesPlusieurs : t.pretesUne);
+  const titre = !resultat.succes ? traduire(resultat.message) : n === 0 ? t.aucuneModifiee : remplir(fait, { n });
+  const deja = statut === "confirmee" ? t.dejaConfirmee : t.dejaPrete;
+  const non = statut === "confirmee" ? t.nonConfirmee : t.nonPrete;
+  const lignes = resultat.echecs.map(e => ({ id: e.id, texte: e.numero === null ? traduire(e.message) : e.deja ? remplir(deja, { n: e.numero }) : remplir(non, { n: e.numero, message: traduire(e.message) }) }));
   return { titre, lignes };
 }
 
@@ -240,10 +245,11 @@ export async function listerAPreparer(client: Client, boutiqueId: string): Promi
 }
 
 /** « vendredi 09/10 à 14 h 05 » (heure d’Oran). */
-export function dateLongue(maintenant: number): string {
-  const parts = new Intl.DateTimeFormat("fr-FR", { timeZone: FUSEAU, weekday: "long", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(maintenant));
+export function dateLongue(maintenant: number, langue: Langue = "fr", modele: string = fr.espace.preparation.dateLongue): string {
+  const parts = new Intl.DateTimeFormat(langue === "ar" ? "ar-DZ-u-nu-latn" : "fr-FR", { timeZone: FUSEAU, weekday: "long", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(maintenant));
   const p = (t: string) => parts.find(x => x.type === t)?.value ?? "";
-  return `${p("weekday")} ${p("day")}/${p("month")} à ${Number(p("hour"))} h ${p("minute")}`;
+  const heure = langue === "ar" ? `${p("hour")}:${p("minute")}` : `${Number(p("hour"))} h ${p("minute")}`;
+  return remplir(modele, { jour: p("weekday"), date: `${p("day")}/${p("month")}`, heure });
 }
 
 // --- US-28.4 : mise à jour automatique (option A, interrogation toutes les 20 s) ---------------
@@ -269,6 +275,6 @@ export function empreinteEtat(etat: EtatCommandes): string {
 }
 
 /** « 14 h 05 » à Oran. */
-export function heureOran(ms: number): string {
-  return heureCourte(new Date(ms).toISOString(), ms);
+export function heureOran(ms: number, t: TextesTableau = fr.espace.tableau): string {
+  return heureCourte(new Date(ms).toISOString(), ms, t);
 }

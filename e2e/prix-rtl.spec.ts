@@ -1,4 +1,4 @@
-// Prix dans les pages en arabe (dir="rtl" sur tout le site, espace et admin compris) : isolés par <Prix />
+// Prix dans les pages en arabe (dir="rtl" sur tout le site ; espace en arabe depuis US-35) : isolés par <Prix />
 // (BOLOSS, 10/10). Vérifié à l'écran, caractère par caractère : en français « DA » reste à droite du nombre et
 // « − » à sa gauche ; en arabe « دج » est à gauche du nombre et les chiffres restent dans l'ordre.
 import { expect, test, type Locator, type Page } from "@playwright/test";
@@ -49,7 +49,7 @@ async function arabeDansLOrdre(element: Locator, prix: RegExp) {
   expect(Math.max(...devise)).toBeLessThan(Math.min(...chiffres));
 }
 
-test("prix en arabe : suivi de commande avec bon (client) ; commande et retrait dans l'espace (français dans une page rtl)", async ({ page, browser }) => {
+test("prix en arabe : suivi de commande avec bon (client) ; commande et retrait dans l'espace en arabe (US-35)", async ({ page, browser }) => {
   test.setTimeout(120_000);
   await sql(`insert into programmes_bons (type, nom_fr, nom_ar, code, montant, minimum_achat, univers, villes, fin, budget, plafond_par_boutique, actif)
              values ('campagne', 'Aïd test', 'العيد', $1, 500, 4000, 'femme', '{oran}', now() + interval '10 days', 1000000, 30, true)`, [code]);
@@ -88,17 +88,23 @@ test("prix en arabe : suivi de commande avec bon (client) ; commande et retrait 
     await arabeDansLOrdre(main, /\u2066?−\u2066?500\u2069?\s+دج/);
     await arabeDansLOrdre(main, /7\s000\u2069?\s+دج/);
 
-    await test.step("commerçant, espace en français dans une page rtl : retrait (sous-total, bon, à encaisser)", async () => {
+    await test.step("commerçant, espace en arabe (US-35) : retrait (sous-total, bon, à encaisser) avec « دج » à gauche", async () => {
+      // d'abord en français (pas de régression) : « DA » à droite, « − » à gauche
+      await espace.goto(`/espace/retrait/${jeton}`);
+      await expect(espace.getByRole("main").getByText(/À encaisser en espèces/)).toBeVisible();
+      await francaisDansLOrdre(espace.getByRole("main"), /7\s500\sDA/);
+      await francaisDansLOrdre(espace.getByRole("main"), /−500\sDA/);
       await passerEnArabe(espace);
       await espace.goto(`/espace/retrait/${jeton}`);
       const contenu = espace.getByRole("main");
-      await expect(contenu.getByText(/À encaisser en espèces/)).toBeVisible();
-      await francaisDansLOrdre(contenu, /7\s500\sDA/);
-      await francaisDansLOrdre(contenu, /−500\sDA/);
-      await francaisDansLOrdre(contenu, /7\s000\sDA/);
+      await expect(contenu.getByText("تقبض كاش")).toBeVisible();
+      await arabeDansLOrdre(contenu, /7\s500\u2069?\s+دج/);
+      await arabeDansLOrdre(contenu, /\u2066?−\u2066?500\u2069?\s+دج/);
+      await arabeDansLOrdre(contenu, /7\s000\u2069?\s+دج/);
+      await expect(contenu).not.toContainText("DA");
       await espace.goto("/espace/commandes?etape=pretes");
-      await espace.getByRole("button", { name: /N° \d+ · Lina/ }).click();
-      await francaisDansLOrdre(espace.getByRole("main"), /Total 7\s500\sDA/);
+      await espace.getByRole("button", { name: /رقم \d+ · Lina/ }).click();
+      await arabeDansLOrdre(espace.getByRole("main"), /(?<=المجموع \u2066?)7\s500\u2069?\s+دج/);
       await espace.context().close();
     });
   });

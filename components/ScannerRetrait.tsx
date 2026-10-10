@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { lireRetraitParCode } from "@/app/espace/retrait/actions";
 import { codeRetraitValide, jetonDepuisQr, LONGUEUR_CODE_RETRAIT, MESSAGE_CAMERA_BLOQUEE, MESSAGE_PAS_QR_RETRAIT, type ResumeRetrait } from "@/lib/retrait";
 import RetraitBoutique from "./RetraitBoutique";
+import { useLangue, useTextes } from "@/components/FournisseurTextes";
+import { traduireMessage } from "@/lib/textes/messages";
 
 // US-26.3 : scanner de la boutique (maquette ⑤). Caméra arrière dans la page ; lecteur intégré du navigateur
 // (BarcodeDetector) s'il lit les QR codes, sinon jsqr chargée à la demande (iPhone, Firefox ; décision 1 du 9/10).
@@ -45,6 +47,7 @@ async function creerLecteur(): Promise<Lecteur> {
 }
 
 export default function ScannerRetrait() {
+  const textes = useTextes(), t = textes.espace.scanner, langue = useLangue();
   const router = useRouter();
   const routeur = useRef(router);
   useEffect(() => { routeur.current = router; }, [router]);
@@ -133,34 +136,34 @@ export default function ScannerRetrait() {
   async function chercher(e: React.FormEvent) {
     e.preventDefault();
     if (enCours) return;
-    if (!codeRetraitValide(code)) { setMessage("Tapez les 6 chiffres du code."); return; }
+    if (!codeRetraitValide(code)) { setMessage(t.tapez); return; }
     setEnCours(true); setMessage("");
     try {
       const resultat = await lireRetraitParCode(code);
       if (resultat.succes && resultat.resume) { arreter(); setResume({ resume: resultat.resume, code }); }
       else setMessage(resultat.message);
-    } catch { setMessage("Impossible de lire cette commande. Vérifiez votre connexion."); }
+    } catch { setMessage(t.lectureImpossible); }
     finally { setEnCours(false); }
   }
 
   if (resume) return <RetraitBoutique resume={resume.resume} cle={{ code: resume.code }} onAutre={() => { setResume(null); setCode(""); setMessage(""); setAvis(""); setCamera("demarrage"); }} />;
 
-  return <section aria-label="Scanner" className="px-6 py-5">
-    <p className="text-sm">Placez le QR code du client dans le cadre.</p>
+  return <section aria-label={textes.espace.commun.scanner} className="px-6 py-5">
+    <p className="text-sm">{t.placez}</p>
     <div className="relative mt-3 aspect-square w-full overflow-hidden bg-noir">
-      <video ref={video} autoPlay muted playsInline aria-label="Caméra" className="size-full object-cover" />
+      <video ref={video} autoPlay muted playsInline aria-label={t.camera} className="size-full object-cover" />
       {camera === "active" && <span aria-hidden="true" className="pointer-events-none absolute inset-[18%] border-2 border-blanc/80" />}
-      {camera === "demarrage" && <p className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-blanc">Ouverture de la caméra…</p>}
+      {camera === "demarrage" && <p className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-blanc">{t.ouverture}</p>}
       {camera === "bloquee" && <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 border border-trait bg-blanc p-5 text-center">
         <p role="alert" className="text-sm">{MESSAGE_CAMERA_BLOQUEE}</p>
-        <p className="text-xs text-gris">Dans WhatsApp ou Instagram, ouvrez votre espace dans Chrome ou Safari.</p>
-        <button type="button" onClick={() => { setCamera("demarrage"); setAvis(""); void demarrer(); }} className="etiquette min-h-11 border border-noir px-4">Réessayer la caméra</button>
+        <p className="text-xs text-gris">{t.navigateur}</p>
+        <button type="button" onClick={() => { setCamera("demarrage"); setAvis(""); void demarrer(); }} className="etiquette min-h-11 border border-noir px-4">{t.reessayer}</button>
       </div>}
-      {camera === "active" && lampe !== null && <button type="button" aria-pressed={lampe} onClick={() => void basculerLampe()} className="absolute bottom-3 right-3 min-h-11 bg-blanc px-3 text-xs">Lampe</button>}
+      {camera === "active" && lampe !== null && <button type="button" aria-pressed={lampe} onClick={() => void basculerLampe()} className="absolute bottom-3 end-3 min-h-11 bg-blanc px-3 text-xs">{t.lampe}</button>}
     </div>
-    {avis && <p role="status" className="mt-2 text-sm">{avis}</p>}
+    {avis && <p role="status" className="mt-2 text-sm">{traduireMessage(avis, langue)}</p>}
     <form noValidate onSubmit={e => void chercher(e)} className="mt-5">
-      <label htmlFor="code-retrait" className="text-sm">La caméra ne marche pas ? Tapez le code à 6 chiffres</label>
+      <label htmlFor="code-retrait" className="text-sm">{t.codeLibelle}</label>
       {/* Suivi de la relecture n°6 : 6 cases. Un seul vrai champ (collage, clavier numérique, lecteur d'écran) posé
           sur les cases, transparent ; les cases montrent les chiffres et la case en cours. */}
       <div dir="ltr" className="relative mt-2">
@@ -173,9 +176,9 @@ export default function ScannerRetrait() {
           onChange={e => { setCode(e.target.value.replace(/\D/g, "").slice(0, LONGUEUR_CODE_RETRAIT)); setMessage(""); }}
           className="absolute inset-0 box-border size-full rounded-none border-0 bg-transparent text-transparent caret-transparent outline-none selection:bg-transparent" />
       </div>
-      <button type="submit" disabled={enCours} className="etiquette mt-3 min-h-12 w-full bg-noir text-blanc">Voir la commande</button>
-      {message && <p role="alert" className="mt-3 border border-trait p-3 text-sm">{message}</p>}
+      <button type="submit" disabled={enCours} className="etiquette mt-3 min-h-12 w-full bg-noir text-blanc">{t.voir}</button>
+      {message && <p role="alert" className="mt-3 border border-trait p-3 text-sm">{traduireMessage(message, langue)}</p>}
     </form>
-    <p className="mt-4 text-center"><Link href="/espace/commandes" className="inline-flex min-h-11 items-center text-sm underline">Retour aux commandes</Link></p>
+    <p className="mt-4 text-center"><Link href="/espace/commandes" className="inline-flex min-h-11 items-center text-sm underline">{t.retourCommandes}</Link></p>
   </section>;
 }
