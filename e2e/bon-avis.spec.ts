@@ -76,3 +76,17 @@ test("bon « avis » : mention sur la vitrine → retrait par QR code → avis 2
   });
   await espace.context().close();
 });
+
+test("/admin/bons : programme « avis » à budget mensuel, « reste … ce mois-ci » (bons du mois seulement)", async ({ browser }) => {
+  await sql("select prive.regler_bon_avis(100000)");
+  const client = await creerCompte({ nom: "Reste Mois" });
+  // Un bon « avis » du mois dernier : compté dans le total, pas dans le reste du mois.
+  await sql(`insert into bons (profil_id, montant, origine, programme_id, minimum_achat, statut, expire_le, cree_le)
+    select $1, 150, 'avis', id, 1500, 'disponible', now() + interval '30 days', now() - interval '1 month' from programmes_bons where type = 'avis'`, [client.id]);
+  const [{ reste }] = await sql<{ reste: number }>("select prive.budget_avis_restant(p) as reste from programmes_bons p where p.type = 'avis'");
+  const admin = await connecterEspace(browser, (await creerCompte({ role: "admin", nom: "Hakim" })).email);
+  await admin.goto("/admin/bons");
+  const avis = admin.getByRole("list", { name: "Programmes" }).getByRole("listitem").filter({ hasText: /^Avis/ });
+  await expect(avis).toContainText(new RegExp(`reste ${new Intl.NumberFormat("fr-FR").format(reste).replace(/\s/g, "\\s")}\\sDA ce mois-ci`));
+  await admin.context().close();
+});

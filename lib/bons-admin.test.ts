@@ -95,3 +95,24 @@ describe("US-33.5 : appels à la base", () => {
     await expect(arreterProgramme(client({ error: { message: "x" } }).c, "p1")).rejects.toThrow("Impossible d’arrêter ce programme. Réessayez.");
   });
 });
+
+describe("US-32.5 : programme à budget mensuel (« avis ») dans /admin/bons", () => {
+  const avis = prog({ id: "pa", type: "avis", nom_fr: "Avis", code: null, montant: 150, minimum_achat: 1500, emis: 7, utilises: 2, rembourse: 300, restant: -50 });
+  it("reste du mois lu par reste_mois_programmes, affiché « ce mois-ci » ; les autres programmes inchangés", async () => {
+    const rpc = vi.fn().mockResolvedValueOnce({ data: [prog(), avis], error: null }).mockResolvedValueOnce({ data: [{ id: "pa", restant: 850 }], error: null });
+    const liste = await listerProgrammes({ rpc } as never);
+    expect(rpc).toHaveBeenLastCalledWith("reste_mois_programmes");
+    expect(liste.map(p => resumeProgramme(p))).toEqual([
+      "412 émis · 233 utilisés · 116 500 DA remboursés · reste 93 500 DA",
+      "7 émis · 2 utilisés · 300 DA remboursés · reste 850 DA ce mois-ci"]);
+  });
+  it("lecture du mois impossible : « reste du mois indisponible », jamais le reste total ; sans programme mensuel, un seul appel", async () => {
+    const rpc = vi.fn().mockResolvedValueOnce({ data: [avis], error: null }).mockResolvedValueOnce({ data: null, error: { message: "x" } });
+    expect(resumeProgramme((await listerProgrammes({ rpc } as never))[0])).toBe("7 émis · 2 utilisés · 300 DA remboursés · reste du mois indisponible");
+    const seul = vi.fn().mockResolvedValue({ data: [prog()], error: null });
+    await listerProgrammes({ rpc: seul } as never); expect(seul).toHaveBeenCalledTimes(1);
+  });
+  it("reste du mois négatif affiché 0 DA", () => {
+    expect(resumeProgramme({ ...avis, resteMois: -150 })).toBe("7 émis · 2 utilisés · 300 DA remboursés · reste 0 DA ce mois-ci");
+  });
+});

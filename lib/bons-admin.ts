@@ -12,7 +12,11 @@ export type ProgrammeAdmin = {
   plafond_par_boutique: number | null; actif: boolean; ouvert: boolean; emis: number; utilises: number; rembourse: number; restant: number;
   /** US-31.4 : programme « inscription_boutique » (part de la boutique d'origine, plafond par boutique et par mois). */
   part_boutique?: number; plafond_inscriptions_mois?: number | null;
+  /** US-32.5 : programme à budget MENSUEL (« avis ») : reste du mois en cours (heure d'Alger) ; null = lecture impossible. */
+  resteMois?: number | null;
 };
+/** Programmes dont le budget vaut pour chaque mois (US-32.5) : le « reste » affiché est celui du mois. */
+export const BUDGET_MENSUEL: readonly ProgrammeAdmin["type"][] = ["avis"];
 export type SignalBoutique = {
   boutique_id: string; boutique: string; slug: string; servis: number; prix: number; prix_le: string | null; nouveaux: number;
   plafond: number | null; plafond_jours: number | null; comptes_recents: number; remises_rapides: number;
@@ -28,7 +32,19 @@ const jourMois = (iso: string) => new Intl.DateTimeFormat("fr-FR", { timeZone: F
 export async function listerProgrammes(client: Client): Promise<ProgrammeAdmin[]> {
   const { data, error } = await client.rpc("programmes_admin");
   if (error) throw new Error("Impossible de charger les programmes. Réessayez.");
-  return (Array.isArray(data) ? data : []) as unknown as ProgrammeAdmin[];
+  const programmes = (Array.isArray(data) ? data : []) as unknown as ProgrammeAdmin[];
+  if (!programmes.some(p => BUDGET_MENSUEL.includes(p.type))) return programmes;
+  // Reste du mois (reste_mois_programmes, admin seulement) ; en cas d'échec : « reste du mois indisponible », jamais le reste total.
+  const mois = new Map<string, number>();
+  let lu = false;
+  try {
+    const r = await client.rpc("reste_mois_programmes");
+    if (!r.error && Array.isArray(r.data)) {
+      lu = true;
+      for (const x of r.data as { id?: unknown; restant?: unknown }[]) if (typeof x?.id === "string" && typeof x.restant === "number") mois.set(x.id, x.restant);
+    }
+  } catch { /* lu reste faux */ }
+  return programmes.map(p => BUDGET_MENSUEL.includes(p.type) ? { ...p, resteMois: lu ? mois.get(p.id) ?? null : null } : p);
 }
 
 export async function lireSignaux(client: Client, programme: string): Promise<SignalBoutique[]> {
@@ -46,8 +62,12 @@ export function etatProgramme(p: Pick<ProgrammeAdmin, "actif" | "debut" | "fin">
 }
 
 /** « 412 émis · 233 utilisés · 116 500 DA remboursés · reste 93 500 DA ». */
-export function resumeProgramme(p: Pick<ProgrammeAdmin, "emis" | "utilises" | "rembourse" | "restant">): string {
-  return `${p.emis} émis · ${p.utilises} utilisé${p.utilises > 1 ? "s" : ""} · ${montantDA(p.rembourse)} remboursés · reste ${montantDA(Math.max(p.restant, 0))}`;
+/** US-32.5 : programme à budget mensuel : « reste 850 DA ce mois-ci » (ou « reste du mois indisponible »). */
+export function resumeProgramme(p: Pick<ProgrammeAdmin, "emis" | "utilises" | "rembourse" | "restant"> & Partial<Pick<ProgrammeAdmin, "type" | "resteMois">>): string {
+  const reste = p.type && BUDGET_MENSUEL.includes(p.type)
+    ? typeof p.resteMois === "number" ? `reste ${montantDA(Math.max(p.resteMois, 0))} ce mois-ci` : "reste du mois indisponible"
+    : `reste ${montantDA(Math.max(p.restant, 0))}`;
+  return `${p.emis} émis · ${p.utilises} utilisé${p.utilises > 1 ? "s" : ""} · ${montantDA(p.rembourse)} remboursés · ${reste}`;
 }
 
 /** « 500 DA dès 4 000 DA · Femme · oran · du 25/5 au 5/6 · bon valable 10 jours · plafond 30 bons par boutique ». */
