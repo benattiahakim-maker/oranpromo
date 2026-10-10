@@ -10,7 +10,7 @@ async function charger(): Promise<{ boutique: string; maintenant: number; prepar
   const client = await creerClientServeur();
   const { data: { user }, error } = await client.auth.getUser();
   if (error || !user) redirect("/espace/connexion");
-  const { data: profil } = await client.from("profils").select("boutique_id, boutiques(nom)").eq("id", user.id).maybeSingle();
+  const { data: profil } = await client.from("profils").select("boutique_id, boutiques!profils_boutique_id_fkey(nom)").eq("id", user.id).maybeSingle();
   const boutique = (profil?.boutiques as unknown as { nom: string } | null)?.nom ?? "";
   const maintenant = Date.now();
   if (!profil?.boutique_id) return { boutique, maintenant, preparation: null, erreur: "Votre compte n’est rattaché à aucune boutique." };
