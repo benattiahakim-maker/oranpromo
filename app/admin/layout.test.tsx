@@ -14,4 +14,10 @@ describe("US-16 : accès administration côté serveur", () => {
   it("redirige une session absente", async () => { getUser.mockResolvedValue({ data: { user: null }, error: null }); await expect(Administration({ children: "Boutiques" })).rejects.toThrow("redirection:/espace/connexion"); });
   it("affiche Accès réservé à un commerçant et cache les enfants", async () => { maybeSingle.mockResolvedValue({ data: { role: "commercant" }, error: null }); const html = renderToStaticMarkup(await Administration({ children: "contenu privé" })); expect(html).toContain("Accès réservé"); expect(html).not.toContain("contenu privé"); });
   it.each(["admin", "ambassadeur"])("autorise le rôle %s", async role => { maybeSingle.mockResolvedValue({ data: { role }, error: null }); expect(renderToStaticMarkup(await Administration({ children: "Les boutiques" }))).toContain("Les boutiques"); });
+  it("revue RTL : l’administration (en français) est en ltr, y compris « Accès réservé »", async () => {
+    maybeSingle.mockResolvedValue({ data: { role: "commercant" }, error: null });
+    expect(renderToStaticMarkup(await Administration({ children: "x" }))).toMatch(/^<main dir="ltr" lang="fr"/);
+    maybeSingle.mockResolvedValue({ data: { role: "admin" }, error: null });
+    expect(renderToStaticMarkup(await Administration({ children: "Boutiques" }))).toMatch(/^<div dir="ltr" lang="fr"/);
+  });
 });

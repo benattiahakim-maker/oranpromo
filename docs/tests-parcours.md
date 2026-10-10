@@ -21,6 +21,7 @@ parcours d'un client, d'une boutique et de l'admin sur un écran de téléphone 
 | `e2e/mes-donnees.spec.ts` | US-34.4 : client avec deux accords et une boutique suivie → `/compte` → « Mes données » : numéro vérifié avec la date, nom, accords (version, date), boutique suivie depuis ; jamais la boutique ni le nom d'un autre client ; pas de « Fermer mon compte » ; en arabe « المعلومات نتاعي » ; admin → « Acceptations » : nombre par version, recherche par numéro (0…) → accords du compte « à l’inscription » ; sans connexion → page de connexion |
 | `e2e/numeros-rtl.spec.ts` | Page en arabe : numéro vérifié de `/compte`, numéro de « Mes données » (au début de la ligne, à droite), numéro du client dans « Commandes reçues » de l'espace : isolés de gauche à droite, premier caractère (« + » ou « 0 ») à gauche du dernier à l'écran |
 | `e2e/prix-rtl.spec.ts` | Pages en arabe : suivi de commande avec bon (« دج » à gauche du nombre, « −500 ») ; espace en français dans une page rtl (retrait : sous-total, bon, à encaisser ; commandes reçues : total) : chaque caractère du prix dans l'ordre à l'écran |
+| `e2e/revue-rtl.spec.ts` | Site en arabe : espace commerçant et administration en ltr (navigation de gauche à droite) ; suivi d'une commande prête : adresse de la boutique dans l'ordre à l'écran |
 
 Les tests ne réécrivent aucune règle (blocage, no-show, numéro, statuts, stock) : ils passent par les écrans et la base
 applique ses propres règles.
