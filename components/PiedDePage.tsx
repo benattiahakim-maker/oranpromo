@@ -15,7 +15,8 @@ type LiensJuridiques = Pick<Textes["juridique"], "piedDePage" | "conditions" | "
 // Revue RTL (10/10) : sous l'espace, l'administration et « Confirmer », libellés français (`francais`) et sens gauche-droite.
 export default function PiedDePage({ francais }: { francais?: LiensJuridiques }) {
   const textes = useTextes().juridique;
-  const enFrancais = Boolean(francais) && pageEnFrancais(usePathname());
+  const chemin = usePathname();
+  const enFrancais = Boolean(francais) && pageEnFrancais(chemin);
   const t = enFrancais && francais ? francais : textes;
   return <footer {...(enFrancais ? { dir: "ltr", lang: "fr" } : {})} className="mx-auto mt-auto w-full max-w-lg border-t border-trait px-4 py-3">
     <nav aria-label={t.piedDePage} className="flex flex-wrap items-center gap-x-1 text-xs text-gris">
