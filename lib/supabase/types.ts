@@ -1556,6 +1556,10 @@ export type Database = {
         Args: { ligne: string; motif: string }
         Returns: undefined
       }
+      moderer_avis: {
+        Args: { action: string; avis: string; signalements: string[] }
+        Returns: undefined
+      }
       mon_code_parrainage: { Args: never; Returns: string }
       mon_parrainage: { Args: never; Returns: Json }
       ne_plus_suivre: { Args: { boutique: string }; Returns: boolean }
@@ -1577,6 +1581,10 @@ export type Database = {
         Args: { code?: string; jeton?: string }
         Returns: Json
       }
+      repondre_avis: {
+        Args: { avis: string; texte: string }
+        Returns: undefined
+      }
       resultat_message_whatsapp: {
         Args: {
           definitif?: boolean
@@ -1589,11 +1597,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      moderer_avis: {
-        Args: { action: string; avis: string; signalements: string[] }
-        Returns: undefined
-      }
-      repondre_avis: { Args: { avis: string; texte: string }; Returns: undefined }
       resume_avis: {
         Args: { boutiques: string[] }
         Returns: {
