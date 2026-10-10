@@ -1,9 +1,9 @@
 "use client";
 import { useRef, useState } from "react";
+import Prix from "@/components/Prix";
 import Link from "next/link";
 import { remettreCommandeRetrait } from "@/app/espace/retrait/actions";
 import { formaterDateHeure } from "@/lib/commandes";
-import { formaterPrix } from "@/lib/prix";
 import type { CleRetrait, ResumeRetrait } from "@/lib/retrait";
 import { aEncaisser, moisAlger, releveDuMois } from "@/lib/bons";
 import { nomBon } from "@/lib/bons-boutique";
@@ -43,8 +43,8 @@ export default function RetraitBoutique({ resume, cle, onAutre }: { resume: Resu
   if (remise) return <section aria-label="Commande remise" className="flex flex-col items-center gap-3 px-6 py-10 text-center">
     <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-full border border-noir text-2xl">✓</span>
     <h2 role="status" className="font-titre text-[26px] font-normal">Commande remise</h2>
-    <p className="text-sm">N° {remise.numero} · {formaterPrix(aEncaisser(remise.total ?? 0, remise.remise_bon ?? bon))} · Elle passe en « Récupérée ». Le stock était déjà à jour.</p>
-    {(remise.remise_bon ?? bon) > 0 && <p className="text-sm text-gris">{libelleBon} de {formaterPrix(remise.remise_bon ?? bon)} : BleDeal vous le rembourse ({releveDuMois(moisAlger(remise.terminee_le ? new Date(remise.terminee_le) : new Date()))}).</p>}
+    <p className="text-sm">N° {remise.numero} · <Prix montant={aEncaisser(remise.total ?? 0, remise.remise_bon ?? bon)} /> · Elle passe en « Récupérée ». Le stock était déjà à jour.</p>
+    {(remise.remise_bon ?? bon) > 0 && <p className="text-sm text-gris">{libelleBon} de <Prix montant={remise.remise_bon ?? bon} /> : BleDeal vous le rembourse ({releveDuMois(moisAlger(remise.terminee_le ? new Date(remise.terminee_le) : new Date()))}).</p>}
     <div className="mt-3 w-full">{autre}</div>
     <Link href="/espace/commandes" className="text-sm underline">Voir les commandes</Link>
   </section>;
@@ -54,15 +54,15 @@ export default function RetraitBoutique({ resume, cle, onAutre }: { resume: Resu
     <h2 className="mt-1 font-titre text-[24px] font-normal leading-tight">Commande n° {resume.numero}{resume.prenom ? ` · ${resume.prenom}` : ""}</h2>
     {resume.expire_le && <p className="mt-1 text-sm text-gris">Prête · jusqu’au {formaterDateHeure(resume.expire_le)}</p>}
     <ul aria-label="Articles" className="mt-4 border-t border-trait pt-2 text-[13px] font-light">{(resume.lignes ?? []).map((l, i) =>
-      <li key={i} className="flex justify-between gap-3 border-b border-trait py-2"><span>{l.titre} · {l.taille} × {l.quantite}</span><span className="whitespace-nowrap">{formaterPrix(l.prix_unitaire * l.quantite)}</span></li>)}</ul>
+      <li key={i} className="flex justify-between gap-3 border-b border-trait py-2"><span>{l.titre} · {l.taille} × {l.quantite}</span><span className="whitespace-nowrap"><Prix montant={l.prix_unitaire * l.quantite} /></span></li>)}</ul>
     {bon > 0 && <dl className="mt-3 text-sm">
-      <div className="flex justify-between py-1"><dt>Sous-total</dt><dd>{formaterPrix(total)}</dd></div>
-      <div className="flex justify-between py-1"><dt>{libelleBon} BleDeal</dt><dd>−{formaterPrix(bon)}</dd></div>
+      <div className="flex justify-between py-1"><dt>Sous-total</dt><dd><Prix montant={total} /></dd></div>
+      <div className="flex justify-between py-1"><dt>{libelleBon} BleDeal</dt><dd><Prix montant={bon} moins /></dd></div>
     </dl>}
-    <p className="mt-4 flex items-center justify-between gap-3 bg-noir px-4 py-3 text-blanc"><span className="etiquette">À encaisser en espèces</span><span className="text-[22px] font-medium whitespace-nowrap">{formaterPrix(aEncaisser(total, bon))}</span></p>
-    {bon > 0 && <p className="mt-2 border border-noir p-3 text-sm">Ces {formaterPrix(bon)} vous sont remboursés par BleDeal ({releveDuMois(moisAlger())}).</p>}
+    <p className="mt-4 flex items-center justify-between gap-3 bg-noir px-4 py-3 text-blanc"><span className="etiquette">À encaisser en espèces</span><span className="text-[22px] font-medium whitespace-nowrap"><Prix montant={aEncaisser(total, bon)} /></span></p>
+    {bon > 0 && <p className="mt-2 border border-noir p-3 text-sm">Ces <Prix montant={bon} /> vous sont remboursés par BleDeal ({releveDuMois(moisAlger())}).</p>}
     {parCode && <div className="mt-3 border border-noir p-3 text-sm">
-      {bonReserve > 0 && <p className="font-medium">Par code, le bon ne s’applique pas : encaissez {formaterPrix(total)}. Le bon reste au client.</p>}
+      {bonReserve > 0 && <p className="font-medium">Par code, le bon ne s’applique pas : encaissez <Prix montant={total} />. Le bon reste au client.</p>}
       <p className={bonReserve > 0 ? "mt-1" : ""}>Remise par code : ni bon parrainage ni parrainage BleDeal. Scannez plutôt le QR code du client.</p>
     </div>}
     <p className="mt-3 text-sm text-gris">Vérifiez les articles avec le client avant de remettre. Un proche peut venir à sa place : c’est normal.</p>

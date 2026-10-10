@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import Prix from "@/components/Prix";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -90,14 +91,14 @@ export default function PanierCommande({ profil, parrainage = { bonDisponible: f
             <span className="w-6 text-center text-sm">{ligne.quantite}</span>
             <button type="button" aria-label={remplir(t.plus, { titre: ligne.titre, taille: ligne.taille })} disabled={enCours || ligne.quantite >= QUANTITE_LIGNE_MAX} onClick={() => sauverPanierLocal(changerQuantitePanier(panier, ligne.articleId, ligne.taille, ligne.quantite + 1))} className="h-11 w-11 disabled:text-gris">+</button>
           </div>
-          <span className="text-sm">{formaterPrix(ligne.prix * ligne.quantite, langue)}</span>
+          <span className="text-sm"><Prix montant={ligne.prix * ligne.quantite} langue={langue} /></span>
         </div>
         <button type="button" disabled={enCours} onClick={() => sauverPanierLocal(retirerDuPanier(panier, ligne.articleId, ligne.taille))} className="mt-1 min-h-11 text-xs text-gris underline">{remplir(t.retirer, { titre: ligne.titre, taille: ligne.taille })}</button>
       </div>
     </li>)}</ul>
     <label htmlFor="note-commande" className="etiquette mt-4 block text-xs">{t.note}</label>
     <textarea id="note-commande" rows={2} maxLength={NOTE_COMMANDE_MAX} value={note} disabled={enCours} onChange={e => setNote(e.target.value)} className="mt-2 box-border w-full resize-none rounded-none border border-trait p-3 font-[inherit] text-base" />
-    <p className="flex justify-between py-4"><span className="etiquette self-center">{t.total}</span><span>{formaterPrix(totalPanier(panier), langue)}</span></p>
+    <p className="flex justify-between py-4"><span className="etiquette self-center">{t.total}</span><span><Prix montant={totalPanier(panier)} langue={langue} /></span></p>
     {profil && parrainage.bonDisponible && (() => {
       const choix = parrainage.bons ? choixBons(parrainage.bons, totalPanier(panier), raisons?.panier === brut ? raisons.raisons : null, bonChoisi) : null;
       const propose = choix?.retenu ?? null;

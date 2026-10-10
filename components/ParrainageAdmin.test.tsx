@@ -5,6 +5,7 @@ import BudgetParrainage from "./BudgetParrainage";
 import ParrainagesAdmin from "./ParrainagesAdmin";
 import RelevesAdmin from "./RelevesAdmin";
 import type { ParrainageAdmin, ReleveAdmin } from "@/lib/parrainage-admin";
+import { sansBalises } from "@/lib/outils-test";
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
 vi.mock("@/app/admin/parrainages/actions", () => ({ reglerBudgetParrainage: vi.fn(), annulerBonsParrainage: vi.fn(), exclureCompteDuParrainage: vi.fn(), retirerBoutiqueDesBons: vi.fn() }));
 vi.mock("@/app/admin/remboursements/actions", () => ({ mettreLigneDeCote: vi.fn(), deciderLigneDeCote: vi.fn(), marquerRelevePaye: vi.fn() }));
@@ -32,7 +33,7 @@ describe("US-27.5 admin", () => {
     expect(html).toContain("0555 •• •• 56"); expect(html).not.toContain("123456"); expect(html).not.toContain("+213");
     expect(html).toContain("Signal : Remise 9 min après « Prête »"); expect(html).toContain("1 avec signal");
     expect(html).toContain("Annuler les bons"); expect(html).toContain("Exclure le parrain"); expect(html).toContain("Retirer la boutique des bons");
-    expect(html).toContain("Commande n° 128 · 3 500 DA · Boutique Nour · QR code"); expect(html).toContain("Bons : filleul disponible · parrain utilisé");
+    expect(sansBalises(html)).toContain("Commande n° 128 · 3 500 DA · Boutique Nour · QR code"); expect(html).toContain("Bons : filleul disponible · parrain utilisé");
   });
   it("parrainage sans bon annulable : pas de bouton « Annuler les bons »", () => {
     const html = renderToStaticMarkup(<ParrainagesAdmin parrainages={[{ ...p, bons: [{ id: "2", origine: "parrainage_parrain", statut: "utilise" }] }]} signaux={{}} />);

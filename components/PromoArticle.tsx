@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
+import Prix from "@/components/Prix";
 import { useRouter } from "next/navigation";
 import { arreterPromo, datePourChampPromo, enregistrerPromo, pourcentageDepuisPrix, prixDepuisPourcentage, validerPromo, type ErreursPromo, type SaisiePromo } from "@/lib/promo";
-import { formaterPrix } from "@/lib/prix";
 import { creerClientNavigateur } from "@/lib/supabase/client";
 import type { Tables } from "@/lib/supabase/types";
 
@@ -48,7 +48,7 @@ export default function PromoArticle({ articleId, prixNormal, promo, occupe, onO
   const erreurChamp = (nom: keyof ErreursPromo) => erreurs[nom] && <span role="alert" id={`erreur-promo-${nom}`} className="mt-2 block text-sm normal-case tracking-normal">{erreurs[nom]}</span>;
   const reduction = pourcentageDepuisPrix(prixNormal, prixPromo);
   return <section aria-labelledby="titre-promo" className="mt-8 border-t border-trait pt-6">
-    <h2 id="titre-promo" className="font-titre text-base">Promo</h2><p className="my-3 text-sm text-gris">Prix normal enregistré : {formaterPrix(prixNormal)}</p>
+    <h2 id="titre-promo" className="font-titre text-base">Promo</h2><p className="my-3 text-sm text-gris">Prix normal enregistré : <Prix montant={prixNormal} /></p>
     <form onSubmit={enregistrer} noValidate><fieldset disabled={occupe || enCours} className="flex min-w-0 flex-col gap-5">
       <label className="etiquette">Prix promo en DA<input name="prixPromo" inputMode="numeric" value={prixPromo} onChange={e => saisirPrix(e.target.value)} className={champ} aria-invalid={Boolean(erreurs.prixPromo)} aria-describedby="erreur-promo-prixPromo" />{erreurChamp("prixPromo")}</label>
       <label className="etiquette">Réduction en pourcentage<input name="pourcentage" inputMode="decimal" value={pourcentage} onChange={e => saisirPourcentage(e.target.value)} className={champ} aria-invalid={Boolean(erreurPourcentage)} aria-describedby="erreur-promo-pourcentage" />{erreurPourcentage && <span role="alert" id="erreur-promo-pourcentage" className="mt-2 block text-sm normal-case tracking-normal">{erreurPourcentage}</span>}</label>

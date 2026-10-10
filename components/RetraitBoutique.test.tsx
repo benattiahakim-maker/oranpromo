@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
+import { texteComplet } from "@/lib/outils-test";
 import RetraitBoutique from "./RetraitBoutique";
 
 const { remettreCommandeRetrait } = vi.hoisted(() => ({ remettreCommandeRetrait: vi.fn() }));
@@ -21,7 +22,7 @@ describe("US-26.3 : résumé et « Remis au client »", () => {
     expect(remettreCommandeRetrait).toHaveBeenCalledWith({ jeton: JETON });
     finir({ succes: true, message: "Commande remise", resume: { ...resume, etat: "remise" } });
     expect(await screen.findByRole("status")).toHaveTextContent("Commande remise");
-    expect(screen.getByText(/N° 128 · 6\s300\sDA · Elle passe en « Récupérée »/)).toBeInTheDocument();
+    expect(screen.getByText(texteComplet(/N° 128 · 6\s300\sDA · Elle passe en « Récupérée »/))).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Scanner une autre commande" })).toHaveAttribute("href", "/espace/scanner");
   });
   it("remise refusée (déjà remise par un autre scan) : message, pas d’écran de succès", async () => {
@@ -51,14 +52,14 @@ describe("US-27.4 : bon parrainage dans le résumé du scan", () => {
     expect(screen.getByText("Sous-total").nextSibling).toHaveTextContent(/6\s300\sDA/);
     expect(screen.getByText("Bon parrainage BleDeal").nextSibling).toHaveTextContent(/−300\sDA/);
     expect(screen.getByText("À encaisser en espèces").nextSibling).toHaveTextContent(/6\s000\sDA/);
-    expect(screen.getByText(/Ces 300\sDA vous sont remboursés par BleDeal \(relevé de novembre\)\./)).toBeInTheDocument();
+    expect(screen.getByText(texteComplet(/Ces 300\sDA vous sont remboursés par BleDeal \(relevé de novembre\)\./))).toBeInTheDocument();
     vi.useRealTimers();
   });
   it("après « Remis au client » : montant encaissé réduit et rappel du remboursement", async () => {
     remettreCommandeRetrait.mockResolvedValue({ succes: true, message: "Commande remise", resume: { ...resume, etat: "remise", remise_bon: 300, terminee_le: "2026-10-12T15:00:00Z" } });
     render(<RetraitBoutique resume={{ ...resume, remise_bon: 300 }} cle={{ jeton: JETON }} />);
     fireEvent.click(screen.getByRole("button", { name: "Remis au client" }));
-    expect(await screen.findByText(/N° 128 · 6\s000\sDA/)).toBeInTheDocument();
+    expect(await screen.findByText(texteComplet(/N° 128 · 6\s000\sDA/))).toBeInTheDocument();
     expect(screen.getByText(/BleDeal vous le rembourse \(relevé d’octobre\)/)).toBeInTheDocument();
   });
   it("sans bon : pas de sous-total ni de ligne de bon, montant plein", () => {
@@ -73,7 +74,7 @@ describe("Relecture n°6, point 2 : par code à 6 chiffres, ni bon ni parrainage
     render(<RetraitBoutique resume={{ ...resume, remise_bon: 300 }} cle={{ code: "048193" }} />);
     expect(screen.queryByText("Sous-total")).toBeNull(); expect(screen.queryByText(/remboursés par BleDeal/)).toBeNull();
     expect(screen.getByText("À encaisser en espèces").nextSibling).toHaveTextContent(/6\s300\sDA/);
-    expect(screen.getByText(/Par code, le bon ne s’applique pas : encaissez 6\s300\sDA\. Le bon reste au client\./)).toBeInTheDocument();
+    expect(screen.getByText(texteComplet(/Par code, le bon ne s’applique pas : encaissez 6\s300\sDA\. Le bon reste au client\./))).toBeInTheDocument();
     expect(screen.getByText("Remise par code : ni bon parrainage ni parrainage BleDeal. Scannez plutôt le QR code du client.")).toBeInTheDocument();
   });
   it("sans bon, par code : l’avertissement sur le parrainage reste ; par QR code : aucun avertissement", () => {

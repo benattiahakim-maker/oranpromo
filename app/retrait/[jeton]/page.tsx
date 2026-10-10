@@ -1,11 +1,11 @@
 import Link from "next/link";
+import Prix from "@/components/Prix";
 import type { Metadata } from "next";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { getLangue } from "@/lib/langue-serveur";
 import { remplir } from "@/lib/langue";
 import { textesDe } from "@/lib/textes";
 import { formaterDateHeure } from "@/lib/commandes";
-import { formaterPrix } from "@/lib/prix";
 import { afficherTaille } from "@/lib/article";
 import { lireRetraitParLien, qrCodeRetrait, type RetraitParLien } from "@/lib/retrait";
 import BlocRetrait from "@/components/BlocRetrait";
@@ -52,9 +52,9 @@ export default async function PageRetrait({ params }: { params: Promise<{ jeton:
     </div>}
     <div className="px-6 pt-4">
       <ul aria-label={t.articles} className="border-t border-trait pt-3 text-[13px] font-light">{vue.lignes.map((l, i) =>
-        <li key={i} className="flex justify-between gap-3 py-1"><span><bdi>{l.titre}</bdi> · <bdi>{afficherTaille(l.taille, langue)}</bdi> × {l.quantite}</span><span className="whitespace-nowrap">{formaterPrix(l.prix_unitaire * l.quantite, langue)}</span></li>)}</ul>
-      {(vue.remise_bon ?? 0) > 0 && <p className="flex justify-between pt-2 text-sm"><span>{libelleBon}</span><span dir="ltr">−{formaterPrix(vue.remise_bon!, langue)}</span></p>}
-      <p className="flex justify-between pt-2"><span className="etiquette self-center">{t.aPayer}</span><span>{formaterPrix(aEncaisser(vue.total, vue.remise_bon), langue)}</span></p>
+        <li key={i} className="flex justify-between gap-3 py-1"><span><bdi>{l.titre}</bdi> · <bdi>{afficherTaille(l.taille, langue)}</bdi> × {l.quantite}</span><span className="whitespace-nowrap"><Prix montant={l.prix_unitaire * l.quantite} langue={langue} /></span></li>)}</ul>
+      {(vue.remise_bon ?? 0) > 0 && <p className="flex justify-between pt-2 text-sm"><span>{libelleBon}</span><Prix montant={vue.remise_bon!} langue={langue} moins /></p>}
+      <p className="flex justify-between pt-2"><span className="etiquette self-center">{t.aPayer}</span><span><Prix montant={aEncaisser(vue.total, vue.remise_bon)} langue={langue} /></span></p>
     </div>
   </Cadre>;
 }

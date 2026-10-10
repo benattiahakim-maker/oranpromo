@@ -1,5 +1,6 @@
 "use client";
 import { remplir } from "@/lib/langue";
+import Prix from "@/components/Prix";
 import { formaterPrix } from "@/lib/prix";
 import { aEncaisser, estBonProgramme, MINIMUM_COMMANDE_BON, MONTANT_BON, type BonClient, type OptionBon, type RaisonBonPanier } from "@/lib/bons";
 import { libelleUtiliserBon, nomDuBon, texteRaisonBon } from "@/lib/bons-affichage";
@@ -23,7 +24,7 @@ export default function BonPanier({ total, utiliser, onChange, desactive, bon = 
     <legend className="etiquette px-1 text-xs text-gris">{t.mesBons}</legend>
     {options.map(o => <label key={o.bon.id} className={`flex min-h-11 items-start gap-3 py-1 ${o.raison === "ok" ? "cursor-pointer" : "text-gris"}`}>
       <input type="radio" name="bon-panier" checked={bon?.id === o.bon.id} disabled={desactive || o.raison !== "ok"} onChange={() => onChoisir?.(o.bon.id)} className="mt-1 h-5 w-5 shrink-0 accent-noir" />
-      <span className="text-sm"><span className="block">{nomDuBon(o.bon, t, langue)} <bdi dir="ltr">(−{formaterPrix(o.bon.montant, langue)})</bdi></span>
+      <span className="text-sm"><span className="block">{nomDuBon(o.bon, t, langue)} <bdi>(<Prix montant={o.bon.montant} langue={langue} moins />)</bdi></span>
         {o.raison !== "ok" && <span className="block text-xs">{texteRaisonBon(o.bon, o.raison, t, langue)}</span>}</span>
     </label>)}
   </fieldset>;
@@ -38,9 +39,9 @@ export default function BonPanier({ total, utiliser, onChange, desactive, bon = 
       <span className="text-sm">{bon ? libelleUtiliserBon(bon, t, langue) : remplir(t.utiliserBon, { montant: formaterPrix(MONTANT_BON, langue) })}</span>
     </label>
     {utiliser && <dl className="mt-3 text-sm">
-      <div className="flex justify-between py-1"><dt>{tPanier.total}</dt><dd>{formaterPrix(total, langue)}</dd></div>
-      <div className="flex justify-between border-b border-noir py-1"><dt>{bon ? nomDuBon(bon, t, langue) : t.ligneBon}</dt><dd dir="ltr">−{formaterPrix(montant, langue)}</dd></div>
-      <div className="flex justify-between pt-2 text-base font-medium"><dt>{t.aPayerBoutique}</dt><dd>{formaterPrix(aEncaisser(total, montant), langue)}</dd></div>
+      <div className="flex justify-between py-1"><dt>{tPanier.total}</dt><dd><Prix montant={total} langue={langue} /></dd></div>
+      <div className="flex justify-between border-b border-noir py-1"><dt>{bon ? nomDuBon(bon, t, langue) : t.ligneBon}</dt><dd><Prix montant={montant} langue={langue} moins /></dd></div>
+      <div className="flex justify-between pt-2 text-base font-medium"><dt>{t.aPayerBoutique}</dt><dd><Prix montant={aEncaisser(total, montant)} langue={langue} /></dd></div>
     </dl>}
     <p className="mt-2 text-xs leading-[1.6] text-gris">{programme ? t.noteBonProgramme : t.noteBon}</p>
   </div>;

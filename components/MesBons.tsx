@@ -1,6 +1,6 @@
 "use client";
 import { remplir } from "@/lib/langue";
-import { formaterPrix } from "@/lib/prix";
+import Prix from "@/components/Prix";
 import { etatBon, type BonClient } from "@/lib/bons";
 import { aideMesBons, detailBonProgramme, detailInscription, nomDuBon } from "@/lib/bons-affichage";
 import { useLangue, useTextes } from "./FournisseurTextes";
@@ -21,7 +21,7 @@ export default function MesBons({ bons, maintenant }: { bons: BonClient[]; maint
       const inscription = etat.cle === "disponible" ? detailInscription(bon, t, maintenant) : null;
       return <li key={bon.id} className={`flex justify-between gap-3 border-b border-trait py-3 ${etat.actif ? "" : "text-gris"}`}>
         <span><span className="block text-[15px]">{nomDuBon(bon, t, langue)}</span><span className="block text-xs text-gris"><bdi>{detail ?? remplir(t[etat.cle], etat.valeurs)}</bdi></span>{inscription && <span dir="auto" className="block text-xs text-gris">{inscription}</span>}</span>
-        <span className={`whitespace-nowrap ${etat.actif ? "font-medium" : ""}`}>{formaterPrix(bon.montant, langue)}</span>
+        <span className={`whitespace-nowrap ${etat.actif ? "font-medium" : ""}`}><Prix montant={bon.montant} langue={langue} /></span>
       </li>;
     })}</ul>
     {aide && <p className="mt-3 text-xs leading-[1.6] text-gris">{aide}</p>}

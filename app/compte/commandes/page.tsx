@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Prix from "@/components/Prix";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { formaterDateHeure, listerMesCommandes, type ResumeCommande } from "@/lib/commandes";
 import { getLangue } from "@/lib/langue-serveur";
@@ -6,7 +7,6 @@ import { traduireMessage } from "@/lib/textes/messages";
 import { remplir } from "@/lib/langue";
 import { textesDe } from "@/lib/textes";
 import { lireProfilClient, messageNoShows } from "@/lib/clients";
-import { formaterPrix } from "@/lib/prix";
 import { avisPossible, lireMesNotes } from "@/lib/avis";
 
 export const metadata = { title: "Mes commandes", robots: { index: false, follow: false } };
@@ -31,7 +31,7 @@ export default async function MesCommandes() {
     {erreur ? <p role="alert" className="py-6">{t.chargementImpossible}</p>
       : !commandes.length ? <div className="py-8 text-center"><p>{t.aucune}</p><Link href="/catalogue" className="etiquette mt-6 flex min-h-[54px] items-center justify-center bg-noir text-blanc">{t.voirArticles}</Link></div>
       : <ul>{commandes.map(c => { const note = notes.get(c.id); return <li key={c.id} className="border-b border-trait"><Link href={`/compte/commandes/${c.id}`} className="flex items-center justify-between gap-3 py-4">
-        <span className="flex min-w-0 flex-col gap-1"><span className="break-words text-sm font-light">{remplir(t.numero, { n: c.numero })}{c.boutiques ? ` · ${c.boutiques.nom}` : ""}</span><span className="text-xs text-gris">{formaterDateHeure(c.cree_le, langue)} · {formaterPrix(c.total, langue)}</span></span>
+        <span className="flex min-w-0 flex-col gap-1"><span className="break-words text-sm font-light">{remplir(t.numero, { n: c.numero })}{c.boutiques ? ` · ${c.boutiques.nom}` : ""}</span><span className="text-xs text-gris">{formaterDateHeure(c.cree_le, langue)} · <Prix montant={c.total} langue={langue} /></span></span>
         <span className="etiquette whitespace-nowrap">{t.statuts[c.statut]}</span>
       </Link>
       {note !== undefined ? <p className="pb-4 text-xs text-gris">{remplir(textes.avis.donne, { note })}</p>

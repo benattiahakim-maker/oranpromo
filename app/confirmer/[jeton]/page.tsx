@@ -1,9 +1,9 @@
 import Link from "next/link";
+import Prix from "@/components/Prix";
 import type { Metadata } from "next";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { lireCommandeAConfirmer, lireLienConfirmation, MESSAGES_CONFIRMATION, secretConfirmation, type CommandeAConfirmer } from "@/lib/confirmation";
 import { formaterDateHeure, STATUTS_COMMANDE } from "@/lib/commandes";
-import { formaterPrix } from "@/lib/prix";
 import ConfirmerCommande from "@/components/ConfirmerCommande";
 
 // US-20.6 : page ouverte par le bouton « Confirmer » du message WhatsApp. Sans connexion ; ne modifie rien à l'ouverture
@@ -48,9 +48,9 @@ export default async function PageConfirmer({ params }: { params: Promise<{ jeto
   return <Cadre titre="Nouvelle commande" sousTitre={`${commande.boutique} · Commande n° ${commande.numero}`}>
     <div className="flex justify-between text-sm"><span>{commande.client}</span><span className="etiquette text-[9px]">{STATUTS_COMMANDE[commande.statut]} · {formaterDateHeure(commande.cree_le)}</span></div>
     <ul className="flex flex-col gap-1.5 text-[13px] font-light">
-      {commande.lignes.map((l, i) => <li key={i} className="flex justify-between gap-3"><span>{l.titre} · {l.taille} × {l.quantite}</span><span className="whitespace-nowrap">{formaterPrix(l.prix_unitaire * l.quantite)}</span></li>)}
+      {commande.lignes.map((l, i) => <li key={i} className="flex justify-between gap-3"><span>{l.titre} · {l.taille} × {l.quantite}</span><span className="whitespace-nowrap"><Prix montant={l.prix_unitaire * l.quantite} /></span></li>)}
     </ul>
-    <div className="flex justify-between border-t border-trait pt-2.5 text-sm"><span>Total</span><span>{formaterPrix(commande.total)}</span></div>
+    <div className="flex justify-between border-t border-trait pt-2.5 text-sm"><span>Total</span><span><Prix montant={commande.total} /></span></div>
     {commande.note && <p className="text-xs font-light">Note du client : « {commande.note} »</p>}
     {etat ? <Avis message={etat} espace /> : <ConfirmerCommande jeton={jeton} />}
   </Cadre>;

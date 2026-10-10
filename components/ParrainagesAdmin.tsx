@@ -1,10 +1,11 @@
 "use client";
 import { useRef, useState } from "react";
+import Prix from "@/components/Prix";
 import Numero from "@/components/Numero";
 import { useRouter } from "next/navigation";
 import ActionMotif from "@/components/ActionMotif";
 import { annulerBonsParrainage, exclureCompteDuParrainage, retirerBoutiqueDesBons } from "@/app/admin/parrainages/actions";
-import { bonsAnnulables, masquerTelephone, montantDA, STATUTS_PARRAINAGE, type ParrainageAdmin } from "@/lib/parrainage-admin";
+import { bonsAnnulables, masquerTelephone, STATUTS_PARRAINAGE, type ParrainageAdmin } from "@/lib/parrainage-admin";
 import { formaterDateHeure } from "@/lib/commandes";
 
 // US-27.5 : liste des parrainages, signaux (jamais bloquants), actions admin.
@@ -44,7 +45,7 @@ function Ligne({ p, signaux }: { p: ParrainageAdmin; signaux: string[] }) {
     <div className="flex items-start justify-between gap-3"><span className="min-w-0 break-words text-sm">{p.filleul?.nom ?? "Compte supprimé"}</span><span className="etiquette shrink-0 whitespace-nowrap">{STATUTS_PARRAINAGE[p.statut] ?? p.statut}</span></div>
     <Personne titre="Filleul" personne={p.filleul} />
     <Personne titre="Parrain" personne={p.parrain} absent={p.parrain_id ? "Compte supprimé" : "aucun (numéro ou code sans parrain possible)"} />
-    {p.commande && <p className="text-xs text-gris">Commande n° {p.commande.numero} · {montantDA(p.commande.total)}{p.boutique ? ` · ${p.boutique.nom}` : ""}{p.commande.mode_remise ? ` · ${MODES[p.commande.mode_remise] ?? p.commande.mode_remise}` : ""}</p>}
+    {p.commande && <p className="text-xs text-gris">Commande n° {p.commande.numero} · <Prix montant={p.commande.total} />{p.boutique ? ` · ${p.boutique.nom}` : ""}{p.commande.mode_remise ? ` · ${MODES[p.commande.mode_remise] ?? p.commande.mode_remise}` : ""}</p>}
     {p.valide_le && <p className="text-xs text-gris">Validé le {formaterDateHeure(p.valide_le)}</p>}
     {p.bons.length > 0 && <p className="text-xs text-gris">Bons : {p.bons.map(b => `${b.origine === "parrainage_parrain" ? "parrain" : "filleul"} ${ETATS_BON[b.statut] ?? b.statut}`).join(" · ")}</p>}
     {p.motif && <p className="text-xs text-gris">Motif : {p.motif}</p>}

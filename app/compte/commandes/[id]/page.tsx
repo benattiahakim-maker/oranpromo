@@ -1,11 +1,11 @@
 import Link from "next/link";
+import Prix from "@/components/Prix";
 import { notFound } from "next/navigation";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { annulableParClient, formaterDateHeure, lireCommande } from "@/lib/commandes";
 import { getLangue } from "@/lib/langue-serveur";
 import { remplir } from "@/lib/langue";
 import { textesDe, traduire } from "@/lib/textes";
-import { formaterPrix } from "@/lib/prix";
 import { afficherTaille } from "@/lib/article";
 import { numeroWhatsApp } from "@/lib/whatsapp";
 import FriseCommande from "@/components/FriseCommande";
@@ -69,11 +69,11 @@ export default async function SuiviCommande({ params, searchParams }: { params: 
       partage={{ lien: retrait.lien, whatsapp: lienPartageRetrait(langue, commande.numero, boutique?.nom ?? "BleDeal", retrait.lien) }} /></div>}
     <div className="px-6 pt-5">
       <FriseCommande statut={commande.statut} suivi={commande.suivi_commandes} />
-      <ul aria-label={t.articles} className="mt-2 border-t border-trait pt-3 text-[13px] font-light">{commande.lignes_commande.map(l => <li key={l.id} className="flex justify-between gap-3 py-1"><span>{l.article_id ? <Link href={`/a/${l.article_id}`} className="underline-offset-2 hover:underline">{l.titre}</Link> : l.titre} · {afficherTaille(l.taille, langue)} × {l.quantite}</span><span className="whitespace-nowrap">{formaterPrix(l.prix_unitaire * l.quantite, langue)}</span></li>)}</ul>
-      <p className="flex justify-between pt-2"><span className="etiquette self-center">{t.total}</span><span>{formaterPrix(commande.total, langue)}</span></p>
+      <ul aria-label={t.articles} className="mt-2 border-t border-trait pt-3 text-[13px] font-light">{commande.lignes_commande.map(l => <li key={l.id} className="flex justify-between gap-3 py-1"><span>{l.article_id ? <Link href={`/a/${l.article_id}`} className="underline-offset-2 hover:underline">{l.titre}</Link> : l.titre} · {afficherTaille(l.taille, langue)} × {l.quantite}</span><span className="whitespace-nowrap"><Prix montant={l.prix_unitaire * l.quantite} langue={langue} /></span></li>)}</ul>
+      <p className="flex justify-between pt-2"><span className="etiquette self-center">{t.total}</span><span><Prix montant={commande.total} langue={langue} /></span></p>
       {remise > 0 && <>
-        <p className="flex justify-between pt-1 text-sm"><span>{libelleBon}</span><span dir="ltr">−{formaterPrix(remise, langue)}</span></p>
-        <p className="flex justify-between border-t border-noir pt-2 font-medium"><span>{textesDe(langue).retrait.aPayer}</span><span>{formaterPrix(aEncaisser(commande.total, remise), langue)}</span></p>
+        <p className="flex justify-between pt-1 text-sm"><span>{libelleBon}</span><Prix montant={remise} langue={langue} moins /></p>
+        <p className="flex justify-between border-t border-noir pt-2 font-medium"><span>{textesDe(langue).retrait.aPayer}</span><span><Prix montant={aEncaisser(commande.total, remise)} langue={langue} /></span></p>
       </>}
       {merci && <MerciParrainage whatsapp={merci.whatsapp} />}
       {commande.note && <p className="mt-2 text-sm text-gris">{remplir(t.note, { note: commande.note })}</p>}

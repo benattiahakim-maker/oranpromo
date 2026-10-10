@@ -1,6 +1,7 @@
 "use client";
 // US-28.1 : lignes serrées (téléphone) et tableau compact (ordinateur ≥ 1 024 px), dans une seule liste ; US-28.2 : cases à cocher, barre d’action, compte rendu.
 import { useRef, useState } from "react";
+import Prix from "@/components/Prix";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { changerStatutCommandeBoutique, changerStatutCommandesBoutique } from "@/app/espace/commandes/actions";
@@ -8,7 +9,6 @@ import { CarteCommande } from "@/components/CommandesRecues";
 import { useEstNouvelle } from "@/components/MiseAJourCommandes";
 import { ACTION_BOUTIQUE, estStockInsuffisant, quantiteTotale, type CommandeRecue } from "@/lib/commandes";
 import { aEncaisser } from "@/lib/bons";
-import { formaterPrix } from "@/lib/prix";
 import { ACTION_GROUPEE, compteRendu, ETAPES, etapeDeStatut, GROUPE_MAX, heureCourte, heureEtape, prenom, urgence, type EtapeCommande } from "@/lib/tableau-commandes";
 
 const COLONNES = "lg:grid-cols-[56px_minmax(0,1fr)_64px_104px_96px_180px_88px]";
@@ -110,7 +110,7 @@ function Ligne({ commande, etape, boutique, maintenant, ouverte, alerte, cochabl
           <span className="lg:col-start-5 lg:row-start-1">{etape ? <><span className="lg:hidden">{ETAPES[etape].heure.toLowerCase()} {/^\d/.test(heure) ? "à " : ""}</span>{heure}</> : ETAPES[etapeLigne].libelle}</span>
         </span>
         <span className={`col-start-1 row-start-3 text-xs lg:col-start-6 lg:row-start-1 lg:text-sm ${u.rouge ? "font-medium text-erreur" : "text-gris"}`}>{u.rouge && <span aria-hidden="true">● </span>}{u.texte}</span>
-        <span className="col-start-2 row-start-1 whitespace-nowrap text-right text-[15px] lg:col-start-4 lg:row-start-1 lg:text-sm">{formaterPrix(aEncaisser(commande.total, remise))}</span>
+        <span className="col-start-2 row-start-1 whitespace-nowrap text-right text-[15px] lg:col-start-4 lg:row-start-1 lg:text-sm"><Prix montant={aEncaisser(commande.total, remise)} /></span>
         {remise > 0 && <span className="col-start-2 row-start-2 justify-self-end lg:col-start-7 lg:row-start-1 lg:justify-self-start"><span className="etiquette whitespace-nowrap border border-noir px-1 text-[9px]">Bon −{remise}</span></span>}
       </button>
       <span className="hidden w-[130px] items-center justify-end pr-1 lg:flex">

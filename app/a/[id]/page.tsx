@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Prix from "@/components/Prix";
 import Link from "next/link";
 import EntetePublic from "@/components/EntetePublic";
 import GalerieArticle from "@/components/GalerieArticle";
@@ -182,7 +183,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                     >
                       <h3 className="font-medium">{autreArticle.titre}</h3>
                       <p className="text-sm text-gris mt-1">
-                        {formaterPrix(autrePrixAffiche, langue)}
+                        <Prix montant={autrePrixAffiche} langue={langue} />
                       </p>
                     </Link>
                   );
@@ -203,9 +204,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     dateFin: promo.date_fin 
   } : null;
 
-  const prixNormalAffiche = formaterPrix(article.prix, langue);
   const prixAfficheValue = prixAffiche(article.prix, promoData);
-  const prixAfficheFormate = formaterPrix(prixAfficheValue, langue);
   const isPromoActive = promoActive(promoData);
 
   return (
@@ -255,11 +254,11 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           <div className="text-lg">
             {isPromoActive && (
               <>
-                <span className="text-gris line-through me-2">{prixNormalAffiche}</span>
-                {prixAfficheFormate}
+                <span className="text-gris line-through me-2"><Prix montant={article.prix} langue={langue} /></span>
+                <Prix montant={prixAfficheValue} langue={langue} />
               </>
             )}
-            {!isPromoActive && prixAfficheFormate}
+            {!isPromoActive && <Prix montant={prixAfficheValue} langue={langue} />}
           </div>
           
           {isPromoActive && promo?.date_fin && (

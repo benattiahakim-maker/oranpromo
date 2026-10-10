@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Prix from "@/components/Prix";
 import Link from "next/link";
 import EntetePublic from "@/components/EntetePublic";
 import Image from "next/image";
 import { creerClientServeur } from "@/lib/supabase/server";
-import { formaterPrix, prixAffiche, promoActive } from "@/lib/prix";
+import { prixAffiche, promoActive } from "@/lib/prix";
 import { numeroWhatsApp } from "@/lib/whatsapp";
 import { positionBoutique, trierArticlesVitrine } from "@/lib/vitrine";
 import { lienItineraire } from "@/lib/carte";
@@ -108,7 +109,7 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
         return <Link key={article.id} href={`/a/${article.id}`} className="min-w-0 text-center">
           <div className="relative aspect-[4/5] bg-fond-photo">{photo ? <Image src={photo.adresse_vignette ?? photo.adresse} alt={article.titre} fill sizes="(max-width: 512px) 45vw, 230px" className="object-cover" unoptimized /> : <span className="flex h-full items-center justify-center text-xs text-gris">{textesDe(langue).carte.aucunePhoto}</span>}</div>
           <h3 dir="auto" className="mt-3 break-words text-sm font-light">{article.titre}</h3>
-          <p className="mt-1 text-sm">{enPromo && <del className="me-2 text-gris">{formaterPrix(article.prix, langue)}</del>}{formaterPrix(prixAffiche(article.prix, article.promo, maintenant), langue)}</p>
+          <p className="mt-1 text-sm">{enPromo && <del className="me-2 text-gris"><Prix montant={article.prix} langue={langue} /></del>}<Prix montant={prixAffiche(article.prix, article.promo, maintenant)} langue={langue} /></p>
         </Link>;
       })}</div>
       {!liste.length && <p className="px-6 py-8 text-center text-sm text-gris">{t.aucun}</p>}

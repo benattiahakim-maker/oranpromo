@@ -22,7 +22,7 @@ describe("US-26.3 : /espace/retrait/[jeton]", () => {
     expect(html).toContain("Commande trouvée · par QR code");
     expect(html).toContain("Commande n° 128 · Amine");
     expect(html).toContain("Eau de parfum rose et musc · 50 ml × 1");
-    expect(html).toMatch(/À encaisser en espèces<\/span><span[^>]*>6\s300\sDA/);
+    expect(html).toMatch(/À encaisser en espèces<\/span><span[^>]*><bdi dir="ltr" data-prix="">6\s300\sDA<\/bdi>/); // prix isolé (page en arabe)
     expect(html).toContain("Un proche peut venir à sa place : c’est normal.");
     expect(html).toContain("Remis au client");
   });
