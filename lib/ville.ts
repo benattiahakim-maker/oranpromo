@@ -12,7 +12,7 @@ export const DUREE_COOKIE_VILLE = 60 * 60 * 24 * 365;
  * que chaque dossier de app/ y est.
  */
 export const CODES_RESERVES: readonly string[] = [
-  "a", "b", "i", "p", "admin", "api", "apercu-local", "auth", "campagne", "carte", "catalogue", "compte", "conditions", "conditions-commercants",
+  "a", "b", "i", "p", "admin", "alertes", "api", "apercu-local", "auth", "campagne", "carte", "catalogue", "compte", "conditions", "conditions-commercants",
   "confidentialite", "confirmer", "espace", "favicon",
   "images", "langue", "manifest", "panier", "parrainage", "retrait", "robots", "sitemap", "ville", "villes", "visiteurs",
 ];

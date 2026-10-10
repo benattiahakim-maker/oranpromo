@@ -18,6 +18,7 @@ import { cookies } from "next/headers";
 import { COOKIE_SUIVRE, estSuivie } from "@/lib/abonnements";
 import { COOKIE_INSCRIPTION, lireOffreInscription } from "@/lib/inscription-boutique";
 import BienvenueBoutique from "@/components/BienvenueBoutique";
+import { ETAT_ALERTES_ETEINTES, lireEtatAlertes } from "@/lib/alertes-whatsapp";
 import AvisBoutique from "@/components/AvisBoutique";
 import NoteBoutique from "@/components/NoteBoutique";
 import { DERNIERS_AVIS, lireAvisBoutique, lireResumes } from "@/lib/avis";
@@ -52,6 +53,8 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
   const { data: profil } = user ? await supabase.from("profils").select("role").eq("id", user.id).maybeSingle() : { data: null };
   const afficherSuivre = !user || profil?.role === "client";
   const suivie = user && afficherSuivre ? await estSuivie(supabase, boutique.id) : false;
+  // US-31.5 : alerte WhatsApp proposée après « Suivre » seulement si la base l'a allumée (éteinte par défaut).
+  const alertes = user && afficherSuivre ? await lireEtatAlertes(supabase) : ETAT_ALERTES_ETEINTES;
   // US-31.3 : QR code de l'affiche (cookie posé par /i/<slug>) → bandeau d'accueil, puis suivi et rattachement une fois connecté.
   const magasin = await cookies();
   const inscription = magasin.get(COOKIE_INSCRIPTION)?.value === slug;
@@ -83,7 +86,7 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
       <p className="etiquette text-gris">{boutique.quartier}{villeBoutique && ` · ${langue === "ar" ? villeBoutique.nom_ar : villeBoutique.nom}`}</p>
       <h1 dir="auto" className="font-titre break-words text-3xl">{boutique.nom}</h1>
       {resume && <a href="#avis" className="text-sm underline-offset-2 hover:underline"><NoteBoutique resume={resume} t={tAvis} /></a>}
-      {afficherSuivre && <BoutonSuivre boutiqueId={boutique.id} slug={slug} nom={boutique.nom} connecte={Boolean(user)} suivieAuDepart={suivie} apresConnexion={apresConnexion} />}
+      {afficherSuivre && <BoutonSuivre boutiqueId={boutique.id} slug={slug} nom={boutique.nom} connecte={Boolean(user)} suivieAuDepart={suivie} apresConnexion={apresConnexion} alertes={alertes} />}
       <p dir="auto" className="text-sm font-light">{boutique.adresse ?? t.adresseInconnue}</p>
       <p dir="auto" className="whitespace-pre-line text-sm text-gris">{boutique.horaires ?? t.horairesInconnus}</p>
       <div className="mt-3 grid grid-cols-2 gap-3">

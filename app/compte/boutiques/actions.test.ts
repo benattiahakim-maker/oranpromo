@@ -10,7 +10,9 @@ vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({
   rpc: etat.rpc, auth: { getUser: etat.getUser },
   from: () => ({ select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: etat.maybeSingle }) }) }) }),
 }) }));
-import { nePlusSuivre, rattacherInscription, seConnecterPourSuivre, suivreApresConnexion, suivreBoutique } from "./actions";
+const langue = vi.hoisted(() => ({ valeur: "fr" as "fr" | "ar" }));
+vi.mock("@/lib/langue-serveur", () => ({ getLangue: async () => langue.valeur }));
+import { activerAlertes, desactiverAlertes, nePlusSuivre, rattacherInscription, seConnecterPourSuivre, suivreApresConnexion, suivreBoutique } from "./actions";
 
 const ID = "11111111-1111-4111-8111-111111111111";
 beforeEach(() => {
@@ -91,5 +93,35 @@ describe("US-31.2 : suivre une boutique", () => {
     etat.getUser.mockResolvedValue({ data: { user: { id: "commercant" } } });
     etat.rpc.mockResolvedValue({ data: null, error: { code: "42501" } });
     expect(await rattacherInscription("chez-amine")).toMatchObject({ succes: false, erreur: "reserve" });
+  });
+});
+
+describe("US-31.5 : alertes WhatsApp depuis la vitrine et le compte", () => {
+  it("accord : langue du site et source envoyées à la base", async () => {
+    etat.rpc.mockResolvedValue({ data: null, error: null });
+    expect(await activerAlertes("vitrine")).toEqual({ succes: true, actives: true });
+    expect(etat.rpc).toHaveBeenCalledWith("activer_alertes_whatsapp", { langue: "fr", source: "vitrine" });
+    langue.valeur = "ar";
+    await activerAlertes("compte");
+    expect(etat.rpc).toHaveBeenLastCalledWith("activer_alertes_whatsapp", { langue: "ar", source: "compte" });
+    langue.valeur = "fr";
+  });
+  it("source inconnue ou visiteur : rien n'est envoyé à la base", async () => {
+    expect(await activerAlertes("lien" as "compte")).toMatchObject({ succes: false, erreur: "erreur" });
+    etat.getUser.mockResolvedValue({ data: { user: null } });
+    expect(await activerAlertes("vitrine")).toMatchObject({ succes: false, erreur: "connexion" });
+    expect(await desactiverAlertes()).toMatchObject({ succes: false, erreur: "connexion" });
+    expect(etat.rpc).not.toHaveBeenCalled();
+  });
+  it("alertes pas encore proposées (55000) : refus lisible", async () => {
+    etat.rpc.mockResolvedValueOnce({ data: null, error: { code: "55000" } });
+    expect(await activerAlertes("vitrine")).toEqual({ succes: false, actives: false, erreur: "nonProposees" });
+  });
+  it("arrêt depuis le compte", async () => {
+    etat.rpc.mockResolvedValue({ data: null, error: null });
+    expect(await desactiverAlertes()).toEqual({ succes: true, actives: false });
+    expect(etat.rpc).toHaveBeenCalledWith("desactiver_alertes_whatsapp");
+    etat.rpc.mockResolvedValueOnce({ data: null, error: { code: "XX000" } });
+    expect(await desactiverAlertes()).toEqual({ succes: false, actives: true, erreur: "erreur" });
   });
 });

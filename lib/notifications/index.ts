@@ -4,6 +4,7 @@ import type { Database } from "@/lib/supabase/types";
 import { creerFournisseurMeta } from "./meta";
 import { preparerBoutonConfirmer, secretConfirmation } from "@/lib/confirmation";
 import { jetonRetraitValide } from "@/lib/retrait";
+import { estModeleAlerte, jetonAlertesValide } from "@/lib/alertes-whatsapp";
 import type { FournisseurWhatsApp, MessageWhatsApp } from "./types";
 
 export type { FournisseurWhatsApp, MessageWhatsApp, ResultatEnvoi } from "./types";
@@ -68,6 +69,25 @@ export async function preparerBoutonRetrait(client: SupabaseClient<Database>, me
   } catch { return sansBouton; }
 }
 
+/**
+ * US-31.5 : alerte « nouvelles promos » (modèle Marketing). Le 3e paramètre est l'identifiant du compte ; le jeton du
+ * lien « Ne plus recevoir » est demandé à la base au moment de l'envoi (avec CRON_SECRET) et sert seulement de
+ * paramètre du bouton (https://<domaine>/alertes/<jeton>). Alertes arrêtées entre-temps, jeton absent ou erreur :
+ * null, le message ne part pas (jamais d'alerte sans lien de désabonnement).
+ */
+export async function preparerBoutonAlerte(client: SupabaseClient<Database>, message: MessageWhatsApp, jeton: string): Promise<MessageWhatsApp | null> {
+  if (!estModeleAlerte(message.modele)) return message;
+  const corps = message.parametres.slice(0, 2);
+  const profil = message.parametres[2];
+  if (!profil || !UUID.test(profil)) return null;
+  try {
+    const { data, error } = await client.rpc("jeton_alertes_envoi", { jeton, profil });
+    return !error && jetonAlertesValide(data) ? { ...message, parametres: corps, bouton: data } : null;
+  } catch { return null; }
+}
+
+export const ALERTE_ARRETEE = "Alertes arrêtées ou lien indisponible : non envoyé.";
+
 /** Envoie les messages un par un et enregistre chaque résultat dans la base (avec le jeton du serveur). Ne lève jamais d'erreur. */
 export async function envoyerMessages(client: SupabaseClient<Database>, messages: MessageWhatsApp[], fournisseur: FournisseurWhatsApp, jeton: string, options: OptionsEnvoi = {}) {
   const maintenant = options.maintenant ?? Date.now;
@@ -76,7 +96,10 @@ export async function envoyerMessages(client: SupabaseClient<Database>, messages
     // Arrêt avant la limite de durée de la fonction : un message coupé en plein envoi partirait deux fois.
     if (options.finAvant !== undefined && maintenant() + DUREE_ENVOI_MAX_MS > options.finAvant) { reportes++; continue; }
     let resultat;
-    try { resultat = await fournisseur.envoyer(await preparerBoutonRetrait(client, message, jeton)); }
+    try {
+      const pret = await preparerBoutonAlerte(client, await preparerBoutonRetrait(client, message, jeton), jeton);
+      resultat = pret ? await fournisseur.envoyer(pret) : { succes: false as const, erreur: ALERTE_ARRETEE, definitif: true };
+    }
     catch { resultat = { succes: false as const, erreur: "Erreur d’envoi.", definitif: false }; }
     if (resultat.succes) envoyes++; else echecs++;
     const { error } = await client.rpc("resultat_message_whatsapp", resultat.succes

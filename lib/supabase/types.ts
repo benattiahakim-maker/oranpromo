@@ -1425,6 +1425,10 @@ export type Database = {
         Args: { contexte: string; documents: string[]; versions: string[] }
         Returns: undefined
       }
+      activer_alertes_whatsapp: {
+        Args: { langue: string; source: string }
+        Returns: undefined
+      }
       ajouter_code_bon: { Args: { code: string }; Returns: Json }
       ajouter_mot_interdit: { Args: { mot: string }; Returns: string }
       annuler_bons_parrainage: {
@@ -1532,6 +1536,8 @@ export type Database = {
         Args: { commande: string; langue: string }
         Returns: undefined
       }
+      desactiver_alertes_par_lien: { Args: { jeton: string }; Returns: string }
+      desactiver_alertes_whatsapp: { Args: never; Returns: undefined }
       documents_a_accepter: {
         Args: never
         Returns: {
@@ -1563,9 +1569,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      etat_alertes_par_lien: { Args: { jeton: string }; Returns: string }
+      etat_alertes_whatsapp: { Args: never; Returns: Json }
       exclure_parrainage: {
         Args: { exclu: boolean; profil: string }
         Returns: undefined
+      }
+      jeton_alertes_envoi: {
+        Args: { jeton: string; profil: string }
+        Returns: string
       }
       jeton_retrait_envoi: {
         Args: { commande: string; jeton: string }
@@ -1624,6 +1636,7 @@ export type Database = {
         Returns: undefined
       }
       rattacher_inscription: { Args: { slug_boutique: string }; Returns: Json }
+      recompense_avis: { Args: never; Returns: Json }
       regler_budget_parrainage: {
         Args: { montant: number }
         Returns: undefined
