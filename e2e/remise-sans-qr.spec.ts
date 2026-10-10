@@ -3,7 +3,7 @@
 // sont pas réécrites ici : le test passe par les écrans, puis lit la base LOCALE pour vérifier ce qu'elle a décidé.
 import { expect, test, type Page } from "@playwright/test";
 import { creerArticle, creerBoutique, creerCompte, fermerBase, ouvrirParrainage, sql } from "./outils/donnees";
-import { avancerCommande, commanderArticle, connecterClient, connecterEspace } from "./outils/parcours";
+import { avancerCommande, commanderArticle, commanderOuAccepter, connecterClient, connecterEspace } from "./outils/parcours";
 
 test.afterAll(fermerBase);
 
@@ -114,7 +114,7 @@ test("remis sans QR code : le bon réservé ne s'applique pas, il revient au cli
     await page.goto("/panier");
     await expect(page.getByRole("checkbox", { name: /Utiliser mon bon parrainage/ })).toBeChecked();
     await expect(page.getByText("2 200 DA").first()).toBeVisible();
-    await page.getByRole("button", { name: "Commander", exact: true }).click();
+    await commanderOuAccepter(page);
     await expect(page).toHaveURL(/\/compte\/commandes\/[0-9a-f-]{36}/);
     suivi = new URL(page.url()).pathname;
     expect(await commande(suivi)).toMatchObject({ bon_id: bon.id, remise_bon: 300 });

@@ -37,7 +37,7 @@ test("client en arabe : commande complète jusqu'au retrait par QR code", async 
     await page.getByRole("link", { name: "شوف السلة" }).click();
   });
 
-  await test.step("panier, connexion par lien e-mail en arabe, « اطلب »", async () => {
+  await test.step("panier, connexion par lien e-mail en arabe, conditions acceptées en arabe, « نقبل ونطلب »", async () => {
     await expect(page.getByRole("heading", { name: "السلة ديالي" })).toBeVisible();
     await enArabe(page);
     await page.getByRole("link", { name: "ادخل لحسابك باش تطلب" }).click();
@@ -45,7 +45,11 @@ test("client en arabe : commande complète jusqu'au retrait par QR code", async 
     await seConnecterParEmail(page, client.email, "ar");
     await expect(page).toHaveURL(/\/panier/);
     await enArabe(page);
-    await page.getByRole("button", { name: "اطلب", exact: true }).click();
+    // Compte créé par e-mail (sans case à l'inscription) : au panier, les conditions sont à accepter (US-34.2), en arabe.
+    await expect(page.getByText(/الشروط نتاعنا تبدلو نهار/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "اطلب", exact: true })).toHaveCount(0);
+    await page.getByRole("checkbox", { name: /نقبل شروط الاستعمال/ }).check();
+    await page.getByRole("button", { name: "نقبل ونطلب" }).click();
     await expect(page).toHaveURL(/\/compte\/commandes\/[0-9a-f-]{36}/);
     await expect(page.getByText("الطلب تبعث").first()).toBeVisible();
     await expect(page.getByRole("list", { name: "تتبّع الطلب" })).toContainText("تأكّد (من بعد)");
