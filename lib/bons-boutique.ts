@@ -10,7 +10,7 @@ import { fr } from "./textes/fr";
 import type { fr as Fr } from "./textes/fr";
 
 type Client = SupabaseClient<Database>;
-const ORIGINES: readonly OrigineBon[] = ["parrainage_filleul", "parrainage_parrain", "bienvenue", "campagne", "inscription_boutique"];
+const ORIGINES: readonly OrigineBon[] = ["parrainage_filleul", "parrainage_parrain", "bienvenue", "campagne", "inscription_boutique", "avis"];
 
 /** Bon posé sur une commande : origine et nom du programme (vide pour le parrainage et la bienvenue). */
 export type NomBon = { origine: OrigineBon; nom_fr: string | null; nom_ar: string | null };

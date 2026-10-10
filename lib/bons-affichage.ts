@@ -10,7 +10,8 @@ type TextesBons = typeof fr.parrainage;
 export function nomDuBon(bon: Pick<BonClient, "origine" | "nom_fr" | "nom_ar">, t: TextesBons, langue: Langue): string {
   // US-31.4 : le bon de l'inscription en boutique est un bon de bienvenue.
   if (bon.origine === "bienvenue" || bon.origine === "inscription_boutique") return t.nomBienvenue;
-  if (bon.origine === "campagne") return remplir(t.nomProgramme, { nom: (langue === "ar" ? bon.nom_ar : bon.nom_fr) ?? bon.nom_fr ?? "" });
+  // US-32.5 : bon « avis » nommé comme une campagne, par son programme (« Bon Avis », « بون راي »).
+  if (bon.origine === "campagne" || bon.origine === "avis") return remplir(t.nomProgramme, { nom: (langue === "ar" ? bon.nom_ar : bon.nom_fr) ?? bon.nom_fr ?? "" });
   return t.nomBon;
 }
 
@@ -31,7 +32,7 @@ export function detailInscription(bon: BonClient, t: TextesBons, maintenant: Dat
 /** Libellé de la case du panier. */
 export function libelleUtiliserBon(bon: BonClient, t: TextesBons, langue: Langue): string {
   if (bon.origine === "bienvenue" || bon.origine === "inscription_boutique") return remplir(t.utiliserBonBienvenue, { montant: formaterPrix(bon.montant, langue) });
-  if (bon.origine === "campagne") return remplir(t.utiliserBonProgramme, { nom: (langue === "ar" ? bon.nom_ar : bon.nom_fr) ?? bon.nom_fr ?? "", montant: formaterPrix(bon.montant, langue) });
+  if (bon.origine === "campagne" || bon.origine === "avis") return remplir(t.utiliserBonProgramme, { nom: (langue === "ar" ? bon.nom_ar : bon.nom_fr) ?? bon.nom_fr ?? "", montant: formaterPrix(bon.montant, langue) });
   return t.utiliserBon;
 }
 

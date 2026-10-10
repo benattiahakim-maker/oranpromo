@@ -36,7 +36,7 @@ describe("US-32.3 : avis sur la vitrine", () => {
     expect(html).toContain("Réponse de la boutique : Merci Amine, à bientôt !");
     expect(html).toContain("★★★☆☆"); expect(html).toContain("septembre 2026");
     expect(html).toContain('href="/b/boutique-nour/avis"'); expect(html).toContain("Voir tous les avis");
-    // La mention du bon (US-32.5) n'est pas affichée tant que la récompense n'existe pas.
+    // US-32.5 : la mention du bon n'est pas affichée tant que la récompense n'est pas active.
     expect(html).not.toContain("petit bon");
     // US-32.4 : « Signaler » sous chaque avis.
     expect(html.match(/>Signaler</g)).toHaveLength(avis.length);
@@ -54,5 +54,13 @@ describe("US-32.3 : avis sur la vitrine", () => {
     const html = renderToStaticMarkup(<AvisBoutique resume={resume(4.6, 18)} avis={avis} slug="boutique-nour" t={ar} langue="ar" />);
     expect(html).toContain("★ 4,6 · 18 راي"); expect(html).toContain("أكتوبر 2026"); expect(html).toContain("آراء الكليان");
     expect(html).toContain('dir="auto"');
+  });
+});
+
+describe("US-32.5 : mention du bon (texte n° 11)", () => {
+  it("affichée quand la récompense est active, en français et en arabe", () => {
+    expect(renderToStaticMarkup(<AvisBoutique resume={resume(4.6, 18)} avis={[]} slug="b" t={fr} langue="fr" recompense />)).toContain("Les clients reçoivent un petit bon pour chaque avis, quelle que soit leur note.");
+    expect(renderToStaticMarkup(<AvisBoutique resume={resume(null, 0)} avis={[]} slug="b" t={ar} langue="ar" recompense />)).toContain("الكليان ياخذو بون صغير على كل راي، مهما كانت النقطة.");
+    expect(renderToStaticMarkup(<AvisBoutique resume={resume(4.6, 18)} avis={[]} slug="b" t={fr} langue="fr" recompense={false} />)).not.toContain("petit bon");
   });
 });

@@ -21,7 +21,7 @@ import BienvenueBoutique from "@/components/BienvenueBoutique";
 import { ETAT_ALERTES_ETEINTES, lireEtatAlertes } from "@/lib/alertes-whatsapp";
 import AvisBoutique from "@/components/AvisBoutique";
 import NoteBoutique from "@/components/NoteBoutique";
-import { DERNIERS_AVIS, lireAvisBoutique, lireResumes } from "@/lib/avis";
+import { DERNIERS_AVIS, lireAvisBoutique, lireRecompenseAvis, lireResumes } from "@/lib/avis";
 import { chargerApercuBoutique, METADONNEES_BOUTIQUE_INDISPONIBLE, metadonneesBoutique } from "@/lib/lien-boutique";
 
 export const dynamic = "force-dynamic";
@@ -63,9 +63,11 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
   const offre = inscription && !user ? await lireOffreInscription(supabase, slug) : null;
   // US-32.3 : note, critères et derniers avis (lecture publique par les fonctions de la base ; sans eux, la vitrine s'affiche).
   const tAvis = textesDe(langue).avis;
-  const [resume, derniersAvis] = await Promise.all([
+  // US-32.5 : mention du bon (texte n° 11) seulement si la récompense est active ; erreur : pas de mention.
+  const [resume, derniersAvis, recompense] = await Promise.all([
     lireResumes(supabase, [boutique.id]).then(r => r.get(boutique.id) ?? null).catch(() => null),
     lireAvisBoutique(supabase, boutique.id, DERNIERS_AVIS).catch(() => null),
+    lireRecompenseAvis(supabase).catch(() => null),
   ]);
   const maintenant = new Date();
   const liste = trierArticlesVitrine((articles ?? []).map(article => {
@@ -111,6 +113,6 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
       })}</div>
       {!liste.length && <p className="px-6 py-8 text-center text-sm text-gris">{t.aucun}</p>}
     </main>
-    {resume && derniersAvis && <AvisBoutique resume={resume} avis={derniersAvis} slug={slug} t={tAvis} langue={langue} />}
+    {resume && derniersAvis && <AvisBoutique resume={resume} avis={derniersAvis} slug={slug} t={tAvis} langue={langue} recompense={recompense !== null} />}
   </div>;
 }

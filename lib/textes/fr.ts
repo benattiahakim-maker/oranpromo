@@ -608,6 +608,8 @@ export const fr = {
     plusPossible: "Un avis est possible seulement sur une commande récupérée avec votre QR code, dans les 14 jours.",
     retourCommande: "Retour à la commande",
     impossible: "Impossible de publier votre avis. Réessayez.",
+    // US-32.5 : mention publique (texte n° 11), affichée quand la récompense est active.
+    mentionBon: "Les clients reçoivent un petit bon pour chaque avis, quelle que soit leur note.",
     // US-32.3 : affichage (textes n° 9, 10 et 13 du module 18).
     resume: "★ {note} · {n} avis",
     resumeFiche: "★ {note} ({n} avis)",

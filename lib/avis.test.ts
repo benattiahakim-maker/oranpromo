@@ -56,7 +56,7 @@ function client(rpc: { data: unknown; error: unknown }, lecture: { data: unknown
 describe("US-32.2 : envoi à la base", () => {
   it("donner_avis reçoit la saisie vérifiée ; renvoie l'avis", async () => {
     const test = client({ data: { avis: "a1" }, error: null });
-    expect(await donnerAvis(test.client, ID, { note: 5, criteres: ["rapidite", "accueil"], commentaire: " Top " })).toBe("a1");
+    expect(await donnerAvis(test.client, ID, { note: 5, criteres: ["rapidite", "accueil"], commentaire: " Top " })).toEqual({ id: "a1", bon: null });
     expect(test.rpc).toHaveBeenCalledWith("donner_avis", { commande: ID, note: 5, criteres: ["accueil", "rapidite"], commentaire: "Top" });
     await donnerAvis(test.client, ID, { note: 2, criteres: [], commentaire: "" });
     expect(test.rpc).toHaveBeenLastCalledWith("donner_avis", { commande: ID, note: 2, criteres: [], commentaire: undefined });
