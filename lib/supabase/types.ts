@@ -1654,6 +1654,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      signaux_avis: {
+        Args: never
+        Returns: {
+          boutique: string
+          boutique_id: string
+          cinq_etoiles_comptes_recents: number
+        }[]
+      }
       signaux_fraude_avis: {
         Args: never
         Returns: {
@@ -1662,14 +1670,6 @@ export type Database = {
           detail: string
           nombre: number
           signal: string
-        }[]
-      }
-      signaux_avis: {
-        Args: never
-        Returns: {
-          boutique: string
-          boutique_id: string
-          cinq_etoiles_comptes_recents: number
         }[]
       }
       suivre_boutique: { Args: { boutique: string }; Returns: boolean }
