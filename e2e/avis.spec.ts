@@ -240,3 +240,31 @@ test("signaux de fraude : avis groupés dans la même minute, affichés à l'adm
   expect(await sql("select statut from avis where boutique_id = $1 and statut <> 'publie'", [boutique.id])).toHaveLength(0);
   await admin.context().close();
 });
+
+test("mots interdits : l'admin ajoute un mot (normalisé), le filtre des avis le refuse aussitôt, puis il le retire", async ({ browser }) => {
+  const suffixe = unique().toLowerCase().replace(/[^a-z0-9]/g, "").slice(-8);
+  const saisi = `Arnaqué${suffixe}`, enregistre = `arnaque${suffixe}`;
+  const filtre = async () => (await sql<{ refuse: boolean }>("select prive.contenu_interdit($1) as refuse", [`Vendeur ${saisi} !`]))[0].refuse;
+  const admin = await connecterEspace(browser, (await creerCompte({ role: "admin", nom: "Hakim" })).email);
+  await admin.goto("/admin/moderation");
+  await admin.getByRole("link", { name: "Mots interdits" }).click();
+  await expect(admin.getByRole("heading", { name: "Mots interdits" })).toBeVisible();
+  await expect(admin.getByRole("list", { name: "Mots interdits" })).toContainText("zebi");
+  expect(await filtre()).toBe(false);
+
+  await admin.getByLabel("Nouveau mot interdit").fill(saisi);
+  await admin.getByRole("button", { name: "Ajouter" }).click();
+  await expect(admin.getByRole("status")).toHaveText(`« ${enregistre} » ajouté à la liste.`);
+  await expect(admin.getByRole("listitem").filter({ hasText: enregistre })).toBeVisible();
+  expect(await filtre()).toBe(true);
+
+  await admin.getByLabel("Nouveau mot interdit").fill("deux mots");
+  await admin.getByRole("button", { name: "Ajouter" }).click();
+  await expect(admin.getByRole("main").getByRole("alert")).toHaveText("Un seul mot, sans espace.");
+
+  await admin.getByRole("button", { name: `Retirer « ${enregistre} »` }).click();
+  await expect(admin.getByRole("status")).toHaveText(`« ${enregistre} » retiré de la liste.`);
+  await expect(admin.getByRole("listitem").filter({ hasText: enregistre })).toHaveCount(0);
+  expect(await filtre()).toBe(false);
+  await admin.context().close();
+});

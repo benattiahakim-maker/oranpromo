@@ -115,6 +115,27 @@ export async function chargerSignauxAvis(client: SupabaseClient<Database>): Prom
     .map(s => ({ signal: s.signal as TypeSignalAvis, boutiqueId: s.boutique_id, boutique: s.boutique, nombre: s.nombre, detail: s.detail ?? null }));
 }
 
+// Liste des mots interdits (filtre des avis, US-32) tenue par l'admin : la base normalise et vérifie le mot.
+function erreurMot(error: { code?: string; message?: string }, defaut: string) {
+  return new Error(["22023", "P0002", "42501"].includes(error.code ?? "") && error.message ? error.message : defaut);
+}
+export async function chargerMotsInterdits(client: SupabaseClient<Database>): Promise<string[]> {
+  const { data, error } = await client.rpc("mots_interdits");
+  if (error) throw new Error("Impossible de charger les mots interdits. Réessayez.");
+  return data ?? [];
+}
+/** Retourne le mot tel qu'il est enregistré (minuscules, sans accents). */
+export async function ajouterMotInterdit(client: SupabaseClient<Database>, mot: string): Promise<string> {
+  if (!mot.trim()) throw new Error("Écrivez un mot.");
+  const { data, error } = await client.rpc("ajouter_mot_interdit", { mot });
+  if (error) throw erreurMot(error, "Impossible d’ajouter ce mot. Réessayez.");
+  return data;
+}
+export async function retirerMotInterdit(client: SupabaseClient<Database>, mot: string) {
+  const { error } = await client.rpc("retirer_mot_interdit", { mot });
+  if (error) throw erreurMot(error, "Impossible de retirer ce mot. Réessayez.");
+}
+
 /** Une transaction dans la base : effet, une décision par signalement, signalements clos (seulement ceux vus). */
 export async function modererAvis(client: SupabaseClient<Database>, avisId: string, ids: string[], action: ActionModerationAvis) {
   await verifierAdministrateur(client);
