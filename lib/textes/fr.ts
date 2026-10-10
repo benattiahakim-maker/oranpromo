@@ -498,10 +498,40 @@ export const fr = {
     utiliserBonProgramme: "Utiliser mon bon {nom} (−{montant})", // 9
     minimumProgramme: "Dès {minimum} d’achat", // 10
     noteBonProgramme: "Un bon par commande. Si la boutique annule la commande, le bon revient ; si tu l’annules ou si tu ne viens pas, il est perdu.",
+    // US-33.3 : campagnes avec code (conception US-33, module 19 : n° 3 à 8, 10 à 14 ; sans numéro : nouveaux).
+    jaiUnCode: "J’ai un code", // 3
+    ajouterCode: "Ajouter", // 4
+    codeAjoute: "Bon {nom} ajouté : {montant} dès {minimum} d’achat.", // 5
+    codeInconnu: "Ce code n’existe pas ou n’est plus valable.", // 6
+    codeDeja: "Vous avez déjà eu ce bon.", // 7
+    codeTrop: "Trop d’essais. Réessayez dans une heure.", // 8
+    codeNumero: "Vérifiez votre numéro pour ajouter un code.",
+    codeErreur: "Impossible d’ajouter ce code. Réessayez.",
+    raisonUnivers: "Articles {univers} seulement", // 11
+    raisonVille: "Pas dans cette ville", // 12
+    raisonPlafond: "Ce bon n’est plus accepté dans cette boutique pour cette campagne.", // 13
+    raisonBoutique: "Cette boutique ne prend plus les bons",
+    universBon: { femme: "Femme", homme: "Homme", enfant: "Enfant", beaute: "Beauté" },
+    bandeau: "{nom} : {montant} offerts dès {minimum} d’achat avec le code {code}, jusqu’au {date}.", // 14
+    bandeauSansDate: "{nom} : {montant} offerts dès {minimum} d’achat avec le code {code}.",
+    conditionsCampagne: "Conditions", // 14
+    conditionsTitre: "Conditions du bon {nom}",
+    conditionsCode: "Code : {code}",
+    conditionsMontant: "{montant} offerts dès {minimum} d’achat",
+    conditionsVilles: "Villes : {villes}",
+    conditionsToutesVilles: "Dans toutes les villes ouvertes",
+    conditionsDates: "Du {debut} au {fin}",
+    conditionsDepuis: "Depuis le {debut}",
+    conditionsNumero: "Une fois par numéro vérifié.",
+    conditionsQr: "Remise en boutique par QR code obligatoire.",
+    conditionsAucune: "Cette campagne n’existe pas ou n’est plus valable.",
     bonNonApplique: {
       aucun_bon: "Bon non appliqué : il a expiré ou n’est plus disponible. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
       minimum: "Bon non appliqué : il s’utilise dès 1 000 DA d’achat. Ta commande reste au prix plein.",
       boutique_exclue: "Bon non appliqué : cette boutique n’accepte pas les bons pour le moment. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
+      univers: "Bon non appliqué : il ne vaut que pour certains articles. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
+      ville: "Bon non appliqué : pas dans cette ville. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
+      plafond_boutique: "Bon non appliqué : ce bon n’est plus accepté dans cette boutique pour cette campagne. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
       erreur: "Bon non appliqué. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
     },
   },

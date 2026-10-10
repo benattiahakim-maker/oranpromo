@@ -489,10 +489,40 @@ export const ar: Textes = {
     utiliserBonProgramme: "استعمل بون {nom} (−{montant})", // 9
     minimumProgramme: "كي تشري {minimum} ولا كثر", // 10
     noteBonProgramme: "بون واحد في كل طلب. إلا الحانوت لغات الطلب، البون يرجعلك؛ إلا لغيتو نتا ولا ما جيتش، البون يروح.", // à valider
+    // US-33.3 : n° 3 à 8, 10 à 14 de la conception ; les autres sont nouveaux, à valider.
+    jaiUnCode: "عندي كود", // 3
+    ajouterCode: "زيد", // 4
+    codeAjoute: "بون {nom} تزاد : {montant} كي تشري {minimum} ولا كثر.", // 5
+    codeInconnu: "هاد الكود ما كاينش ولا فات الوقت نتاعو.", // 6
+    codeDeja: "ديجا خذيت هاد البون.", // 7
+    codeTrop: "بزاف تاع المحاولات. عاود من بعد ساعة.", // 8
+    codeNumero: "أكّد النمرة نتاعك باش تزيد كود.", // à valider
+    codeErreur: "ما قدرناش نزيدو هاد الكود. عاود جرّب.", // à valider
+    raisonUnivers: "غير سلعة {univers}", // 11
+    raisonVille: "ماشي في هاد المدينة", // 12
+    raisonPlafond: "هاد البون ما بقاش يتقبل في هاد الحانوت لهاد البروموسيون.", // 13
+    raisonBoutique: "هاد الحانوت ما بقاش ياخذ البونات", // à valider
+    universBon: { femme: "النسا", homme: "الرجال", enfant: "الذراري", beaute: "التجميل" }, // « النسا » : n° 11 ; autres à valider
+    bandeau: "{nom} : {montant} هدية كي تشري {minimum} ولا كثر بالكود {code}، حتى {date}.", // 14
+    bandeauSansDate: "{nom} : {montant} هدية كي تشري {minimum} ولا كثر بالكود {code}.",
+    conditionsCampagne: "الشروط", // 14
+    conditionsTitre: "شروط بون {nom}", // à valider
+    conditionsCode: "الكود : {code}", // à valider
+    conditionsMontant: "{montant} هدية كي تشري {minimum} ولا كثر",
+    conditionsVilles: "المدن : {villes}", // à valider
+    conditionsToutesVilles: "في كامل المدن المفتوحة", // à valider
+    conditionsDates: "من {debut} حتى {fin}", // à valider
+    conditionsDepuis: "من {debut}", // à valider
+    conditionsNumero: "مرة وحدة لكل نمرة مأكّدة.", // à valider
+    conditionsQr: "لازم QR code باش تدّي من الحانوت.", // à valider
+    conditionsAucune: "هاد البروموسيون ما كاينش ولا فات الوقت نتاعو.", // à valider
     bonNonApplique: {
       aucun_bon: "البون ما تحسبش: فات وقتو ولا ما بقاش. الطلب يبقى بالسومة الكاملة؛ تقدر تلغيه إلا حبيت.",
       minimum: "البون ما تحسبش: يخدم من 1000 دج وفوق. الطلب يبقى بالسومة الكاملة.",
       boutique_exclue: "البون ما تحسبش: هاد الحانوت ما يقبلش البونات دروك. الطلب يبقى بالسومة الكاملة؛ تقدر تلغيه إلا حبيت.",
+      univers: "البون ما تحسبش: يخدم غير على شي سلعة. الطلب يبقى بالسومة الكاملة؛ تقدر تلغيه إلا حبيت.", // à valider
+      ville: "البون ما تحسبش: ماشي في هاد المدينة. الطلب يبقى بالسومة الكاملة؛ تقدر تلغيه إلا حبيت.", // à valider
+      plafond_boutique: "البون ما تحسبش: هاد البون ما بقاش يتقبل في هاد الحانوت لهاد البروموسيون. الطلب يبقى بالسومة الكاملة؛ تقدر تلغيه إلا حبيت.", // à valider
       erreur: "البون ما تحسبش. الطلب يبقى بالسومة الكاملة؛ تقدر تلغيه إلا حبيت.",
     },
   },

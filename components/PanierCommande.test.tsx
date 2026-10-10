@@ -4,8 +4,8 @@ import "@testing-library/jest-dom/vitest";
 import PanierCommande from "./PanierCommande";
 import { CLE_PANIER } from "@/lib/panier";
 
-const { commanderPanier, push, refresh } = vi.hoisted(() => ({ commanderPanier: vi.fn(), push: vi.fn(), refresh: vi.fn() }));
-vi.mock("@/app/panier/actions", () => ({ commanderPanier }));
+const { commanderPanier, raisonsBonsPanier, push, refresh } = vi.hoisted(() => ({ commanderPanier: vi.fn(), raisonsBonsPanier: vi.fn(async (): Promise<Record<string, string> | null> => null), push: vi.fn(), refresh: vi.fn() }));
+vi.mock("@/app/panier/actions", () => ({ commanderPanier, raisonsBonsPanier }));
 vi.mock("@/app/compte/actions", () => ({ enregistrerProfil: vi.fn(), enregistrerNom: vi.fn(), envoyerCodeVerification: vi.fn(), verifierCodeVerification: vi.fn() }));
 vi.mock("@/app/compte/parrainage/actions", () => ({ choisirParrain: vi.fn() }));
 vi.mock("@/app/compte/connexion/actions", () => ({ envoyerCodeConnexion: vi.fn(), verifierCodeConnexion: vi.fn() }));
@@ -204,7 +204,7 @@ describe("US-33.2 : plusieurs bons au panier", () => {
     expect(screen.getByRole("checkbox", { name: /^Utiliser mon bon Aïd 2026 \(−500\sDA\)$/ })).toBeChecked();
     expect(screen.getByText("À payer en boutique").nextSibling).toHaveTextContent(/8\s200\sDA/);
     fireEvent.click(screen.getByRole("button", { name: "Commander" }));
-    await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", true, []));
+    await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", "a", []));
   });
   it("aucun bon utilisable : raison affichée, commande sans bon", async () => {
     commanderPanier.mockResolvedValue({ id: "c1" });
@@ -213,5 +213,43 @@ describe("US-33.2 : plusieurs bons au panier", () => {
     expect(screen.getByText(/Bon de bienvenue · Dès 10\s000\sDA d’achat/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Commander" }));
     await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", false, []));
+  });
+});
+
+describe("US-33.3 : choix du bon au panier, raisons lues dans la base", () => {
+  const base = { utilise_le: null, commande: null, numero: null, boutique: null, villes: [] as string[], cree_le: "2026-10-10T10:00:00Z", statut: "disponible" as const, expire_le: "2099-11-09T10:00:00Z" };
+  const bienvenue = { ...base, id: "w", montant: 300, origine: "bienvenue" as const, minimum_achat: 2000, univers: null, nom_fr: "Bienvenue", nom_ar: "مرحبا" };
+  const aid = { ...base, id: "a", montant: 500, origine: "campagne" as const, minimum_achat: 4000, univers: "femme", nom_fr: "Aïd 2026", nom_ar: "العيد 2026" };
+  it("bon Aïd refusé par la base (univers) : raison n° 11, bon de bienvenue retenu et envoyé", async () => {
+    raisonsBonsPanier.mockResolvedValueOnce({ a: "univers", w: "ok" });
+    commanderPanier.mockResolvedValue({ id: "c1" });
+    render(<PanierCommande profil={complet} parrainage={{ bonDisponible: true, bons: [bienvenue, aid], choix: null }} />);
+    expect(await screen.findByText("Articles Femme seulement")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Bon Aïd 2026/ })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: /Bon de bienvenue/ })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /^Utiliser mon bon de bienvenue/ })).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "Commander" }));
+    await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", "w", []));
+    expect(raisonsBonsPanier).toHaveBeenCalledWith("b1", [{ article_id: "polo", taille: "M", quantite: 1 }, { article_id: "chemise", taille: "L", quantite: 1 }]);
+  });
+  it("deux bons utilisables : le plus gros proposé, le client choisit l'autre", async () => {
+    raisonsBonsPanier.mockResolvedValueOnce({ a: "ok", w: "ok" });
+    commanderPanier.mockResolvedValue({ id: "c1" });
+    render(<PanierCommande profil={complet} parrainage={{ bonDisponible: true, bons: [bienvenue, aid], choix: null }} />);
+    await waitFor(() => expect(raisonsBonsPanier).toHaveBeenCalled());
+    expect(screen.getByRole("radio", { name: /Bon Aïd 2026/ })).toBeChecked();
+    fireEvent.click(screen.getByRole("radio", { name: /Bon de bienvenue/ }));
+    expect(screen.getByText("À payer en boutique").nextSibling).toHaveTextContent(/8\s400\sDA/);
+    fireEvent.click(screen.getByRole("button", { name: "Commander" }));
+    await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", "w", []));
+  });
+  it("seul bon refusé (ville, plafond, boutique) : raison affichée, commande sans bon", async () => {
+    for (const [raison, texte] of [["ville", "Pas dans cette ville"], ["plafond_boutique", "Ce bon n’est plus accepté dans cette boutique pour cette campagne."], ["boutique_exclue", "Cette boutique ne prend plus les bons"]]) {
+      raisonsBonsPanier.mockResolvedValueOnce({ a: raison });
+      const { unmount } = render(<PanierCommande profil={complet} parrainage={{ bonDisponible: true, bons: [{ ...aid, univers: null }], choix: null }} />);
+      expect(await screen.findByText(`Bon Aïd 2026 · ${texte}`)).toBeInTheDocument();
+      expect(screen.queryByRole("checkbox")).toBeNull();
+      unmount();
+    }
   });
 });

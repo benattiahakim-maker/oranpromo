@@ -84,15 +84,24 @@ describe("US-27.4 : bon parrainage au panier", () => {
   it("case cochée : utiliser_bon juste après passer_commande, avant le message à la boutique", async () => {
     passer.mockImplementation(async () => { ordre.push("passer_commande"); return "c1"; });
     expect(await commanderPanier("b1", [ligne], "", true)).toEqual({ id: "c1" });
-    expect(utiliser).toHaveBeenCalledWith(expect.anything(), "c1");
+    expect(utiliser).toHaveBeenCalledWith(expect.anything(), "c1", undefined);
     expect(ordre).toEqual(["documents_a_accepter", "passer_commande", "utiliser_bon", "after"]);
+  });
+  it("US-33.3 : bon choisi au panier : son identifiant est passé à utiliser_bon ; identifiant invalide ignoré", async () => {
+    passer.mockResolvedValue("c1");
+    const bon = "0b0b0b0b-0000-4000-8000-000000000001";
+    await commanderPanier("b1", [ligne], "", bon);
+    expect(utiliser).toHaveBeenLastCalledWith(expect.anything(), "c1", bon);
+    utiliser.mockClear();
+    await commanderPanier("b1", [ligne], "", "pas-un-uuid");
+    expect(utiliser).not.toHaveBeenCalled();
   });
   it("case décochée (ou ancien appel sans 4e argument) : pas de bon", async () => {
     await commanderPanier("b1", [ligne], "", false);
     await commanderPanier("b1", [ligne], "");
     expect(utiliser).not.toHaveBeenCalled();
   });
-  it.each([["aucun_bon", "aucun_bon"], ["minimum", "minimum"], ["boutique_exclue", "boutique_exclue"], ["deja", "erreur"], ["erreur", "erreur"], ["univers", "erreur"], ["ville", "erreur"], ["plafond_boutique", "erreur"]])("bon non posé (%s) : commande gardée au prix plein, raison « %s »", async (reponse, raison) => {
+  it.each([["aucun_bon", "aucun_bon"], ["minimum", "minimum"], ["boutique_exclue", "boutique_exclue"], ["deja", "erreur"], ["erreur", "erreur"], ["univers", "univers"], ["ville", "ville"], ["plafond_boutique", "plafond_boutique"]])("bon non posé (%s) : commande gardée au prix plein, raison « %s »", async (reponse, raison) => {
     utiliser.mockResolvedValueOnce(reponse);
     expect(await commanderPanier("b1", [ligne], "", true)).toEqual({ id: "c1", bon: raison });
     expect(after).toHaveBeenCalledTimes(1);
