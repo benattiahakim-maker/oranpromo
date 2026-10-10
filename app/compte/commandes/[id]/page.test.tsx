@@ -60,7 +60,8 @@ describe("US-27.3 et US-27.4 : bon et parrainage sur le suivi", () => {
   });
   it("bon coché mais non posé : la raison s'affiche sur une commande au prix plein ; valeur inconnue ignorée", async () => {
     lireCommande.mockResolvedValue(commande("demandee"));
-    expect(await afficher("aucun_bon")).toContain("Bon non appliqué : il a expiré ou n’est plus disponible.");
+    expect(await afficher("aucun_bon")).toContain("Bon non appliqué : il a expiré ou n’est plus disponible. Votre commande reste au prix plein ; vous pouvez l’annuler si vous le souhaitez.");
+    for (const raison of ["aucun_bon", "minimum", "boutique_exclue", "univers", "ville", "plafond_boutique", "pas_aujourdhui", "erreur"]) expect(await afficher(raison)).not.toMatch(/>[^<]*(?<!\p{L})(ton|ta|tes|tu|toi)(?!\p{L})[^<]*</iu);
     expect(await afficher("<script>")).not.toContain("Bon non appliqué");
     lireCommande.mockResolvedValue({ ...commande("demandee"), remise_bon: 300 });
     expect(await afficher("aucun_bon")).not.toContain("Bon non appliqué");
@@ -70,7 +71,7 @@ describe("US-27.3 et US-27.4 : bon et parrainage sur le suivi", () => {
     rpc.mockImplementation(async (nom: string) => nom === "mon_parrainage" ? { data: { actif: true, peut_parrainer: true, filleuls: [], en_attente: 0 }, error: null }
       : nom === "mon_code_parrainage" ? { data: "K7M2QX", error: null } : { data: null, error: null });
     const html = await afficher();
-    expect(html).toContain("Merci !");
+    expect(html).toContain("Merci !"); expect(html).toContain("Faites découvrir BleDeal à un ami"); expect(html).not.toMatch(/>[^<]*(?<!\p{L})(ton|ta|tes|tu|toi)(?!\p{L})[^<]*</iu);
     expect(decodeURIComponent(/href="(https:\/\/wa\.me\/\?text=[^"]+)"/.exec(html)![1])).toContain("https://oranpromo.example/p/K7M2QX");
   });
   it("pas d'encadré si le parrainage est fermé ou la commande pas récupérée", async () => {

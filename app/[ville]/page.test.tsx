@@ -61,7 +61,7 @@ describe("US-27.3 : bloc « Parraine tes amis » sur l'accueil", () => {
     const serveur = await import("@/lib/supabase/server");
     vi.spyOn(serveur, "creerClientServeur").mockResolvedValueOnce({ rpc: async (nom: string) => ({ data: nom === "parrainage_ouvert", error: null }) } as never);
     const html = renderToStaticMarkup(await Accueil({ params: Promise.resolve({ ville: "oran" }) }));
-    expect(html).toContain('href="/parrainage"'); expect(html).toContain("Parraine tes amis"); expect(html).toContain("300 DA chacun");
+    expect(html).toContain('href="/parrainage"'); expect(html).toContain("Parrainez vos amis"); expect(html).not.toMatch(/>[^<]*(?<!\p{L})(ton|ta|tes|tu|toi)(?!\p{L})[^<]*</iu); expect(html).toContain("300 DA chacun");
   });
 });
 

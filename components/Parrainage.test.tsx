@@ -95,7 +95,7 @@ describe("US-27.3 : « Mon parrainage » et « Mes bons »", () => {
     render(<PartageParrainage invitation={{ code: "K7M2QX", lien: "https://bledeal.com/p/K7M2QX", whatsapp: "https://wa.me/?text=x", qr: "data:image/svg+xml,x" }} vouvoiement />);
     expect(screen.getByText("Votre code")).toBeInTheDocument();
     expect(screen.getByAltText("QR code de votre lien de parrainage")).toBeInTheDocument();
-    expect(document.body.textContent).not.toMatch(/\b(ton|ta|tes|tu|toi)\b/i);
+    expect(document.body.textContent).not.toMatch(/(?<!\p{L})(ton|ta|tes|tu|toi)(?!\p{L})/iu);
     cleanup();
     render(<ChoixParrain parrainSaisi={false} saisies={0} />);
     expect(screen.getByLabelText(fr.parrainage.champ)).toBeInTheDocument(); // « Ton parrain… » sur /parrainage
@@ -111,7 +111,7 @@ describe("US-27.3 : « Mon parrainage » et « Mes bons »", () => {
     expect(screen.getByText("Disponible · valable jusqu’au 11 décembre")).toBeInTheDocument();
     expect(screen.getByText("Réservé pour la commande n° 128")).toBeInTheDocument();
     expect(screen.getByText("Utilisé le 12/10 chez Maison Ilyes")).toBeInTheDocument();
-    expect(screen.getByText("Ton bon arrive le 1er novembre (budget du mois atteint).")).toBeInTheDocument();
+    expect(screen.getByText("Votre bon arrive le 1er novembre (budget du mois atteint).")).toBeInTheDocument();
     expect(screen.getByText(/^À utiliser au panier\. Bon parrainage : 300\sDA de moins, payé par BleDeal\.$/)).toBeInTheDocument();
   });
   it("encadré « Merci ! » avec le lien WhatsApp du client", () => {
@@ -168,7 +168,7 @@ describe("US-27.4 : bon au panier et sur le QR code", () => {
     unmount();
     render(<BonPanier total={900} utiliser onChange={vi.fn()} />);
     expect(screen.queryByRole("checkbox")).toBeNull();
-    expect(screen.getByText("Ton bon s’utilise dès 1 000 DA d’achat.")).toBeInTheDocument();
+    expect(screen.getByText("Votre bon s’utilise dès 1 000 DA d’achat.")).toBeInTheDocument();
   });
   it("QR code (client et proche) : « Bon parrainage −300 DA » et « À payer en espèces : 3 200 DA »", () => {
     render(<BlocRetrait qr="data:image/svg+xml,x" code="048193" numero={12} total={3500} remise={300} />);

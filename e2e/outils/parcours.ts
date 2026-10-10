@@ -98,3 +98,9 @@ export async function connecterClient(page: Page, email: string) {
   await seConnecterParEmail(page, email);
   await expect(page).toHaveURL(/\/compte/);
 }
+
+/** Vouvoiement partout sauf sur les pages du parrainage (décision 9 du 9/10, BOLOSS 10/10) : aucun « ton, ta, tes, tu, toi »
+ *  dans le contenu de la page (limites de mot Unicode : « Prête », « vous êtes » ne comptent pas). */
+export async function sansTutoiement(page: Page) {
+  await expect(page.getByRole("main")).not.toContainText(/(?<!\p{L})(ton|ta|tes|tu|toi)(?!\p{L})/iu);
+}

@@ -8,7 +8,7 @@ import { useLangue, useTextes } from "./FournisseurTextes";
 
 // US-27.3 : bloc « Mon parrainage » de /compte. Prénom + initiale des filleuls récompensés seulement, jamais de numéro.
 export default function MonParrainage({ parrainage, invitation }: { parrainage: DonneesParrainage; invitation: LienInvitation | null }) {
-  const t = textesParrainage(useTextes().parrainage, true); // dans /compte : vouvoiement
+  const t = textesParrainage(useTextes().parrainage, true); // dans /compte : vouvoiement (code, QR code)
   const langue = useLangue();
   const { valides, enAttente } = compteursParrainage(parrainage);
   return <section aria-labelledby="titre-mon-parrainage" className="mt-8 border-t border-trait pt-6">
