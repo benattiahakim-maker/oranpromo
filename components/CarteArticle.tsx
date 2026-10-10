@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
+import Prix from "@/components/Prix";
 import Image from "next/image";
 import type { CarteArticle as Article } from "@/lib/catalogue";
-import { formaterPrix, prixAffiche, promoActive, pourcentageReduction } from "@/lib/prix";
+import { prixAffiche, promoActive, pourcentageReduction } from "@/lib/prix";
 import { remplir } from "@/lib/langue";
 import { useLangue, useTextes } from "./FournisseurTextes";
 import type { ResumeAvis } from "@/lib/avis";
@@ -21,6 +22,6 @@ export default function CarteArticle({ article, resume }: { article: Article; re
     <p className="etiquette mt-3 text-[10px] text-gris">{article.boutique.nom} · {article.boutique.quartier}</p>
     {resume?.moyenne != null && <p className="mt-1 text-[11px]" dir="auto">{texteNote({ resume, t: t.avis })}</p>}
     <h3 className="mt-1 break-words text-sm font-light">{article.titre}</h3>
-    <p className="mt-1 text-sm">{enPromo && <del className="me-2 text-gris">{formaterPrix(article.prix, langue)}</del>}{formaterPrix(prixAffiche(article.prix, article.promo), langue)}</p>
+    <p className="mt-1 text-sm">{enPromo && <del className="me-2 text-gris"><Prix montant={article.prix} langue={langue} /></del>}<Prix montant={prixAffiche(article.prix, article.promo)} langue={langue} /></p>
   </Link>;
 }

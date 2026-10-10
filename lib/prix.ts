@@ -26,8 +26,12 @@ export function pourcentageReduction(prix: number, prixPromo: number): number {
 
 /** Format français : 3500 → "3 500 DA". En arabe (US-23) : "3 500 دج", le nombre isolé de gauche à droite. */
 export function formaterPrix(montant: number, langue: Langue = "fr"): string {
-  const nombre = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(montant);
-  // Intl utilise une espace fine insécable : on la remplace par une espace insécable classique.
-  const chiffres = nombre.replace(/ /g, " ");
+  const chiffres = chiffresPrix(montant);
   return langue === "ar" ? `${isolerGaucheDroite(chiffres)}\u00a0دج` : `${chiffres}\u00a0DA`;
+}
+
+/** Chiffres seuls, groupés par milliers avec une espace insécable : 3500 → "3 500". */
+export function chiffresPrix(montant: number): string {
+  // Intl utilise une espace fine insécable : on la remplace par une espace insécable classique.
+  return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(montant).replace(/\u202f/g, "\u00a0");
 }

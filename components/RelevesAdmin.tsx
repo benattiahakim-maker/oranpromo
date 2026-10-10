@@ -1,10 +1,11 @@
 "use client";
 import { useId, useRef, useState } from "react";
+import Prix from "@/components/Prix";
 import { useRouter } from "next/navigation";
 import ActionMotif from "@/components/ActionMotif";
 import { deciderLigneDeCote, marquerRelevePaye, mettreLigneDeCote } from "@/app/admin/remboursements/actions";
 import { aRembourserLigne } from "@/lib/bons-boutique";
-import { dateHeureAlger, ETATS_LIGNE, ETATS_RELEVE, libelleMois, montantDA, parametreMois, resumeReleve, signalRemiseRapide, signauxReleve, type LigneReleveAdmin, type ReleveAdmin } from "@/lib/parrainage-admin";
+import { dateHeureAlger, ETATS_LIGNE, ETATS_RELEVE, libelleMois, parametreMois, resumeReleve, signalRemiseRapide, signauxReleve, type LigneReleveAdmin, type ReleveAdmin } from "@/lib/parrainage-admin";
 
 // US-27.5 : relevés mensuels des bons par boutique, détail, export, « Mettre de côté », « Marquer comme payé ».
 const MODES: Record<string, string> = { qr: "QR code", code: "code" };
@@ -25,7 +26,7 @@ export default function RelevesAdmin({ mois, moisPossibles, releves, deCote, auj
     </section>
     <section aria-labelledby="de-cote" className="mt-6">
       <h2 id="de-cote" className="etiquette">Lignes mises de côté ({deCote.length})</h2>
-      {deCote.length ? <ul>{deCote.map(l => <li key={l.id} className="border-b border-trait py-3"><p className="text-sm">N° {l.numero_commande} · {l.boutique?.nom ?? ""} · {montantDA(aRembourserLigne(l))}</p><p className="text-xs text-gris">{l.libelle_origine ? `${l.libelle_origine} · ` : ""}{dateHeureAlger(l.remise_le)} · {l.client}{l.motif ? ` · motif : ${l.motif}` : ""}</p>
+      {deCote.length ? <ul>{deCote.map(l => <li key={l.id} className="border-b border-trait py-3"><p className="text-sm">N° {l.numero_commande} · {l.boutique?.nom ?? ""} · <Prix montant={aRembourserLigne(l)} /></p><p className="text-xs text-gris">{l.libelle_origine ? `${l.libelle_origine} · ` : ""}{dateHeureAlger(l.remise_le)} · {l.client}{l.motif ? ` · motif : ${l.motif}` : ""}</p>
         <div className="flex flex-wrap gap-x-2"><ActionMotif libelle="Rembourser" confirmer="Rembourser" etiquette={`Rembourser la ligne de la commande n° ${l.numero_commande}`} aide="La ligne revient sur le relevé en cours de la boutique." action={m => deciderLigneDeCote(l.id, "rembourser", m)} /><ActionMotif libelle="Refuser" confirmer="Refuser" etiquette={`Refuser la ligne de la commande n° ${l.numero_commande}`} aide="La ligne ne sera pas remboursée ; le motif est gardé." action={m => deciderLigneDeCote(l.id, "refuser", m)} /></div></li>)}</ul>
         : <p className="py-3 text-sm text-gris">Aucune ligne en attente de décision.</p>}
     </section>
@@ -43,8 +44,8 @@ function Releve({ releve: r, aujourdhui }: { releve: ReleveAdmin; aujourdhui: st
     {signaux.length > 0 && <ul className="mt-2 border-l-2 border-noir pl-2">{signaux.map(s => <li key={s} className="text-xs font-medium">Signal : {s}</li>)}</ul>}
     <details className="mt-2"><summary className="inline-flex min-h-11 cursor-pointer items-center text-sm underline">Détail ({r.lignes.length})</summary>
       <ul>{r.lignes.map(l => <li key={l.id} className="border-t border-trait py-2.5">
-        <div className="flex justify-between gap-3 text-sm"><span>N° {l.numero_commande} · {l.client}</span><span className="shrink-0">{l.statut === "a_rembourser" ? montantDA(aRembourserLigne(l)) : ETATS_LIGNE[l.statut] ?? l.statut}</span></div>
-        <p className="text-xs text-gris">{l.libelle_origine ? `${l.libelle_origine} · ` : ""}{dateHeureAlger(l.remise_le)} · {MODES[l.mode_remise] ?? l.mode_remise} · commande {montantDA(l.total_commande)}{l.part_boutique ? ` · bon ${montantDA(l.montant)}, part de la boutique ${montantDA(l.part_boutique)}` : ""}{l.motif ? ` · motif : ${l.motif}` : ""}</p>
+        <div className="flex justify-between gap-3 text-sm"><span>N° {l.numero_commande} · {l.client}</span><span className="shrink-0">{l.statut === "a_rembourser" ? <Prix montant={aRembourserLigne(l)} /> : ETATS_LIGNE[l.statut] ?? l.statut}</span></div>
+        <p className="text-xs text-gris">{l.libelle_origine ? `${l.libelle_origine} · ` : ""}{dateHeureAlger(l.remise_le)} · {MODES[l.mode_remise] ?? l.mode_remise} · commande <Prix montant={l.total_commande} />{l.part_boutique ? <> · bon <Prix montant={l.montant} />, part de la boutique <Prix montant={l.part_boutique} /></> : ""}{l.motif ? ` · motif : ${l.motif}` : ""}</p>
         {signalRemiseRapide(l.commande) && <p className="text-xs font-medium">Signal : {signalRemiseRapide(l.commande)}</p>}
         {l.statut === "a_rembourser" && r.statut !== "paye" && <ActionMotif libelle="Mettre de côté" confirmer="Mettre de côté" etiquette={`Mettre de côté la commande n° ${l.numero_commande}`} aide="La ligne sort du relevé à payer et attend une décision." action={m => mettreLigneDeCote(l.id, m)} />}
       </li>)}</ul>
@@ -76,7 +77,7 @@ function Payer({ releve: r, aujourdhui }: { releve: ReleveAdmin; aujourdhui: str
     <input id={`${id}-ref`} value={reference} maxLength={60} onChange={e => { setReference(e.target.value); setConfirmation(false); }} className="mt-1 min-h-11 w-full border border-trait px-3 text-sm" />
     <label htmlFor={`${id}-date`} className="mt-2 block text-xs text-gris">Date du paiement</label>
     <input id={`${id}-date`} type="date" value={date} max={aujourdhui} onChange={e => { setDate(e.target.value); setConfirmation(false); }} className="mt-1 min-h-11 w-full border border-trait px-3 text-sm" />
-    {confirmation && <p className="mt-2 text-sm font-medium">Confirmer le paiement de {montantDA(r.montant)} à {r.boutique?.nom ?? "la boutique"} ? Le relevé ne sera plus modifiable.</p>}
+    {confirmation && <p className="mt-2 text-sm font-medium">Confirmer le paiement de <Prix montant={r.montant} /> à {r.boutique?.nom ?? "la boutique"} ? Le relevé ne sera plus modifiable.</p>}
     <div className="mt-3 flex gap-2">
       <button type="button" disabled={enCours} onClick={() => (confirmation ? void payer() : setConfirmation(true))} className="etiquette min-h-11 flex-1 bg-noir px-3 text-blanc">{confirmation ? "Confirmer" : "Marquer comme payé"}</button>
       <button type="button" disabled={enCours} onClick={() => { setOuvert(false); setConfirmation(false); }} className="etiquette min-h-11 border border-trait px-3">Retour</button>

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
+import { texteComplet } from "@/lib/outils-test";
 import CommandesRecues from "./CommandesRecues";
 import type { CommandeRecue } from "@/lib/commandes";
 
@@ -19,7 +20,7 @@ describe("commandes reçues (US-20.3)", () => {
     const lien = screen.getByRole("link", { name: "0555 12 34 56 · WhatsApp" }).getAttribute("href")!;
     expect(lien).toContain("https://wa.me/213555123456?");
     expect(screen.getByText(/Polo · M × 1/)).toBeInTheDocument();
-    expect(screen.getByText(/Total 8\s700 DA · 2 pièces/)).toBeInTheDocument();
+    expect(screen.getByText(texteComplet(/Total 8\s700 DA · 2 pièces/))).toBeInTheDocument();
     expect(screen.getByText("Note du client : « Samedi »")).toBeInTheDocument();
   });
   it.each([["demandee", "Confirmer", "confirmee"], ["confirmee", "Prête", "prete"]] as const)("statut %s : le bouton %s passe à %s", async (statut, bouton, suivant) => {
@@ -118,11 +119,11 @@ describe("commandes reçues (US-20.3)", () => {
 describe("US-27.4 : bon parrainage dans la liste de la boutique", () => {
   it("sous le total : « Bon parrainage −300 DA · à encaisser 8 400 DA »", () => {
     render(<CommandesRecues commandes={[commande("confirmee", { bon_id: "b1", remise_bon: 300 })]} boutique="Boutique Amine" />);
-    expect(screen.getByText(/Bon parrainage −300\sDA · à encaisser 8\s400\sDA/)).toBeInTheDocument();
+    expect(screen.getByText(texteComplet(/Bon parrainage −300\sDA · à encaisser 8\s400\sDA/))).toBeInTheDocument();
   });
   it("US-33.4 : nom du bon de campagne : « Bon Aïd 2026 −500 DA · à encaisser 8 200 DA »", () => {
     render(<CommandesRecues commandes={[commande("confirmee", { bon_id: "b1", remise_bon: 500, bon: { origine: "campagne", nom_fr: "Aïd 2026", nom_ar: "العيد 2026" } })]} boutique="Boutique Amine" />);
-    expect(screen.getByText(/Bon Aïd 2026 −500\sDA · à encaisser 8\s200\sDA/)).toBeInTheDocument();
+    expect(screen.getByText(texteComplet(/Bon Aïd 2026 −500\sDA · à encaisser 8\s200\sDA/))).toBeInTheDocument();
   });
   it("sans bon : pas de ligne", () => {
     render(<CommandesRecues commandes={[commande("confirmee")]} boutique="Boutique Amine" />);
@@ -131,7 +132,7 @@ describe("US-27.4 : bon parrainage dans la liste de la boutique", () => {
   it("« Remis sans QR code » avec un bon : la confirmation dit d'encaisser le total, le bon reste au client", () => {
     render(<CommandesRecues commandes={[commande("prete", { bon_id: "b1", remise_bon: 300 })]} boutique="Boutique Amine" />);
     fireEvent.click(screen.getByRole("button", { name: "Remis sans QR code" }));
-    expect(screen.getByText(/Sans QR code, le bon ne s’applique pas : encaissez 8\s700\sDA\. Le bon reste au client\./)).toBeInTheDocument();
+    expect(screen.getByText(texteComplet(/Sans QR code, le bon ne s’applique pas : encaissez 8\s700\sDA\. Le bon reste au client\./))).toBeInTheDocument();
     expect(changerStatutCommandeBoutique).not.toHaveBeenCalled();
   });
   it("« Remis sans QR code » sans bon : pas de phrase sur le bon", () => {

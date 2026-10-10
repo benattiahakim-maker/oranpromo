@@ -1,7 +1,7 @@
 // US-28.3 : liste de préparation, regroupée par article puis taille / contenance ; feuille A4 noir et blanc à l’impression.
 import Link from "next/link";
+import Prix from "@/components/Prix";
 import BoutonImprimer from "@/components/BoutonImprimer";
-import { formaterPrix } from "@/lib/prix";
 import { dateLongue, type Preparation } from "@/lib/tableau-commandes";
 
 const pluriel = (n: number, mot: string) => `${n} ${mot}${n > 1 ? "s" : ""}`;
@@ -29,7 +29,7 @@ export default function VuePreparation({ boutique, maintenant, preparation, erre
         </section>)}
         <section aria-label="Par commande" className="border-t-[1.5px] border-noir pt-2.5 [break-inside:avoid]">
           <h2 className="etiquette text-[10px]">Par commande</h2>
-          <ul className="mt-1 text-[13px] leading-relaxed print:columns-2">{preparation.commandes.map(c => <li key={c.numero}><span aria-hidden="true">☐ </span>N° {c.numero} · {c.prenom} · {pluriel(c.pieces, "pièce")} · {formaterPrix(c.montant)}</li>)}</ul>
+          <ul className="mt-1 text-[13px] leading-relaxed print:columns-2">{preparation.commandes.map(c => <li key={c.numero}><span aria-hidden="true">☐ </span>N° {c.numero} · {c.prenom} · {pluriel(c.pieces, "pièce")} · <Prix montant={c.montant} /></li>)}</ul>
           <p className="mt-2.5 text-xs text-gris print:hidden">Une fois préparées : cochez-les dans « À préparer » puis « Marquer prêtes ».</p>
         </section>
       </>}

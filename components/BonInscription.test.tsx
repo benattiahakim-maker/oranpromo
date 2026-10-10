@@ -15,6 +15,7 @@ import { fr } from "@/lib/textes/fr";
 import { ar } from "@/lib/textes/ar";
 import type { BonClient } from "@/lib/bons";
 import type { ReleveAdmin, ReleveBoutique } from "@/lib/parrainage-admin";
+import { sansBalises } from "@/lib/outils-test";
 
 const rattacherInscription = vi.fn();
 vi.mock("@/app/compte/boutiques/actions", () => ({ rattacherInscription: (...a: unknown[]) => rattacherInscription(...a), nePlusSuivre: vi.fn(), seConnecterPourSuivre: vi.fn(), suivreApresConnexion: vi.fn(), suivreBoutique: vi.fn() }));
@@ -74,7 +75,7 @@ describe("US-31.4 : relevés, espace et admin", () => {
       boutique: { id: "B", nom: "Boutique Nour", slug: "nour", bons_acceptes: true }, lignes: [ligne] };
     const html = renderToStaticMarkup(<RelevesAdmin mois="2026-10-01" moisPossibles={["2026-10-01"]} releves={[releve]} deCote={[]} aujourdhui="2026-10-11" />);
     expect(html).toContain("1 bon · 250 DA");
-    expect(html).toContain("bon 500 DA, part de la boutique 250 DA");
+    expect(sansBalises(html)).toContain("bon 500 DA, part de la boutique 250 DA");
   });
   it("espace : ligne à 250 DA et explication de la part", () => {
     const releve: ReleveBoutique = { id: "r", mois: "2026-10-01", nombre: 1, montant: 250, statut: "en_cours", paye_le: null, reference_paiement: null, lignes: [ligne] };

@@ -18,6 +18,6 @@ describe("page d’accueil : tuiles et badge promo", () => {
   it("affiche le badge −XX % en plus du prix barré sur une carte en promo", () => {
     render(<CarteArticle article={{ id: "1", titre: "Polo", description: null, categorie: "T-shirts et polos", genre: "homme", prix: 4500, cree_le: "2026-10-09", boutique: { nom: "Amine", quartier: "Centre" }, photo: "https://exemple.fr/v.jpg", tailles: ["M"], promo: { prixPromo: 3500, dateFin: "2999-01-01" } }} />);
     expect(screen.getByText("−22 %")).toBeTruthy();
-    expect(screen.getByText("4 500 DA").tagName).toBe("DEL");
+    expect(screen.getByText("4 500 DA").closest("del")).not.toBeNull();
   });
 });

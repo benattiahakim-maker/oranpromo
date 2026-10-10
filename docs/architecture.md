@@ -1039,6 +1039,8 @@ L'accord aux messages publicitaires reste **à part** (`abonnements_boutique.ale
 
 Textes français : **vouvoiement** partout (vérifié par `lib/textes/textes.test.ts`) ; **tutoiement** seulement sur les pages du parrainage (`/parrainage`, invitation : décision 9 du 9/10). Un composant du parrainage affiché ailleurs (`ChoixParrain` dans `/compte` et au panier, `PartageParrainage` dans `/compte`) prend `vouvoiement` (textes `parrainage.vous`, `textesParrainage`, `vouvoyerMessageParrain` pour les réponses de la base).
 
+Prix : toujours avec `components/Prix.tsx` dans le rendu (`<Prix montant={…} langue={langue} />`, `moins` pour un bon) ; `formaterPrix` reste pour le texte seul (messages WhatsApp, métadonnées, phrases traduites avec `remplir`, où le nombre arabe est déjà isolé).
+
 Numéros de téléphone : toujours avec `components/Numero.tsx` (`<bdi dir="ltr">`, `lisible` pour « 0555 12 34 56 »), ou `remplirAvec` quand le numéro est dans une phrase ; dans une chaîne de caractères seule (message `role="status"`), l'entourer de U+2066 et U+2069 comme `CodeTelephone`. Raison : le site entier passe en `dir="rtl"` en arabe, espace et admin compris.
 
 ### Conformité : ce que le code peut faire, et ce qui relève du propriétaire

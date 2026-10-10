@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
+import { texteComplet } from "@/lib/outils-test";
 import VuePreparation from "./VuePreparation";
 import { grouperPreparation } from "@/lib/tableau-commandes";
 afterEach(cleanup);
@@ -19,7 +20,7 @@ describe("US-28.3 : page de préparation", () => {
     const polo = screen.getByRole("region", { name: "Polo piqué" });
     expect(within(polo).getByText("2 pièces")).toBeInTheDocument();
     expect(within(polo).getByText("N° 118 Nadia ×2")).toBeInTheDocument();
-    expect(screen.getByText(/N° 121 · Yacine · 1 pièce · 3\s600 DA/)).toBeInTheDocument();
+    expect(screen.getByText(texteComplet(/N° 121 · Yacine · 1 pièce · 3\s600 DA/))).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Imprimer" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "← Commandes" })).toHaveAttribute("href", "/espace/commandes?etape=a_preparer");
     expect(screen.queryByRole("img")).toBeNull(); // pas de photo (décision 6)
