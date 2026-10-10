@@ -94,7 +94,7 @@ describe("US-26.3 : scanner", () => {
     fireEvent.click(screen.getByRole("button", { name: "Scanner une autre commande" }));
     expect(await screen.findByLabelText("La caméra ne marche pas ? Tapez le code à 4 chiffres")).toHaveValue("");
   });
-  it("code incomplet : pas d’appel ; code faux : message, on peut réessayer (pas de limite d’essais)", async () => {
+  it("code incomplet : pas d’appel ; code faux : message, on peut réessayer (la limite de 10 codes faux en 15 min est dans la base)", async () => {
     lireRetraitParCode.mockResolvedValue({ succes: false, message: "Code faux. Vérifiez les 4 chiffres avec le client." });
     render(<ScannerRetrait />);
     const champ = screen.getByLabelText("La caméra ne marche pas ? Tapez le code à 4 chiffres");

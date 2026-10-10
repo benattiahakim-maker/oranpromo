@@ -48,7 +48,7 @@ insert into auth.users (id, email) values
   ('c2700000-0000-0000-0000-0000000000ff', 'nonverifie27@test.dz');
 insert into auth.users (id, phone, phone_confirmed_at)
 select ('c2700000-0000-0000-0000-0000000000' || lpad(i::text, 2, '0'))::uuid, '2135552700' || lpad(i::text, 2, '0'), now()
-from generate_series(1, 20) i;
+from generate_series(1, 21) i;
 insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
   ('d2700000-0000-0000-0000-00000000000a', 'Boutique Bon A', 'boutique-bon-a', 'Gambetta', '+213555270901', 'validee', 'oran'),
   ('d2700000-0000-0000-0000-00000000000b', 'Boutique Bon B', 'boutique-bon-b', 'Centre', '+213555270902', 'validee', 'oran');
@@ -252,13 +252,16 @@ select pg_temp.ok(pg_temp.remettre(:'f2c2', 'code') = 'remise', 'deuxième comma
 reset role;
 select pg_temp.ok((select count(*) from bons where parrainage_id = 'c2700000-0000-0000-0000-000000000002') = 2, 'deuxième commande : aucun bon de plus');
 
--- Code à 4 chiffres : valide aussi. Filleul 10.
+-- Code à 4 chiffres : ne valide plus (relecture n°6, point 2, 20261015100000_retrait_code_limite_bons_qr.sql :
+-- le code peut être deviné par la boutique ; seul le QR code compte). Filleul 10.
 set local role authenticated;
 select pg_temp.ok(pg_temp.choisir('c2700000-0000-0000-0000-000000000010', :'code1') = 'enregistre', 'filleul 10 choisit le code');
 select pg_temp.prete(pg_temp.commande('c2700000-0000-0000-0000-000000000010', :'polo')) as f10 \gset
-select pg_temp.remettre(:'f10', 'code') \g /dev/null
+select pg_temp.ok(pg_temp.remettre(:'f10', 'code') = 'remise', 'filleul 10 : commande remise par code');
 reset role;
-select pg_temp.ok((select statut from parrainages where filleul_id = 'c2700000-0000-0000-0000-000000000010') = 'valide', 'remise par code à 4 chiffres : validé');
+select pg_temp.ok((select statut = 'non_valide' and motif = 'remise_sans_qr_code' from parrainages where filleul_id = 'c2700000-0000-0000-0000-000000000010')
+  and not exists (select 1 from bons where parrainage_id = 'c2700000-0000-0000-0000-000000000010'),
+  'remise par code à 4 chiffres : parrainage non validé, aucun bon');
 
 -- « Remis sans QR code » : non validé, et une commande suivante ne rattrape pas.
 set local role authenticated;
@@ -309,8 +312,11 @@ select pg_temp.ok((select statut from parrainages where filleul_id = 'c2700000-0
 -- ---------------------------------------------------------------------------
 -- 4. Plafond de 5 par parrain et par mois ; parrain exclu
 -- ---------------------------------------------------------------------------
--- Déjà 2 validés (filleuls 2 et 10). Filleuls 14, 15, 16 → 5 ; filleul 17 → plafond (bon du filleul seul).
+-- Déjà 1 validé (filleul 2 ; le filleul 10, remis par code, ne compte plus). Filleul 21 (QR code) → 2 ;
+-- filleuls 14, 15, 16 → 5 ; filleul 17 → plafond (bon du filleul seul).
 set local role authenticated;
+select pg_temp.choisir('c2700000-0000-0000-0000-000000000021', :'code1') \g /dev/null
+select pg_temp.remettre(pg_temp.prete(pg_temp.commande('c2700000-0000-0000-0000-000000000021', :'polo')), 'qr') \g /dev/null
 select pg_temp.choisir(('c2700000-0000-0000-0000-0000000000' || i)::uuid, :'code1') from generate_series(14, 17) i \g /dev/null
 select pg_temp.remettre(pg_temp.prete(pg_temp.commande(('c2700000-0000-0000-0000-0000000000' || i)::uuid, :'polo')), 'qr') from generate_series(14, 17) i \g /dev/null
 reset role;
@@ -440,6 +446,15 @@ select pg_temp.remettre(:'cb4', 'manuel') \g /dev/null
 reset role;
 select pg_temp.ok((select statut from bons where profil_id = :'f2') = 'disponible' and (select remise_bon from commandes where id = :'cb4') = 0
   and not exists (select 1 from lignes_releve where commande_id = :'cb4'), '« Remis sans QR code » : bon rendu, aucune ligne de relevé');
+-- Remise par code à 4 chiffres (relecture n°6, point 2) : comme sans QR code, bon rendu, aucune ligne de relevé.
+set local role authenticated;
+select pg_temp.prete(pg_temp.commande(:'f2', :'polo', 1, true)) as cb4c \gset
+select pg_temp.ok(pg_temp.remettre(:'cb4c', 'code') = 'remise', 'commande avec bon remise par code');
+reset role;
+select pg_temp.ok((select statut = 'disponible' and commande_id is null from bons where profil_id = :'f2')
+  and (select remise_bon = 0 and mode_remise = 'code' and statut = 'recuperee' from commandes where id = :'cb4c')
+  and not exists (select 1 from lignes_releve where commande_id = :'cb4c'),
+  'remise par code : bon rendu au client, aucune ligne de relevé (rien à rembourser)');
 -- Remise par QR code → utilisé, ligne de relevé.
 set local role authenticated;
 select pg_temp.prete(pg_temp.commande(:'f2', :'polo', 1, true)) as cb5 \gset

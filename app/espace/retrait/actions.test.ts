@@ -14,7 +14,13 @@ describe("US-26.3 : actions du scanner", () => {
     expect(rpc).toHaveBeenCalledWith("retrait_boutique", { code: "0481" });
     expect(JSON.stringify(r)).not.toContain("jeton");
   });
-  it("code mal tapé : pas d’appel ; code faux : message unique, sans limite d’essais", async () => {
+  it("relecture n°6 : code bloqué par la base (10 codes faux en 15 min) → message clair, en lecture et en remise", async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: "54000", message: "Trop de codes faux" } });
+    const message = "Trop de codes faux : la saisie du code est bloquée 15 minutes. Scannez le QR code du client.";
+    expect(await lireRetraitParCode("0481")).toEqual({ succes: false, message });
+    expect(await remettreCommandeRetrait({ code: "0481" })).toEqual({ succes: false, message });
+  });
+  it("code mal tapé : pas d’appel ; code faux : message unique (la limite d’essais est dans la base)", async () => {
     expect(await lireRetraitParCode("48")).toEqual({ succes: false, message: "Tapez les 4 chiffres du code." });
     expect(rpc).not.toHaveBeenCalled();
     rpc.mockResolvedValue({ data: { etat: "invalide" }, error: null });

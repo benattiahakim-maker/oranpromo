@@ -71,6 +71,11 @@ describe("US-26.3 : résumé et remise", () => {
     await expect(lireRetraitBoutique(client({ data: null, error: { code: "XX000", message: "détail technique" } }).c, { jeton: JETON })).rejects.toThrow("Impossible de lire cette commande. Réessayez.");
     await expect(lireRetraitBoutique(client({ data: { etat: "bizarre" }, error: null }).c, { jeton: JETON })).rejects.toThrow("Impossible de lire");
   });
+  it("relecture n°6 : 10 codes faux en 15 minutes → la base bloque le code (54000), message clair en lecture et en remise", async () => {
+    const erreur = { data: null, error: { code: "54000", message: "Trop de codes faux" } };
+    await expect(lireRetraitBoutique(client(erreur).c, { code: "0481" })).rejects.toThrow("Trop de codes faux : la saisie du code est bloquée 15 minutes. Scannez le QR code du client.");
+    await expect(remettreRetrait(client(erreur).c, { code: "0481" })).rejects.toThrow("Scannez le QR code du client.");
+  });
   it("messages (textes 17 à 20 de la story) : même message pour un QR code inconnu ou d’une autre boutique", () => {
     expect(messageRetraitBoutique({ etat: "invalide" }, false)).toBe("Ce QR code n’est pas valide pour votre boutique.");
     expect(messageRetraitBoutique({ etat: "invalide" }, true)).toBe("Code faux. Vérifiez les 4 chiffres avec le client.");

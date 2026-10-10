@@ -22,7 +22,7 @@ export default function VueCommandesRecues({ boutiqueId, boutique, maintenant, r
           <input id="recherche-commande" name="q" type="search" defaultValue={texteRecherche} maxLength={RECHERCHE_MAX} placeholder="N° ou prénom" autoComplete="off" className="min-w-0 flex-1 bg-transparent px-2 text-base outline-none" />
           {texteRecherche && <Link href={lienEtape(etape)} aria-label="Effacer la recherche" className="flex min-h-11 min-w-11 items-center justify-center text-gris">×</Link>}
         </Form>
-        {/* US-26.3 : remise par QR code ou code à 4 chiffres (gardé). */}
+        {/* US-26.3 : remise par QR code ou code à 4 chiffres (gardé) ; bon et parrainage : QR code seulement (relecture n°6). */}
         <Link href="/espace/scanner" aria-label="Scanner un QR code client" className="etiquette flex min-h-11 items-center gap-2 bg-noir px-3 text-blanc"><span aria-hidden="true">▣</span>Scanner</Link>
       </div>
     </header>

@@ -101,6 +101,8 @@ export type CleRetrait = { jeton: string } | { code: string };
 
 const ETATS_BOUTIQUE: readonly EtatRetraitBoutique[] = ["ok", "remise", "invalide", "deja_remise", "annulee", "expiree"];
 export const MESSAGE_CONNEXION_BOUTIQUE = "Connectez-vous à votre espace boutique.";
+/** Relecture n°6, point 2 : après 10 codes faux en 15 minutes, la base refuse le code pendant 15 minutes (QR code toujours accepté). */
+export const MESSAGE_CODE_BLOQUE = "Trop de codes faux : la saisie du code est bloquée 15 minutes. Scannez le QR code du client.";
 
 function parametres(cle: CleRetrait): { jeton?: string; code?: string } {
   if ("jeton" in cle) {
@@ -115,7 +117,7 @@ async function appelerRetrait(client: Client, fonction: "retrait_boutique" | "re
   // Mauvais format : même réponse que la base pour un jeton ou un code inconnu, sans appel.
   if (!args.jeton && !args.code) return { etat: "invalide" };
   const { data, error } = await client.rpc(fonction, args);
-  if (error) throw new Error(error.code === "42501" ? MESSAGE_CONNEXION_BOUTIQUE : "Impossible de lire cette commande. Réessayez.");
+  if (error) throw new Error(error.code === "42501" ? MESSAGE_CONNEXION_BOUTIQUE : error.code === "54000" ? MESSAGE_CODE_BLOQUE : "Impossible de lire cette commande. Réessayez.");
   const vue = data as ResumeRetrait | null;
   if (!vue || !ETATS_BOUTIQUE.includes(vue.etat)) throw new Error("Impossible de lire cette commande. Réessayez.");
   return vue;
