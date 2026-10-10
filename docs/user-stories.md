@@ -906,7 +906,7 @@ En tant que commerçant, je veux voir d'un coup d'œil ce que je dois confirmer,
 
 ## Module 16 — BleDeal, plusieurs villes (après le MVP)
 
-Source : décision du propriétaire du 10 octobre 2026 (4 h 16) : « renommer OranPromo en marque nationale **BleDeal** (écrit BleDeal dans le logo, domaine **bledeal.com** que le propriétaire achète ; proposition en écriture arabe **بليديل**, à valider) et rendre le site **multi-villes** : le client choisit une ville (wilaya) et le contenu s'adapte (catalogue, accueil, boutiques, `/carte`, compteurs) à cette ville. **Un seul site, une seule base, un seul code**, et plus tard d'autres pays du Maghreb. » **Conception seulement** : aucun code, aucune migration, aucune dépendance. Conception technique : `docs/architecture.md`, section « BleDeal, plusieurs villes (US-29, US-30) » ; maquette `docs/maquettes/ChoixVille.dc.html` (375 px, français et arabe de droite à gauche). **À valider par le propriétaire avant tout code** (questions en fin de module).
+Source : décision du propriétaire du 10 octobre 2026 (4 h 16) : « renommer OranPromo en marque nationale **BleDeal** (écrit BleDeal dans le logo, domaine **bledeal.com** que le propriétaire achète ; proposition en écriture arabe **بليديل**, à valider) et rendre le site **multi-villes** : le client choisit une ville (wilaya) et le contenu s'adapte (catalogue, accueil, boutiques, `/carte`, compteurs) à cette ville. **Un seul site, une seule base, un seul code**, et plus tard d'autres pays du Maghreb. » **Conception seulement** : aucun code, aucune migration, aucune dépendance. Conception technique : `docs/architecture.md`, section « BleDeal, plusieurs villes (US-29, US-30) » ; maquette `docs/maquettes/ChoixVille.dc.html` (375 px, français et arabe de droite à gauche). **Validée par le propriétaire le 10/10 à 4 h 22** (décisions en fin de module).
 
 **Aujourd'hui** : tout est pensé pour Oran : rectangle de la wilaya d'Oran dans la base (contrainte `boutiques_position_oran` et déclencheur `verifier_position_boutique`) et dans `lib/position.ts` (`BORNES_ORAN`, `CENTRE_ORAN`) ; titres « Les promos d'Oran », « 12 boutiques à Oran », « Carte des boutiques d'Oran » ; grande photo de Santa Cruz ; « OranPromo » dans l'en-tête, les métadonnées, les messages et les modèles WhatsApp (`oranpromo_*`).
 
@@ -924,7 +924,7 @@ Livré en sous-stories, une PR chacune, dans cet ordre (US-30 peut passer avant 
 | US-30.2 | Nouveau nom dans le projet : `package.json`, README, `CLAUDE.md`, `AGENTS.md`, `docs/`, scripts `.bat` | aucun |
 | US-30.3 | Liste des actions du propriétaire (domaine, Vercel, Supabase, Meta, Twilio, Cloudflare, CARTO, GitHub, affiches) | aucun |
 
-### US-29 — Choisir sa ville (vue d'ensemble) — **à valider par le propriétaire**
+### US-29 — Choisir sa ville (vue d'ensemble) — **validée par le propriétaire le 10/10**
 En tant que client, je veux choisir ma ville (wilaya) une fois, sans compte, afin de ne voir que les promos et les boutiques où je peux aller ; en tant que propriétaire, je veux ouvrir BleDeal ville par ville avec un seul site.
 
 ### US-29.1 — Villes dans la base (aucun écran)
@@ -958,7 +958,7 @@ En tant que client, je veux choisir ma ville (wilaya) une fois, sans compte, afi
 - `/espace` : « Ville : Oran » en lecture seule.
 - Une ville fermée : ses boutiques peuvent être créées, validées et préparées par l'ambassadeur ; elles n'apparaissent dans aucune liste publique ; leurs liens `/b/<slug>` restent ouverts (question 4).
 
-### US-30 — Le site s'appelle BleDeal (vue d'ensemble) — **à valider par le propriétaire**
+### US-30 — Le site s'appelle BleDeal (vue d'ensemble) — **validée par le propriétaire le 10/10**
 En tant que propriétaire, je veux que le site, ses messages et ses liens s'appellent BleDeal partout où le client et la boutique les voient, sans casser ce qui marche (paniers, liens déjà partagés, modèles WhatsApp).
 
 ### US-30.1 — BleDeal dans le site (tout le site)
@@ -1010,3 +1010,18 @@ Les autres textes ne changent que par le nom : « OranPromo » devient « BleDea
 11. **Ancien nom** : possédez-vous `oranpromo.com` (ou un autre domaine) ou des affiches déjà imprimées avec un QR code ? Si oui, il faut rediriger l'ancien domaine vers `bledeal.com`.
 12. **Prochaines villes** et leur ordre (pour préparer leurs bornes) : Alger, Tlemcen, Mostaganem… ?
 13. Darja des textes arabes (parler oranais aujourd'hui) : la garder pour tout le pays (recommandé pour l'instant) ?
+
+**Décisions du propriétaire (10/10, 4 h 22)** — recommandations suivies pour les questions 1 à 6, 8, 9, 10 et 13 :
+1. Adresses avec la ville (`/oran`, `/oran/catalogue`, `/oran/carte`) **et** cookie `ville`.
+2. Première visite sans choix gardé, plusieurs villes ouvertes : page de choix `/villes` ; une seule ville ouverte : elle, directement.
+3. Bouton « Oran ▾ » seulement à partir de 2 villes ouvertes.
+4. Ville fermée : liens `/b/<slug>` et `/a/<id>` de ses boutiques validées ouverts (commande possible par ces liens) ; absente des listes publiques.
+5. Ambassadeur limité à sa ville quand l'admin lui en a donné une.
+6. Valeur par défaut `oran` de `boutiques.ville` retirée en US-29.4.
+7. *(en attente)* Grande photo : celle d'aujourd'hui pour Oran, une image commune neutre pour les autres villes.
+8. Noms des modèles WhatsApp `oranpromo_*` **gardés** ; « BleDeal » dans leurs textes chez Meta.
+9. Ordre : US-29 (29.1 à 29.4), puis US-30 (30.1 à 30.3).
+10. « BleDeal » en lettres latines dans les phrases arabes (pas « بليديل » pour l'instant) ; logo en lettres latines.
+11. *(en attente)* Ancien domaine ou affiches : on suppose qu'il n'y en a pas ; la redirection possible est documentée (`ETAT.md`).
+12. *(en attente)* Prochaines villes : **seule Oran** est créée et ouverte ; la marche à suivre pour ajouter une ville est dans `architecture.md`.
+13. Darja oranaise gardée pour tout le pays.
