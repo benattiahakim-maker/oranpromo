@@ -44,3 +44,26 @@ describe("US-23 : dictionnaires", () => {
     for (const g of GENRES_ARTICLE) expect(ar.listes.genres[g]).toBeTruthy();
   });
 });
+
+describe("vouvoiement partout, tutoiement seulement sur les pages du parrainage (décision 9 du 9/10, BOLOSS 10/10)", () => {
+  // Textes affichés seulement sur /parrainage (ContenuParrainage) ou partagés avec lui ; hors de ces pages, les
+  // composants prennent `parrainage.vous` (ChoixParrain, PartageParrainage avec `vouvoiement`).
+  const pagesParrainage = new Set(["titre", "intro", "etape1", "etape2", "etape3", "connecteToi", "bonTitre", "bonTexte", "regle7", "invite",
+    "inviteConnexion", "tonCode", "copieImpossible", "qrAlt", "qrTexte", "tonParrain", "champ", "rappel", "impossible", "modificationsRestantes", "enregistre"]
+    .map(cle => `parrainage.${cle}`));
+  // Limites de mot Unicode : « Prête », « vous êtes » ne sont pas du tutoiement.
+  const pronoms = /(?<!\p{L})(tu|ton|ta|tes|toi|te|t’|t')(?!\p{L})/iu;
+  const imperatifs = /(?<![\p{L}’'])(Parraine|Fais|Partage|Connecte-toi|Réessaie|Choisis|Utilise|Vérifie|Écris|Annule|Viens|paies)(?!\p{L})/u; // majuscule : début de phrase
+  const tutoiement = { test: (texte: string) => pronoms.test(texte) || imperatifs.test(texte) };
+
+  it("aucun texte français au tutoiement hors des pages du parrainage", () => {
+    const fautifs = feuilles(fr as unknown as Arbre).filter(([cle, texte]) => !pagesParrainage.has(cle) && tutoiement.test(texte));
+    expect(fautifs.map(([cle, texte]) => `${cle} : ${texte}`)).toEqual([]);
+  });
+
+  it("chaque texte partagé avec les pages du parrainage a sa version au vouvoiement, sans tutoiement", () => {
+    const partages = ["tonCode", "copieImpossible", "qrAlt", "qrTexte", "tonParrain", "champ", "rappel", "impossible", "modificationsRestantes"];
+    expect(Object.keys(fr.parrainage.vous).sort()).toEqual([...partages].sort());
+    for (const texte of Object.values(fr.parrainage.vous)) expect(tutoiement.test(texte)).toBe(false);
+  });
+});

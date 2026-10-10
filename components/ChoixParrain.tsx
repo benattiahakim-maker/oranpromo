@@ -8,7 +8,7 @@ import { useTextes } from "./FournisseurTextes";
 
 // US-27.2 : saisie du parrain (numéro WhatsApp ou code), avant la première commande et dans les 7 jours.
 // Réponse toujours identique quand la base accepte (pas d'énumération) ; les erreurs ne portent que sur le filleul.
-// `vouvoiement` : dans /compte (le reste du site vouvoie) ; les pages du parrainage tutoient (décision 9 du 9/10).
+// `vouvoiement` : hors des pages du parrainage (/compte, panier) ; les pages du parrainage tutoient (décision 9 du 9/10).
 export default function ChoixParrain({ initial = "", parrainSaisi, saisies, titre = true, vouvoiement = false }: { initial?: string; parrainSaisi: boolean; saisies: number; titre?: boolean; vouvoiement?: boolean }) {
   const t = textesParrainage(useTextes().parrainage, vouvoiement);
   const router = useRouter();

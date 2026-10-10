@@ -112,7 +112,7 @@ export async function parrainageOuvert(client: Client): Promise<boolean> {
 
 export async function lireMonParrainage(client: Client): Promise<MonParrainage | null> {
   const { data, error } = await client.rpc("mon_parrainage");
-  if (error) throw new Error("Impossible de charger ton parrainage. Réessaie.");
+  if (error) throw new Error("Impossible de charger le parrainage. Réessayez.");
   return (data ?? null) as MonParrainage | null;
 }
 

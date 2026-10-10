@@ -105,7 +105,7 @@ export default function PanierCommande({ profil, parrainage = { bonDisponible: f
         raison={choix?.options.find(o => o.bon.id === propose?.bon.id)?.raison} options={choix?.options} onChoisir={setBonChoisi} />;
     })()}
     {avertissement && <p role="alert" className="mb-4 border border-trait p-3 text-sm leading-[1.6]">{avertissement}</p>}
-    {profil && parrainage.choix && <div className="mb-4"><ChoixParrain initial={parrainage.choix.initial} parrainSaisi={parrainage.choix.parrainSaisi} saisies={parrainage.choix.saisies} /></div>}
+    {profil && parrainage.choix && <div className="mb-4"><ChoixParrain initial={parrainage.choix.initial} parrainSaisi={parrainage.choix.parrainSaisi} saisies={parrainage.choix.saisies} vouvoiement /></div>}
     {!profil ? <Link href="/compte/connexion?suite=/panier" className="etiquette flex min-h-[54px] items-center justify-center bg-noir text-blanc">{t.seConnecter}</Link>
       : profil.verificationRequise && !profil.telephoneVerifie ? <div className="border border-noir p-4"><p className="etiquette mb-2 text-xs">{t.verifierTitre}</p><p className="mb-3 text-sm leading-[1.6]">{t.verifierTexte}</p><CodeTelephone usage="verification" numeroInitial={profil.telephone} onVerifie={() => router.refresh()} /></div>
       : !profil.complet ? <div className="border border-trait p-4"><p className="mb-3 text-sm">{profil.telephoneVerifie ? t.profilNom : t.profilNomTelephone}</p><FormulaireProfilClient nom={profil.nom} telephone={profil.telephone} telephoneModifiable={!profil.telephoneVerifie && !profil.verificationRequise} bouton={t.enregistrerContinuer} onEnregistre={() => router.refresh()} /></div>

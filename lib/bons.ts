@@ -171,7 +171,7 @@ export function raisonBonNonApplique(valeur: unknown): RaisonBonNonApplique | nu
 
 export async function lireMesBons(client: SupabaseClient<Database>): Promise<BonClient[]> {
   const { data, error } = await client.rpc("mes_bons");
-  if (error) throw new Error("Impossible de charger tes bons. Réessaie.");
+  if (error) throw new Error("Impossible de charger vos bons. Réessayez.");
   return Array.isArray(data) ? (data as unknown as BonClient[]) : [];
 }
 

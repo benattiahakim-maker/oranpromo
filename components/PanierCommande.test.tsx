@@ -151,12 +151,13 @@ describe("US-27 : bon et parrain au panier", () => {
   it("pas de bon : pas de case ; parrain encore à choisir : champ « Ton parrain » pré-rempli", () => {
     render(<PanierCommande profil={complet} parrainage={{ bonDisponible: false, choix: { initial: "K7M2QX", parrainSaisi: false, saisies: 0 } }} />);
     expect(screen.queryByRole("checkbox")).toBeNull();
-    expect(screen.getByLabelText("Ton parrain (facultatif) : son numéro WhatsApp ou son code")).toHaveValue("K7M2QX");
+    expect(screen.getByLabelText("Votre parrain (facultatif) : son numéro WhatsApp ou son code")).toHaveValue("K7M2QX");
+    expect(document.body.textContent).not.toMatch(/(?<!\p{L})(ton|ta|tes|tu|toi)(?!\p{L})/iu); // panier : vouvoiement
   });
   it("visiteur non connecté : ni bon ni champ du parrain", () => {
     render(<PanierCommande profil={null} parrainage={{ bonDisponible: true, choix: { initial: "", parrainSaisi: false, saisies: 0 } }} />);
     expect(screen.queryByRole("checkbox")).toBeNull();
-    expect(screen.queryByLabelText(/Ton parrain/)).toBeNull();
+    expect(screen.queryByLabelText(/Votre parrain/)).toBeNull();
   });
 });
 

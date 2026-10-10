@@ -3,7 +3,7 @@
 // US-33.4 : nom du bon côté boutique (commandes reçues, scan), sur le suivi et la page du proche, relevé par origine et plafond.
 import { expect, test } from "@playwright/test";
 import { creerArticle, creerBoutique, creerCompte, fermerBase, sql, unique } from "./outils/donnees";
-import { avancerCommande, commanderOuAccepter, connecterClient, connecterEspace, lireJetonRetrait, remettre } from "./outils/parcours";
+import { avancerCommande, commanderOuAccepter, connecterClient, connecterEspace, lireJetonRetrait, remettre, sansTutoiement } from "./outils/parcours";
 
 const code = `E2E${unique().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10)}`;
 test.afterAll(async () => {
@@ -29,6 +29,7 @@ test("bon de campagne : bandeau et conditions → code dans /compte → bon choi
     await expect(page.getByText("Articles Femme seulement")).toBeVisible();
     await expect(page.getByText("Une fois par numéro vérifié.")).toBeVisible();
     await expect(page.getByText("Remise en boutique par QR code obligatoire.")).toBeVisible();
+    await sansTutoiement(page); // /campagne/[code], note du bon comprise
   });
 
   await test.step("« J'ai un code » : code faux, puis le bon code", async () => {
@@ -53,6 +54,8 @@ test("bon de campagne : bandeau et conditions → code dans /compte → bon choi
     await page.getByRole("button", { name: "Robe Aïd M : une pièce de plus" }).click();
     await expect(page.getByRole("checkbox", { name: /Utiliser mon bon Aïd test \(−500\sDA\)/ })).toBeChecked();
     await expect(page.getByText("4 500 DA").first()).toBeVisible();
+    await expect(page.getByText(/si vous l’annulez ou si vous ne venez pas, il est perdu/)).toBeVisible();
+    await sansTutoiement(page); // panier
     await commanderOuAccepter(page);
     await expect(page).toHaveURL(/\/compte\/commandes\/[0-9a-f-]{36}/);
     await expect(page.getByText("4 500 DA").first()).toBeVisible();

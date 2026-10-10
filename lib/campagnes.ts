@@ -46,7 +46,7 @@ export async function ajouterCodeBon(client: SupabaseClient<Database>, code: str
 export type RaisonPanier = Exclude<ResultatBon, "applique" | "aucun_bon" | "deja"> | "ok";
 export async function lireRaisonsBonsPanier(client: SupabaseClient<Database>, boutique: string, lignes: { article_id: string; quantite: number }[]): Promise<Record<string, RaisonPanier>> {
   const { data, error } = await client.rpc("bons_panier", { boutique, lignes });
-  if (error || !Array.isArray(data)) throw new Error("Impossible de vérifier tes bons.");
+  if (error || !Array.isArray(data)) throw new Error("Impossible de vérifier vos bons.");
   const raisons: Record<string, RaisonPanier> = {};
   for (const item of data as { id?: unknown; raison?: unknown }[]) {
     if (typeof item?.id === "string" && (item.raison === "ok" || (RESULTATS_BON as readonly unknown[]).includes(item.raison))) raisons[item.id] = item.raison as RaisonPanier;

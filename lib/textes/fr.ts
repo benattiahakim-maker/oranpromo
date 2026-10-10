@@ -520,9 +520,9 @@ export const fr = {
     filleul: "{prenom} · {date}",
     bonFilleul: "bon de 300 DA",
     bonEnFile: "bon en attente (budget)",
-    plafond: "Plafond du mois atteint : 5 amis récompensés. Les suivants reçoivent leur bon, pas toi, jusqu’à la fin du mois.",
+    plafond: "Plafond du mois atteint : 5 amis récompensés. Les suivants reçoivent leur bon, pas vous, jusqu’à la fin du mois.",
     discretion: "Les amis en attente ne sont pas nommés. Aucun numéro n’est affiché.",
-    aucunFilleul: "Aucun ami récompensé pour le moment : partage ton lien.",
+    aucunFilleul: "Aucun ami récompensé pour le moment : partagez votre lien.",
     commentMarche: "Comment marche le parrainage ?",
     mesBons: "Mes bons", // 15
     nomBon: "Bon parrainage",
@@ -530,35 +530,33 @@ export const fr = {
     reserve: "Réservé pour la commande n° {n}", // 21
     utilise: "Utilisé le {date} chez {boutique}", // 22
     expire: "Expiré le {date}", // 23
-    enFile: "Ton bon arrive le {date} (budget du mois atteint).", // 20
+    enFile: "Votre bon arrive le {date} (budget du mois atteint).", // 20
     annule: "Annulé",
     // Phrase d'aide de « Mes bons », bon par bon : montant réel et qui paie (BOLOSS du 10/10, validé par le propriétaire).
     aideBons: "À utiliser au panier.",
     aideBonBleDeal: "{nom} : {montant} de moins, payé par BleDeal.", // parrainage, bienvenue, campagne, avis
     aideBonInscription: "{nom} : {montant} de moins, payé par BleDeal et la boutique où vous vous êtes inscrit.", // US-31.4
     // Accueil et suivi (US-27.3)
-    accueilTitre: "Parraine tes amis", // 13
+    accueilTitre: "Parrainez vos amis", // 13
     accueilTexte: "300 DA chacun", // 13
     accueilLien: "Voir",
     merciTitre: "Merci !", // 14
-    merciTexte: "Fais découvrir BleDeal à un ami : 300 DA chacun après sa première commande.", // 14
+    merciTexte: "Faites découvrir BleDeal à un ami : 300 DA chacun après sa première commande.", // 14
     partagerMonLien: "Partager mon lien",
     // Panier et suivi (US-27.4)
     utiliserBon: "Utiliser mon bon parrainage (−{montant})", // 17
     ligneBon: "Bon parrainage",
     aPayerBoutique: "À payer en boutique", // 18
-    sousMinimum: "Ton bon s’utilise dès 1 000 DA d’achat.", // 19
+    sousMinimum: "Votre bon s’utilise dès 1 000 DA d’achat.", // 19
     noteBon: "Un bon par commande. Si la commande est annulée ou expire, le bon revient.",
-    // Les mêmes textes au vouvoiement, pour le parrainage affiché dans /compte : le tutoiement reste sur les pages du
-    // parrainage (décision 9 du 9/10) ; le reste du site vouvoie (BOLOSS, 10/10).
+    // Textes partagés avec les pages du parrainage (tutoiement, décision 9 du 9/10), au vouvoiement pour le reste du
+    // site (/compte, panier : BOLOSS, 10/10).
     vous: {
       tonParrain: "Votre parrain",
       champ: "Votre parrain (facultatif) : son numéro WhatsApp ou son code",
       rappel: "Votre bon et celui de votre parrain arrivent après votre première commande d’au moins 2 000 DA, récupérée en boutique avec votre QR code.",
       impossible: "Impossible d’enregistrer votre parrain. Réessayez.",
       modificationsRestantes: "Vous pouvez encore le modifier {n} fois, avant votre première commande.",
-      aucunFilleul: "Aucun ami récompensé pour le moment : partagez votre lien.",
-      plafond: "Plafond du mois atteint : 5 amis récompensés. Les suivants reçoivent leur bon, pas vous, jusqu’à la fin du mois.",
       copieImpossible: "Copie impossible : partagez le lien par WhatsApp.",
       qrAlt: "QR code de votre lien de parrainage",
       qrTexte: "Votre ami peut scanner ce QR code avec son téléphone. Le lien ne montre ni votre nom ni votre numéro.",
@@ -571,7 +569,7 @@ export const fr = {
     utiliserBonBienvenue: "Utiliser mon bon de bienvenue (−{montant})", // 9
     utiliserBonProgramme: "Utiliser mon bon {nom} (−{montant})", // 9
     minimumProgramme: "Dès {minimum} d’achat", // 10
-    noteBonProgramme: "Un bon par commande. Si la boutique annule la commande, le bon revient ; si tu l’annules ou si tu ne viens pas, il est perdu.",
+    noteBonProgramme: "Un bon par commande. Si la boutique annule la commande, le bon revient ; si vous l’annulez ou si vous ne venez pas, il est perdu.",
     // US-33.3 : campagnes avec code (conception US-33, module 19 : n° 3 à 8, 10 à 14 ; sans numéro : nouveaux).
     jaiUnCode: "J’ai un code", // 3
     ajouterCode: "Ajouter", // 4
@@ -603,14 +601,14 @@ export const fr = {
     conditionsQr: "Remise en boutique par QR code obligatoire.",
     conditionsAucune: "Cette campagne n’existe pas ou n’est plus valable.",
     bonNonApplique: {
-      aucun_bon: "Bon non appliqué : il a expiré ou n’est plus disponible. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
-      minimum: "Bon non appliqué : il s’utilise dès 1 000 DA d’achat. Ta commande reste au prix plein.",
-      boutique_exclue: "Bon non appliqué : cette boutique n’accepte pas les bons pour le moment. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
-      univers: "Bon non appliqué : il ne vaut que pour certains articles. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
-      ville: "Bon non appliqué : pas dans cette ville. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
-      plafond_boutique: "Bon non appliqué : ce bon n’est plus accepté dans cette boutique pour cette campagne. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
-      pas_aujourdhui: "Bon non appliqué : dans la boutique où tu t’es inscrit, ton bon de bienvenue s’utilise dès demain. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
-      erreur: "Bon non appliqué. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
+      aucun_bon: "Bon non appliqué : il a expiré ou n’est plus disponible. Votre commande reste au prix plein ; vous pouvez l’annuler si vous le souhaitez.",
+      minimum: "Bon non appliqué : il s’utilise dès 1 000 DA d’achat. Votre commande reste au prix plein.",
+      boutique_exclue: "Bon non appliqué : cette boutique n’accepte pas les bons pour le moment. Votre commande reste au prix plein ; vous pouvez l’annuler si vous le souhaitez.",
+      univers: "Bon non appliqué : il ne vaut que pour certains articles. Votre commande reste au prix plein ; vous pouvez l’annuler si vous le souhaitez.",
+      ville: "Bon non appliqué : pas dans cette ville. Votre commande reste au prix plein ; vous pouvez l’annuler si vous le souhaitez.",
+      plafond_boutique: "Bon non appliqué : ce bon n’est plus accepté dans cette boutique pour cette campagne. Votre commande reste au prix plein ; vous pouvez l’annuler si vous le souhaitez.",
+      pas_aujourdhui: "Bon non appliqué : dans la boutique où vous vous êtes inscrit, votre bon de bienvenue s’utilise dès demain. Votre commande reste au prix plein ; vous pouvez l’annuler si vous le souhaitez.",
+      erreur: "Bon non appliqué. Votre commande reste au prix plein ; vous pouvez l’annuler si vous le souhaitez.",
     },
   },
   juridique: {

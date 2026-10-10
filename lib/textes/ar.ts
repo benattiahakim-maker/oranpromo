@@ -537,15 +537,13 @@ export const ar: Textes = {
     aPayerBoutique: "تخلّص في الحانوت", // 18
     sousMinimum: "البون يخدم من 1000 دج وفوق.", // 19
     noteBon: "بون واحد في كل طلب. إلا الطلب تلغى ولا فات وقتو، البون يرجعلك.",
-    // Vouvoiement du parrainage dans /compte : en darja, la même forme (pas de différence tu/vous ici).
+    // Vouvoiement du parrainage hors des pages du parrainage : en darja, la même forme (pas de différence tu/vous ici).
     vous: {
       tonParrain: "اللي عرضك",
       champ: "اللي عرضك (إلا حبيت): النمرة نتاع الواتساب ولا الكود",
       rappel: "البون نتاعك ونتاع اللي عرضك يجيو من بعد أول طلب تاع 2000 دج وفوق، تدّيه من الحانوت بالـ QR نتاعك.",
       impossible: "ما قدرناش نسجّلو اللي عرضك. عاود جرّب.",
       modificationsRestantes: "تقدر تبدّلو {n} مرات، قبل أول طلب.",
-      aucunFilleul: "حتى صاحب مازال ما ربح: ابعث الرابط نتاعك.",
-      plafond: "وصلت للحد تاع الشهر: 5 صحاب. اللي يجيو من بعد ياخذو البون نتاعهم، انت لا، حتى يكمل الشهر.",
       copieImpossible: "ما قدرناش ننسخو: ابعث الرابط على واتساب.",
       qrAlt: "QR تاع رابط العرضة نتاعك",
       qrTexte: "صاحبك يقدر يسكاني هاد QR بالتيليفون نتاعو. الرابط ما يبيّنش لا اسمك لا نمرتك.",

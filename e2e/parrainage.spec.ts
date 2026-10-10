@@ -2,7 +2,7 @@
 // boutique par l'admin (US-27.5). Les règles ne sont pas réécrites ici : le test passe par les écrans.
 import { expect, test } from "@playwright/test";
 import { creerArticle, creerBoutique, creerCompte, fermerBase, ouvrirParrainage, sql } from "./outils/donnees";
-import { avancerCommande, commanderArticle, connecterClient, connecterEspace, lireJetonRetrait, remettre } from "./outils/parcours";
+import { avancerCommande, commanderArticle, connecterClient, connecterEspace, lireJetonRetrait, remettre, sansTutoiement } from "./outils/parcours";
 
 test.afterAll(fermerBase);
 
@@ -36,7 +36,7 @@ test("parrainage : premier retrait par QR code → un bon chacun → bon utilis�
     await page.getByRole("button", { name: "Valider", exact: true }).click();
     await expect(page.getByText(/il deviendra votre parrain après votre premier retrait/)).toBeVisible();
     // /compte vouvoie partout (« Mon parrainage », « Mes bons », choix du parrain) ; /parrainage garde le tutoiement.
-    await expect(page.getByRole("main")).not.toContainText(/\b(ton|ta|tes|tu|toi)\b/i);
+    await sansTutoiement(page);
     await expect(page.getByText("Parrain enregistré")).toBeVisible();
   });
 
@@ -48,6 +48,12 @@ test("parrainage : premier retrait par QR code → un bon chacun → bon utilis�
     await page.goto(suivi);
     await espace.goto(`/espace/retrait/${await lireJetonRetrait(page)}`);
     await remettre(espace, /^Commande n° \d+$/);
+    await page.goto(suivi); // commande récupérée : encadré « Merci ! » au vouvoiement
+    await expect(page.getByText("Faites découvrir BleDeal à un ami", { exact: false })).toBeVisible();
+    await sansTutoiement(page);
+    await page.goto("/oran"); // tuile de l'accueil
+    await expect(page.getByRole("link", { name: /Parrainez vos amis/ })).toBeVisible();
+    await sansTutoiement(page);
   });
 
   await test.step("un bon de 300 DA visible chez le filleul et chez le parrain", async () => {
@@ -66,6 +72,7 @@ test("parrainage : premier retrait par QR code → un bon chacun → bon utilis�
     await page.goto("/panier");
     await expect(page.getByRole("checkbox", { name: /Utiliser mon bon parrainage/ })).toBeChecked();
     await expect(page.getByText("2 200 DA").first()).toBeVisible();
+    await sansTutoiement(page); // panier
     await page.getByRole("button", { name: "Commander", exact: true }).click();
     await expect(page).toHaveURL(/\/compte\/commandes\/[0-9a-f-]{36}/);
     const suivi = new URL(page.url()).pathname;
