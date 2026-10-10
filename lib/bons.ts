@@ -92,6 +92,34 @@ export function bonDisponible(bons: BonClient[], maintenant: Date = new Date()):
     .sort((a, b) => a.expire_le!.localeCompare(b.expire_le!))[0] ?? null;
 }
 
+/** US-33.2 : bon d'un programme (bienvenue, campagne) ou de parrainage. */
+export function estBonProgramme(bon: Pick<BonClient, "origine">): boolean {
+  return bon.origine === "bienvenue" || bon.origine === "campagne";
+}
+
+/** Achat minimum d'un bon (parrainage : 1 000 DA, fixé par la base ; programmes : copié du programme). */
+export function minimumBon(bon: Pick<BonClient, "minimum_achat">): number {
+  return bon.minimum_achat ?? MINIMUM_COMMANDE_BON;
+}
+
+/** Bon proposé au panier : le plus gros bon utilisable pour ce total (comme utiliser_bon), sinon celui au plus petit minimum. */
+export type BonPropose = { bon: BonClient; applicable: boolean };
+export function bonPourTotal(bons: BonClient[], total: number, maintenant: Date = new Date()): BonPropose | null {
+  const valables = bons.filter(b => b.statut === "disponible" && b.expire_le && new Date(b.expire_le).getTime() > maintenant.getTime());
+  const parOrdre = (a: BonClient, b: BonClient) => b.montant - a.montant || a.expire_le!.localeCompare(b.expire_le!) || a.cree_le.localeCompare(b.cree_le);
+  const utilisable = valables.filter(b => total >= minimumBon(b)).sort(parOrdre)[0];
+  if (utilisable) return { bon: utilisable, applicable: true };
+  const plusProche = [...valables].sort((a, b) => minimumBon(a) - minimumBon(b) || parOrdre(a, b))[0];
+  return plusProche ? { bon: plusProche, applicable: false } : null;
+}
+
+/** « 9/11 » (heure d'Alger) : date courte des bons de programme (conception US-33, texte n° 2). */
+export function formaterJourMoisNumerique(iso: string): string {
+  const morceaux = new Intl.DateTimeFormat("fr-FR", { timeZone: FUSEAU, day: "numeric", month: "numeric" }).formatToParts(new Date(iso));
+  const nombre = (type: string) => String(Number(morceaux.find(m => m.type === type)?.value ?? ""));
+  return `${nombre("day")}/${nombre("month")}`;
+}
+
 /** Ligne d'état d'un bon dans « Mes bons » : clé du texte et valeurs à remplir. */
 export type EtatBonAffiche = { cle: "disponible" | "reserve" | "utilise" | "expire" | "enFile" | "annule"; valeurs: Record<string, string | number>; actif: boolean };
 export function etatBon(bon: BonClient, langue: Langue = "fr", maintenant: Date = new Date()): EtatBonAffiche {

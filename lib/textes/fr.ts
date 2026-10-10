@@ -483,6 +483,14 @@ export const fr = {
     aPayerBoutique: "À payer en boutique", // 18
     sousMinimum: "Ton bon s’utilise dès 1 000 DA d’achat.", // 19
     noteBon: "Un bon par commande. Si la commande est annulée ou expire, le bon revient.",
+    // US-33.2 : bons de programme (conception US-33, module 19 : n° 2, 9, 10).
+    nomBienvenue: "Bon de bienvenue", // 2
+    nomProgramme: "Bon {nom}", // 5, 9
+    detailProgramme: "{montant} dès {minimum} d’achat · jusqu’au {date}", // 2
+    utiliserBonBienvenue: "Utiliser mon bon de bienvenue (−{montant})", // 9
+    utiliserBonProgramme: "Utiliser mon bon {nom} (−{montant})", // 9
+    minimumProgramme: "Dès {minimum} d’achat", // 10
+    noteBonProgramme: "Un bon par commande. Si la boutique annule la commande, le bon revient ; si tu l’annules ou si tu ne viens pas, il est perdu.",
     bonNonApplique: {
       aucun_bon: "Bon non appliqué : il a expiré ou n’est plus disponible. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
       minimum: "Bon non appliqué : il s’utilise dès 1 000 DA d’achat. Ta commande reste au prix plein.",

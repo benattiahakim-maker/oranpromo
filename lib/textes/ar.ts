@@ -476,6 +476,14 @@ export const ar: Textes = {
     aPayerBoutique: "تخلّص في الحانوت", // 18
     sousMinimum: "البون يخدم من 1000 دج وفوق.", // 19
     noteBon: "بون واحد في كل طلب. إلا الطلب تلغى ولا فات وقتو، البون يرجعلك.",
+    // US-33.2 : textes de la conception (module 19, n° 2, 9, 10) ; noteBonProgramme : nouveau, à valider.
+    nomBienvenue: "بون مرحبا", // 2
+    nomProgramme: "بون {nom}", // 5, 9
+    detailProgramme: "{montant} كي تشري {minimum} ولا كثر · حتى {date}", // 2
+    utiliserBonBienvenue: "استعمل بون مرحبا (−{montant})", // 9
+    utiliserBonProgramme: "استعمل بون {nom} (−{montant})", // 9
+    minimumProgramme: "كي تشري {minimum} ولا كثر", // 10
+    noteBonProgramme: "بون واحد في كل طلب. إلا الحانوت لغات الطلب، البون يرجعلك؛ إلا لغيتو نتا ولا ما جيتش، البون يروح.", // à valider
     bonNonApplique: {
       aucun_bon: "البون ما تحسبش: فات وقتو ولا ما بقاش. الطلب يبقى بالسومة الكاملة؛ تقدر تلغيه إلا حبيت.",
       minimum: "البون ما تحسبش: يخدم من 1000 دج وفوق. الطلب يبقى بالسومة الكاملة.",
