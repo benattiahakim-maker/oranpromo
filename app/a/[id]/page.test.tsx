@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import ArticlePage from "./page";
 const { single, langue, commande } = vi.hoisted(() => ({ single: vi.fn(), langue: { valeur: "fr" as "fr" | "ar" }, commande: vi.fn((props: { beaute?: boolean }) => { void props; return null; }) }));
 vi.mock("@/lib/langue-serveur", () => ({ getLangue: async () => langue.valeur }));
-vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ from: () => ({ select: () => ({ eq: () => ({ single, eq: () => ({ limit: async () => ({ data: [] }) }) }) }) }) }) }));
+const { rpc } = vi.hoisted(() => ({ rpc: vi.fn(async () => ({ data: [], error: null })) }));
+vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ rpc, from: () => ({ select: () => ({ eq: () => ({ single, eq: () => ({ limit: async () => ({ data: [] }) }) }) }) }) }) }));
 vi.mock("@/components/GalerieArticle", () => ({ default: () => null }));
 vi.mock("@/components/PartagerArticle", () => ({ default: () => null }));
 vi.mock("@/components/CommandeArticle", () => ({ default: commande }));
@@ -47,5 +48,24 @@ describe("US-25.1 : la fiche dit à la commande si l’article est un produit de
     renderToStaticMarkup(await ArticlePage({ params: Promise.resolve({ id: "a" }) }));
     expect(commande).toHaveBeenCalled();
     expect(commande.mock.calls[0][0].beaute).toBe(beaute);
+  });
+});
+
+describe("US-32.3 : note de la boutique sur la fiche", () => {
+  const B = "44444444-4444-4444-4444-444444444444";
+  const article = { id: "a", titre: "Abaya brodée", prix: 9000, description: null, description_ar: null, statut: "disponible", boutique_id: B, boutiques: { nom: "Boutique Nour", quartier: "Centre", slug: "boutique-nour" }, photos: [], tailles: [], promos: null };
+  it("« Boutique Nour · ★ 4,6 (18 avis) », lien vers les avis de la vitrine", async () => {
+    single.mockResolvedValue({ data: article, error: null });
+    rpc.mockResolvedValueOnce({ data: [{ boutique_id: B, nombre: 18, moyenne: 4.6, criteres: {} }], error: null } as never);
+    const html = renderToStaticMarkup(await ArticlePage({ params: Promise.resolve({ id: "a" }) }));
+    expect(rpc).toHaveBeenCalledWith("resume_avis", { boutiques: [B] });
+    expect(html).toContain('href="/b/boutique-nour#avis"'); expect(html).toContain("Boutique Nour · ★ 4,6 (18 avis)");
+  });
+  it("sous le seuil ou lecture impossible : pas de note", async () => {
+    single.mockResolvedValue({ data: article, error: null });
+    rpc.mockResolvedValueOnce({ data: [{ boutique_id: B, nombre: 2, moyenne: null, criteres: {} }], error: null } as never);
+    expect(renderToStaticMarkup(await ArticlePage({ params: Promise.resolve({ id: "a" }) }))).not.toContain("#avis");
+    rpc.mockResolvedValueOnce({ data: null, error: { message: "x" } } as never);
+    expect(renderToStaticMarkup(await ArticlePage({ params: Promise.resolve({ id: "a" }) }))).not.toContain("#avis");
   });
 });

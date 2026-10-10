@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { avisPossible, donnerAvis, lireMesNotes, messageErreurAvis, verifierSaisieAvis, MESSAGES_AVIS } from "./avis";
+import { avisPossible, criteresCites, donnerAvis, etoiles, formaterMois, formaterMoyenne, lireAvisBoutique, lireMesNotes, lireResumes, messageErreurAvis, trierMieuxNotees, verifierSaisieAvis, MESSAGES_AVIS } from "./avis";
 
 const JOUR = 24 * 3600 * 1000;
 const MAINTENANT = Date.parse("2026-10-20T12:00:00Z");
@@ -82,5 +82,46 @@ describe("US-32.2 : envoi à la base", () => {
     expect(test.appels).toContainEqual(["in", "commande_id", [ID]]);
     expect(await lireMesNotes(client({ data: null, error: null }).client, ["x"])).toEqual(new Map());
     await expect(lireMesNotes(client({ data: null, error: null }, { data: null, error: { message: "x" } }).client, [ID])).rejects.toThrow("Impossible de charger vos avis");
+  });
+});
+
+describe("US-32.3 : lectures publiques", () => {
+  const B1 = "22222222-2222-2222-2222-222222222222", B2 = "33333333-3333-3333-3333-333333333333";
+  it("resume_avis : une requête pour toutes les boutiques (sans doublon, identifiants valides), moyenne vide sous le seuil", async () => {
+    const test = client({ data: [{ boutique_id: B1, nombre: 18, moyenne: 4.6, criteres: { accueil: 12, article_conforme: 9, rapidite: 6 } }, { boutique_id: B2, nombre: 2, moyenne: null, criteres: null }], error: null });
+    const resumes = await lireResumes(test.client, [B1, B2, B1, "x"]);
+    expect(test.rpc).toHaveBeenCalledTimes(1);
+    expect(test.rpc).toHaveBeenCalledWith("resume_avis", { boutiques: [B1, B2] });
+    expect(resumes.get(B1)).toEqual({ nombre: 18, moyenne: 4.6, criteres: { accueil: 12, article_conforme: 9, rapidite: 6 } });
+    expect(resumes.get(B2)).toEqual({ nombre: 2, moyenne: null, criteres: { accueil: 0, article_conforme: 0, rapidite: 0 } });
+    const vide = client({ data: [], error: null });
+    expect(await lireResumes(vide.client, ["x"])).toEqual(new Map()); expect(vide.rpc).not.toHaveBeenCalled();
+    await expect(lireResumes(client({ data: null, error: { message: "x" } }).client, [B1])).rejects.toThrow("Impossible de charger les avis.");
+  });
+  it("avis_boutique : derniers avis (critères inconnus ignorés) ; boutique invalide : rien", async () => {
+    const test = client({ data: [{ id: "a1", auteur: "Amine B.", note: 5, criteres: ["accueil", "x"], commentaire: "Top", mois: "2026-10-01", reponse: null }], error: null });
+    expect(await lireAvisBoutique(test.client, B1)).toEqual([{ id: "a1", auteur: "Amine B.", note: 5, criteres: ["accueil"], commentaire: "Top", mois: "2026-10-01", reponse: null }]);
+    expect(test.rpc).toHaveBeenCalledWith("avis_boutique", { boutique: B1, limite: 5, decalage: 0 });
+    expect(await lireAvisBoutique(test.client, "x")).toEqual([]);
+    await expect(lireAvisBoutique(client({ data: null, error: { message: "x" } }).client, B1)).rejects.toThrow("Impossible de charger les avis.");
+  });
+});
+
+describe("US-32.3 : format", () => {
+  it("moyenne « 4,6 », étoiles, mois en français et en arabe", () => {
+    expect(formaterMoyenne(4.6)).toBe("4,6"); expect(formaterMoyenne(4)).toBe("4,0");
+    expect(etoiles(4)).toBe("★★★★☆"); expect(etoiles(5)).toBe("★★★★★"); expect(etoiles(9)).toBe("★★★★★");
+    expect(formaterMois("2026-10-01", "fr")).toBe("octobre 2026");
+    expect(formaterMois("2026-10-01", "ar")).toBe("أكتوبر 2026");
+    expect(formaterMois("pas une date", "fr")).toBe("");
+  });
+  it("critères les plus cités d'abord, jamais ceux à 0", () => {
+    expect(criteresCites({ criteres: { accueil: 6, article_conforme: 12, rapidite: 0 } })).toEqual([{ critere: "article_conforme", nombre: 12 }, { critere: "accueil", nombre: 6 }]);
+  });
+  it("« Mieux notées » : moyenne décroissante, puis nombre d'avis ; sous le seuil (sans moyenne) ou sans avis à la fin, ordre gardé", () => {
+    const r = (moyenne: number | null, nombre: number) => ({ moyenne, nombre, criteres: { accueil: 0, article_conforme: 0, rapidite: 0 } });
+    const resumes = new Map([["nour", r(4.6, 18)], ["dar", r(4.2, 7)], ["kids", r(null, 1)], ["egal", r(4.6, 3)]]);
+    const liste = ["sans", "kids", "dar", "egal", "nour"];
+    expect(trierMieuxNotees(liste, x => x, resumes)).toEqual(["nour", "egal", "dar", "sans", "kids"]);
   });
 });

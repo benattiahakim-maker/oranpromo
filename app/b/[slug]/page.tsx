@@ -18,6 +18,9 @@ import { cookies } from "next/headers";
 import { COOKIE_SUIVRE, estSuivie } from "@/lib/abonnements";
 import { COOKIE_INSCRIPTION } from "@/lib/inscription-boutique";
 import BienvenueBoutique from "@/components/BienvenueBoutique";
+import AvisBoutique from "@/components/AvisBoutique";
+import NoteBoutique from "@/components/NoteBoutique";
+import { DERNIERS_AVIS, lireAvisBoutique, lireResumes } from "@/lib/avis";
 import { chargerApercuBoutique, METADONNEES_BOUTIQUE_INDISPONIBLE, metadonneesBoutique } from "@/lib/lien-boutique";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +56,12 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
   const magasin = await cookies();
   const inscription = magasin.get(COOKIE_INSCRIPTION)?.value === slug;
   const apresConnexion = !user ? null : inscription ? "inscription" : magasin.get(COOKIE_SUIVRE)?.value === slug ? "suivre" : null;
+  // US-32.3 : note, critères et derniers avis (lecture publique par les fonctions de la base ; sans eux, la vitrine s'affiche).
+  const tAvis = textesDe(langue).avis;
+  const [resume, derniersAvis] = await Promise.all([
+    lireResumes(supabase, [boutique.id]).then(r => r.get(boutique.id) ?? null).catch(() => null),
+    lireAvisBoutique(supabase, boutique.id, DERNIERS_AVIS).catch(() => null),
+  ]);
   const maintenant = new Date();
   const liste = trierArticlesVitrine((articles ?? []).map(article => {
     const promotion = Array.isArray(article.promos) ? article.promos[0] : article.promos;
@@ -71,6 +80,7 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
     <section className="flex flex-col gap-3 px-6 py-8 text-center">
       <p className="etiquette text-gris">{boutique.quartier}{villeBoutique && ` · ${langue === "ar" ? villeBoutique.nom_ar : villeBoutique.nom}`}</p>
       <h1 dir="auto" className="font-titre break-words text-3xl">{boutique.nom}</h1>
+      {resume && <a href="#avis" className="text-sm underline-offset-2 hover:underline"><NoteBoutique resume={resume} t={tAvis} /></a>}
       {afficherSuivre && <BoutonSuivre boutiqueId={boutique.id} slug={slug} nom={boutique.nom} connecte={Boolean(user)} suivieAuDepart={suivie} apresConnexion={apresConnexion} />}
       <p dir="auto" className="text-sm font-light">{boutique.adresse ?? t.adresseInconnue}</p>
       <p dir="auto" className="whitespace-pre-line text-sm text-gris">{boutique.horaires ?? t.horairesInconnus}</p>
@@ -96,5 +106,6 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
       })}</div>
       {!liste.length && <p className="px-6 py-8 text-center text-sm text-gris">{t.aucun}</p>}
     </main>
+    {resume && derniersAvis && <AvisBoutique resume={resume} avis={derniersAvis} slug={slug} t={tAvis} langue={langue} />}
   </div>;
 }

@@ -11,6 +11,8 @@ import { getLangue } from "@/lib/langue-serveur";
 import { estCategorieBeaute } from "@/lib/article";
 import { remplir, type Langue } from "@/lib/langue";
 import { textesDe } from "@/lib/textes";
+import { lireResumes } from "@/lib/avis";
+import { texteNote } from "@/components/NoteBoutique";
 import { 
   formaterPrix, 
   prixAffiche, 
@@ -119,6 +121,9 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   const promos = Array.isArray(article.promos) ? article.promos[0] : article.promos;
   const photos = article.photos?.sort((a, b) => a.ordre - b.ordre) || [];
   const tailles = article.tailles || [];
+  // US-32.3 : note de la boutique (une lecture ; sans elle, la fiche s'affiche sans note).
+  const resumeBoutique = await lireResumes(supabase, [article.boutique_id]).then(r => r.get(article.boutique_id)).catch(() => undefined);
+  const noteBoutique = texteNote({ resume: resumeBoutique, t: t.avis, forme: "fiche" });
 
   const promo = promos;
 
@@ -242,6 +247,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           >
             {boutiques?.nom} · {boutiques?.quartier}
           </a>
+          {/* US-32.3 : « Boutique Nour · ★ 4,6 (18 avis) », lien vers les avis de la vitrine (rien sous le seuil de 3 avis). */}
+          {noteBoutique && <a href={`/b/${boutiques?.slug}#avis`} className="text-sm hover:underline">{boutiques?.nom} · {noteBoutique}</a>}
           <h1 dir="auto" className="font-titre text-2xl leading-tight">{article.titre}</h1>
           
           {/* Price display */}

@@ -70,3 +70,71 @@ export async function lireMesNotes(client: SupabaseClient<Database>, commandes: 
   if (error) throw new Error("Impossible de charger vos avis. Réessayez.");
   return new Map((data ?? []).map(a => [a.commande_id, a.note]));
 }
+
+// ---------------------------------------------------------------------------
+// US-32.3 : affichage (vitrine, fiche, catalogue, carte). Lecture publique par les fonctions de la base seulement.
+// ---------------------------------------------------------------------------
+export const DERNIERS_AVIS = 5;
+export const AVIS_PAR_PAGE = 20;
+const MAX_BOUTIQUES_RESUME = 500;
+
+export type ResumeAvis = { nombre: number; moyenne: number | null; criteres: Record<CritereAvis, number> };
+export type AvisPublic = { id: string; auteur: string; note: number; criteres: CritereAvis[]; commentaire: string | null; mois: string; reponse: string | null };
+
+const versCriteres = (brut: unknown): Record<CritereAvis, number> => {
+  const objet = (brut && typeof brut === "object" ? brut : {}) as Record<string, unknown>;
+  return Object.fromEntries(CRITERES_AVIS.map(c => [c, Number(objet[c]) || 0])) as Record<CritereAvis, number>;
+};
+
+/** Nombre d'avis publiés, moyenne (vide sous le seuil de 3 avis) et critères cités, en une requête pour toutes les boutiques. */
+export async function lireResumes(client: SupabaseClient<Database>, boutiques: string[]): Promise<Map<string, ResumeAvis>> {
+  const ids = [...new Set(boutiques.filter(id => UUID.test(id)))].slice(0, MAX_BOUTIQUES_RESUME);
+  if (!ids.length) return new Map();
+  const { data, error } = await client.rpc("resume_avis", { boutiques: ids });
+  if (error) throw new Error("Impossible de charger les avis.");
+  return new Map((data ?? []).map(r => [r.boutique_id, { nombre: r.nombre, moyenne: r.moyenne === null ? null : Number(r.moyenne), criteres: versCriteres(r.criteres) }]));
+}
+
+/** Avis publiés d'une boutique, les plus récents d'abord (« Amine B. », mois seulement). */
+export async function lireAvisBoutique(client: SupabaseClient<Database>, boutique: string, limite = DERNIERS_AVIS, decalage = 0): Promise<AvisPublic[]> {
+  if (!UUID.test(boutique)) return [];
+  const { data, error } = await client.rpc("avis_boutique", { boutique, limite, decalage });
+  if (error) throw new Error("Impossible de charger les avis.");
+  return (data ?? []).map(a => ({ id: a.id, auteur: a.auteur, note: a.note, criteres: (a.criteres ?? []).filter((c): c is CritereAvis => (CRITERES_AVIS as readonly string[]).includes(c)), commentaire: a.commentaire, mois: a.mois, reponse: a.reponse }));
+}
+
+/** « 4,6 » (une décimale, virgule, en français comme en arabe : maquette vues ④ et ⑩). */
+export function formaterMoyenne(moyenne: number): string {
+  return moyenne.toFixed(1).replace(".", ",");
+}
+
+/** « ★★★★☆ » */
+export function etoiles(note: number): string {
+  const n = Math.max(0, Math.min(5, Math.round(note)));
+  return "★".repeat(n) + "☆".repeat(5 - n);
+}
+
+/** « octobre 2026 » / « أكتوبر 2026 » (le mois seulement, jamais la date exacte). */
+export function formaterMois(mois: string, langue: "fr" | "ar"): string {
+  const date = new Date(`${mois.slice(0, 10)}T12:00:00Z`);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(langue === "ar" ? "ar-DZ-u-nu-latn" : "fr-FR", { month: "long", year: "numeric", timeZone: "UTC" }).format(date);
+}
+
+/** Les 3 critères les plus cités (au moins une fois), du plus cité au moins cité. */
+export function criteresCites(resume: Pick<ResumeAvis, "criteres">): { critere: CritereAvis; nombre: number }[] {
+  return CRITERES_AVIS.map(critere => ({ critere, nombre: resume.criteres[critere] ?? 0 })).filter(c => c.nombre > 0)
+    .sort((a, b) => b.nombre - a.nombre).slice(0, 3);
+}
+
+/** Tri « Mieux notées » : moyenne décroissante, puis nombre d'avis ; boutiques sous le seuil (sans moyenne) à la fin ;
+ *  ordre d'origine gardé à égalité (décision du propriétaire : tri dès le lancement, boutiques sous le seuil à la fin). */
+export function trierMieuxNotees<T>(liste: T[], boutiqueDe: (element: T) => string | undefined, resumes: Map<string, ResumeAvis>): T[] {
+  const cle = (e: T) => { const r = resumes.get(boutiqueDe(e) ?? ""); return { moyenne: r?.moyenne ?? null, nombre: r?.nombre ?? 0 }; };
+  return liste.map((element, rang) => ({ element, rang, ...cle(element) })).sort((a, b) => {
+    if ((a.moyenne === null) !== (b.moyenne === null)) return a.moyenne === null ? 1 : -1;
+    if (a.moyenne !== null && b.moyenne !== null && a.moyenne !== b.moyenne) return b.moyenne - a.moyenne;
+    if (a.moyenne !== null && a.nombre !== b.nombre) return b.nombre - a.nombre;
+    return a.rang - b.rang;
+  }).map(x => x.element);
+}

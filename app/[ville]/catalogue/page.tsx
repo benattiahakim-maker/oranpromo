@@ -11,6 +11,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getVilleOuverte, getVillesOuvertes } from "@/lib/ville-serveur";
 import { cheminVille, nomVille } from "@/lib/ville";
+import { lireResumes, trierMieuxNotees, type ResumeAvis } from "@/lib/avis";
 
 export const dynamic = "force-dynamic";
 
@@ -31,11 +32,15 @@ export default async function Catalogue({ params: parametres, searchParams }: { 
   const client = await creerClientServeur();
   const [t, langue] = await Promise.all([getTextes(), getLangue()]);
   const tc = t.catalogue;
-  const [resultats, { categories, tailles, contenances, quartiers }] = await Promise.all([chargerCatalogue(client, ville.code, filtres), chargerOptionsCatalogue(client, ville.code)]);
+  const [trouves, { categories, tailles, contenances, quartiers }] = await Promise.all([chargerCatalogue(client, ville.code, filtres), chargerOptionsCatalogue(client, ville.code)]);
+  // US-32.3 : notes des boutiques (une requête pour toutes) ; tri « Mieux notées » (boutiques sous le seuil à la fin).
+  const parNote = valeur("tri") === "notes";
+  const resumes = await lireResumes(client, trouves.map(a => a.boutique.id ?? "")).catch(() => new Map<string, ResumeAvis>());
+  const resultats = parNote ? trierMieuxNotees(trouves, a => a.boutique.id, resumes) : trouves;
   const page = Math.max(1, Math.floor(nombre("page") ?? 1));
   const lienPage = (numero: number) => {
     const query = new URLSearchParams();
-    for (const nom of ["q", "univers", "categorie", "taille", "genre", "min", "max", "quartier", "promo"]) if (valeur(nom)) query.set(nom, valeur(nom));
+    for (const nom of ["q", "univers", "categorie", "taille", "genre", "min", "max", "quartier", "promo", "tri"]) if (valeur(nom)) query.set(nom, valeur(nom));
     query.set("page", String(numero)); return `${base}?${query}`;
   };
   // US-23 : la valeur envoyée reste en français (filtre), seul le libellé affiché est traduit.
@@ -60,16 +65,17 @@ export default async function Catalogue({ params: parametres, searchParams }: { 
       {univers?.cle === "beaute" && categoriesBeaute.length > 0 && <nav aria-label={tc.categoriesBeaute} className="overflow-x-auto px-5 pt-4"><ul className="flex gap-2">{raccourci(tc.tout, "")}{categoriesBeaute.map(c => raccourci(traduire(t.listes.raccourcisBeaute, c), c))}</ul></nav>}
       <form key={JSON.stringify(params)} action={base} method="get" className="flex flex-col gap-4 p-5">
         <label className="flex flex-col gap-2 text-sm">{tc.rechercherArticle}<input type="search" name="q" defaultValue={valeur("q")} placeholder={tc.exemple} className="min-h-12 border border-trait px-3" /></label>
-        <details open={Object.keys(params).some(nom => !["q", "page"].includes(nom))} className="border-y border-trait py-3"><summary className="etiquette cursor-pointer py-2">{tc.filtres}</summary><div className="mt-4 grid grid-cols-2 gap-4">
+        <details open={Object.keys(params).some(nom => !["q", "page", "tri"].includes(nom))} className="border-y border-trait py-3"><summary className="etiquette cursor-pointer py-2">{tc.filtres}</summary><div className="mt-4 grid grid-cols-2 gap-4">
           {selectUnivers}{selectCategorie}{selectTaille}{selectGenre}{select("quartier", tc.quartier, quartiers)}
           <label className="flex flex-col gap-2 text-sm">{tc.prixMin}<input type="number" name="min" min="0" step="1" defaultValue={valeur("min")} className="min-h-11 w-full border border-trait px-2" /></label>
           <label className="flex flex-col gap-2 text-sm">{tc.prixMax}<input type="number" name="max" min="0" step="1" defaultValue={valeur("max")} className="min-h-11 w-full border border-trait px-2" /></label>
           <label className="col-span-2 flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" name="promo" value="1" defaultChecked={valeur("promo") === "1"} />{tc.enPromo}</label>
         </div></details>
+        <label className="flex flex-col gap-2 text-sm">{tc.tri}<select name="tri" defaultValue={parNote ? "notes" : ""} className="min-h-11 min-w-0 border border-trait bg-blanc px-2"><option value="">{tc.recents}</option><option value="notes">{tc.mieuxNotees}</option></select></label>
         <button className="etiquette min-h-12 bg-noir text-blanc">{tc.rechercher}</button><Link href={base} className="text-center text-sm underline">{tc.effacer}</Link>
       </form>
       <p role="status" className="px-5 pb-5 text-sm text-gris">{remplir(resultats.length > 1 ? tc.resultats : tc.unResultat, { n: resultats.length })}</p>
-      {resultats.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-6 px-5">{resultats.slice((page - 1) * ARTICLES_PAR_PAGE, page * ARTICLES_PAR_PAGE).map(article => <CarteArticle key={article.id} article={article} />)}</div> : <p className="px-5 py-8 text-center">{!Object.keys(params).length ? remplir(tc.aucunVille, { ville: nomVille(ville, langue) }) : univers?.cle === "beaute" && seulementUnivers ? tc.aucunBeaute : tc.aucun}</p>}
+      {resultats.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-6 px-5">{resultats.slice((page - 1) * ARTICLES_PAR_PAGE, page * ARTICLES_PAR_PAGE).map(article => <CarteArticle key={article.id} article={article} resume={resumes.get(article.boutique.id ?? "")} />)}</div> : <p className="px-5 py-8 text-center">{!Object.keys(params).length ? remplir(tc.aucunVille, { ville: nomVille(ville, langue) }) : univers?.cle === "beaute" && seulementUnivers ? tc.aucunBeaute : tc.aucun}</p>}
       <nav aria-label={tc.pagination} className="flex justify-between px-5 pt-8">{page > 1 && <Link href={lienPage(page - 1)} className="border border-noir px-4 py-3">{tc.precedent}</Link>}{page * ARTICLES_PAR_PAGE < resultats.length && <Link href={lienPage(page + 1)} className="ms-auto border border-noir px-4 py-3">{tc.suivant}</Link>}</nav>
     </main>
   </div>;
