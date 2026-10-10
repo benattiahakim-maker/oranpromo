@@ -2,10 +2,16 @@
 
 Règles (comme US-23) : arabe simple avec des mots de darja d’Oran ; le commerçant est interpellé au **masculin générique** ;
 en français, on garde le **« vous »** (textes français inchangés). Nombres en chiffres 0-9 ; prix avec `Prix`, numéros avec `Numero`.
-Pas traduits : le texte juridique des conditions commerçants (avis « texte officiel en français » de #146 en arabe),
-le résumé des engagements des conditions (texte juridique), l’affiche imprimée pour les clients (`/espace/affiche`),
-le bloc « Bons à rembourser » (`components/BonsBoutique.tsx`, fichier à ne pas toucher), l’administration et la page « Confirmer »
-(décision de BOLOSS), ce que saisit la boutique (titres, descriptions).
+Pas traduits : le texte juridique entier des conditions commerçants (avis « texte officiel en français » de #146 en arabe),
+l’affiche imprimée pour les clients (`/espace/affiche`), l’administration et la page « Confirmer » (décision de BOLOSS),
+ce que saisit la boutique (titres, descriptions), les noms français des campagnes dans le détail du relevé
+(la base ne donne que le nom français ; le plafond utilise le nom arabe).
+
+**Ajouts du 10/10 après-midi** (BOLOSS) : bloc « Bons à rembourser » (`espace.bons`, 23 textes) et résumé des engagements
+des conditions commerçants (`espace.conditions.resume1` à `resume5`, plus `provisoire`) : 29 textes marqués **(nouveau)** ;
+`espace.conditions.francais` **(modifié)** (le résumé est maintenant en arabe, le texte officiel reste en français) ;
+`espace.accueil.bonsEnFrancais` retiré (note provisoire « bloc en français »).
+
 Listes déjà traduites et réutilisées : catégories, genres (`textes.listes`), statuts et motifs d’annulation des commandes
 (`textes.commandes`), critères et motifs de signalement des avis (`textes.avis`).
 
@@ -55,7 +61,6 @@ Listes déjà traduites et réutilisées : catégories, genres (`textes.listes`)
 | `avisClients` | Avis clients | آراء الزبائن |
 | `avisClientsLibelle` | Avis clients : {resume} | آراء الزبائن: {resume} |
 | `mesCommandes` | Mes commandes | الطلبات نتاعي |
-| `bonsEnFrancais` | Bons à rembourser : bloc en français pour le moment. | البونات اللي نخلّصوهملك: هاد الجزء مازال بالفرنسية. |
 
 #### `espace.resumeAvis`
 
@@ -501,12 +506,46 @@ Listes déjà traduites et réutilisées : catégories, genres (`textes.listes`)
 |---|---|---|
 | `titre` | Conditions commerçants | شروط التجار |
 | `intro` | Avant d’utiliser votre espace, lisez et acceptez les conditions commerçants (version du {version}). | قبل ما تخدم بالفضاء نتاعك، اقرا واقبل شروط التجار (النسخة تاع {version}). |
-| `francais` | Le texte officiel est la version française ci-dessous. La traduction arabe viendra après la relecture juridique. | النص الرسمي هو النسخة بالفرنسية اللي تحت. الترجمة بالعربية تجي من بعد المراجعة القانونية. |
+| `francais` **(modifié)** | Le texte officiel des conditions est en français (lien ci-dessous). Ce résumé vous aide à le comprendre ; la traduction complète viendra après la relecture juridique. | النص الرسمي تاع الشروط بالفرنسية (الرابط اللي تحت). هاد الملخص يعاونك باش تفهمو؛ الترجمة الكاملة تجي من بعد المراجعة القانونية. |
+| `provisoire` **(nouveau)** | Version provisoire, en cours de relecture juridique. | نسخة مؤقتة، راهي في المراجعة القانونية. |
+| `resume1` **(nouveau)** | BleDeal ne vend rien et n’encaisse rien : vous vendez en votre nom et encaissez en espèces au retrait. | BleDeal ما يبيع والو وما يقبض والو: انت اللي تبيع باسمك وتقبض الدراهم كاش كي يجي الزبون يدّي الطلب. |
+| `resume2` **(nouveau)** | Authenticité : uniquement des produits authentiques ; pas de contrefaçon ni de produits interdits (alcool, tabac, produits pharmaceutiques…). | السلعة الأصلية برك: ما كاش التقليد ولا السلع الممنوعة (الشراب، الدخان، الدوا…). |
+| `resume3` **(nouveau)** | Les données des clients (prénom, nom, téléphone) servent uniquement à la commande en cours. | المعلومات تاع الزبائن (الاسم، اللقب، التيليفون) تخدم غير للطلب اللي راهو ماشي. |
+| `resume4` **(nouveau)** | Bons : vous les déduisez en caisse au retrait par QR code ; BleDeal vous les rembourse sur relevé mensuel. Pas de remboursement sans QR code. | البونات: تنقّصهم في الكاسة كي يتسلّم الطلب بالـ QR code؛ وBleDeal يخلّصهملك في الكشف تاع كل شهر. بلا QR code ما كاش تخليص. |
+| `resume5` **(nouveau)** | Modération : BleDeal peut masquer un article, avertir ou suspendre la boutique ; chaque décision est enregistrée. | المراقبة: BleDeal يقدر يخبّي سلعة، ينبّهك ولا يوقّف الحانوت؛ وكل قرار يتسجّل. |
 | `lire` | Lire les conditions commerçants | اقرا شروط التجار |
 | `confidentialite` | Politique de confidentialité | سياسة الخصوصية |
 | `case` | J’ai lu et j’accepte les conditions commerçants (version du {version}) et la politique de confidentialité. | قريت ونقبل شروط التجار (النسخة تاع {version}) وسياسة الخصوصية. |
 | `accepter` | Accepter | نقبل |
 | `connexionPerdue` | Connexion perdue. Réessayez. | الأنترنت راحت. عاود جرّب. |
+
+#### `espace.bons`
+
+| Clé | Français | Arabe (à valider) |
+|---|---|---|
+| `titre` **(nouveau)** | Bons à rembourser | البونات اللي نخلّصوهملك |
+| `ceMois` **(nouveau)** | Ce mois-ci : {resume} | هاد الشهر: {resume} |
+| `resume` **(nouveau)** | {bons} · {montant} | {bons} · {montant} |
+| `un` **(nouveau)** | {n} bon | {n} بون |
+| `plusieurs` **(nouveau)** | {n} bons | {n} بونات |
+| `parOrigine` **(nouveau)** | Par origine | حسب المصدر |
+| `plafond` **(nouveau)** | Plafond {nom} : {compte} bons dans votre boutique. | الحد تاع {nom}: {compte} بون في الحانوت نتاعك. |
+| `paye` **(nouveau)** | {mois} : {montant} · payé le {date} | {mois}: {montant} · تخلّص نهار {date} |
+| `payeReference` **(nouveau)** | {mois} : {montant} · payé le {date}, réf. {reference} | {mois}: {montant} · تخلّص نهار {date}، المرجع {reference} |
+| `aPayer` **(nouveau)** | {mois} : {montant} · à payer avant le {date} | {mois}: {montant} · يتخلّص قبل {date} |
+| `enCours` **(nouveau)** | {mois} : {montant} · en cours | {mois}: {montant} · مازال الشهر ما كملش |
+| `detail` **(nouveau)** | Détail des commandes | التفاصيل تاع الطلبات |
+| `ligne` **(nouveau)** | N° {numero} · {origine} · {date} | رقم {numero} · {origine} · {date} |
+| `origineParrainage` **(nouveau)** | Parrainage | العرضة |
+| `origineBienvenue` **(nouveau)** | Bienvenue | مرحبا |
+| `origineInscription` **(nouveau)** | Inscription en boutique | التسجيل في الحانوت |
+| `origineCampagne` **(nouveau)** | Campagne | حملة |
+| `origineAvis` **(nouveau)** | Avis | رأي |
+| `etatARembourser` **(nouveau)** | À rembourser | باش يتخلّص |
+| `etatDeCote` **(nouveau)** | Mise de côté | محطوطة على جنب |
+| `etatRefuse` **(nouveau)** | Refusée | مرفوضة |
+| `partBoutique` **(nouveau)** | Bon de bienvenue d’un client inscrit chez vous : vous déduisez tout le bon en caisse et BleDeal vous rembourse le bon moins votre part. | بون مرحبا تاع زبون تسجّل عندك: تنقّص البون كامل في الكاسة، وBleDeal يخلّصلك البون ناقص الحصة نتاعك. |
+| `explication` **(nouveau)** | BleDeal vous rembourse chaque mois les bons (parrainage, bienvenue, campagnes) déduits sur des commandes remises par QR code (relevé clôturé le 1er, paiement avant le 10). Par code à 6 chiffres, le bon ne s’applique pas. | BleDeal يخلّصلك كل شهر البونات (العرضة، مرحبا، الحملات) اللي نقّصتهم في طلبات تسلّمت بالـ QR code (الكشف يتسكّر نهار 1، والخلاص قبل نهار 10). بالكود تاع 6 أرقام، البون ما يتحسبش. |
 
 #### `espace.connexion`
 

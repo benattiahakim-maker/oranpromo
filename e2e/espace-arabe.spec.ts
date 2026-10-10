@@ -96,3 +96,30 @@ test("espace commerçant en arabe : choix de la langue, commandes, retrait, arti
   });
   await espace.context().close();
 });
+
+// BOLOSS (10/10) : en arabe, les coordonnées de « Position sur la carte » restent dans l'ordre latitude · longitude,
+// de gauche à droite (isolées comme les numéros), même dans une phrase arabe (« الإحداثيات اللي في الرابط: … »).
+// Échoue sur l'ancien code : dans la phrase arabe, la longitude passait à gauche de la latitude et le « − » se détachait.
+test("position en arabe : coordonnées lues dans le lien, de gauche à droite (latitude puis longitude)", async ({ browser }) => {
+  const boutique = await creerBoutique({ statut: "en_attente" });
+  const espace = await connecterEspace(browser, (await creerCompte({ role: "commercant", boutique: boutique.id, nom: "Karim" })).email);
+  await espace.goto("/espace");
+  await espace.getByRole("navigation", { name: "Espace commerçant" }).getByRole("button", { name: "العربية" }).click();
+  await expect(espace.locator("html")).toHaveAttribute("dir", "rtl");
+  await espace.getByLabel("حط رابط Google Maps").fill("https://www.google.com/maps/@35.69712,-0.63375,17z");
+  await espace.getByRole("button", { name: "اقرا", exact: true }).click();
+  const message = espace.getByRole("status").filter({ hasText: "الإحداثيات اللي في الرابط" });
+  await expect(message).toBeVisible();
+  const x = await message.evaluate(el => {
+    const noeuds: Text[] = []; const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    while (w.nextNode()) noeuds.push(w.currentNode as Text);
+    const gauche = (morceau: string) => {
+      const n = noeuds.find(t => t.data.includes(morceau))!; const i = n.data.indexOf(morceau);
+      const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + 1); return r.getBoundingClientRect().left;
+    };
+    return { latitude: gauche("35,697120"), moins: gauche("−0,633750"), zero: gauche("0,633750") };
+  });
+  expect(x.latitude).toBeLessThan(x.moins); // latitude à gauche de la longitude
+  expect(x.moins).toBeLessThan(x.zero); // « − » collé devant son nombre
+  await espace.context().close();
+});

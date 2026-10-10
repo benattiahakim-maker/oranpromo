@@ -56,12 +56,17 @@ describe("US-35 : espace commerçant en arabe", () => {
     expect(screen.getByRole("button", { name: t.articles.plus.replace("{taille}", "M") })).toBeInTheDocument();
   });
 
-  it("conditions : écran en arabe, avis « texte officiel en français », résumé juridique gardé en français (ltr)", () => {
+  it("conditions : écran et résumé des engagements en arabe ; avis « texte officiel en français » (texte entier non traduit)", () => {
     enArabe(<AccepterConditionsCommercant documents={[{ document: "conditions_commercants", version: "2026-10-10" }]} />);
     expect(screen.getByRole("heading", { name: t.conditions.titre })).toBeInTheDocument();
     expect(screen.getAllByRole("note")[0]).toHaveTextContent(t.conditions.francais);
-    const premier = screen.getByText(RESUME_CONDITIONS_COMMERCANTS[0]);
-    expect(premier.closest("[dir]")).toHaveAttribute("dir", "ltr"); expect(premier.closest("[lang]")).toHaveAttribute("lang", "fr");
+    const points = screen.getAllByRole("listitem").map(li => li.textContent);
+    expect(points).toEqual([t.conditions.resume1, t.conditions.resume2, t.conditions.resume3, t.conditions.resume4, t.conditions.resume5]);
+    for (const point of points) expect(point).toMatch(/[\u0600-\u06FF]/);
+    // plus de bloc forcé en français : le résumé suit la page (droite à gauche)
+    expect(screen.getAllByRole("listitem")[0].closest("[dir]")).toBeNull();
+    expect(screen.queryByText(RESUME_CONDITIONS_COMMERCANTS[0])).toBeNull();
+    expect(screen.getByRole("link", { name: t.conditions.lire })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: t.conditions.accepter })).toBeDisabled();
   });
 

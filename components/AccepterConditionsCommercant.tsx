@@ -8,18 +8,14 @@ import { MESSAGE_CONDITIONS_CHANGEES, type DocumentAAccepter } from "@/lib/accep
 import { useLangue, useTextes } from "@/components/FournisseurTextes";
 import { remplir } from "@/lib/langue";
 import { traduireMessage } from "@/lib/textes/messages";
+import { fr } from "@/lib/textes/fr";
 
 // US-34.3 : à la première visite de l'espace (et à chaque nouvelle version importante), à la place de la page
 // demandée : résumé en 5 points (conception, docs/user-stories.md), lien vers les textes entiers, case et « Accepter ».
-// US-35 : l'écran suit la langue de l'espace, mais le résumé des engagements reste en français (texte juridique,
-// traduit après la relecture juridique) ; en arabe, l'avis « le texte officiel est en français » est affiché.
-export const RESUME_CONDITIONS_COMMERCANTS = [
-  "BleDeal ne vend rien et n’encaisse rien : vous vendez en votre nom et encaissez en espèces au retrait.",
-  "Authenticité : uniquement des produits authentiques ; pas de contrefaçon ni de produits interdits (alcool, tabac, produits pharmaceutiques…).",
-  "Les données des clients (prénom, nom, téléphone) servent uniquement à la commande en cours.",
-  "Bons : vous les déduisez en caisse au retrait par QR code ; BleDeal vous les rembourse sur relevé mensuel. Pas de remboursement sans QR code.",
-  "Modération : BleDeal peut masquer un article, avertir ou suspendre la boutique ; chaque décision est enregistrée.",
-] as const;
+// US-35 : l'écran suit la langue de l'espace, résumé des engagements compris (textes `espace.conditions.resume1…5`,
+// à valider) ; le texte juridique entier reste en français : en arabe, l'avis « le texte officiel est en français » est affiché.
+const C = fr.espace.conditions;
+export const RESUME_CONDITIONS_COMMERCANTS = [C.resume1, C.resume2, C.resume3, C.resume4, C.resume5] as const;
 
 export default function AccepterConditionsCommercant({ documents }: { documents: DocumentAAccepter[] }) {
   const router = useRouter();
@@ -47,10 +43,8 @@ export default function AccepterConditionsCommercant({ documents }: { documents:
     <h1 className="my-4 font-titre text-[28px] font-normal">{t.titre}</h1>
     <p className="text-sm leading-[1.6]">{remplir(t.intro, { version: formaterVersion(version) })}</p>
     {langue !== "fr" && <p role="note" className="mt-3 border border-noir p-3 text-sm">{t.francais}</p>}
-    <div dir="ltr" lang="fr">
-      {VERSION_PROVISOIRE && <p role="note" className="mt-3 border border-noir p-3 text-sm">Version provisoire, en cours de relecture juridique.</p>}
-      <ol className="mt-4 list-decimal ps-5 text-sm leading-[1.6]">{RESUME_CONDITIONS_COMMERCANTS.map(point => <li key={point} className="mb-2">{point}</li>)}</ol>
-    </div>
+    {VERSION_PROVISOIRE && <p role="note" className="mt-3 border border-noir p-3 text-sm">{t.provisoire}</p>}
+    <ol className="mt-4 list-decimal ps-5 text-sm leading-[1.6]">{[t.resume1, t.resume2, t.resume3, t.resume4, t.resume5].map(point => <li key={point} className="mb-2">{point}</li>)}</ol>
     <p className="flex flex-wrap gap-x-4 text-sm">
       <Link href={CHEMINS.conditions_commercants} target="_blank" rel="noopener" className="inline-flex min-h-11 items-center underline">{t.lire}</Link>
       <Link href={CHEMINS.confidentialite} target="_blank" rel="noopener" className="inline-flex min-h-11 items-center underline">{t.confidentialite}</Link>

@@ -7,6 +7,7 @@ import type { OrigineBon } from "./bons";
 import { nomDuBon } from "./bons-affichage";
 import { jetonRetraitValide, type ResumeRetrait } from "./retrait";
 import { fr } from "./textes/fr";
+import { remplir } from "./langue";
 import type { fr as Fr } from "./textes/fr";
 
 type Client = SupabaseClient<Database>;
@@ -62,7 +63,7 @@ export async function lirePlafondsBoutique(client: Client): Promise<PlafondBouti
 
 /** « Plafond Aïd 2026 : 14 / 30 bons dans votre boutique. » */
 export function textePlafond(p: PlafondBoutique): string {
-  return `Plafond ${p.nom_fr} : ${p.utilises} / ${p.plafond} bons dans votre boutique.`;
+  return remplir(fr.espace.bons.plafond, { nom: p.nom_fr, compte: `${p.utilises} / ${p.plafond}` });
 }
 
 /** Programmes des lignes du relevé de la boutique : id → nom français. */
@@ -85,23 +86,26 @@ export function aRembourserLigne(l: Pick<LigneOrigine, "montant" | "part_boutiqu
   return Math.max(0, l.montant - Math.max(0, l.part_boutique ?? 0));
 }
 
+/** US-35 : libellés des origines (textes de l'espace, `espace.bons`) ; par défaut, le français (admin, CSV). */
+export type LibellesOrigine = Pick<typeof Fr.espace.bons, "origineParrainage" | "origineBienvenue" | "origineInscription" | "origineCampagne" | "origineAvis">;
+
 /** Origine d'une ligne du relevé : « Parrainage », « Bienvenue », « Aïd 2026 » (nom de la campagne). */
-export function origineLigne(l: Pick<LigneOrigine, "origine" | "programme_id">, noms: Map<string, string>): string {
-  if (l.origine === "bienvenue") return "Bienvenue";
+export function origineLigne(l: Pick<LigneOrigine, "origine" | "programme_id">, noms: Map<string, string>, libelles: LibellesOrigine = fr.espace.bons): string {
+  if (l.origine === "bienvenue") return libelles.origineBienvenue;
   // US-31.4 : bon de bienvenue de l'inscription en boutique.
-  if (l.origine === "inscription_boutique") return "Inscription en boutique";
-  if (l.origine === "campagne") return (l.programme_id && noms.get(l.programme_id)) || "Campagne";
+  if (l.origine === "inscription_boutique") return libelles.origineInscription;
+  if (l.origine === "campagne") return (l.programme_id && noms.get(l.programme_id)) || libelles.origineCampagne;
   // US-32.5 (bon offert pour un avis) : origine « avis » prévue par US-33.5.
-  if (l.origine === "avis") return (l.programme_id && noms.get(l.programme_id)) || "Avis";
-  return "Parrainage";
+  if (l.origine === "avis") return (l.programme_id && noms.get(l.programme_id)) || libelles.origineAvis;
+  return libelles.origineParrainage;
 }
 
 /** Lignes à rembourser regroupées par origine, la plus grosse d'abord : « Aïd 2026 · 14 bons · 7 000 DA ». */
-export function totauxParOrigine(lignes: LigneOrigine[], noms: Map<string, string>): { origine: string; nombre: number; montant: number }[] {
+export function totauxParOrigine(lignes: LigneOrigine[], noms: Map<string, string>, libelles: LibellesOrigine = fr.espace.bons): { origine: string; nombre: number; montant: number }[] {
   const totaux = new Map<string, { origine: string; nombre: number; montant: number }>();
   for (const l of lignes) {
     if (l.statut !== "a_rembourser") continue;
-    const origine = origineLigne(l, noms);
+    const origine = origineLigne(l, noms, libelles);
     const t = totaux.get(origine) ?? { origine, nombre: 0, montant: 0 };
     t.nombre += 1; t.montant += aRembourserLigne(l); totaux.set(origine, t);
   }
