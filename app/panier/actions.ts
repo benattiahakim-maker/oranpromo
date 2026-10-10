@@ -5,7 +5,7 @@ import { creerClientServeur } from "@/lib/supabase/server";
 import { envoyerMessagesCommande } from "@/lib/notifications";
 import { definirLangueCommande, passerCommande, type LigneEnvoyee } from "@/lib/commandes";
 import { LIGNES_PANIER_MAX, NOTE_COMMANDE_MAX, QUANTITE_LIGNE_MAX } from "@/lib/panier";
-import { utiliserBon, type RaisonBonNonApplique } from "@/lib/bons";
+import { raisonBonNonApplique, utiliserBon, type RaisonBonNonApplique } from "@/lib/bons";
 import { acceptationCouvre, accepterDocuments, documentsValides, lireDocumentsAAccepter, MESSAGE_CONDITIONS_A_ACCEPTER, MESSAGE_CONDITIONS_CHANGEES, type DocumentAAccepter } from "@/lib/acceptations";
 
 /** bon : raison si le bon coché n'a pas pu être posé (la commande reste valable, au prix plein). */
@@ -46,7 +46,7 @@ async function commanderPanierEnFrancais(boutiqueId: string, lignes: LigneEnvoye
     let bon: RaisonBonNonApplique | undefined;
     if (avecBon === true) {
       const resultat = await utiliserBon(client, id);
-      if (resultat !== "applique") bon = resultat === "deja" ? "erreur" : resultat;
+      if (resultat !== "applique") bon = raisonBonNonApplique(resultat) ?? "erreur"; // US-33.1 : raisons nouvelles → message générique
     }
     // WhatsApp à la boutique après la réponse (US-20.5) ; sans configuration, le message reste en file d'attente.
     after(() => envoyerMessagesCommande(client, id));
