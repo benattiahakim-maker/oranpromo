@@ -54,7 +54,7 @@ test("remis sans QR code : confirmation, première commande d'un filleul → par
     code = (await pageParrain.getByText("Ton code").locator("xpath=..").locator("strong").innerText()).trim();
     await connecterClient(page, filleul.email);
     await page.goto("/compte");
-    await page.getByLabel("Ton parrain (facultatif) : son numéro WhatsApp ou son code").fill(code);
+    await page.getByLabel("Votre parrain (facultatif) : son numéro WhatsApp ou son code").fill(code); // /compte : vouvoiement
     await page.getByRole("button", { name: "Valider", exact: true }).click();
     await expect(page.getByText("Parrain enregistré")).toBeVisible();
   });

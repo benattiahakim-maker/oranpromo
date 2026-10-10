@@ -1,8 +1,8 @@
 "use server";
 import { cookies } from "next/headers";
-import { enLangue } from "@/lib/langue-serveur";
+import { enLangue, getLangue } from "@/lib/langue-serveur";
 import { creerClientServeur } from "@/lib/supabase/server";
-import { choisirParrain as choisirParrainBase, COOKIE_PARRAIN, MESSAGE_PARRAIN_ENREGISTRE, MESSAGE_PARRAIN_IMPOSSIBLE } from "@/lib/parrainage";
+import { choisirParrain as choisirParrainBase, COOKIE_PARRAIN, MESSAGE_PARRAIN_ENREGISTRE, MESSAGE_PARRAIN_IMPOSSIBLE, vouvoyerMessageParrain } from "@/lib/parrainage";
 
 export type ResultatParrain = { succes: boolean; message: string };
 
@@ -19,6 +19,9 @@ async function choisirParrainEnFrancais(saisie: string): Promise<ResultatParrain
   }
 }
 
-export async function choisirParrain(saisie: string): Promise<ResultatParrain> {
-  return enLangue(await choisirParrainEnFrancais(saisie));
+// `vous` : depuis /compte (vouvoiement) ; les pages du parrainage tutoient.
+export async function choisirParrain(saisie: string, vous = false): Promise<ResultatParrain> {
+  const resultat = await choisirParrainEnFrancais(saisie);
+  if (vous === true && await getLangue() === "fr") return { ...resultat, message: vouvoyerMessageParrain(resultat.message) };
+  return enLangue(resultat);
 }

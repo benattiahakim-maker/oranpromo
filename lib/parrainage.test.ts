@@ -91,3 +91,15 @@ describe("US-30.1 : invitation BleDeal (texte 13)", () => {
     expect(messagePartageParrainage("ar", "https://bledeal.com/p/K7M2QX")).toBe("نعرضك لـ BleDeal، التخفيضات تاع الحوانيت اللي قراب ليك: https://bledeal.com/p/K7M2QX");
   });
 });
+
+describe("vouvoiement du parrainage dans /compte", () => {
+  it("chaque réponse au tutoiement de choisir_parrain a sa version au vouvoiement ; un message inconnu reste tel quel", async () => {
+    const { vouvoyerMessageParrain } = await import("./parrainage");
+    const { readFileSync } = await import("node:fs");
+    const bloc = readFileSync("lib/textes/messages.ts", "utf8").split("// Parrainage (US-27)")[1].split("// Signalement")[0];
+    const tutoiement = [...bloc.matchAll(/^\s+"([^"]+)":/gm)].map(m => m[1]).filter(m => /\b(ton|ta|tes|tu|toi|te|choisis|Connecte|Vérifie|Écris|Réessaie)\b/i.test(m));
+    expect(tutoiement.length).toBeGreaterThanOrEqual(10);
+    for (const message of tutoiement) expect(vouvoyerMessageParrain(message)).not.toMatch(/\b(ton|ta|tes|tu|toi|choisis|Connecte-toi|Vérifie|Écris|Réessaie)\b/i);
+    expect(vouvoyerMessageParrain("Le parrainage n'est pas ouvert pour le moment.")).toBe("Le parrainage n'est pas ouvert pour le moment.");
+  });
+});

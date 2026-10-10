@@ -32,9 +32,11 @@ test("parrainage : premier retrait par QR code → un bon chacun → bon utilis�
   await test.step("le filleul saisit le code dans /compte", async () => {
     await connecterClient(page, filleul.email);
     await page.goto("/compte");
-    await page.getByLabel("Ton parrain (facultatif) : son numéro WhatsApp ou son code").fill(code);
+    await page.getByLabel("Votre parrain (facultatif) : son numéro WhatsApp ou son code").fill(code); // /compte : vouvoiement
     await page.getByRole("button", { name: "Valider", exact: true }).click();
-    await expect(page.getByText(/il deviendra ton parrain après ton premier retrait/)).toBeVisible();
+    await expect(page.getByText(/il deviendra votre parrain après votre premier retrait/)).toBeVisible();
+    // /compte vouvoie partout (« Mon parrainage », « Mes bons », choix du parrain) ; /parrainage garde le tutoiement.
+    await expect(page.getByRole("main")).not.toContainText(/\b(ton|ta|tes|tu|toi)\b/i);
     await expect(page.getByText("Parrain enregistré")).toBeVisible();
   });
 

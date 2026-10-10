@@ -31,12 +31,12 @@ describe("US-27 : /compte", () => {
     cookie.parrain = "K7M2QX";
     base(parrainage({ peut_choisir: true, peut_parrainer: true }));
     const html = await afficher();
-    expect(html).toContain("Ton parrain (facultatif)"); expect(html).toContain('value="K7M2QX"');
+    expect(html).toContain("Votre parrain (facultatif)"); expect(html).not.toMatch(/>[^<]*\b(ton|ta|tes|tu|toi)\b[^<]*</i); expect(html).toContain('value="K7M2QX"');
   });
   it("après une commande (la base répond peut_choisir = faux) : le bloc disparaît", async () => {
     cookie.parrain = "K7M2QX";
     base(parrainage({ peut_choisir: false }));
-    expect(await afficher()).not.toContain("Ton parrain (facultatif)");
+    expect(await afficher()).not.toContain("Votre parrain (facultatif)");
   });
   it("client vérifié, parrainage ouvert : « Mon parrainage » avec code et lien /p/<code> ; « Mes bons »", async () => {
     base(parrainage(), [bon]);

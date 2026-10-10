@@ -549,6 +549,21 @@ export const fr = {
     aPayerBoutique: "À payer en boutique", // 18
     sousMinimum: "Ton bon s’utilise dès 1 000 DA d’achat.", // 19
     noteBon: "Un bon par commande. Si la commande est annulée ou expire, le bon revient.",
+    // Les mêmes textes au vouvoiement, pour le parrainage affiché dans /compte : le tutoiement reste sur les pages du
+    // parrainage (décision 9 du 9/10) ; le reste du site vouvoie (BOLOSS, 10/10).
+    vous: {
+      tonParrain: "Votre parrain",
+      champ: "Votre parrain (facultatif) : son numéro WhatsApp ou son code",
+      rappel: "Votre bon et celui de votre parrain arrivent après votre première commande d’au moins 2 000 DA, récupérée en boutique avec votre QR code.",
+      impossible: "Impossible d’enregistrer votre parrain. Réessayez.",
+      modificationsRestantes: "Vous pouvez encore le modifier {n} fois, avant votre première commande.",
+      aucunFilleul: "Aucun ami récompensé pour le moment : partagez votre lien.",
+      plafond: "Plafond du mois atteint : 5 amis récompensés. Les suivants reçoivent leur bon, pas vous, jusqu’à la fin du mois.",
+      copieImpossible: "Copie impossible : partagez le lien par WhatsApp.",
+      qrAlt: "QR code de votre lien de parrainage",
+      qrTexte: "Votre ami peut scanner ce QR code avec son téléphone. Le lien ne montre ni votre nom ni votre numéro.",
+      tonCode: "Votre code",
+    },
     // US-33.2 : bons de programme (conception US-33, module 19 : n° 2, 9, 10).
     nomBienvenue: "Bon de bienvenue", // 2
     nomProgramme: "Bon {nom}", // 5, 9

@@ -1,13 +1,14 @@
 "use client";
 import { useState } from "react";
 import { useTextes } from "./FournisseurTextes";
+import { textesParrainage } from "@/lib/parrainage";
 
 /** Lien d'invitation prêt à partager (calculé par le serveur : lib/parrainage.ts). */
 export type LienInvitation = { code: string; lien: string; whatsapp: string; qr?: string | null };
 
 // US-27.3 : code, lien /p/<code>, « Partager sur WhatsApp » (wa.me sans numéro), « Copier le lien », QR code du lien.
-export default function PartageParrainage({ invitation, cadre = true }: { invitation: LienInvitation; cadre?: boolean }) {
-  const t = useTextes().parrainage;
+export default function PartageParrainage({ invitation, cadre = true, vouvoiement = false }: { invitation: LienInvitation; cadre?: boolean; vouvoiement?: boolean }) {
+  const t = textesParrainage(useTextes().parrainage, vouvoiement);
   const [message, setMessage] = useState("");
   async function copier() {
     try { await navigator.clipboard.writeText(invitation.lien); setMessage(t.lienCopie); }

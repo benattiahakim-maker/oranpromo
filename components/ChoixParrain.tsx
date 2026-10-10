@@ -3,13 +3,14 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { choisirParrain } from "@/app/compte/parrainage/actions";
 import { remplir } from "@/lib/langue";
-import { modificationsRestantes } from "@/lib/parrainage";
+import { modificationsRestantes, textesParrainage } from "@/lib/parrainage";
 import { useTextes } from "./FournisseurTextes";
 
 // US-27.2 : saisie du parrain (numéro WhatsApp ou code), avant la première commande et dans les 7 jours.
 // Réponse toujours identique quand la base accepte (pas d'énumération) ; les erreurs ne portent que sur le filleul.
-export default function ChoixParrain({ initial = "", parrainSaisi, saisies, titre = true }: { initial?: string; parrainSaisi: boolean; saisies: number; titre?: boolean }) {
-  const t = useTextes().parrainage;
+// `vouvoiement` : dans /compte (le reste du site vouvoie) ; les pages du parrainage tutoient (décision 9 du 9/10).
+export default function ChoixParrain({ initial = "", parrainSaisi, saisies, titre = true, vouvoiement = false }: { initial?: string; parrainSaisi: boolean; saisies: number; titre?: boolean; vouvoiement?: boolean }) {
+  const t = textesParrainage(useTextes().parrainage, vouvoiement);
   const router = useRouter();
   const [saisie, setSaisie] = useState(initial);
   const [modifier, setModifier] = useState(false);
@@ -24,7 +25,7 @@ export default function ChoixParrain({ initial = "", parrainSaisi, saisies, titr
     if (verrou.current) return;
     verrou.current = true; setEnCours(true); setErreur(""); setMessage("");
     try {
-      const resultat = await choisirParrain(saisie);
+      const resultat = await choisirParrain(saisie, vouvoiement);
       if (resultat.succes) { setMessage(resultat.message); setModifier(false); setSaisie(""); router.refresh(); }
       else setErreur(resultat.message);
     } catch { setErreur(t.impossible); }
