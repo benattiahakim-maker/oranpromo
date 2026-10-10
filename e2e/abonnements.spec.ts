@@ -1,8 +1,9 @@
-// US-31.2 : suivre une boutique depuis sa vitrine sans être connecté → connexion → retour suivi → « Mes boutiques »
+// US-31.2 / US-31.3 : suivre une boutique depuis sa vitrine sans être connecté → connexion → retour suivi → « Mes boutiques »
 // → ne plus suivre (avec confirmation). Base locale uniquement (voir docs/environnements.md).
 import { expect, test } from "@playwright/test";
-import { creerArticle, creerBoutique, creerCompte, fermerBase, sql } from "./outils/donnees";
+import { creerArticle, creerBoutique, creerCompte, fermerBase, sql, unique } from "./outils/donnees";
 import { seConnecterParEmail } from "./outils/connexion";
+import { connecterEspace } from "./outils/parcours";
 
 test.afterAll(fermerBase);
 
@@ -56,4 +57,37 @@ test("commerçant : pas de bouton « Suivre » sur une vitrine", async ({ page }
   await page.goto(`/b/${boutique.slug}`);
   await expect(page.getByRole("heading", { name: boutique.nom })).toBeVisible();
   await expect(page.getByRole("button", { name: /Suivre|Suivie/ })).toHaveCount(0);
+});
+
+test("US-31.3 : affiche → /i/<slug> → Créer mon compte → suivie et rattachée → compteur de l'espace", async ({ page, browser }) => {
+  const boutique = await creerBoutique();
+  const commercant = await creerCompte({ role: "commercant", boutique: boutique.id });
+  const email = `nouveau-${unique()}@bledeal.test`; // compte créé à la première connexion
+
+  await test.step("QR code de l'affiche : bandeau d'accueil sur la vitrine", async () => {
+    await page.goto(`/i/${boutique.slug}`);
+    await expect(page).toHaveURL(new RegExp(`/b/${boutique.slug}\\?bienvenue=1$`));
+    await expect(page.getByRole("heading", { name: `Bienvenue chez ${boutique.nom}` })).toBeVisible();
+  });
+
+  await test.step("Créer mon compte → connexion → retour suivi, compte rattaché", async () => {
+    await page.getByRole("link", { name: "Créer mon compte" }).click();
+    await expect(page).toHaveURL(/\/compte\/connexion\?suite=/);
+    await seConnecterParEmail(page, email);
+    await expect(page).toHaveURL(new RegExp(`/b/${boutique.slug}$`));
+    await expect(page.getByRole("button", { name: "✓ Suivie" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: `Bienvenue chez ${boutique.nom}` })).toHaveCount(0);
+    await expect.poll(async () => sql(`select a.source, (select boutique_id from inscriptions_boutique i where i.profil_id = p.id) as rattachee
+      from profils p join auth.users u on u.id = p.id left join abonnements_boutique a on a.profil_id = p.id where u.email = $1`, [email]))
+      .toEqual([{ source: "inscription_boutique", rattachee: boutique.id }]);
+  });
+
+  await test.step("espace : « 1 client suit votre boutique · +1 cette semaine » ; affiche vers /i/<slug>", async () => {
+    const espace = await connecterEspace(browser, commercant.email);
+    await espace.goto("/espace");
+    await expect(espace.getByText("1 client suit votre boutique · +1 cette semaine")).toBeVisible();
+    await espace.goto("/espace/affiche");
+    await expect(espace.getByText(`/i/${boutique.slug}`)).toBeVisible();
+    await expect(espace.getByText("Inscrivez-vous et suivez la boutique")).toBeVisible();
+  });
 });

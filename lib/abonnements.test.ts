@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { boutiquesSuivies, compterMesBoutiques, compterPromos, erreurAbonnement, estSuivie, listerMesBoutiques, uuidValide } from "./abonnements";
+import { boutiquesSuivies, compterMesBoutiques, compterPromos, erreurAbonnement, estSuivie, lireAbonnesBoutique, listerMesBoutiques, texteAbonnes, uuidValide } from "./abonnements";
 
 const maintenant = new Date("2026-10-10T10:00:00Z");
 const demain = "2026-10-11T10:00:00Z";
@@ -56,5 +56,17 @@ describe("US-31.2 : boutiques suivies", () => {
     expect(await compterMesBoutiques({} as never)).toBe(0);
     const maybeSingle = vi.fn().mockResolvedValue({ data: { boutique_id: "b" }, error: null });
     expect(await estSuivie({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle }) }) }) } as never, "b")).toBe(true);
+  });
+
+  it("US-31.3 : compteur de l'espace (un nombre seulement), masqué si la lecture échoue", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { total: 12, sept_jours: 3 }, error: null });
+    expect(await lireAbonnesBoutique({ rpc } as never)).toEqual({ total: 12, sept_jours: 3 });
+    expect(rpc).toHaveBeenCalledWith("abonnes_boutique");
+    expect(await lireAbonnesBoutique({ rpc: vi.fn().mockResolvedValue({ data: null, error: { code: "42501" } }) } as never)).toBeNull();
+    expect(await lireAbonnesBoutique({ rpc: vi.fn().mockResolvedValue({ data: { total: "x" }, error: null }) } as never)).toBeNull();
+    expect(await lireAbonnesBoutique({} as never)).toBeNull();
+    expect(texteAbonnes({ total: 12, sept_jours: 3 })).toBe("12 clients suivent votre boutique · +3 cette semaine");
+    expect(texteAbonnes({ total: 1, sept_jours: 0 })).toBe("1 client suit votre boutique");
+    expect(texteAbonnes({ total: 0, sept_jours: 0 })).toBe("Aucun client ne suit encore votre boutique.");
   });
 });

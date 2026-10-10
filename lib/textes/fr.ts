@@ -215,6 +215,10 @@ export const fr = {
     introuvable: "Cette boutique n’est plus disponible.",
     reserve: "Seuls les comptes clients peuvent suivre une boutique.",
     erreur: "Action impossible pour le moment. Réessayez.",
+    // US-31.3 : bandeau de la vitrine après le QR code de l'affiche.
+    bienvenueTitre: "Bienvenue chez {nom}",
+    bienvenueTexte: "Créez votre compte BleDeal : vous suivez la boutique et vous réservez ses articles en ligne, à payer en boutique.",
+    creerCompte: "Créer mon compte",
   },
   panier: {
     titre: "Mon panier",
