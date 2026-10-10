@@ -267,7 +267,7 @@ select pg_temp.erreur($q$select prive.donner_bon_programme('f3300000-0000-0000-0
 reset role;
 select pg_temp.compte('a3300000-0000-0000-0000-00000000000a');
 set local role authenticated;
-select pg_temp.ok((select count(*) from programmes_bons) = 3, 'l''admin lit les programmes');
+select pg_temp.ok((select count(*) from programmes_bons) = 4, 'l''admin lit les programmes'); -- US-31.4 : + inscription_boutique
 select pg_temp.ok((budget_parrainage() ->> 'utilise')::int = 0, 'budget du parrainage : bons de bienvenue utilisés non comptés');
 reset role;
 select pg_temp.erreur($q$insert into bons (profil_id, origine, programme_id, statut, expire_le) values ('c3300000-0000-0000-0000-000000000002', 'parrainage_filleul', 'f3300000-0000-0000-0000-00000000000a', 'disponible', now())$q$,

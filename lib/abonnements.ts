@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
-import { promoActive } from "./prix";
+import { formaterPrix, promoActive } from "./prix";
 import { villeLue } from "./ville";
 
 /** US-31.2 : suivre une boutique (table abonnements_boutique, fonctions suivre_boutique et ne_plus_suivre). */
@@ -83,7 +83,12 @@ export async function estSuivie(client: Client, boutiqueId: string): Promise<boo
 }
 
 // US-31.3 : compteur de l'espace commerçant (un nombre, jamais de liste ; décision du propriétaire du 10/10).
-export type NombreAbonnes = { total: number; sept_jours: number };
+// US-31.4 : clients inscrits en boutique et, quand le programme est ouvert, bons d'inscription du mois (plafond, part).
+export type NombreAbonnes = {
+  total: number; sept_jours: number; inscrits?: number;
+  bons_inscription_mois?: number | null; plafond_inscriptions_mois?: number | null; montant_bon_inscription?: number | null; part_boutique?: number | null;
+};
+const nombreOuNull = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
 /** null si la lecture échoue (le bloc est alors masqué, l'espace reste utilisable). */
 export async function lireAbonnesBoutique(client: Client): Promise<NombreAbonnes | null> {
@@ -92,13 +97,26 @@ export async function lireAbonnesBoutique(client: Client): Promise<NombreAbonnes
     if (error || !data || typeof data !== "object") return null;
     const objet = data as Record<string, unknown>;
     const total = Number(objet.total), sept = Number(objet.sept_jours);
-    return Number.isFinite(total) && Number.isFinite(sept) ? { total, sept_jours: sept } : null;
+    if (!Number.isFinite(total) || !Number.isFinite(sept)) return null;
+    return { total, sept_jours: sept, inscrits: nombreOuNull(objet.inscrits) ?? 0, bons_inscription_mois: nombreOuNull(objet.bons_inscription_mois),
+      plafond_inscriptions_mois: nombreOuNull(objet.plafond_inscriptions_mois), montant_bon_inscription: nombreOuNull(objet.montant_bon_inscription),
+      part_boutique: nombreOuNull(objet.part_boutique) };
   } catch { return null; }
 }
 
 /** « 12 clients suivent votre boutique · +3 cette semaine » (espace commerçant, en français). */
-export function texteAbonnes({ total, sept_jours }: NombreAbonnes): string {
+export function texteAbonnes({ total, sept_jours, inscrits = 0 }: NombreAbonnes): string {
   if (total <= 0) return "Aucun client ne suit encore votre boutique.";
   const base = total === 1 ? "1 client suit votre boutique" : `${total} clients suivent votre boutique`;
-  return sept_jours > 0 ? `${base} · +${sept_jours} cette semaine` : base;
+  const semaine = sept_jours > 0 ? `${base} · +${sept_jours} cette semaine` : base;
+  // US-31.4 (maquette SuivreBoutique, écran ⑥) : « dont 9 inscrits en boutique ».
+  return inscrits > 0 ? `${semaine} · dont ${inscrits} inscrit${inscrits > 1 ? "s" : ""} en boutique` : semaine;
+}
+
+/** US-31.4 : « Bons de bienvenue des inscrits ce mois : 3 / 20. Votre part : 250 DA par bon utilisé chez vous. » (null : programme fermé). */
+export function texteBonsInscription(a: NombreAbonnes): string | null {
+  if (a.bons_inscription_mois == null || a.montant_bon_inscription == null) return null;
+  const plafond = a.plafond_inscriptions_mois ? ` / ${a.plafond_inscriptions_mois}` : "";
+  const part = a.part_boutique ? ` Votre part : ${formaterPrix(a.part_boutique)} par bon utilisé chez vous (déduite du remboursement).` : "";
+  return `Bons de bienvenue des inscrits ce mois : ${a.bons_inscription_mois}${plafond}.${part}`;
 }

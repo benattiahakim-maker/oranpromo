@@ -16,7 +16,7 @@ import { textesDe } from "@/lib/textes";
 import BoutonSuivre from "@/components/BoutonSuivre";
 import { cookies } from "next/headers";
 import { COOKIE_SUIVRE, estSuivie } from "@/lib/abonnements";
-import { COOKIE_INSCRIPTION } from "@/lib/inscription-boutique";
+import { COOKIE_INSCRIPTION, lireOffreInscription } from "@/lib/inscription-boutique";
 import BienvenueBoutique from "@/components/BienvenueBoutique";
 import AvisBoutique from "@/components/AvisBoutique";
 import NoteBoutique from "@/components/NoteBoutique";
@@ -56,6 +56,8 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
   const magasin = await cookies();
   const inscription = magasin.get(COOKIE_INSCRIPTION)?.value === slug;
   const apresConnexion = !user ? null : inscription ? "inscription" : magasin.get(COOKIE_SUIVRE)?.value === slug ? "suivre" : null;
+  // US-31.4 : bon de bienvenue de l'inscription en boutique, annoncé dans le bandeau si l'offre est ouverte pour cette boutique.
+  const offre = inscription && !user ? await lireOffreInscription(supabase, slug) : null;
   // US-32.3 : note, critères et derniers avis (lecture publique par les fonctions de la base ; sans eux, la vitrine s'affiche).
   const tAvis = textesDe(langue).avis;
   const [resume, derniersAvis] = await Promise.all([
@@ -76,7 +78,7 @@ export default async function Vitrine({ params }: { params: Promise<{ slug: stri
   return <div className="mx-auto w-full max-w-lg pb-10">
     <EnregistrerVue boutiqueId={boutique.id} />
     <EntetePublic /><div className="relative h-11"><PartagerArticle titre={boutique.nom} boutiqueId={boutique.id} libelle={t.partager} /></div>
-    {inscription && !user && <BienvenueBoutique nom={boutique.nom} slug={slug} t={textesDe(langue).suivre} />}
+    {inscription && !user && <BienvenueBoutique nom={boutique.nom} slug={slug} t={textesDe(langue).suivre} offre={offre} langue={langue} />}
     <section className="flex flex-col gap-3 px-6 py-8 text-center">
       <p className="etiquette text-gris">{boutique.quartier}{villeBoutique && ` · ${langue === "ar" ? villeBoutique.nom_ar : villeBoutique.nom}`}</p>
       <h1 dir="auto" className="font-titre break-words text-3xl">{boutique.nom}</h1>

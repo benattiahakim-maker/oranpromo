@@ -223,6 +223,11 @@ export const fr = {
     bienvenueTitre: "Bienvenue chez {nom}",
     bienvenueTexte: "Créez votre compte BleDeal : vous suivez la boutique et vous réservez ses articles en ligne, à payer en boutique.",
     creerCompte: "Créer mon compte",
+    // US-31.4 : bon de bienvenue de l’inscription en boutique (maquette SuivreBoutique, écran ⑧).
+    bonInscription: "Bon de bienvenue de {montant} dès {minimum} d’achat, utilisable dès demain dans cette boutique, tout de suite ailleurs.",
+    bonInscriptionNumero: "Après vérification de votre numéro. Retrait par QR code.",
+    bonDonne: "Votre bon de bienvenue est dans votre compte, « Mes bons ».",
+    bonApresNumero: "Vérifiez votre numéro dans votre compte pour recevoir votre bon de bienvenue.",
   },
   panier: {
     titre: "Mon panier",
@@ -511,6 +516,9 @@ export const fr = {
     raisonVille: "Pas dans cette ville", // 12
     raisonPlafond: "Ce bon n’est plus accepté dans cette boutique pour cette campagne.", // 13
     raisonBoutique: "Cette boutique ne prend plus les bons",
+    // US-31.4 : bon de bienvenue de l’inscription en boutique (conception US-31, module 17).
+    raisonPasAujourdhui: "Dans cette boutique, dès demain",
+    detailInscription: "Chez {boutique} : dès le {date}. Ailleurs : tout de suite.",
     universBon: { femme: "Femme", homme: "Homme", enfant: "Enfant", beaute: "Beauté" },
     bandeau: "{nom} : {montant} offerts dès {minimum} d’achat avec le code {code}, jusqu’au {date}.", // 14
     bandeauSansDate: "{nom} : {montant} offerts dès {minimum} d’achat avec le code {code}.",
@@ -532,6 +540,7 @@ export const fr = {
       univers: "Bon non appliqué : il ne vaut que pour certains articles. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
       ville: "Bon non appliqué : pas dans cette ville. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
       plafond_boutique: "Bon non appliqué : ce bon n’est plus accepté dans cette boutique pour cette campagne. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
+      pas_aujourdhui: "Bon non appliqué : dans la boutique où tu t’es inscrit, ton bon de bienvenue s’utilise dès demain. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
       erreur: "Bon non appliqué. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
     },
   },

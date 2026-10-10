@@ -27,6 +27,7 @@ export default function BoutonSuivre({ boutiqueId, slug, nom, connecte, suivieAu
   const [suivie, setSuivie] = useState(suivieAuDepart);
   const [confirmation, setConfirmation] = useState(false);
   const [erreur, setErreur] = useState<ErreurAbonnement | null>(null);
+  const [bon, setBon] = useState<"donne" | "numero" | null>(null); // US-31.4 : bon de bienvenue de l'inscription en boutique
   const [enCours, demarrer] = useTransition();
   const termine = useRef(false);
 
@@ -34,7 +35,12 @@ export default function BoutonSuivre({ boutiqueId, slug, nom, connecte, suivieAu
     if (!apresConnexion || termine.current) return;
     termine.current = true;
     demarrer(async () => {
-      const resultat = apresConnexion === "inscription" ? await rattacherInscription(slug) : await suivreApresConnexion(slug);
+      if (apresConnexion === "inscription") {
+        const resultat = await rattacherInscription(slug);
+        if (resultat.succes) { setSuivie(true); setBon(resultat.bon ?? null); router.refresh(); } else if (resultat.erreur) setErreur(resultat.erreur);
+        return;
+      }
+      const resultat = await suivreApresConnexion(slug);
       if (resultat.succes) { setSuivie(true); router.refresh(); } else if (resultat.erreur) setErreur(resultat.erreur);
     });
   }, [apresConnexion, slug, router]);
@@ -59,6 +65,7 @@ export default function BoutonSuivre({ boutiqueId, slug, nom, connecte, suivieAu
       </div>
     </div> : suivie ? <button type="button" aria-pressed="true" disabled={enCours} onClick={() => setConfirmation(true)} className={`${classe} border border-noir bg-fond-photo`}>{t.suivie}</button>
       : <button type="button" aria-pressed="false" disabled={enCours} onClick={() => agir(() => suivreBoutique(boutiqueId))} className={`${classe} border border-noir`}>{enCours ? t.enCours : t.suivre}</button>}
+    {bon && <p role="status" className="mt-2 text-sm">{bon === "donne" ? t.bonDonne : t.bonApresNumero}</p>}
     {erreur && <p role="alert" className="mt-2 text-sm text-erreur">{t[erreur]}</p>}
   </div>;
 }

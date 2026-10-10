@@ -128,7 +128,7 @@ export function verifierActionBoutique(actuel: StatutCommande, voulu: StatutComm
 
 export type CommandeRecue = Tables<"commandes"> & { lignes_commande: Tables<"lignes_commande">[];
   /** US-33.4 : nom du bon posé (lu à part) ; absent : « Bon parrainage ». */
-  bon?: { origine: "parrainage_filleul" | "parrainage_parrain" | "bienvenue" | "campagne"; nom_fr: string | null; nom_ar: string | null } | null };
+  bon?: { origine: "parrainage_filleul" | "parrainage_parrain" | "bienvenue" | "campagne" | "inscription_boutique"; nom_fr: string | null; nom_ar: string | null } | null };
 export type VueCommandes = "en_cours" | "terminees";
 export const COMMANDES_PAR_VUE = 100;
 

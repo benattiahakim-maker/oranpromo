@@ -238,6 +238,7 @@ export type Database = {
       }
       bons: {
         Row: {
+          boutique_origine: string | null
           commande_id: string | null
           cree_le: string
           expire_le: string | null
@@ -246,15 +247,18 @@ export type Database = {
           montant: number
           origine: string
           parrainage_id: string | null
+          part_boutique: number
           profil_id: string
           programme_id: string | null
           releve_id: string | null
           statut: string
           univers: string | null
+          utilisable_des: string | null
           utilise_le: string | null
           villes: string[]
         }
         Insert: {
+          boutique_origine?: string | null
           commande_id?: string | null
           cree_le?: string
           expire_le?: string | null
@@ -263,15 +267,18 @@ export type Database = {
           montant?: number
           origine: string
           parrainage_id?: string | null
+          part_boutique?: number
           profil_id: string
           programme_id?: string | null
           releve_id?: string | null
           statut?: string
           univers?: string | null
+          utilisable_des?: string | null
           utilise_le?: string | null
           villes?: string[]
         }
         Update: {
+          boutique_origine?: string | null
           commande_id?: string | null
           cree_le?: string
           expire_le?: string | null
@@ -280,15 +287,24 @@ export type Database = {
           montant?: number
           origine?: string
           parrainage_id?: string | null
+          part_boutique?: number
           profil_id?: string
           programme_id?: string | null
           releve_id?: string | null
           statut?: string
           univers?: string | null
+          utilisable_des?: string | null
           utilise_le?: string | null
           villes?: string[]
         }
         Relationships: [
+          {
+            foreignKeyName: "bons_boutique_origine_fkey"
+            columns: ["boutique_origine"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bons_commande_id_fkey"
             columns: ["commande_id"]
@@ -708,6 +724,7 @@ export type Database = {
           motif: string | null
           numero_commande: number
           origine: string | null
+          part_boutique: number
           programme_id: string | null
           releve_id: string
           remise_le: string
@@ -725,6 +742,7 @@ export type Database = {
           motif?: string | null
           numero_commande: number
           origine?: string | null
+          part_boutique?: number
           programme_id?: string | null
           releve_id: string
           remise_le: string
@@ -742,6 +760,7 @@ export type Database = {
           motif?: string | null
           numero_commande?: number
           origine?: string | null
+          part_boutique?: number
           programme_id?: string | null
           releve_id?: string
           remise_le?: string
@@ -1028,6 +1047,8 @@ export type Database = {
           montant: number
           nom_ar: string
           nom_fr: string
+          part_boutique: number
+          plafond_inscriptions_mois: number | null
           plafond_par_boutique: number | null
           type: string
           univers: string | null
@@ -1047,6 +1068,8 @@ export type Database = {
           montant: number
           nom_ar: string
           nom_fr: string
+          part_boutique?: number
+          plafond_inscriptions_mois?: number | null
           plafond_par_boutique?: number | null
           type: string
           univers?: string | null
@@ -1066,6 +1089,8 @@ export type Database = {
           montant?: number
           nom_ar?: string
           nom_fr?: string
+          part_boutique?: number
+          plafond_inscriptions_mois?: number | null
           plafond_par_boutique?: number | null
           type?: string
           univers?: string | null
@@ -1586,6 +1611,7 @@ export type Database = {
       mots_interdits: { Args: never; Returns: string[] }
       ne_plus_suivre: { Args: { boutique: string }; Returns: boolean }
       noms_programmes_releve: { Args: never; Returns: Json }
+      offre_inscription: { Args: { slug_boutique: string }; Returns: Json }
       parrainage_ouvert: { Args: never; Returns: boolean }
       passer_commande: {
         Args: { boutique: string; lignes: Json; note?: string }
@@ -1695,6 +1721,7 @@ export type Database = {
           signal: string
         }[]
       }
+      signaux_inscriptions: { Args: never; Returns: Json }
       suivre_boutique: { Args: { boutique: string }; Returns: boolean }
       utiliser_bon: {
         Args: { bon?: string; commande: string }

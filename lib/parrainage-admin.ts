@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
 import { MINIMUM_PREMIERE_COMMANDE, moisAlger, nomMois } from "./bons";
-import { origineLigne } from "./bons-boutique";
+import { aRembourserLigne, origineLigne } from "./bons-boutique";
 
 // US-27.5 : administration du parrainage (budget, parrainages et signaux, relevés des boutiques, export CSV).
 // Les règles (budget, annulation, exclusion, relevé payé figé…) sont dans la base ; ici : lecture, signaux, mise en forme.
@@ -214,6 +214,8 @@ export type LigneReleveAdmin = {
   commande: { cree_le: string; prete_le: string | null; terminee_le: string | null } | null;
   /** US-33.5 : origine du bon (« Parrainage », « Bienvenue », nom de la campagne). */
   origine?: string | null; programme_id?: string | null; libelle_origine?: string;
+  /** US-31.4 : part de la boutique d'origine (bon d'inscription utilisé chez elle), non remboursée. */
+  part_boutique?: number | null;
 };
 export type ReleveAdmin = {
   id: string; mois: string; nombre: number; montant: number; statut: string; cloture_le: string | null; paye_le: string | null; reference_paiement: string | null;
@@ -240,7 +242,7 @@ export async function listerReleves(client: Client, mois: string, boutique?: str
   const releves = (data ?? []) as unknown as Omit<ReleveAdmin, "lignes">[];
   if (!releves.length) return [];
   const { data: lignes, error: erreurLignes } = await client.from("lignes_releve")
-    .select("id, releve_id, numero_commande, remise_le, mode_remise, client, total_commande, montant, statut, motif, origine, programme_id, commande:commandes!lignes_releve_commande_id_fkey(cree_le, prete_le, terminee_le)")
+    .select("id, releve_id, numero_commande, remise_le, mode_remise, client, total_commande, montant, statut, motif, origine, programme_id, part_boutique, commande:commandes!lignes_releve_commande_id_fkey(cree_le, prete_le, terminee_le)")
     .in("releve_id", releves.map(r => r.id)).order("remise_le", { ascending: true });
   if (erreurLignes) throw new Error("Impossible de charger les relevés. Réessayez.");
   const toutes = avecOrigine((lignes ?? []) as unknown as LigneReleveAdmin[], await lireNomsProgrammes(client));
@@ -251,7 +253,7 @@ export async function listerReleves(client: Client, mois: string, boutique?: str
 /** Lignes mises de côté, tous mois confondus (elles attendent une décision). */
 export async function listerLignesDeCote(client: Client): Promise<(LigneReleveAdmin & { boutique: { nom: string } | null })[]> {
   const { data, error } = await client.from("lignes_releve")
-    .select("id, releve_id, numero_commande, remise_le, mode_remise, client, total_commande, montant, statut, motif, origine, programme_id, commande:commandes!lignes_releve_commande_id_fkey(cree_le, prete_le, terminee_le), boutique:boutiques!lignes_releve_boutique_id_fkey(nom)")
+    .select("id, releve_id, numero_commande, remise_le, mode_remise, client, total_commande, montant, statut, motif, origine, programme_id, part_boutique, commande:commandes!lignes_releve_commande_id_fkey(cree_le, prete_le, terminee_le), boutique:boutiques!lignes_releve_boutique_id_fkey(nom)")
     .eq("statut", "de_cote").order("remise_le", { ascending: true });
   if (error) throw new Error("Impossible de charger les lignes mises de côté. Réessayez.");
   return avecOrigine((data ?? []) as unknown as (LigneReleveAdmin & { boutique: { nom: string } | null })[], await lireNomsProgrammes(client));
@@ -274,7 +276,8 @@ export function signauxReleve(r: Pick<ReleveAdmin, "montant" | "lignes">): strin
 }
 
 // ---------- Export CSV ----------
-export const COLONNES_CSV = ["mois", "boutique", "slug", "numero_commande", "date_remise", "mode_remise", "client", "total_commande", "bon", "a_rembourser", "etat_ligne", "etat_releve", "reference_paiement", "origine"] as const;
+// US-31.4 : « part_boutique » (en dernier, l'ordre des colonnes existantes ne change pas) ; a_rembourser = bon − part_boutique.
+export const COLONNES_CSV = ["mois", "boutique", "slug", "numero_commande", "date_remise", "mode_remise", "client", "total_commande", "bon", "a_rembourser", "etat_ligne", "etat_releve", "reference_paiement", "origine", "part_boutique"] as const;
 
 /** Champ CSV : apostrophe devant =, +, -, @ (formules Excel), guillemets si ; " ou retour à la ligne. */
 export function champCsv(valeur: string | number | null | undefined): string {
@@ -292,11 +295,11 @@ export function csvReleves(releves: Pick<ReleveAdmin, "mois" | "statut" | "refer
     const slug = r.boutique?.slug ?? "";
     let totalBons = 0, totalARembourser = 0;
     for (const l of r.lignes) {
-      const aRembourser = l.statut === "a_rembourser" ? l.montant : 0;
+      const aRembourser = l.statut === "a_rembourser" ? aRembourserLigne(l) : 0;
       totalBons += l.montant; totalARembourser += aRembourser;
-      lignes.push([mois, nom, slug, l.numero_commande, dateHeureAlger(l.remise_le), l.mode_remise, l.client, l.total_commande, l.montant, aRembourser, l.statut, r.statut, r.reference_paiement, l.libelle_origine ?? origineLigne(l, new Map())].map(champCsv).join(";"));
+      lignes.push([mois, nom, slug, l.numero_commande, dateHeureAlger(l.remise_le), l.mode_remise, l.client, l.total_commande, l.montant, aRembourser, l.statut, r.statut, r.reference_paiement, l.libelle_origine ?? origineLigne(l, new Map()), l.part_boutique ?? 0].map(champCsv).join(";"));
     }
-    lignes.push([mois, nom, slug, "TOTAL", "", "", "", "", totalBons, totalARembourser, "", r.statut, r.reference_paiement, ""].map(champCsv).join(";"));
+    lignes.push([mois, nom, slug, "TOTAL", "", "", "", "", totalBons, totalARembourser, "", r.statut, r.reference_paiement, "", ""].map(champCsv).join(";"));
   }
   return `\uFEFF${lignes.join("\r\n")}\r\n`;
 }
@@ -306,13 +309,13 @@ export function nomFichierCsv(mois: string): string { return `bledeal-bons-${par
 // ---------- Boutique (/espace) ----------
 export type ReleveBoutique = Pick<ReleveAdmin, "id" | "mois" | "nombre" | "montant" | "statut" | "paye_le" | "reference_paiement"> & {
   /** US-33.4 : origine du bon et programme (vides pour les lignes d'avant US-33). */
-  lignes: (Pick<LigneReleveAdmin, "id" | "numero_commande" | "remise_le" | "montant" | "statut"> & { origine?: string | null; programme_id?: string | null })[];
+  lignes: (Pick<LigneReleveAdmin, "id" | "numero_commande" | "remise_le" | "montant" | "statut"> & { origine?: string | null; programme_id?: string | null; part_boutique?: number | null })[];
 };
 
 /** Relevés de la boutique du commerçant (RLS : sa boutique seulement), du plus récent au plus ancien. */
 export async function lireRelevesBoutique(client: Client, boutiqueId: string): Promise<ReleveBoutique[]> {
   const { data, error } = await client.from("releves_bons")
-    .select("id, mois, nombre, montant, statut, paye_le, reference_paiement, lignes:lignes_releve!lignes_releve_releve_id_fkey(id, numero_commande, remise_le, montant, statut, origine, programme_id)")
+    .select("id, mois, nombre, montant, statut, paye_le, reference_paiement, lignes:lignes_releve!lignes_releve_releve_id_fkey(id, numero_commande, remise_le, montant, statut, origine, programme_id, part_boutique)")
     .eq("boutique_id", boutiqueId).order("mois", { ascending: false }).limit(12);
   if (error) throw new Error("Impossible de charger vos bons parrainage. Réessayez.");
   return (data ?? []) as unknown as ReleveBoutique[];

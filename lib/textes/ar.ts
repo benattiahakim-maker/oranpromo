@@ -219,6 +219,11 @@ export const ar: Textes = {
     bienvenueTitre: "مرحبا بيك عند {nom}",
     bienvenueTexte: "دير حسابك في BleDeal: تتبّع الحانوت وتحجز السلعة نتاعو من التيليفون، وتخلّص في الحانوت.",
     creerCompte: "دير حسابي",
+    // US-31.4 : nouveaux, à valider.
+    bonInscription: "بون مرحبا تاع {montant} كي تشري {minimum} ولا كثر، يخدم من غدوة في هاد الحانوت، ودروك في الحوانت الأخرين.", // à valider
+    bonInscriptionNumero: "من بعد ما تأكّد النمرة نتاعك. تدّي بالـ QR code.", // à valider
+    bonDonne: "بون مرحبا راهو في الحساب نتاعك، « البونات نتاعي ».", // à valider
+    bonApresNumero: "أكّد النمرة نتاعك في الحساب باش يجيك بون مرحبا.", // à valider
   },
   panier: {
     titre: "السلة ديالي",
@@ -502,6 +507,9 @@ export const ar: Textes = {
     raisonVille: "ماشي في هاد المدينة", // 12
     raisonPlafond: "هاد البون ما بقاش يتقبل في هاد الحانوت لهاد البروموسيون.", // 13
     raisonBoutique: "هاد الحانوت ما بقاش ياخذ البونات", // à valider
+    // US-31.4 : nouveaux, à valider.
+    raisonPasAujourdhui: "في هاد الحانوت، من غدوة", // à valider
+    detailInscription: "عند {boutique} : من {date}. في حوانت أخرين : دروك.", // à valider
     universBon: { femme: "النسا", homme: "الرجال", enfant: "الذراري", beaute: "التجميل" }, // « النسا » : n° 11 ; autres à valider
     bandeau: "{nom} : {montant} هدية كي تشري {minimum} ولا كثر بالكود {code}، حتى {date}.", // 14
     bandeauSansDate: "{nom} : {montant} هدية كي تشري {minimum} ولا كثر بالكود {code}.",
@@ -523,6 +531,7 @@ export const ar: Textes = {
       univers: "البون ما تحسبش: يخدم غير على شي سلعة. الطلب يبقى بالسومة الكاملة؛ تقدر تلغيه إلا حبيت.", // à valider
       ville: "البون ما تحسبش: ماشي في هاد المدينة. الطلب يبقى بالسومة الكاملة؛ تقدر تلغيه إلا حبيت.", // à valider
       plafond_boutique: "البون ما تحسبش: هاد البون ما بقاش يتقبل في هاد الحانوت لهاد البروموسيون. الطلب يبقى بالسومة الكاملة؛ تقدر تلغيه إلا حبيت.", // à valider
+      pas_aujourdhui: "البون ما تحسبش: في الحانوت اللي تسجلت فيه، بون مرحبا يخدم من غدوة. الطلب يبقى بالسومة الكاملة؛ تقدر تلغيه إلا حبيت.", // à valider
       erreur: "البون ما تحسبش. الطلب يبقى بالسومة الكاملة؛ تقدر تلغيه إلا حبيت.",
     },
   },

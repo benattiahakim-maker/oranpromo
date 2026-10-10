@@ -10,7 +10,7 @@ import { fr } from "./textes/fr";
 import type { fr as Fr } from "./textes/fr";
 
 type Client = SupabaseClient<Database>;
-const ORIGINES: readonly OrigineBon[] = ["parrainage_filleul", "parrainage_parrain", "bienvenue", "campagne"];
+const ORIGINES: readonly OrigineBon[] = ["parrainage_filleul", "parrainage_parrain", "bienvenue", "campagne", "inscription_boutique"];
 
 /** Bon posé sur une commande : origine et nom du programme (vide pour le parrainage et la bienvenue). */
 export type NomBon = { origine: OrigineBon; nom_fr: string | null; nom_ar: string | null };
@@ -77,11 +77,19 @@ export async function lireNomsProgrammesReleve(client: Client): Promise<Map<stri
   return noms;
 }
 
-type LigneOrigine = { origine?: string | null; programme_id?: string | null; montant: number; statut: string };
+/** part_boutique (US-31.4) : part payée par la boutique d'origine d'un bon d'inscription, non remboursée. */
+type LigneOrigine = { origine?: string | null; programme_id?: string | null; montant: number; statut: string; part_boutique?: number | null };
+
+/** US-31.4 : ce que BleDeal rembourse pour une ligne (le bon moins la part de la boutique d'origine). */
+export function aRembourserLigne(l: Pick<LigneOrigine, "montant" | "part_boutique">): number {
+  return Math.max(0, l.montant - Math.max(0, l.part_boutique ?? 0));
+}
 
 /** Origine d'une ligne du relevé : « Parrainage », « Bienvenue », « Aïd 2026 » (nom de la campagne). */
 export function origineLigne(l: Pick<LigneOrigine, "origine" | "programme_id">, noms: Map<string, string>): string {
   if (l.origine === "bienvenue") return "Bienvenue";
+  // US-31.4 : bon de bienvenue de l'inscription en boutique.
+  if (l.origine === "inscription_boutique") return "Inscription en boutique";
   if (l.origine === "campagne") return (l.programme_id && noms.get(l.programme_id)) || "Campagne";
   // US-32.5 (bon offert pour un avis) : origine « avis » prévue par US-33.5.
   if (l.origine === "avis") return (l.programme_id && noms.get(l.programme_id)) || "Avis";
@@ -95,7 +103,7 @@ export function totauxParOrigine(lignes: LigneOrigine[], noms: Map<string, strin
     if (l.statut !== "a_rembourser") continue;
     const origine = origineLigne(l, noms);
     const t = totaux.get(origine) ?? { origine, nombre: 0, montant: 0 };
-    t.nombre += 1; t.montant += l.montant; totaux.set(origine, t);
+    t.nombre += 1; t.montant += aRembourserLigne(l); totaux.set(origine, t);
   }
   return [...totaux.values()].sort((a, b) => b.montant - a.montant || a.origine.localeCompare(b.origine, "fr"));
 }
