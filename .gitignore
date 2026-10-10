@@ -43,5 +43,5 @@ next-env.d.ts
 # exemple de configuration (sans secrets)
 !.env.example
 
-# prompt et journal de Codex (lancer-codex.bat)
+# ancien dossier de travail de Codex (plus utilisé)
 /.codex-tache/
