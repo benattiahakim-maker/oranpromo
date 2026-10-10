@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=375">
+<title>BleDeal — Conditions, conditions commerçants et confidentialité (US-34, à valider)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&amp;family=Jost:wght@300;400;500&amp;family=Noto+Naskh+Arabic:wght@400;500&amp;family=Tajawal:wght@300;400;500&amp;display=swap">
+<style>
+body{margin:0;background:#EDEDED}
+.col{display:flex;flex-direction:column;align-items:flex-start;gap:0;padding-bottom:30px}
+.lbl{width:375px;box-sizing:border-box;padding:18px 16px 10px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:1.5px;color:#3A3A3A}
+.ecran{width:375px;box-sizing:border-box;background:#FFF;color:#0A0A0A;overflow:hidden;position:relative}
+.ent{display:flex;justify-content:space-between;align-items:center;gap:4px;padding:14px 16px;border-bottom:1px solid #E6E6E6}
+.logoville{display:flex;align-items:baseline;gap:10px}
+.logo{font-family:'Bodoni Moda',serif;font-size:21px;letter-spacing:.5px}
+.ville{font-size:13px;border-bottom:1px solid #0A0A0A;min-height:28px;display:inline-flex;align-items:center;gap:3px}
+.nav{display:flex;align-items:center;gap:10px}
+.ico{font-size:16px}
+.et{font-size:10.5px;letter-spacing:1.6px;text-transform:uppercase}
+[dir=rtl] .et{letter-spacing:0;font-size:13px;text-transform:none}
+.univ{display:flex;justify-content:center;gap:24px;padding:12px;border-bottom:1px solid #E6E6E6;font-size:11px;letter-spacing:2px}
+[dir=rtl] .univ{letter-spacing:0;font-size:14px}
+.hero{height:330px;background-size:cover;background-position:50% 20%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:12px;padding:0 20px 34px;color:#FFF;text-align:center;position:relative}
+.h1{font-family:'Bodoni Moda',serif;font-weight:400;font-size:34px;margin:0}
+[dir=rtl] .h1,[dir=rtl] .h2,[dir=rtl] .bt{font-family:'Noto Naskh Arabic',serif}
+.st{margin:0}
+.btnb{background:#FFF;color:#0A0A0A;padding:14px 26px;font-size:11px;letter-spacing:2px}
+[dir=rtl] .btnb{letter-spacing:0;font-size:14px}
+.cred{position:absolute;bottom:6px;right:8px;font-size:9px;opacity:.85}
+[dir=rtl] .cred{right:auto;left:8px}
+.bloc{margin:20px 20px 0;border:1px solid #0A0A0A;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.bt{display:block;font-family:'Bodoni Moda',serif;font-size:22px}.bs{display:block;font-size:13px;color:#6B6B6B}
+.sec{display:flex;justify-content:space-between;padding:26px 20px 12px}.u{text-decoration:underline}
+.grille{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px 20px}
+.ph{height:150px;background:#F3F2EF}.t{margin:8px 0 2px;font-size:14px}.p{margin:0;font-size:13px}.p s{color:#8A8A8A;margin-right:6px}.q{margin:2px 0 0;font-size:11px;color:#6B6B6B}
+.pad{padding:18px 20px 22px}.pad2{padding:14px 20px}
+.g{color:#6B6B6B}.s{font-size:14px;line-height:1.5}.xs{font-size:12px}.s2{font-size:13px}
+.h2{font-family:'Bodoni Moda',serif;font-weight:400;font-size:28px;margin:4px 0 8px}.m0{margin:2px 0 0;font-size:24px}
+.btno{display:inline-flex;align-items:center;min-height:44px;border:1px solid #0A0A0A;padding:0 16px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;margin:6px 0 4px}
+[dir=rtl] .btno{letter-spacing:0;font-size:14px}
+.msg{border:1px solid #E6E6E6;padding:10px 12px;font-size:14px;margin:10px 0 0}
+.liste{list-style:none;margin:12px 0 10px;padding:0;border-top:1px solid #E6E6E6}
+.vl{display:flex;justify-content:space-between;align-items:center;min-height:60px;border-bottom:1px solid #E6E6E6;gap:8px}
+.vl.sel{background:#F6F6F6;padding:0 10px;margin:0 -10px}
+.vn{display:block;font-size:17px}.vc{display:block;font-size:12px;color:#6B6B6B}
+.carte{height:300px;background:#EEF0F1;position:relative;border-top:1px solid #E6E6E6;border-bottom:1px solid #E6E6E6;background-image:linear-gradient(#e3e6e8 1px,transparent 1px),linear-gradient(90deg,#e3e6e8 1px,transparent 1px);background-size:40px 40px}
+.pin{position:absolute;background:#0A0A0A;color:#FFF;font-size:11px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.cadre{position:absolute;inset:14px;border:1px dashed #8A8A8A;font-size:10px;color:#6B6B6B;padding:4px}
+.filtres{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 16px}.filtres span{border:1px solid #E6E6E6;padding:8px 10px;font-size:13px}
+label.et{display:block;margin-top:14px}.champ{display:block;border:1px solid #E6E6E6;min-height:44px;line-height:44px;padding:0 12px;font-size:15px;letter-spacing:0;text-transform:none;margin-top:6px}
+.err{font-size:14px;margin:8px 0 0;color:#A31F1F}
+.btnb2{display:inline-flex;align-items:center;min-height:44px;background:#0A0A0A;color:#FFF;padding:0 18px;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-top:16px}
+.btno2{display:inline-flex;align-items:center;min-height:44px;border:1px solid #0A0A0A;padding:0 18px;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-top:16px}
+.tog{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;border:1px solid #0A0A0A;padding:6px 10px;min-width:70px;text-align:center}.tog.on{background:#0A0A0A;color:#FFF}
+.conf{border:1px solid #0A0A0A;padding:12px 14px;font-size:14px}.conf p{margin:0}
+.wa{background:#EFEAE2}.wa .et{margin:14px 0 6px}
+.bulle{background:#FFF;padding:10px 12px;font-size:14px;line-height:1.45;max-width:300px}.bulle.moi{background:#D9FDD3;margin-left:auto}
+.bout{display:block;border-top:1px solid #E6E6E6;margin-top:8px;padding-top:8px;text-align:center;color:#0A7CFF}
+.og{background:#FFF;max-width:300px}.ogimg{height:150px;background:#F3F2EF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.ogq{font-size:10px;letter-spacing:3px;color:#6F6F6F}.ogn{font-family:'Bodoni Moda',serif;font-size:24px}.ogm{font-family:'Bodoni Moda',serif;font-size:13px}
+.ogt{padding:8px 10px;font-size:13px}
+
+.bord{border:1px solid #0A0A0A;padding:12px 14px;margin:12px 0 0}
+.ligne{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;border-bottom:1px solid #E6E6E6;font-size:14px}
+.case{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;margin:12px 0 0}
+.case i{flex:none;width:18px;height:18px;border:1px solid #0A0A0A;display:inline-block;margin-top:2px;font-style:normal;text-align:center;line-height:18px;font-size:12px}
+.case i.on{background:#0A0A0A;color:#FFF}
+.etoiles{font-size:20px;letter-spacing:4px}[dir=rtl] .etoiles{letter-spacing:4px}
+.qr{width:120px;height:120px;border:1px solid #0A0A0A;background-image:linear-gradient(45deg,#0A0A0A 25%,transparent 25%,transparent 75%,#0A0A0A 75%),linear-gradient(45deg,#0A0A0A 25%,transparent 25%,transparent 75%,#0A0A0A 75%);background-size:16px 16px;background-position:0 0,8px 8px;margin:12px auto}
+.puce{display:inline-block;border:1px solid #0A0A0A;padding:2px 8px;font-size:11px;letter-spacing:1px;text-transform:uppercase}
+[dir=rtl] .puce{letter-spacing:0;font-size:12px}
+.doc{font-size:13px;line-height:1.55}.doc h3{font-size:15px;margin:16px 0 4px;font-weight:500}.doc p{margin:0 0 8px}
+.avert{border:1px solid #0A0A0A;padding:10px 12px;font-size:13px;margin:0 0 12px}
+.ar{font-family:'Tajawal','Noto Naskh Arabic',sans-serif}
+</style>
+</helmet>
+<!-- US-34 (conditions clients, conditions commerçants, confidentialité, acceptation et versions) : conception, à valider par le propriétaire ; textes à faire relire par un avocat (brouillons dans docs/juridique/). Téléphone, 375 px. ① à ④ et ⑥ client en français, ⑤ espace commerçant, ⑦ et ⑧ en arabe (de droite à gauche). Date de version (1/12/2026) : exemple. Textes arabes de l’interface à valider (tableau du module 20) ; textes juridiques en arabe : traduction professionnelle (question 4). -->
+<div class="col">
+<div class="lbl">① /COMPTE/CONNEXION · CODE REÇU · CASE OBLIGATOIRE (NON COCHÉE)</div><div class="ecran" lang="fr" dir="ltr" style="font-family:'Jost',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">Carte</span><span class="ico">👜</span><span class="et"><b>FR</b> | عربي</span></nav></header><main class="pad"><h1 class="h2">Connexion</h1><label class="et">Code reçu sur WhatsApp<span class="champ">• • • • • •</span></label><div class="case"><i></i><span>J’accepte les <span class="u">conditions d’utilisation</span> et la <span class="u">politique de confidentialité</span>, y compris l’utilisation de prestataires situés hors d’Algérie (Supabase, Vercel, WhatsApp…).</span></div><p role="alert" class="err">Cochez la case pour créer votre compte.</p><span class="btnb2">Valider</span><p class="g xs" style="margin-top:14px">Les messages publicitaires sont proposés à part, plus tard (US-31.5), jamais dans cette case.</p></main><footer class="pad2" style="border-top:1px solid #E6E6E6;font-size:12px;color:#6B6B6B">Conditions · Commerçants · Confidentialité · Contact</footer></div>
+<div class="lbl">② /PANIER · NOUVELLE VERSION IMPORTANTE</div><div class="ecran" lang="fr" dir="ltr" style="font-family:'Jost',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">Carte</span><span class="ico">👜</span><span class="et"><b>FR</b> | عربي</span></nav></header><main class="pad"><h1 class="h2">Panier</h1><p class="s" style="margin:0">Boutique Nour · 2 articles · <b>4 600 DA</b></p><div class="bord"><p class="s" style="margin:0"><b>Nos conditions ont changé le 1/12/2026</b></p><p class="g s2" style="margin:6px 0 0">Résumé : nouveaux bons de campagne ; avis clients. <span class="u">Lire les conditions</span></p><div class="case"><i></i><span>J’accepte les conditions d’utilisation et la politique de confidentialité (version du 1/12/2026).</span></div></div><span class="btnb2">Accepter et commander</span></main></div>
+<div class="lbl">③ /CONDITIONS · PAGE PUBLIQUE (TEXTE RELU PAR L’AVOCAT)</div><div class="ecran" lang="fr" dir="ltr" style="font-family:'Jost',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">Carte</span><span class="ico">👜</span><span class="et"><b>FR</b> | عربي</span></nav></header><main class="pad doc"><p class="et g">/ conditions</p><h1 class="h2">Conditions d’utilisation</h1><p class="g s2">Version du 1/12/2026 · <span class="u">Versions précédentes</span></p><div class="avert">Maquette : le texte vient de docs/juridique/ seulement après relecture d’un avocat.</div><h3>2. Ce que fait BleDeal, et ce qu’il ne fait pas</h3><p><b>BleDeal ne vend rien.</b> Le vendeur est la boutique : elle fixe ses prix, ses articles et ses promos, et elle seule conclut la vente avec vous, en boutique.</p><p>Vous payez en boutique, en espèces, au moment du retrait.</p><h3>6. Commandes non retirées et blocage</h3><p>Au 5e « client pas venu », le compte est bloqué : il ne peut plus commander.</p></main><footer class="pad2" style="border-top:1px solid #E6E6E6;font-size:12px;color:#6B6B6B">Conditions · Commerçants · Confidentialité · Contact</footer></div>
+<div class="lbl">④ /CONFIDENTIALITE · EXTRAIT</div><div class="ecran" lang="fr" dir="ltr" style="font-family:'Jost',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">Carte</span><span class="ico">👜</span><span class="et"><b>FR</b> | عربي</span></nav></header><main class="pad doc"><p class="et g">/ confidentialite</p><h1 class="h2">Confidentialité</h1><p class="g s2">Version du 1/12/2026</p><h3>3. Qui voit vos données</h3><p>La boutique de votre commande : votre nom et votre numéro, pour cette commande seulement. Le public : votre prénom et l’initiale de votre nom sur vos avis.</p><h3>7. Vos droits</h3><p>Accès, rectification ou effacement gratuit sous 10 jours, opposition, retrait du consentement. Écrire à [e-mail]. Réclamation possible auprès de l’ANPDP.</p><h3>8. Prestataires hors d’Algérie</h3><p>Supabase (Paris), Vercel, Meta (WhatsApp), Twilio, Cloudflare, CARTO, Anthropic.</p></main><footer class="pad2" style="border-top:1px solid #E6E6E6;font-size:12px;color:#6B6B6B">Conditions · Commerçants · Confidentialité · Contact</footer></div>
+<div class="lbl">⑤ /ESPACE/CONDITIONS · AVANT D’ENTRER DANS L’ESPACE</div><div class="ecran" lang="fr" dir="ltr" style="font-family:'Jost',sans-serif"><header class="ent"><span class="logo" dir="ltr">BleDeal</span><span class="et g">Espace</span></header><main class="pad"><h1 class="h2">Conditions commerçants</h1><p class="g s2">Version du 1/12/2026</p><ol class="s" style="padding-left:18px;margin:12px 0 0;line-height:1.5"><li>BleDeal ne vend rien : vous vendez et encaissez en boutique.</li><li>Articles réels et authentiques (parfums, maquillage) ; pas de produits interdits.</li><li>Données des clients : pour la commande seulement.</li><li>Bons : déduits en caisse, remboursés chaque mois, QR code obligatoire.</li><li>Modération : article masqué ou boutique suspendue en cas d’abus.</li></ol><p class="s"><span class="u">Lire le texte entier</span></p><div class="case"><i></i><span>J’ai lu et j’accepte les conditions commerçants (version du 1/12/2026).</span></div><span class="btnb2">Accepter</span> <span class="btno2">Se déconnecter</span></main></div>
+<div class="lbl">⑥ /COMPTE · MES DONNÉES · FERMER MON COMPTE (US-34.4)</div><div class="ecran" lang="fr" dir="ltr" style="font-family:'Jost',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">Carte</span><span class="ico">👜</span><span class="et"><b>FR</b> | عربي</span></nav></header><main class="pad"><p class="et g">/ compte</p><h1 class="h2">Mes données</h1><ul class="liste"><li class="ligne"><span>Numéro WhatsApp</span><span>+213 5•• •• •• 12</span></li><li class="ligne"><span>Commandes</span><span>7</span></li><li class="ligne"><span>Bons</span><span>2</span></li><li class="ligne"><span>Avis</span><span>3</span></li><li class="ligne"><span>Conditions acceptées</span><span>1/12/2026</span></li><li class="ligne"><span>Alertes WhatsApp</span><span>non</span></li></ul><span class="btno2">Fermer mon compte</span><div class="conf" style="margin-top:12px"><p><b>Fermer votre compte ?</b> Vos commandes passées restent gardées [x] ans pour la comptabilité.</p><span class="btnb2">Fermer</span> <span class="btno2">Annuler</span></div></main></div>
+<div class="lbl">⑦ INSCRIPTION ET PANIER EN ARABE</div><div class="ecran" lang="ar" dir="rtl" style="font-family:'Tajawal','Noto Naskh Arabic',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">خريطة</span><span class="ico">👜</span><span class="et">FR | <b>عربي</b></span></nav></header><main class="pad"><label class="et">الكود اللي جاك في الواتساب<span class="champ">• • • • • •</span></label><div class="case"><i></i><span>نقبل <span class="u">شروط الاستعمال</span> و<span class="u">سياسة الخصوصية</span>، حتى استعمال شركات برّا الدزاير (Supabase، Vercel، WhatsApp…).</span></div><p class="err">علّم على الخانة باش تدير الحساب نتاعك.</p><div class="bord"><p class="s" style="margin:0"><b>الشروط نتاعنا تبدلو نهار 1/12/2026</b></p></div><span class="btnb2">نقبل ونطلب</span></main><footer class="pad2" style="border-top:1px solid #E6E6E6;font-size:13px;color:#6B6B6B">الشروط · التجار · الخصوصية · اتصل بنا</footer></div>
+<div class="lbl">⑧ /CONDITIONS EN ARABE · TRADUCTION JURIDIQUE EN ATTENTE</div><div class="ecran" lang="ar" dir="rtl" style="font-family:'Tajawal','Noto Naskh Arabic',sans-serif"><header class="ent"><span class="logoville"><span class="logo" dir="ltr">BleDeal</span></span><nav class="nav"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg><span class="et">خريطة</span><span class="ico">👜</span><span class="et">FR | <b>عربي</b></span></nav></header><main class="pad doc"><h1 class="h2">شروط الاستعمال</h1><p class="g s2">النسخة تاع 1/12/2026 · <span class="u">النسخ اللي فاتو</span></p><div class="avert">الترجمة بالعربية تاع هاد النص جاية قريب. النص اللي تحت هو النسخة بالفرنسية.</div><div dir="ltr" lang="fr" style="text-align:left;font-family:'Jost',sans-serif"><h3>2. Ce que fait BleDeal, et ce qu’il ne fait pas</h3><p><b>BleDeal ne vend rien.</b> Le vendeur est la boutique…</p></div><p class="s" style="margin-top:14px">المعلومات نتاعي · سكّر الحساب نتاعي</p></main><footer class="pad2" style="border-top:1px solid #E6E6E6;font-size:13px;color:#6B6B6B">الشروط · التجار · الخصوصية · اتصل بنا</footer></div>
+</div>
+</x-dc>
+</body>
+</html>
