@@ -465,6 +465,21 @@ export const fr = {
       erreur: "Bon non appliqué. Ta commande reste au prix plein ; tu peux l’annuler si tu le souhaites.",
     },
   },
+  juridique: {
+    // US-34.1 : pied de page et pages juridiques (textes provisoires, décision du propriétaire du 10/10).
+    piedDePage: "Informations juridiques",
+    conditions: "Conditions",
+    commercants: "Commerçants",
+    confidentialite: "Confidentialité",
+    titres: {
+      conditions: "Conditions d’utilisation",
+      conditions_commercants: "Conditions commerçants",
+      confidentialite: "Politique de confidentialité",
+    },
+    version: "Version du {date}",
+    provisoire: "Version provisoire, en cours de relecture juridique.",
+    traductionAttente: "La traduction arabe de ce texte arrive bientôt. Le texte ci-dessous est la version française.",
+  },
 };
 
 export type Textes = typeof fr;

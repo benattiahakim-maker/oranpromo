@@ -1,6 +1,6 @@
 # Politique de confidentialité de BleDeal — BROUILLON
 
-> **Brouillon à faire relire par un avocat algérien avant toute mise en ligne.** Version proposée : `[AAAA-MM-JJ]`. Sources : loi 18-07 (modifiée par la loi 25-11) et loi 18-05, voir `docs/juridique/README.md`. **Avant de traiter des données sur le site ouvert au public, BleDeal doit déposer une déclaration préalable auprès de l'ANPDP (loi 18-07, art. 12 à 14) et régler la question des transferts vers l'étranger (art. 44 et 45) : voir le point 8.**
+> **Version provisoire, en cours de relecture juridique** : publiée le 10/10/2026 avec ce bandeau (décision du propriétaire), à faire relire par un avocat algérien. Version : 2026-10-10. Sources : loi 18-07 (modifiée par la loi 25-11) et loi 18-05, voir `docs/juridique/README.md`. **Avant de traiter des données sur le site ouvert au public, BleDeal doit déposer une déclaration préalable auprès de l'ANPDP (loi 18-07, art. 12 à 14) et régler la question des transferts vers l'étranger (art. 44 et 45) : voir le point 8.**
 
 ## 1. Responsable du traitement
 

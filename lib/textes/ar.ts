@@ -459,4 +459,18 @@ export const ar: Textes = {
       erreur: "البون ما تحسبش. الطلب يبقى بالسومة الكاملة؛ تقدر تلغيه إلا حبيت.",
     },
   },
+  juridique: {
+    piedDePage: "معلومات قانونية",
+    conditions: "الشروط",
+    commercants: "التجار",
+    confidentialite: "الخصوصية",
+    titres: {
+      conditions: "شروط الاستعمال",
+      conditions_commercants: "شروط التجار",
+      confidentialite: "سياسة الخصوصية",
+    },
+    version: "النسخة تاع {date}",
+    provisoire: "نسخة مؤقتة، راهي في المراجعة القانونية.",
+    traductionAttente: "الترجمة بالعربية تاع هاد النص جاية قريب. النص اللي تحت هو النسخة بالفرنسية.",
+  },
 };

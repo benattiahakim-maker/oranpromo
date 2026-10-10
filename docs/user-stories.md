@@ -1186,6 +1186,12 @@ L'espace commerçant et l'admin restent en français.
 5. **Tri « Mieux notées »** : dès le lancement, ou quand assez de boutiques ont 3 avis ?
 6. Le client peut-il **modifier** son avis (et la boutique sa réponse) ? Recommandé : non dans la première version (simple ; un avis faux se signale).
 
+### Décisions du propriétaire (10/10 à 9 h 24, « coder avec ces valeurs par défaut »)
+1. Avis **seulement après un retrait par QR code** (pas par code à 6 chiffres ni « sans QR code »), **dans les 14 jours**.
+2. Note moyenne affichée **à partir de 3 avis** publiés.
+3. Bon « avis » : **150 DA dès 1 500 DA d'achat** ; au plus **2 bons « avis » par mois et par numéro** vérifié.
+4. Ordre de code : après US-34 et US-33. Autres questions (tri « Mieux notées », modification d'un avis) : recommandations de la conception (tri dès le lancement, boutiques sous le seuil à la fin ; pas de modification).
+
 ## Module 19 — Bons de réduction : 1re commande et campagnes (après le MVP)
 
 Source : carte Trello « Marketing · Bons de réduction (1re commande + campagnes Aïd / rentrée) » (bons payés par BleDeal, option A ; bon de bienvenue ; bons de campagne de 500 / 1 000 DA avec code, minimum d'achat, plafonds, dates, univers ; relevé mensuel ; clause dans les conditions commerçants ; à vérifier avec le comptable). Demande du 10/10 : **conception seulement** : aucun code, aucune migration. Conception technique : `docs/architecture.md`, section « Bons de réduction : bienvenue et campagnes (US-33) » ; maquette `docs/maquettes/BonsReduction.dc.html` (375 px, français et arabe de droite à gauche). **À valider par le propriétaire** (questions en fin de module).
@@ -1265,6 +1271,14 @@ L'espace commerçant et l'admin restent en français. Les noms de campagne sont 
 5. **Commande annulée** : la carte dit « le bon expire, sauf si la boutique a annulé » ; aujourd'hui (parrainage) le bon est **toujours rendu** (+7 jours). Règle de la carte pour les nouveaux bons, et parrainage inchangé (recommandé), ou une seule règle pour tous ?
 6. **Délai de paiement** des relevés : avant le 10 (comme le parrainage) ou environ 15 jours après la fin du mois (carte) ? Paiement en espèces accepté (avec reçu signé) ?
 
+### Décisions du propriétaire (10/10 à 9 h 24, « coder avec ces valeurs par défaut »)
+1. Bon de bienvenue : **300 DA dès 2 000 DA d'achat**, **pas en plus d'un bon de parrainage** (un filleul n'en reçoit pas).
+2. Campagnes : **500 DA**, **plafond de 30 bons par boutique** (montant minimum et dates : fixés par l'admin à la création ; exemple de la carte : 4 000 DA).
+3. Commande annulée : **règle de la carte** pour les nouveaux bons : le bon **expire**, sauf si **la boutique** a annulé (il revient alors au client) ; le parrainage garde sa règle (bon toujours rendu).
+4. Relevés payés **avant le 10** du mois (inchangé).
+5. Preuve **par QR code seulement** (inchangé).
+6. Autres questions : recommandations de la conception (code à taper, toutes les boutiques qui acceptent les bons participent).
+
 ## Module 20 — Conditions d'utilisation, conditions commerçants et confidentialité (après le MVP)
 
 Source : carte Trello « Juridique · Conditions d'utilisation commerçants » (BleDeal ne vend rien ; le commerçant est responsable de ses produits et de leur authenticité, parfums et maquillage ; retrait des annonces signalées, US-17 / US-18 ; à faire relire par un avocat) et demande du 10/10 (conditions clients, politique de confidentialité, acceptation à l'inscription et à l'arrivée de la boutique, versions ; brouillons fondés sur les lois 18-05 et 18-07). **Conception seulement** : aucun code, aucune migration. Brouillons des textes : **`docs/juridique/`** (avec les sources). Conception technique : `docs/architecture.md`, section « Conditions et confidentialité (US-34) » ; maquette `docs/maquettes/Conditions.dc.html` (375 px, français et arabe de droite à gauche). **À valider par le propriétaire, textes à faire relire par un avocat algérien avant toute mise en ligne.**
@@ -1284,8 +1298,9 @@ Source : carte Trello « Juridique · Conditions d'utilisation commerçants » (
 En tant que BleDeal, je veux des conditions claires, acceptées et datées, et une politique de confidentialité, afin de protéger les clients, les commerçants et la société, et de respecter les lois 18-05 et 18-07.
 
 ### US-34.1 — Pages et versions
-- Trois pages publiques, lisibles sans compte : **`/conditions`** (clients), **`/conditions-commercants`**, **`/confidentialite`**. En haut : « Version du `[date]` » et un lien « Versions précédentes ». Textes repris de `docs/juridique/` **après relecture de l'avocat** (jamais avant).
-- Pied de page de toutes les pages : « Conditions · Commerçants · Confidentialité · Contact ».
+- Trois pages publiques, lisibles sans compte : **`/conditions`** (clients), **`/conditions-commercants`**, **`/confidentialite`**. En haut : « Version du `[date]` » (lien « Versions précédentes » quand il y en aura plusieurs) et, tant que l'avocat n'a pas relu, le bandeau **« Version provisoire, en cours de relecture juridique. »** (décision du 10/10). Textes repris de `docs/juridique/`.
+- **Codé en US-34.1** : `lib/juridique/` (versions, lecture du Markdown, copie exacte des brouillons vérifiée par test), `components/PageJuridique.tsx`, `DocumentJuridique.tsx`, `PiedDePage.tsx` (dans `app/layout.tsx`), pages `app/conditions/`, `app/conditions-commercants/`, `app/confidentialite/` ; migration `20261017090000_pages_juridiques.sql` (ces mots ne deviennent jamais un code de ville).
+- Pied de page de toutes les pages : « Conditions · Commerçants · Confidentialité » (« Contact » quand l'adresse de contact de la société existera).
 - Chaque document a des **versions** datées ; une version est **importante** (nouvelle acceptation) ou **mineure** (simple information : « Nos conditions ont changé le … »).
 - Arabe : mêmes pages en arabe (de droite à gauche) ; **traduction juridique à faire faire** (pas de darja dans les textes juridiques ; question 4). Tant qu'elle manque, la page arabe affiche le texte français avec un bandeau en arabe.
 
@@ -1328,3 +1343,9 @@ L'espace commerçant reste en français.
 3. **Points de loi à trancher avec l'avocat** (essentiel) : a) loi 18-05, art. 8 et 9 : site « **.com.dz** » **hébergé en Algérie** et nom de domaine déposé au CNRC — BleDeal (et les boutiques ?) sont-ils « e-fournisseurs » alors que la vente et le paiement se font en boutique ? b) loi 18-07 : **déclaration ANPDP** avant l'ouverture au public, et **transferts hors d'Algérie** (Supabase Paris, Vercel, Meta, Twilio, Cloudflare, CARTO, Anthropic) : autorisation (art. 44) ou exceptions (art. 45) ; c) **délégué à la protection des données** (loi 25-11) ; d) **âge minimum** ; e) parfums et cosmétiques vs « produits pharmaceutiques » (art. 3).
 4. **Arabe** : traduction juridique professionnelle des 3 textes (recommandé) ; en attendant, page arabe avec le texte français ?
 5. **Durées de conservation** (comptes, commandes, relevés, mesures) et **fermeture de compte** : à fixer avec l'avocat et le comptable.
+
+### Décisions du propriétaire (10/10 à 9 h 24, « coder avec ces valeurs par défaut »)
+1. Pages `/conditions`, `/conditions-commercants`, `/confidentialite` et **acceptation par version** comme conçu (US-34.1 à US-34.3).
+2. Les textes restent des **brouillons** et sont publiés avec le bandeau visible **« Version provisoire, en cours de relecture juridique »** (jusqu'à la relecture de l'avocat).
+3. Questions juridiques (« .com.dz », hébergement en Algérie, déclaration ANPDP, transferts, délégué, âge) : notées pour l'avocat dans `docs/ETAT.md`.
+4. US-34.4 (« Mes données », « Fermer mon compte ») : pas dans cette série (durées de conservation à fixer d'abord).

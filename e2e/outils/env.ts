@@ -22,5 +22,5 @@ export const E2E = {
   get cleService() { return lire("SERVICE_ROLE_KEY"); },
   get baseDeDonnees() { return verifierLocal(lire("DB_URL"), "DB_URL"); },
   get mailpit() { return verifierLocal(lire("MAILPIT_URL", "INBUCKET_URL"), "MAILPIT_URL"); },
-  site: "http://127.0.0.1:3100",
+  site: `http://127.0.0.1:${/^\d{4,5}$/.test(process.env.E2E_PORT ?? "") ? process.env.E2E_PORT : "3100"}`,
 };

@@ -8,10 +8,12 @@ export const DUREE_COOKIE_VILLE = 60 * 60 * 24 * 365;
 
 /**
  * Mots déjà pris par une page ou un fichier du site : jamais un code de ville (sinon /<code> ouvrirait la page).
- * Même liste que la contrainte villes_code_libre de la base ; un test vérifie que chaque dossier de app/ y est.
+ * Même liste que les contraintes villes_code_libre et villes_code_libre_juridique (US-34.1) de la base ; un test vérifie
+ * que chaque dossier de app/ y est.
  */
 export const CODES_RESERVES: readonly string[] = [
-  "a", "b", "p", "admin", "api", "apercu-local", "auth", "carte", "catalogue", "compte", "confirmer", "espace", "favicon",
+  "a", "b", "p", "admin", "api", "apercu-local", "auth", "carte", "catalogue", "compte", "conditions", "conditions-commercants",
+  "confidentialite", "confirmer", "espace", "favicon",
   "images", "langue", "manifest", "panier", "parrainage", "retrait", "robots", "sitemap", "ville", "villes", "visiteurs",
 ];
 

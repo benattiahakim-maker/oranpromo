@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bodoni_Moda, Jost, Noto_Naskh_Arabic, Tajawal } from "next/font/google";
 import FournisseurTextes from "@/components/FournisseurTextes";
+import PiedDePage from "@/components/PiedDePage";
 import { direction } from "@/lib/langue";
 import { getLangue } from "@/lib/langue-serveur";
 import { textesDe } from "@/lib/textes";
@@ -23,7 +24,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const langue = await getLangue();
   return (
     <html lang={langue} dir={direction(langue)} className={`${bodoni.variable} ${jost.variable} ${tajawal.variable} ${naskh.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col"><FournisseurTextes langue={langue} textes={textesDe(langue)}>{children}</FournisseurTextes></body>
+      <body className="min-h-full flex flex-col"><FournisseurTextes langue={langue} textes={textesDe(langue)}>{children}<PiedDePage /></FournisseurTextes></body>
     </html>
   );
 }
