@@ -15,6 +15,7 @@ import { lienPartageRetrait, lienRetrait, lireRetraitClient, qrCodeRetrait } fro
 import MerciParrainage from "@/components/MerciParrainage";
 import { aEncaisser, raisonBonNonApplique } from "@/lib/bons";
 import { lireMonParrainage, preparerInvitation } from "@/lib/parrainage";
+import { avisPossible, lireMesNotes } from "@/lib/avis";
 
 export const metadata = { title: "Suivi de commande", robots: { index: false, follow: false } };
 
@@ -45,6 +46,13 @@ export default async function SuiviCommande({ params, searchParams }: { params: 
     const mon = await lireMonParrainage(client).catch(() => null);
     if (mon?.actif && mon.peut_parrainer) merci = { whatsapp: (await preparerInvitation(client, langue).catch(() => null))?.whatsapp ?? null };
   }
+  // US-32.2 : « Donner mon avis » sur une commande récupérée par QR code depuis 14 jours au plus, ou la note déjà donnée.
+  let avis: { note?: number } | null = null;
+  if (commande.statut === "recuperee" && commande.mode_remise === "qr") {
+    const note = (await lireMesNotes(client, [commande.id]).catch(() => null))?.get(commande.id);
+    avis = note !== undefined ? { note } : avisPossible(commande) ? {} : null;
+  }
+  const tAvis = textesDe(langue).avis;
   const tBon = textesDe(langue).parrainage;
   const remise = commande.remise_bon ?? 0;
   const motif = commande.motif_annulation && Object.hasOwn(t.motifs, commande.motif_annulation) ? traduire(t.motifs, commande.motif_annulation) : null;
@@ -67,6 +75,8 @@ export default async function SuiviCommande({ params, searchParams }: { params: 
       {merci && <MerciParrainage whatsapp={merci.whatsapp} />}
       {commande.note && <p className="mt-2 text-sm text-gris">{remplir(t.note, { note: commande.note })}</p>}
       <div className="mt-6 flex flex-col gap-3">
+        {avis && (avis.note !== undefined ? <p className="text-center text-sm">{remplir(tAvis.donne, { note: avis.note })}</p>
+          : <Link href={`/compte/commandes/${commande.id}/avis`} className="etiquette flex min-h-[54px] items-center justify-center bg-noir text-blanc">{tAvis.donner}</Link>)}
         {boutique?.whatsapp && <a href={`https://wa.me/${numeroWhatsApp(boutique.whatsapp)}`} target="_blank" rel="noopener noreferrer" className="etiquette flex min-h-11 items-center justify-center border border-noir">{t.ecrire}</a>}
         {boutique?.slug && <Link href={`/b/${boutique.slug}`} className="etiquette flex min-h-11 items-center justify-center text-gris underline">{t.voirBoutique}{boutique.quartier ? ` · ${boutique.quartier}` : ""}</Link>}
         {annulableParClient(commande.statut) && <AnnulerCommande id={commande.id} />}

@@ -2,8 +2,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Page from "./page";
 
-const { rpc, lireCommande, langue } = vi.hoisted(() => ({ rpc: vi.fn(), lireCommande: vi.fn(), langue: { valeur: "fr" as "fr" | "ar" } }));
-vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ rpc, auth: { getUser: async () => ({ data: { user: { id: "k1" } } }) } }) }));
+const { rpc, lireCommande, langue, notesAvis } = vi.hoisted(() => ({ rpc: vi.fn(), lireCommande: vi.fn(), langue: { valeur: "fr" as "fr" | "ar" }, notesAvis: { liste: [] as { commande_id: string; note: number }[] } }));
+vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ rpc, from: () => ({ select: () => ({ in: async () => ({ data: notesAvis.liste, error: null }) }) }), auth: { getUser: async () => ({ data: { user: { id: "k1" } } }) } }) }));
 vi.mock("@/lib/langue-serveur", () => ({ getLangue: async () => langue.valeur }));
 vi.mock("@/lib/commandes", async (original) => ({ ...(await original<typeof import("@/lib/commandes")>()), lireCommande }));
 vi.mock("next/navigation", () => ({ notFound: () => { throw new Error("404"); }, useRouter: () => ({ refresh: vi.fn() }) }));
@@ -70,5 +70,35 @@ describe("US-27.3 et US-27.4 : bon et parrainage sur le suivi", () => {
     expect(await afficher()).not.toContain("Merci !");
     lireCommande.mockResolvedValue(commande("prete"));
     expect(await afficher()).not.toContain("Merci !");
+  });
+});
+
+describe("US-32.2 : « Donner mon avis » sur le suivi", () => {
+  const ID = "11111111-2222-3333-4444-555555555555";
+  const recuperee = (champs: Record<string, unknown>) => ({ ...commande("recuperee"), id: ID, terminee_le: new Date(Date.now() - 3600 * 1000).toISOString(), ...champs });
+  beforeEach(() => { notesAvis.liste = []; });
+  it("récupérée par QR code il y a une heure : bouton vers /compte/commandes/<id>/avis", async () => {
+    lireCommande.mockResolvedValue(recuperee({ mode_remise: "qr" }));
+    const html = await afficher();
+    expect(html).toContain(`href="/compte/commandes/${ID}/avis"`); expect(html).toContain("Donner mon avis");
+  });
+  it("avis déjà donné : « Avis donné · ★ 5 », pas de bouton", async () => {
+    lireCommande.mockResolvedValue(recuperee({ mode_remise: "qr" }));
+    notesAvis.liste = [{ commande_id: ID, note: 5 }];
+    const html = await afficher();
+    expect(html).toContain("Avis donné · ★ 5"); expect(html).not.toContain("Donner mon avis");
+  });
+  it.each([["code", "code à 6 chiffres"], ["manuel", "sans QR code"]])("remise « %s » (%s) : pas de bouton", async (mode) => {
+    lireCommande.mockResolvedValue(recuperee({ mode_remise: mode }));
+    expect(await afficher()).not.toContain("Donner mon avis");
+  });
+  it("récupérée il y a 15 jours : pas de bouton", async () => {
+    lireCommande.mockResolvedValue(recuperee({ mode_remise: "qr", terminee_le: new Date(Date.now() - 15 * 24 * 3600 * 1000).toISOString() }));
+    expect(await afficher()).not.toContain("Donner mon avis");
+  });
+  it("en arabe : « قول رايك »", async () => {
+    langue.valeur = "ar";
+    lireCommande.mockResolvedValue(recuperee({ mode_remise: "qr" }));
+    expect(await afficher()).toContain("قول رايك");
   });
 });

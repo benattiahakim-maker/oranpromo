@@ -127,6 +127,18 @@ const FIXES: Record<string, string> = {
   "Trop de signalements envoyés : réessayez dans une heure.": "بعثت بلاغات بزاف: عاود جرّب من بعد ساعة.",
   "Le commentaire doit contenir 1000 caractères au plus.": "التعليق ما يفوتش 1000 حرف.",
   "Visiteur inconnu.": "زائر ما نعرفوهش.",
+  // US-32.2 : avis (n° 7 et 8 de la conception ; les autres : traduction à valider par le propriétaire).
+  "Merci, votre avis est publié.": "يعطيك الصحة، رايك تنشر.",
+  "Votre commentaire ne peut pas contenir de lien, de numéro de téléphone ni de mot grossier.": "ما تقدرش تكتب لينك، ولا نمرة تيليفون، ولا كلام خايب.",
+  "Un avis est possible seulement sur une commande récupérée avec votre QR code.": "تقدر تعطي رايك غير على طلب ديتو بالـ QR code نتاعك.",
+  "Le délai de 14 jours pour donner votre avis est dépassé.": "فاتو 14 يوم: ما بقاش تقدر تعطي رايك على هاد الطلب.",
+  "Vous avez déjà donné votre avis sur cette commande.": "راك عطيت رايك على هاد الطلب.",
+  "Vous ne pouvez pas donner un avis sur votre propre boutique.": "ما تقدرش تعطي رايك على الحانوت نتاعك.",
+  "Choisissez une note de 1 à 5 étoiles.": "اختار نقطة من 1 حتى 5 نجوم.",
+  "Critère inconnu.": "هاد الاختيار ما كاينش.",
+  "Le commentaire doit contenir 300 caractères au plus.": "الكلمة لازم ما تفوتش 300 حرف.",
+  "Impossible de publier votre avis. Réessayez.": "ما قدرناش ننشرو رايك. عاود جرّب.",
+  "Connectez-vous pour donner votre avis.": "ادخل لحسابك باش تعطي رايك.",
 };
 
 /** Messages avec des valeurs (nombres, noms) : expression du message français → modèle arabe ($1, $2…). */

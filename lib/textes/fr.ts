@@ -510,6 +510,26 @@ export const fr = {
     conditionsChangees: "Nos conditions ont changé le {date}",
     accepterCommander: "Accepter et commander",
   },
+  avis: {
+    // US-32.2 : donner un avis (textes n° 1 à 8 du module 18, docs/user-stories.md).
+    donner: "Donner mon avis",
+    titre: "Votre avis sur {boutique}",
+    commande: "Commande n° {n}",
+    note: "Votre note",
+    noteObligatoire: "Note obligatoire",
+    etoiles: "{n} sur 5",
+    criteres: { accueil: "Bon accueil", article_conforme: "Article conforme", rapidite: "Rapide" },
+    commentaire: "Commentaire (facultatif)",
+    compteur: "{n}/300",
+    rappel: "Votre avis est public avec votre prénom et l’initiale de votre nom.",
+    publier: "Publier mon avis",
+    merci: "Merci, votre avis est publié.",
+    noteRequise: "Choisissez une note de 1 à 5 étoiles.",
+    donne: "Avis donné · ★ {note}",
+    plusPossible: "Un avis est possible seulement sur une commande récupérée avec votre QR code, dans les 14 jours.",
+    retourCommande: "Retour à la commande",
+    impossible: "Impossible de publier votre avis. Réessayez.",
+  },
 };
 
 export type Textes = typeof fr;
