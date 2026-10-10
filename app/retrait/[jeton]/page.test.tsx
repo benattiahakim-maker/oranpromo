@@ -6,7 +6,7 @@ const { rpc, langue } = vi.hoisted(() => ({ rpc: vi.fn(), langue: { valeur: "fr"
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({ rpc }) }));
 vi.mock("@/lib/langue-serveur", () => ({ getLangue: async () => langue.valeur }));
 const JETON = "q7Kx2mPZ9vTfW8LrB4n1aE";
-const vue = (etat: string, code: string | null = "0481") => ({ etat, numero: 128, total: 6300, expire_le: "2026-10-10T18:30:00Z", terminee_le: null,
+const vue = (etat: string, code: string | null = "048193") => ({ etat, numero: 128, total: 6300, expire_le: "2026-10-10T18:30:00Z", terminee_le: null,
   boutique: { nom: "Parfumerie Démo", slug: "parfumerie-demo", quartier: "Gambetta", adresse: "12 rue de Mostaganem" },
   lignes: [{ titre: "Eau de parfum rose et musc", taille: "50 ml", quantite: 1, prix_unitaire: 3900 }, { titre: "Huile parfumée musc blanc", taille: "10 ml", quantite: 2, prix_unitaire: 1200 }], code });
 const afficher = async (jeton = JETON) => renderToStaticMarkup(await Page({ params: Promise.resolve({ jeton }) }));
@@ -22,8 +22,8 @@ describe("US-26.2 : page du retrait (proche, sans connexion)", () => {
     expect(html).toContain("Commande n° 128 à récupérer chez Parfumerie Démo");
     expect(html).toContain("Avant le"); expect(html).toContain("<bdi>12 rue de Mostaganem</bdi></span><span> · <bdi>Gambetta</bdi>");
     expect(html).toContain('href="/b/parfumerie-demo"');
-    expect(html).toContain("Montrez ce QR code au vendeur, ou donnez-lui le code :");
-    expect(html).toContain("data:image/svg+xml"); expect(html).toMatch(/>0<\/span><span[^>]*>4<\/span><span[^>]*>8<\/span><span[^>]*>1</);
+    expect(html).toContain("Montrez ce QR code au vendeur, ou donnez-lui le code à 6 chiffres :");
+    expect(html).toContain("data:image/svg+xml"); expect(html).toMatch(/>0<\/span><span[^>]*>4<\/span><span[^>]*>8<\/span><span[^>]*>1<\/span><span[^>]*>9<\/span><span[^>]*>3</);
     expect(html).toContain("<bdi>Eau de parfum rose et musc</bdi> · <bdi>50 ml</bdi> × 1"); expect(html).toContain("<bdi>Huile parfumée musc blanc</bdi> · <bdi>10 ml</bdi> × 2");
     expect(html).toContain("À payer en espèces");
     expect(html).not.toContain("+213"); expect(html).not.toContain("Envoyer à un proche");

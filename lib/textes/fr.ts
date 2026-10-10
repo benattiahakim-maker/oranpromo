@@ -305,7 +305,7 @@ export const fr = {
     // US-26.2 : QR code de retrait (client et proche). Textes 1 à 10 de la story US-26.
     bloc: "Mon QR code de retrait",
     consigne: "Montrez ce QR code au vendeur, dans la boutique. Vous payez sur place, en espèces.",
-    sansCamera: "Pas de caméra ? Donnez ce code :",
+    sansCamera: "Pas de caméra ? Donnez ce code à 6 chiffres :",
     aPayer: "À payer en espèces",
     luminosite: "Montez la luminosité de l’écran pour que le QR code se lise bien.",
     envoyerProche: "Envoyer à un proche (WhatsApp)",
@@ -318,7 +318,7 @@ export const fr = {
     metaTitre: "Commande à récupérer",
     titreProche: "Commande n° {n} à récupérer chez {boutique}",
     avant: "Avant le {date}",
-    consigneProche: "Montrez ce QR code au vendeur, ou donnez-lui le code :",
+    consigneProche: "Montrez ce QR code au vendeur, ou donnez-lui le code à 6 chiffres :",
     voirBoutique: "Voir la boutique",
     articles: "Articles à récupérer",
     recuperee: "Cette commande a déjà été récupérée.",

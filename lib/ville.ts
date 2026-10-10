@@ -1,6 +1,6 @@
 // US-29.2 : ville choisie par le client (adresse /oran/… et cookie « ville », comme la langue, sans compte).
 // Fonctions pures (serveur et navigateur) ; la lecture de la base est dans lib/ville-serveur.ts.
-import { cheminSuite } from "./connexion";
+import { cheminSuite } from "./chemin";
 
 export const COOKIE_VILLE = "ville";
 /** Le choix est gardé un an (comme la langue). */
