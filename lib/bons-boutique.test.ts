@@ -60,5 +60,10 @@ describe("US-33.4 : relevé par origine et plafond", () => {
     expect(textePlafond({ nom_fr: "Aïd 2026", nom_ar: "", plafond: 30, utilises: 14 })).toBe("Plafond Aïd 2026 : 14 / 30 bons dans votre boutique.");
     expect(await lirePlafondsBoutique(client([{ nom_fr: "Aïd 2026", nom_ar: "x", plafond: 30, utilises: 2 }, { nom_fr: "X" }]).c)).toHaveLength(1);
     expect([...(await lireNomsProgrammesReleve(client([{ id: "p1", type: "campagne", nom_fr: "Aïd 2026" }, { id: 3 }]).c))]).toEqual([["p1", "Aïd 2026"]]);
+    // US-35 : en arabe, le nom arabe de la campagne (nom_ar) ; le nom français s'il manque ou s'il est vide ; en français, toujours le nom français
+    const lignes = [{ id: "p1", type: "campagne", nom_fr: "Aïd 2026", nom_ar: "العيد 2026" }, { id: "p2", type: "campagne", nom_fr: "Rentrée", nom_ar: "  " }, { id: "p3", type: "campagne", nom_fr: "Soldes" }];
+    expect([...(await lireNomsProgrammesReleve(client(lignes).c, "ar"))]).toEqual([["p1", "العيد 2026"], ["p2", "Rentrée"], ["p3", "Soldes"]]);
+    expect([...(await lireNomsProgrammesReleve(client(lignes).c, "fr"))]).toEqual([["p1", "Aïd 2026"], ["p2", "Rentrée"], ["p3", "Soldes"]]);
+    expect([...(await lireNomsProgrammesReleve(client(lignes).c))]).toEqual([["p1", "Aïd 2026"], ["p2", "Rentrée"], ["p3", "Soldes"]]);
   });
 });

@@ -66,14 +66,17 @@ export function textePlafond(p: PlafondBoutique): string {
   return remplir(fr.espace.bons.plafond, { nom: p.nom_fr, compte: `${p.utilises} / ${p.plafond}` });
 }
 
-/** Programmes des lignes du relevé de la boutique : id → nom français. */
-export async function lireNomsProgrammesReleve(client: Client): Promise<Map<string, string>> {
+/** Programmes des lignes du relevé de la boutique : id → nom (français ; en arabe, `nom_ar` saisi dans « Nouvelle campagne »,
+ *  le nom français s'il manque). US-35 : `nom_ar` est déjà rendu par `noms_programmes_releve` (aucune migration). */
+export async function lireNomsProgrammesReleve(client: Client, langue: Langue = "fr"): Promise<Map<string, string>> {
   const { data, error } = await client.rpc("noms_programmes_releve");
   if (error) throw new Error("Impossible de lire les noms des bons.");
   const noms = new Map<string, string>();
   for (const x of Array.isArray(data) ? data : []) {
-    const v = x as { id?: unknown; nom_fr?: unknown };
-    if (typeof v?.id === "string" && typeof v.nom_fr === "string") noms.set(v.id, v.nom_fr);
+    const v = x as { id?: unknown; nom_fr?: unknown; nom_ar?: unknown };
+    if (typeof v?.id !== "string" || typeof v.nom_fr !== "string") continue;
+    const arabe = langue === "ar" && typeof v.nom_ar === "string" ? v.nom_ar.trim() : "";
+    noms.set(v.id, arabe || v.nom_fr);
   }
   return noms;
 }

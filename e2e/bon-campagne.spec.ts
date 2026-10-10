@@ -83,6 +83,14 @@ test("bon de campagne : bandeau et conditions → code dans /compte → bon choi
     const bloc = espace.getByRole("region", { name: "Bons à rembourser" });
     await expect(bloc.getByRole("list", { name: "Par origine" })).toContainText(/Aïd test · 1 bon\s*500\sDA/);
     await expect(bloc).toContainText("Plafond Aïd test : 1 / 30 bons dans votre boutique.");
+    // US-35 : espace en arabe : le relevé donne le nom arabe de la campagne (nom_ar, saisi dans « Nouvelle campagne »), plus « Aïd test »
+    await espace.getByRole("navigation", { name: "Espace commerçant" }).getByRole("button", { name: "العربية" }).click();
+    await expect(espace.locator("html")).toHaveAttribute("dir", "rtl");
+    const blocAr = espace.getByRole("region", { name: "البونات اللي نخلّصوهملك" });
+    await expect(blocAr.getByRole("list", { name: "حسب المصدر" })).toContainText(/العيد · 1 بون/);
+    await blocAr.getByText("التفاصيل تاع الطلبات").click();
+    await expect(blocAr.getByRole("listitem").filter({ hasText: /رقم \d+ · العيد · / })).toBeVisible();
+    await expect(blocAr).not.toContainText("Aïd test");
     await espace.context().close();
   });
 });
