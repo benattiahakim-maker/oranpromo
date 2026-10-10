@@ -4,6 +4,9 @@ import { defineConfig } from "@playwright/test";
 // http://127.0.0.1:3100 contre la pile Supabase LOCALE (`npx supabase start`), jamais la production.
 // Lancer avec « npm run test:e2e » (e2e/lancer.mjs lit les adresses et clés locales). Voir docs/tests-parcours.md.
 const env = process.env;
+// E2E_PORT : port du site des tests (3100 par défaut) ; un autre port permet à deux dossiers de lancer leurs tests en même temps.
+const port = /^\d{4,5}$/.test(env.E2E_PORT ?? "") ? env.E2E_PORT! : "3100";
+const site = `http://127.0.0.1:${port}`;
 const supabase = env.API_URL ?? "";
 if (!/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?\/?$/.test(supabase)) {
   throw new Error("API_URL doit être la pile Supabase locale (http://127.0.0.1:54321) : lancez « npm run test:e2e ».");
@@ -21,7 +24,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   reporter: env.CI ? [["list"], ["html", { open: "never" }]] : [["list"]],
   use: {
-    baseURL: "http://127.0.0.1:3100",
+    baseURL: site,
     viewport: { width: 375, height: 812 },
     isMobile: true,
     hasTouch: true,
@@ -35,15 +38,15 @@ export default defineConfig({
   webServer: {
     // Recommandation du guide Next.js (testing/playwright.md) : tester le site construit (next build + next start).
     // BLEDEAL_E2E=1 : construction à part dans .next-e2e (next.config.ts).
-    command: "npx next build && npx next start -p 3100 -H 127.0.0.1",
-    url: "http://127.0.0.1:3100/villes",
+    command: `npx next build && npx next start -p ${port} -H 127.0.0.1`,
+    url: `${site}/villes`,
     reuseExistingServer: !env.CI,
     timeout: 600_000,
     env: {
       BLEDEAL_E2E: "1",
       NEXT_PUBLIC_SUPABASE_URL: supabase,
       NEXT_PUBLIC_SUPABASE_ANON_KEY: env.ANON_KEY ?? "",
-      NEXT_PUBLIC_SITE_URL: "http://127.0.0.1:3100",
+      NEXT_PUBLIC_SITE_URL: site,
       CONNEXION_CLIENT: "email",
       // Rien ne part vers WhatsApp, Claude, Turnstile ou CARTO : ces variables restent vides. Une variable déjà posée,
       // même vide, n'est pas remplacée par .env.local : les clés de production d'un .env.local ne servent jamais ici.

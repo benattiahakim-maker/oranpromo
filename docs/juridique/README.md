@@ -1,7 +1,7 @@
 # Textes juridiques de BleDeal — brouillons (US-34)
 
-> **BROUILLONS À FAIRE RELIRE PAR UN AVOCAT ALGÉRIEN AVANT TOUTE MISE EN LIGNE.**
-> Ces textes ont été préparés par Grok Bot à partir des lois citées ci-dessous, sans conseil juridique. Ils ne sont **pas** en ligne et **n'engagent personne** tant qu'ils n'ont pas été relus, complétés (identité de la société, numéros, adresses) et validés par le propriétaire et un avocat. Les passages entre crochets `[…]` sont à compléter ; les passages marqués **« À vérifier »** sont des points où le droit applicable n'est pas certain.
+> **BROUILLONS EN COURS DE RELECTURE JURIDIQUE.** Décision du propriétaire du 10/10/2026 : ils sont publiés (US-34.1) avec le bandeau « Version provisoire, en cours de relecture juridique » en attendant la relecture d'un avocat algérien.
+> Ces textes ont été préparés par Grok Bot à partir des lois citées ci-dessous, sans conseil juridique. Ils doivent être relus, complétés (identité de la société, numéros, adresses) et validés par le propriétaire et un avocat ; le bandeau ne disparaît qu'ensuite (`VERSION_PROVISOIRE` dans `lib/juridique/index.ts`). Les passages entre crochets `[…]` sont à compléter ; les passages marqués **« À vérifier »** sont des points où le droit applicable n'est pas certain.
 
 | Fichier | Page prévue | Qui l'accepte |
 | --- | --- | --- |

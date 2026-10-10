@@ -18,6 +18,9 @@ describe("US-23 : mise en page selon la langue", () => {
     expect(html).toContain(`<html lang="${code}" dir="${sens}"`);
     expect(html).toContain("police-tajawal"); expect(html).toContain("police-naskh");
     expect(html).toContain(texte);
+    // US-34.1 : pied de page juridique sur toutes les pages.
+    expect(html).toContain('href="/conditions"');
+    expect(html).toContain('href="/confidentialite"');
   });
 });
 

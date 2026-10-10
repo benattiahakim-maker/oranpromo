@@ -1,6 +1,6 @@
 # Conditions d'utilisation de BleDeal (clients) — BROUILLON
 
-> **Brouillon à faire relire par un avocat algérien avant toute mise en ligne.** Version proposée : `[AAAA-MM-JJ]`. Sources et points à vérifier : `docs/juridique/README.md`. Les passages `[…]` sont à compléter.
+> **Version provisoire, en cours de relecture juridique** : publiée le 10/10/2026 avec ce bandeau (décision du propriétaire), à faire relire par un avocat algérien. Version : 2026-10-10. Sources et points à vérifier : `docs/juridique/README.md`. Les passages `[…]` sont à compléter.
 
 ## 1. Qui sommes-nous
 

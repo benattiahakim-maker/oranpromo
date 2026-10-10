@@ -1,6 +1,6 @@
 # Conditions d'utilisation de BleDeal pour les commerçants — BROUILLON
 
-> **Brouillon à faire relire par un avocat algérien avant toute mise en ligne.** Version proposée : `[AAAA-MM-JJ]`. Sources et points à vérifier : `docs/juridique/README.md`. Les passages `[…]` sont à compléter. Le régime comptable et fiscal des remboursements de bons est **à vérifier avec le comptable**.
+> **Version provisoire, en cours de relecture juridique** : publiée le 10/10/2026 avec ce bandeau (décision du propriétaire), à faire relire par un avocat algérien. Version : 2026-10-10. Sources et points à vérifier : `docs/juridique/README.md`. Les passages `[…]` sont à compléter. Le régime comptable et fiscal des remboursements de bons est **à vérifier avec le comptable**.
 
 ## 1. Les parties
 
