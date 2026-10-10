@@ -65,6 +65,13 @@ tests relancés ne doivent pas l'épuiser).
 
 Un seul fichier : `npm run test:e2e -- e2e/boutique.spec.ts`.
 
+Le port du site des tests (3100, ou `E2E_PORT`) doit être **libre** : Playwright construit et lance le site de ce
+commit, et s'arrête tout de suite avec une erreur si un autre site occupe déjà le port. Avant, il réutilisait en
+silence ce site, construit depuis un autre commit ou un autre dossier : les écrans récents manquaient et un test
+s'arrêtait sur « Test timeout » (échec ponctuel de `e2e/avis.spec.ts`, 10/10). Le processus Next.js s'appelle
+`next-server`, pas `next start` : arrêtez-le par son numéro (`ss -ltnp "sport = :3100"`), seulement si c'est le
+vôtre. Réutiliser exprès un site déjà lancé **depuis ce commit** : `E2E_REUTILISER=1 npm run test:e2e`.
+
 `.env.local` n'est pas utilisé par les tests : `playwright.config.ts` donne au site les clés locales et vide les
 secrets (Turnstile, WhatsApp, IA, carte, visiteurs, codes). Même si `.env.local` contient des clés de production,
 le site de test ne les lit pas.
