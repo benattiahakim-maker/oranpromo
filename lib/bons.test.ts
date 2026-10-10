@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { aEncaisser, bonApplicable, releveDuMois, bonDisponible, etatBon, formaterJourCourt, formaterJourMois, moisAlger, nomMois, premierDuMoisSuivant, raisonBonNonApplique, resultatBon, utiliserBon, type BonClient } from "./bons";
+import { bonPourTotal, estBonProgramme, formaterJourMoisNumerique, minimumBon, aEncaisser, bonApplicable, releveDuMois, bonDisponible, etatBon, formaterJourCourt, formaterJourMois, moisAlger, nomMois, premierDuMoisSuivant, raisonBonNonApplique, resultatBon, utiliserBon, type BonClient } from "./bons";
 
 describe("bons de parrainage (US-27)", () => {
   it("montant à encaisser = total − bon", () => {
@@ -90,5 +90,28 @@ describe("US-27.4 : relevé de remboursement nommé pour la boutique", () => {
     expect(releveDuMois("2026-10-01")).toBe("relevé d’octobre");
     expect(releveDuMois("2026-08-01")).toBe("relevé d’août");
     expect(releveDuMois("2026-04-01")).toBe("relevé d’avril");
+  });
+});
+
+describe("US-33.2 : bons de programme", () => {
+  const b = (id: string, montant: number, minimum: number | undefined, origine: BonClient["origine"], expire = "2026-11-09T10:00:00Z", statut: BonClient["statut"] = "disponible"): BonClient =>
+    ({ id, montant, statut, origine, cree_le: "2026-10-10T10:00:00Z", expire_le: expire, utilise_le: null, commande: null, numero: null, boutique: null, minimum_achat: minimum });
+  const maintenant = new Date("2026-10-20T10:00:00Z");
+  it("minimum : celui du bon, 1 000 DA par défaut (parrainage)", () => {
+    expect(minimumBon(b("p", 300, undefined, "parrainage_filleul"))).toBe(1000);
+    expect(minimumBon(b("w", 300, 2000, "bienvenue"))).toBe(2000);
+    expect([estBonProgramme(b("w", 300, 2000, "bienvenue")), estBonProgramme(b("p", 300, 1000, "parrainage_parrain"))]).toEqual([true, false]);
+  });
+  it("le plus gros bon utilisable, puis le plus proche de l'échéance ; sinon le plus petit minimum, non applicable", () => {
+    const bons = [b("p", 300, 1000, "parrainage_filleul", "2026-11-30T10:00:00Z"), b("w", 300, 2000, "bienvenue", "2026-11-09T10:00:00Z"), b("a", 500, 4000, "campagne")];
+    expect(bonPourTotal(bons, 5000, maintenant)).toEqual({ bon: bons[2], applicable: true });
+    expect(bonPourTotal(bons, 2500, maintenant)).toEqual({ bon: bons[1], applicable: true });
+    expect(bonPourTotal(bons, 1500, maintenant)).toEqual({ bon: bons[0], applicable: true });
+    expect(bonPourTotal(bons.slice(1), 1500, maintenant)).toEqual({ bon: bons[1], applicable: false });
+    expect(bonPourTotal([b("x", 300, 2000, "bienvenue", "2026-10-19T10:00:00Z"), b("y", 300, 2000, "bienvenue", undefined, "reserve")], 5000, maintenant)).toBeNull();
+  });
+  it("date courte « 9/11 » (heure d'Alger)", () => {
+    expect(formaterJourMoisNumerique("2026-11-09T10:00:00Z")).toBe("9/11");
+    expect(formaterJourMoisNumerique("2026-11-30T23:30:00Z")).toBe("1/12");
   });
 });

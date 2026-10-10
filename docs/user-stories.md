@@ -1225,6 +1225,7 @@ En tant que BleDeal, je veux offrir un bon sur la 1re commande et lancer des cam
 - Utilisable sur une commande à partir du minimum (exemple : 300 DA dès 2 000 DA, question 1), valable 30 jours ; si la 1re commande est annulée par la boutique, le bon revient (règle de la question 5).
 - Un filleul du parrainage reçoit déjà un bon de 300 DA : **pas de bon de bienvenue en plus** (question 2).
 - `/compte`, rubrique « Mes bons » : « Bon de bienvenue · 300 DA dès 2 000 DA d'achat · jusqu'au 9/11 ».
+- **Codé le 10/10** (migration `20261018100000_bon_bienvenue.sql`, en production) : bon donné à la vérification du numéro ; parrain trouvé ensuite → bon de bienvenue disponible annulé ; un client déjà vérifié avant l'activation du programme n'en reçoit pas. Au panier, le plus gros bon utilisable est proposé (choix entre plusieurs bons : US-33.3).
 
 ### US-33.3 — Bons de campagne avec code (pages `/compte`, `/panier`, accueil `/[ville]`)
 - L'admin crée une campagne (US-33.5). Le client tape le **code** dans `/compte` (« J'ai un code ») : `ajouter_code_bon(code)` vérifie le code, les dates, la ville du compte (ville choisie, cookie `ville`) seulement pour l'affichage — **la ville qui compte est celle de la boutique au moment de la commande** —, le budget, et **une fois par numéro vérifié et par campagne**. Numéro vérifié obligatoire. Au plus 5 codes faux par heure et par compte (« Trop d'essais. Réessayez dans une heure. »).

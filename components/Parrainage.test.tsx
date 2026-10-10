@@ -161,3 +161,31 @@ describe("US-27.4 : bon au panier et sur le QR code", () => {
     expect(screen.getByText("تخلّص في الحانوت")).toBeInTheDocument();
   });
 });
+
+describe("US-33.2 : bon de bienvenue dans « Mes bons » et au panier", () => {
+  const bienvenue: BonClient = { id: "b", montant: 300, statut: "disponible", origine: "bienvenue", cree_le: "2026-10-10T10:00:00Z", expire_le: "2026-11-09T10:00:00Z",
+    utilise_le: null, commande: null, numero: null, boutique: null, minimum_achat: 2000, univers: null, villes: [], nom_fr: "Bienvenue", nom_ar: "مرحبا" };
+  it("Mes bons : « Bon de bienvenue · 300 DA dès 2 000 DA d'achat · jusqu'au 9/11 » (texte n° 2)", () => {
+    render(<MesBons bons={[bienvenue, { ...bienvenue, id: "r", statut: "reserve", commande: "c", numero: 7 }]} maintenant={new Date("2026-10-20T10:00:00Z")} />);
+    expect(screen.getAllByText("Bon de bienvenue")).toHaveLength(2);
+    expect(screen.getByText(/^300\sDA dès 2\s000\sDA d’achat · jusqu’au 9\/11$/)).toBeInTheDocument();
+    expect(screen.getByText("Réservé pour la commande n° 7")).toBeInTheDocument();
+  });
+  it("Mes bons en arabe : « بون مرحبا »", () => {
+    render(<FournisseurTextes langue="ar" textes={ar}><MesBons bons={[bienvenue]} maintenant={new Date("2026-10-20T10:00:00Z")} /></FournisseurTextes>);
+    expect(screen.getByText("بون مرحبا")).toBeInTheDocument();
+    expect(screen.getByText(/كي تشري .* ولا كثر · حتى 9\/11/)).toBeInTheDocument();
+  });
+  it("panier : case « Utiliser mon bon de bienvenue (−300 DA) », ligne « Bon de bienvenue », règle d'annulation des bons de programme", () => {
+    render(<BonPanier total={2500} utiliser onChange={vi.fn()} bon={bienvenue} applicable />);
+    expect(screen.getByRole("checkbox", { name: /^Utiliser mon bon de bienvenue \(−300\sDA\)$/ })).toBeChecked();
+    expect(screen.getByText("Bon de bienvenue")).toBeInTheDocument();
+    expect(screen.getByText("À payer en boutique").nextSibling).toHaveTextContent(/2\s200\sDA/);
+    expect(screen.getByText(fr.parrainage.noteBonProgramme)).toBeInTheDocument();
+  });
+  it("panier sous le minimum : « Bon de bienvenue · Dès 2 000 DA d'achat », pas de case", () => {
+    render(<BonPanier total={1500} utiliser onChange={vi.fn()} bon={bienvenue} applicable={false} />);
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(screen.getByText(/Bon de bienvenue · Dès 2\s000\sDA d’achat/)).toBeInTheDocument();
+  });
+});

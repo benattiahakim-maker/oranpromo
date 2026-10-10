@@ -8,7 +8,7 @@ import FormulaireProfilClient from "./FormulaireProfilClient";
 import CodeTelephone from "./CodeTelephone";
 import BonPanier from "./BonPanier";
 import ChoixParrain from "./ChoixParrain";
-import { bonApplicable } from "@/lib/bons";
+import { bonApplicable, bonPourTotal, type BonClient } from "@/lib/bons";
 import { formaterPrix } from "@/lib/prix";
 import { abonnerPanier, changerQuantitePanier, lignesCommande, lirePanier, NOTE_COMMANDE_MAX, panierBrut, QUANTITE_LIGNE_MAX, retirerDuPanier, sauverPanierLocal, totalPanier } from "@/lib/panier";
 import { messageNoShows } from "@/lib/clients";
@@ -24,7 +24,8 @@ import type { DocumentAAccepter } from "@/lib/acceptations";
 // US-21.2 : verificationRequise = mode téléphone (CONNEXION_CLIENT=telephone) ; telephoneVerifie = numéro vérifié par code.
 export type ProfilPanier = { nom: string | null; telephone: string | null; complet: boolean; bloque: boolean; noShows: number; telephoneVerifie?: boolean; verificationRequise?: boolean } | null;
 /** US-27 : bon disponible et saisie du parrain (avant la première commande), lus par la page. */
-export type ParrainagePanier = { bonDisponible: boolean; choix: { initial: string; parrainSaisi: boolean; saisies: number } | null };
+// US-33.2 : bons = bons du client (mes_bons) ; le panier propose le plus gros utilisable. Sans liste : bon parrainage.
+export type ParrainagePanier = { bonDisponible: boolean; bons?: BonClient[]; choix: { initial: string; parrainSaisi: boolean; saisies: number } | null };
 
 // US-20.2 : panier d’une boutique → « Commander ».
 // US-34.2 : conditions = textes à (re)accepter (nouvelle version importante, compte créé avant US-34) : case et
@@ -51,7 +52,8 @@ export default function PanierCommande({ profil, parrainage = { bonDisponible: f
     if (note.trim().length > NOTE_COMMANDE_MAX) { setErreur(remplir(t.noteTropLongue, { max: NOTE_COMMANDE_MAX })); return; }
     verrou.current = true; setEnCours(true); setErreur("");
     try {
-      const bon = Boolean(profil && parrainage.bonDisponible && avecBon && bonApplicable(totalPanier(panier), true));
+      const propose = parrainage.bons ? bonPourTotal(parrainage.bons, totalPanier(panier)) : null;
+      const bon = Boolean(profil && parrainage.bonDisponible && avecBon && (propose ? propose.applicable : bonApplicable(totalPanier(panier), true)));
       const resultat = await commanderPanier(panier.boutiqueId, lignesCommande(panier), note, bon, accord ? conditions : []);
       if (resultat.id) { sauverPanierLocal(null); router.push(`/compte/commandes/${resultat.id}${resultat.bon ? `?bon=${resultat.bon}` : ""}`); return; }
       if (resultat.connexion) { router.push("/compte/connexion?suite=/panier"); return; }
@@ -85,7 +87,10 @@ export default function PanierCommande({ profil, parrainage = { bonDisponible: f
     <label htmlFor="note-commande" className="etiquette mt-4 block text-xs">{t.note}</label>
     <textarea id="note-commande" rows={2} maxLength={NOTE_COMMANDE_MAX} value={note} disabled={enCours} onChange={e => setNote(e.target.value)} className="mt-2 box-border w-full resize-none rounded-none border border-trait p-3 font-[inherit] text-base" />
     <p className="flex justify-between py-4"><span className="etiquette self-center">{t.total}</span><span>{formaterPrix(totalPanier(panier), langue)}</span></p>
-    {profil && parrainage.bonDisponible && <BonPanier total={totalPanier(panier)} utiliser={avecBon} onChange={setAvecBon} desactive={enCours} />}
+    {profil && parrainage.bonDisponible && (() => {
+      const propose = parrainage.bons ? bonPourTotal(parrainage.bons, totalPanier(panier)) : null;
+      return <BonPanier total={totalPanier(panier)} utiliser={avecBon} onChange={setAvecBon} desactive={enCours} bon={propose?.bon ?? null} applicable={propose?.applicable} />;
+    })()}
     {avertissement && <p role="alert" className="mb-4 border border-trait p-3 text-sm leading-[1.6]">{avertissement}</p>}
     {profil && parrainage.choix && <div className="mb-4"><ChoixParrain initial={parrainage.choix.initial} parrainSaisi={parrainage.choix.parrainSaisi} saisies={parrainage.choix.saisies} /></div>}
     {!profil ? <Link href="/compte/connexion?suite=/panier" className="etiquette flex min-h-[54px] items-center justify-center bg-noir text-blanc">{t.seConnecter}</Link>

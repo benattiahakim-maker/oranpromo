@@ -28,7 +28,7 @@ export default async function Panier() {
       const [mon, bons, aAccepter] = await Promise.all([lireMonParrainage(client).catch(() => null), lireMesBons(client).catch(() => []), lireDocumentsAAccepter(client).catch(() => [])]);
       conditions = aAccepter;
       const code = normaliserCodeParrainage((await cookies()).get(COOKIE_PARRAIN)?.value) ?? "";
-      parrainage = { bonDisponible: Boolean(bonDisponible(bons)), choix: mon?.peut_choisir ? { initial: mon.parrain_saisi ? "" : code, parrainSaisi: mon.parrain_saisi, saisies: mon.saisies } : null };
+      parrainage = { bonDisponible: Boolean(bonDisponible(bons)), bons, choix: mon?.peut_choisir ? { initial: mon.parrain_saisi ? "" : code, parrainSaisi: mon.parrain_saisi, saisies: mon.saisies } : null };
     }
   } catch { /* Profil illisible : le bouton propose de se connecter, la base vérifiera à la commande. */ }
   return <><EntetePublic /><main className="mx-auto w-full max-w-lg bg-blanc pb-6 text-noir">

@@ -193,3 +193,25 @@ describe("US-34.2 : nouvelle version des conditions au panier", () => {
     expect(screen.getByText("الشروط نتاعنا تبدلو نهار 1/12/2026")).toBeInTheDocument();
   });
 });
+
+describe("US-33.2 : plusieurs bons au panier", () => {
+  const base = { utilise_le: null, commande: null, numero: null, boutique: null, univers: null, villes: [] as string[], cree_le: "2026-10-10T10:00:00Z" };
+  const bienvenue = { ...base, id: "w", montant: 300, statut: "disponible" as const, origine: "bienvenue" as const, expire_le: "2099-11-09T10:00:00Z", minimum_achat: 2000, nom_fr: "Bienvenue", nom_ar: "مرحبا" };
+  const aid = { ...base, id: "a", montant: 500, statut: "disponible" as const, origine: "campagne" as const, expire_le: "2099-11-09T10:00:00Z", minimum_achat: 4000, nom_fr: "Aïd 2026", nom_ar: "العيد 2026" };
+  it("le plus gros bon utilisable est proposé (texte n° 9), commande avec le bon", async () => {
+    commanderPanier.mockResolvedValue({ id: "c1" });
+    render(<PanierCommande profil={complet} parrainage={{ bonDisponible: true, bons: [bienvenue, aid], choix: null }} />);
+    expect(screen.getByRole("checkbox", { name: /^Utiliser mon bon Aïd 2026 \(−500\sDA\)$/ })).toBeChecked();
+    expect(screen.getByText("À payer en boutique").nextSibling).toHaveTextContent(/8\s200\sDA/);
+    fireEvent.click(screen.getByRole("button", { name: "Commander" }));
+    await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", true, []));
+  });
+  it("aucun bon utilisable : raison affichée, commande sans bon", async () => {
+    commanderPanier.mockResolvedValue({ id: "c1" });
+    render(<PanierCommande profil={complet} parrainage={{ bonDisponible: true, bons: [{ ...bienvenue, minimum_achat: 10000 }], choix: null }} />);
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(screen.getByText(/Bon de bienvenue · Dès 10\s000\sDA d’achat/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Commander" }));
+    await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", false, []));
+  });
+});
