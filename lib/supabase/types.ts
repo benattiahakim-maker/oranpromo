@@ -181,6 +181,7 @@ export type Database = {
           note: number
           reponse: string | null
           reponse_le: string | null
+          reponse_masquee: boolean
           statut: string
         }
         Insert: {
@@ -194,6 +195,7 @@ export type Database = {
           note: number
           reponse?: string | null
           reponse_le?: string | null
+          reponse_masquee?: boolean
           statut?: string
         }
         Update: {
@@ -207,6 +209,7 @@ export type Database = {
           note?: number
           reponse?: string | null
           reponse_le?: string | null
+          reponse_masquee?: boolean
           statut?: string
         }
         Relationships: [
@@ -530,21 +533,24 @@ export type Database = {
           auteur_id: string
           date: string
           id: string
-          signalement_id: string
+          signalement_avis_id: string | null
+          signalement_id: string | null
         }
         Insert: {
           action: string
           auteur_id: string
           date?: string
           id?: string
-          signalement_id: string
+          signalement_avis_id?: string | null
+          signalement_id?: string | null
         }
         Update: {
           action?: string
           auteur_id?: string
           date?: string
           id?: string
-          signalement_id?: string
+          signalement_avis_id?: string | null
+          signalement_id?: string | null
         }
         Relationships: [
           {
@@ -552,6 +558,13 @@ export type Database = {
             columns: ["auteur_id"]
             isOneToOne: false
             referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decisions_signalement_avis_id_fkey"
+            columns: ["signalement_avis_id"]
+            isOneToOne: false
+            referencedRelation: "signalements_avis"
             referencedColumns: ["id"]
           },
           {
@@ -1190,6 +1203,41 @@ export type Database = {
           },
         ]
       }
+      signalements_avis: {
+        Row: {
+          avis_id: string
+          commentaire: string | null
+          cree_le: string
+          id: string
+          motif: string
+          statut: Database["public"]["Enums"]["statut_signalement"]
+        }
+        Insert: {
+          avis_id: string
+          commentaire?: string | null
+          cree_le?: string
+          id?: string
+          motif: string
+          statut?: Database["public"]["Enums"]["statut_signalement"]
+        }
+        Update: {
+          avis_id?: string
+          commentaire?: string | null
+          cree_le?: string
+          id?: string
+          motif?: string
+          statut?: Database["public"]["Enums"]["statut_signalement"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signalements_avis_avis_id_fkey"
+            columns: ["avis_id"]
+            isOneToOne: false
+            referencedRelation: "avis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suivi_commandes: {
         Row: {
           auteur: string
@@ -1370,6 +1418,20 @@ export type Database = {
           reponse: string
         }[]
       }
+      avis_ma_boutique: {
+        Args: { decalage?: number; limite?: number }
+        Returns: {
+          auteur: string
+          commentaire: string
+          cree_le: string
+          criteres: string[]
+          id: string
+          note: number
+          reponse: string
+          reponse_le: string
+          reponse_masquee: boolean
+        }[]
+      }
       bloquer_client: { Args: { client: string }; Returns: undefined }
       bons_panier: { Args: { boutique: string; lignes: Json }; Returns: Json }
       boutiques_carte: {
@@ -1494,6 +1556,10 @@ export type Database = {
         Args: { ligne: string; motif: string }
         Returns: undefined
       }
+      moderer_avis: {
+        Args: { action: string; avis: string; signalements: string[] }
+        Returns: undefined
+      }
       mon_code_parrainage: { Args: never; Returns: string }
       mon_parrainage: { Args: never; Returns: Json }
       ne_plus_suivre: { Args: { boutique: string }; Returns: boolean }
@@ -1515,6 +1581,10 @@ export type Database = {
         Args: { code?: string; jeton?: string }
         Returns: Json
       }
+      repondre_avis: {
+        Args: { avis: string; texte: string }
+        Returns: undefined
+      }
       resultat_message_whatsapp: {
         Args: {
           definitif?: boolean
@@ -1534,6 +1604,14 @@ export type Database = {
           criteres: Json
           moyenne: number
           nombre: number
+        }[]
+      }
+      resume_ma_boutique: {
+        Args: never
+        Returns: {
+          moyenne: number
+          nombre: number
+          sans_reponse: number
         }[]
       }
       retirer_boutique_des_bons: {
@@ -1561,6 +1639,24 @@ export type Database = {
           visiteur: string
         }
         Returns: undefined
+      }
+      signaler_avis: {
+        Args: {
+          avis: string
+          commentaire?: string
+          jeton: string
+          motif: string
+          visiteur: string
+        }
+        Returns: undefined
+      }
+      signaux_avis: {
+        Args: never
+        Returns: {
+          boutique: string
+          boutique_id: string
+          cinq_etoiles_comptes_recents: number
+        }[]
       }
       suivre_boutique: { Args: { boutique: string }; Returns: boolean }
       utiliser_bon: {

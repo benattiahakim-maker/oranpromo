@@ -575,5 +575,16 @@ export const ar: Textes = {
     suivants: "آراء قدام",
     retourBoutique: "رجوع للحانوت",
     chargementImpossible: "ما قدرناش نحمّلو الآراء. عاود جرّب.",
+    // US-32.4 : بلّغ على راي (النص 12 من الوحدة 18 ؛ الباقي : ترجمة لازم يصادق عليها المالك).
+    signaler: "بلّغ",
+    signalerTitre: "بلّغ على راي {auteur}",
+    motifSignalement: "علاش تبلّغ؟",
+    choisirMotif: "اختار السبب",
+    motifs: { faux_avis: "راي ماشي صحيح", insulte: "سبّ ولا كلام ماشي لايق", informations_personnelles: "معلومات شخصية", autre: "سبب آخر" },
+    commentaireSignalement: "تعليق (إذا حبيت)",
+    envoyerSignalement: "ابعث البلاغ",
+    envoiSignalement: "راهو يتبعث…",
+    motifObligatoire: "اختار السبب.",
+    signalementEchec: "البلاغ ما تبعثش. عاود جرّب.",
   },
 };

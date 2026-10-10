@@ -38,6 +38,9 @@ describe("US-32.3 : avis sur la vitrine", () => {
     expect(html).toContain('href="/b/boutique-nour/avis"'); expect(html).toContain("Voir tous les avis");
     // La mention du bon (US-32.5) n'est pas affichée tant que la récompense n'existe pas.
     expect(html).not.toContain("petit bon");
+    // US-32.4 : « Signaler » sous chaque avis.
+    expect(html.match(/>Signaler</g)).toHaveLength(avis.length);
+    expect(html).toContain('aria-label="Signaler l’avis de Amine B."');
   });
   it("sous le seuil : « Pas encore assez d'avis », les commentaires s'affichent dès le premier ; pas de « Voir tous » si tout est affiché", () => {
     const html = renderToStaticMarkup(<AvisBoutique resume={resume(null, 1, { accueil: 0, article_conforme: 0, rapidite: 0 })} avis={[avis[0]]} slug="kids" t={fr} langue="fr" />);
