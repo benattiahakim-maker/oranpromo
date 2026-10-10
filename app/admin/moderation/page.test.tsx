@@ -1,12 +1,13 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Moderation from "./page";
-const { verifier, charger, historique, chargerAvis, signaux } = vi.hoisted(() => ({ verifier: vi.fn(), charger: vi.fn(), historique: vi.fn(), chargerAvis: vi.fn(), signaux: vi.fn() }));
+const { verifier, charger, historique, chargerAvis, signaux, mots } = vi.hoisted(() => ({ verifier: vi.fn(), charger: vi.fn(), historique: vi.fn(), chargerAvis: vi.fn(), signaux: vi.fn(), mots: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ creerClientServeur: async () => ({}) }));
-vi.mock("@/lib/moderation", async importOriginal => ({ ...await importOriginal<typeof import("@/lib/moderation")>(), verifierAdministrateur: verifier, chargerSignalements: charger, chargerHistoriqueModeration: historique, chargerSignalementsAvis: chargerAvis, chargerSignauxAvis: signaux }));
+vi.mock("@/lib/moderation", async importOriginal => ({ ...await importOriginal<typeof import("@/lib/moderation")>(), verifierAdministrateur: verifier, chargerSignalements: charger, chargerHistoriqueModeration: historique, chargerSignalementsAvis: chargerAvis, chargerSignauxAvis: signaux, chargerMotsInterdits: mots }));
+vi.mock("@/components/MotsInterdits", () => ({ default: ({ mots }: { mots: string[] }) => <p>Mots {mots.join(",")}</p> }));
 vi.mock("@/components/SignalementsAvisModeration", () => ({ default: ({ groupes, signaux }: { groupes: unknown[]; signaux: unknown[] }) => <p>File avis {groupes.length} / signaux {signaux.length}</p> }));
 vi.mock("@/components/SignalementsModeration", () => ({ default: () => <p>File ouverte</p> }));
-beforeEach(() => { vi.clearAllMocks(); verifier.mockResolvedValue("admin"); charger.mockResolvedValue([]); historique.mockResolvedValue([]); chargerAvis.mockResolvedValue([]); signaux.mockResolvedValue([]); });
+beforeEach(() => { vi.clearAllMocks(); verifier.mockResolvedValue("admin"); charger.mockResolvedValue([]); historique.mockResolvedValue([]); chargerAvis.mockResolvedValue([]); signaux.mockResolvedValue([]); mots.mockResolvedValue([]); });
 describe("accès et historique US-18", () => {
   it("refuse un ambassadeur avant de charger des données privées", async () => {
     verifier.mockRejectedValue(new Error("Accès réservé"));
@@ -47,5 +48,20 @@ describe("US-32.4 : onglet Avis", () => {
     historique.mockResolvedValue([{ id: "d1", date: "2026-10-09T10:00:00Z", action: "masquer_reponse", titre: "Avis de Amine B. · Boutique Nour", articleId: null }]);
     const html = renderToStaticMarkup(await Moderation({ searchParams: Promise.resolve({ onglet: "historique" }) }));
     expect(html).toContain("Avis de Amine B. · Boutique Nour"); expect(html).toContain("Masquer la réponse");
+  });
+});
+
+describe("US-32 : onglet Mots interdits", () => {
+  it("quatre onglets ; l’onglet Mots interdits charge la liste, rien d’autre", async () => {
+    mots.mockResolvedValue(["fdp", "zebi"]);
+    const html = renderToStaticMarkup(await Moderation({ searchParams: Promise.resolve({ onglet: "mots" }) }));
+    expect(html).toContain("Mots fdp,zebi");
+    expect(html).toMatch(/aria-current="page"[^>]*>Mots interdits</);
+    expect(html).toContain('href="/admin/moderation?onglet=mots"');
+    expect(charger).not.toHaveBeenCalled(); expect(chargerAvis).not.toHaveBeenCalled(); expect(historique).not.toHaveBeenCalled();
+  });
+  it("liste en échec : message d’erreur", async () => {
+    mots.mockRejectedValue(new Error("x"));
+    expect(renderToStaticMarkup(await Moderation({ searchParams: Promise.resolve({ onglet: "mots" }) }))).toContain("Impossible de charger la modération");
   });
 });

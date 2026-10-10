@@ -1401,6 +1401,7 @@ export type Database = {
         Returns: undefined
       }
       ajouter_code_bon: { Args: { code: string }; Returns: Json }
+      ajouter_mot_interdit: { Args: { mot: string }; Returns: string }
       annuler_bons_parrainage: {
         Args: { filleul: string; motif: string }
         Returns: number
@@ -1582,6 +1583,7 @@ export type Database = {
       }
       mon_code_parrainage: { Args: never; Returns: string }
       mon_parrainage: { Args: never; Returns: Json }
+      mots_interdits: { Args: never; Returns: string[] }
       ne_plus_suivre: { Args: { boutique: string }; Returns: boolean }
       noms_programmes_releve: { Args: never; Returns: Json }
       parrainage_ouvert: { Args: never; Returns: boolean }
@@ -1641,6 +1643,7 @@ export type Database = {
         Args: { boutique: string; retiree: boolean }
         Returns: undefined
       }
+      retirer_mot_interdit: { Args: { mot: string }; Returns: undefined }
       retrait_boutique: {
         Args: { code?: string; jeton?: string }
         Returns: Json
