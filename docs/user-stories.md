@@ -1359,3 +1359,14 @@ L'espace commerçant reste en français.
 2. Les textes restent des **brouillons** et sont publiés avec le bandeau visible **« Version provisoire, en cours de relecture juridique »** (jusqu'à la relecture de l'avocat).
 3. Questions juridiques (« .com.dz », hébergement en Algérie, déclaration ANPDP, transferts, délégué, âge) : notées pour l'avocat dans `docs/ETAT.md`.
 4. US-34.4 : « Mes données » et registre admin codés le 10/10 ; « Fermer mon compte » attend les durées de conservation (question 5).
+
+## Module 21 — Espace commerçant en arabe (après le MVP)
+
+### US-35 — Voir l'espace commerçant en arabe — **textes à valider par le propriétaire**
+Décision du propriétaire (10/10, par BOLOSS) : l'espace commerçant est traduit en arabe ; l'administration et la page « Confirmer » restent en français.
+En tant que commerçant d'Oran qui lit plus facilement l'arabe, je veux choisir l'arabe dans mon espace, afin de gérer mes articles, mes commandes, le retrait, les avis, les statistiques et la position de ma boutique sans effort.
+- **Pages** : `/espace` (mes articles, partage, position, clients qui suivent), ajout et modification d'un article (formulaire, photos, description arabe, promo, stock), commandes reçues (étapes, tableau, détail, mise à jour automatique, liste de préparation), scanner et retrait, avis (réponse, signalement), statistiques, connexion, demande d'accord sur les conditions commerçants (habillage seulement), navigation, messages d'erreur du serveur liés.
+- **Règles comme US-23** : arabe simple avec des mots de darja d'Oran ; le commerçant est interpellé au **masculin générique** ; en français, « vous » (textes français inchangés). Choix de la langue : même cookie `langue` et même bouton « عربي / FR » que le site, ajouté à la navigation de l'espace. Page de droite à gauche ; prix avec `Prix`, numéros avec `Numero`, codes et références de gauche à droite.
+- **Pas traduits** : le texte juridique des conditions commerçants et le résumé de ses engagements (avis arabe « texte officiel en français » de #146) ; l'affiche imprimée pour les clients ; le bloc « Bons à rembourser » (`components/BonsBoutique.tsx`, fichier à ne pas toucher : il reste en français, de gauche à droite) ; ce que saisit la boutique.
+- **Pied de page** : sous `/espace`, il suit la langue de la page (règle de #146 ajustée) ; sous `/admin` et « Confirmer », il reste en français.
+- **Liste complète des textes FR → AR** (510 entrées : interface, messages, modèles) : `docs/textes-espace-ar.md` — **à valider par le propriétaire** avant ou après la mise en ligne (le code les branche tels quels ; une correction = une ligne dans `lib/textes/ar.ts` ou `lib/textes/messages.ts`).
