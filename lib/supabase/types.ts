@@ -1649,6 +1649,7 @@ export type Database = {
         Args: { avis: string; texte: string }
         Returns: undefined
       }
+      reste_mois_programmes: { Args: never; Returns: Json }
       resultat_message_whatsapp: {
         Args: {
           definitif?: boolean
