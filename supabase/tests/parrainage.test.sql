@@ -49,9 +49,9 @@ insert into auth.users (id, email) values
 insert into auth.users (id, phone, phone_confirmed_at)
 select ('c2700000-0000-0000-0000-0000000000' || lpad(i::text, 2, '0'))::uuid, '2135552700' || lpad(i::text, 2, '0'), now()
 from generate_series(1, 20) i;
-insert into boutiques (id, nom, slug, quartier, whatsapp, statut) values
-  ('d2700000-0000-0000-0000-00000000000a', 'Boutique Bon A', 'boutique-bon-a', 'Gambetta', '+213555270901', 'validee'),
-  ('d2700000-0000-0000-0000-00000000000b', 'Boutique Bon B', 'boutique-bon-b', 'Centre', '+213555270902', 'validee');
+insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
+  ('d2700000-0000-0000-0000-00000000000a', 'Boutique Bon A', 'boutique-bon-a', 'Gambetta', '+213555270901', 'validee', 'oran'),
+  ('d2700000-0000-0000-0000-00000000000b', 'Boutique Bon B', 'boutique-bon-b', 'Centre', '+213555270902', 'validee', 'oran');
 update profils set role = 'commercant', boutique_id = 'd2700000-0000-0000-0000-00000000000a' where id = 'b2700000-0000-0000-0000-00000000000a';
 update profils set role = 'commercant', boutique_id = 'd2700000-0000-0000-0000-00000000000b' where id = 'b2700000-0000-0000-0000-00000000000b';
 update profils set nom = 'Client ' || chr(64 + right(id::text, 2)::integer) || ' Test' where id::text like 'c2700000-%' and id::text not like '%ff';

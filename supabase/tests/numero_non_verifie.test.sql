@@ -37,9 +37,9 @@ insert into auth.users (id, email) values
   ('c1000000-0000-0000-0000-000000000001', 'fraudeur@test.dz'),
   ('c1000000-0000-0000-0000-000000000002', 'victime@test.dz'),
   ('c1000000-0000-0000-0000-000000000003', 'passage@test.dz');
-insert into boutiques (id, nom, slug, quartier, whatsapp, statut) values
-  ('d1000000-0000-0000-0000-000000000001', 'Boutique Essai Un', 'essai-un', 'Centre', '+213555910001', 'validee'),
-  ('d1000000-0000-0000-0000-000000000002', 'Boutique Essai Deux', 'essai-deux', 'Centre', '+213555910002', 'validee');
+insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
+  ('d1000000-0000-0000-0000-000000000001', 'Boutique Essai Un', 'essai-un', 'Centre', '+213555910001', 'validee', 'oran'),
+  ('d1000000-0000-0000-0000-000000000002', 'Boutique Essai Deux', 'essai-deux', 'Centre', '+213555910002', 'validee', 'oran');
 update profils set role = 'admin' where id = 'a1000000-0000-0000-0000-000000000001';
 update profils set role = 'commercant', boutique_id = 'd1000000-0000-0000-0000-000000000001' where id = 'b1000000-0000-0000-0000-000000000001';
 update profils set role = 'commercant', boutique_id = 'd1000000-0000-0000-0000-000000000002' where id = 'b1000000-0000-0000-0000-000000000002';

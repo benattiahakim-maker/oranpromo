@@ -25,9 +25,9 @@
 -- =============================================================================
 
 
-insert into boutiques (id, nom, slug, quartier, adresse, latitude, longitude, horaires, whatsapp, statut) values
+insert into boutiques (id, nom, slug, quartier, adresse, latitude, longitude, horaires, whatsapp, statut, ville) values
   ('33333333-3333-3333-3333-333333333333', 'Parfumerie Démo', 'parfumerie-demo', 'Gambetta',
-   'Boutique de démonstration (adresse fictive)', 35.699750, -0.617200, '10 h – 19 h, sauf vendredi', '+213000000003', 'validee')
+   'Boutique de démonstration (adresse fictive)', 35.699750, -0.617200, '10 h – 19 h, sauf vendredi', '+213000000003', 'validee', 'oran')
 on conflict (id) do nothing;
 
 -- Articles : « Parfums », genre mixte sauf mention (la beauté est enregistrée « mixte » quand le genre est vide).

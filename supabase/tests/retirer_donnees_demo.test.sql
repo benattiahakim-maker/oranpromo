@@ -25,9 +25,9 @@ insert into auth.users (id, email) values
   ('c4000000-0000-0000-0000-000000000002', 'vrai-commercant@test.dz');   -- vrai commerçant : à garder
 -- Boutique Nour a un numéro volontairement invalide (+213000000002), créé avant la règle de format.
 alter table boutiques disable trigger coordonnees_boutique_protegees;
-insert into boutiques (id, nom, slug, quartier, whatsapp, statut) values
-  ('11111111-1111-1111-1111-111111111111', 'Maison Ilyes', 'maison-ilyes', 'Centre', '+213555940011', 'validee'),
-  ('22222222-2222-2222-2222-222222222222', 'Boutique Nour', 'boutique-nour', 'Akid Lotfi', '+213000000002', 'validee');
+insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
+  ('11111111-1111-1111-1111-111111111111', 'Maison Ilyes', 'maison-ilyes', 'Centre', '+213555940011', 'validee', 'oran'),
+  ('22222222-2222-2222-2222-222222222222', 'Boutique Nour', 'boutique-nour', 'Akid Lotfi', '+213000000002', 'validee', 'oran');
 alter table boutiques enable trigger coordonnees_boutique_protegees;
 update profils set role = 'admin', boutique_id = '11111111-1111-1111-1111-111111111111' where id = '78b03d9d-299d-480b-b2b9-f6149523bb27';
 update profils set role = 'commercant', boutique_id = '22222222-2222-2222-2222-222222222222', telephone = '+213555940099' where id = 'da9f4aa4-9bfa-4312-9a8f-05c3eefffc99';

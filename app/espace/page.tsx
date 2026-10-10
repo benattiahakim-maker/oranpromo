@@ -7,6 +7,7 @@ import PositionEspace, { type ProprietesPositionEspace } from "@/components/Posi
 import { preparerPartageBoutique, type PartageBoutique } from "@/lib/lien-boutique";
 import BonsBoutique from "@/components/BonsBoutique";
 import { lireRelevesBoutique, type ReleveBoutique } from "@/lib/parrainage-admin";
+import { villeLue } from "@/lib/ville";
 
 export default async function Espace({ searchParams }: { searchParams: Promise<{ erreur?: string }> }) {
   const supabase = await creerClientServeur();
@@ -22,14 +23,15 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
   if (profil?.boutique_id) {
     const [resultat, boutique] = await Promise.all([
       supabase.from("articles").select("*, photos(*), tailles(*), promos(*)").eq("boutique_id", profil.boutique_id).order("cree_le", { ascending: false }),
-      supabase.from("boutiques").select("nom, slug, statut, latitude, longitude").eq("id", profil.boutique_id).maybeSingle(),
+      supabase.from("boutiques").select("nom, slug, statut, latitude, longitude, villes(nom, lat_min, lat_max, lng_min, lng_max, centre_lat, centre_lng)").eq("id", profil.boutique_id).maybeSingle(),
     ]);
     articles = resultat.data;
     erreurListe = Boolean(resultat.error);
     // US-22 : bloc « Partager ma boutique » (sans boutique lisible, pas de bloc, la liste reste affichée).
     if (boutique.data) partage = await preparerPartageBoutique(boutique.data);
     // US-24.2 : bloc « Position sur la carte ».
-    if (boutique.data) position = { statut: boutique.data.statut, latitude: boutique.data.latitude ?? null, longitude: boutique.data.longitude ?? null };
+    // US-29.4 : avec la ville de la boutique (illisible : Oran, comme avant).
+    if (boutique.data) position = { statut: boutique.data.statut, latitude: boutique.data.latitude ?? null, longitude: boutique.data.longitude ?? null, zone: villeLue(boutique.data.villes) ?? undefined };
     // US-27.5 : bloc « Bons parrainage à rembourser » (seulement si la boutique a des relevés ; une erreur masque le bloc).
     try { releves = await lireRelevesBoutique(supabase, profil.boutique_id); } catch { releves = []; }
   }

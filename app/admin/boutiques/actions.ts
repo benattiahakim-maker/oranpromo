@@ -1,7 +1,7 @@
 "use server";
 
 import { creerClientServeur } from "@/lib/supabase/server";
-import { changerStatutBoutique, creerBoutique, ErreurValidationBoutique, modifierPositionBoutiqueAdmin, rattacherCommercant, type ErreursBoutique, type SaisieBoutique } from "@/lib/boutique";
+import { changerStatutBoutique, changerVilleBoutique, creerBoutique, ErreurValidationBoutique, modifierPositionBoutiqueAdmin, rattacherCommercant, type ErreursBoutique, type SaisieBoutique } from "@/lib/boutique";
 import type { Enums } from "@/lib/supabase/types";
 
 export type ResultatBoutique = { succes: boolean; message: string; erreurs?: ErreursBoutique };
@@ -21,4 +21,8 @@ export async function rattacherCompteBoutique(id: string, email: string) {
 // US-24.2 : position d'une boutique (deux nombres, ou deux null pour la retirer).
 export async function modifierPositionBoutique(id: string, latitude: number | null, longitude: number | null) {
   return resultat(async () => { await modifierPositionBoutiqueAdmin(await creerClientServeur(), id, latitude, longitude); }, latitude === null ? "Position retirée." : "Position enregistrée.");
+}
+// US-29.4 : l'admin change la ville d'une boutique (la base revérifie la position dans les bornes de la nouvelle ville).
+export async function changerVilleBoutiqueAdmin(id: string, ville: string) {
+  return resultat(async () => { await changerVilleBoutique(await creerClientServeur(), id, ville); }, "Ville enregistrée.");
 }

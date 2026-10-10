@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
 import { creerBoutique, messageErreurPosition, modifierPositionBoutiqueAdmin, modifierPositionMaBoutique, validerBoutique } from "./boutique";
-import { MESSAGE_HORS_ORAN, MESSAGE_POSITION_INCOMPLETE, MESSAGE_POSITION_PUBLIEE } from "./position";
+import { MESSAGE_HORS_ORAN, MESSAGE_POSITION_INCOMPLETE, MESSAGE_POSITION_PUBLIEE, ZONE_ORAN } from "./position";
 
-const saisie = { nom: "Boutique Étoile", quartier: "Akid Lotfi", adresse: "12 rue des Oliviers", latitude: "", longitude: "", horaires: "", whatsapp: "0555 12 34 56", instagram: "", facebook: "" };
+const saisie = { nom: "Boutique Étoile", quartier: "Akid Lotfi", adresse: "12 rue des Oliviers", latitude: "", longitude: "", horaires: "", whatsapp: "0555 12 34 56", instagram: "", facebook: "", ville: "oran" };
 
 // Faux client Supabase : profil (rôle, boutique), boutique (statut) et mise à jour de la position.
 function simulation({ role = "admin", boutiqueId = "boutique" as string | null, statut = "en_attente", resultat = { data: { id: "boutique" } as unknown, error: null as unknown } } = {}) {
@@ -12,10 +12,12 @@ function simulation({ role = "admin", boutiqueId = "boutique" as string | null, 
   const fin = { select: () => ({ maybeSingle: async () => resultat, single: async () => resultat }) };
   updateEq.mockReturnValue(fin); update.mockReturnValue({ eq: updateEq }); insert.mockReturnValue(fin);
   const lectureProfil = { eq: () => ({ maybeSingle: async () => ({ data: { role, boutique_id: boutiqueId }, error: null }) }) };
+  // US-29.4 : la ville choisie (Oran) et ses bornes, lues avant la création.
+  const lectureVille = { eq: () => ({ maybeSingle: async () => ({ data: ZONE_ORAN, error: null }) }) };
   const lectureBoutique = vi.fn(() => ({ eq: () => ({ maybeSingle: async () => ({ data: { statut }, error: null }) }) }));
   const client = {
     auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "compte" } }, error: null }) },
-    from: vi.fn((table: string) => table === "profils" ? { select: () => lectureProfil } : { select: lectureBoutique, update, insert }),
+    from: vi.fn((table: string) => table === "profils" ? { select: () => lectureProfil } : table === "villes" ? { select: () => lectureVille } : { select: lectureBoutique, update, insert }),
   } as unknown as SupabaseClient<Database>;
   return { client, update, updateEq, insert };
 }

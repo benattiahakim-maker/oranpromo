@@ -24,17 +24,17 @@ begin
   raise exception 'ÉCHEC - % : aucune erreur', nom;
 end $$;
 
-insert into boutiques (id, nom, slug, quartier, whatsapp) values
-  ('d7000000-0000-0000-0000-000000000001', repeat('A', 80), 'nom-quatre-vingts', 'Centre', '+213555970001');
+insert into boutiques (id, nom, slug, quartier, whatsapp, ville) values
+  ('d7000000-0000-0000-0000-000000000001', repeat('A', 80), 'nom-quatre-vingts', 'Centre', '+213555970001', 'oran');
 select pg_temp.ok((select char_length(nom) = 80 from boutiques where id = 'd7000000-0000-0000-0000-000000000001'), 'nom de 80 caractères accepté');
-select pg_temp.erreur($$insert into boutiques (nom, slug, quartier, whatsapp) values (repeat('A', 81), 'nom-81', 'Centre', '+213555970002')$$,
+select pg_temp.erreur($$insert into boutiques (nom, slug, quartier, whatsapp, ville) values (repeat('A', 81), 'nom-81', 'Centre', '+213555970002', 'oran')$$,
   '23514', 'Le nom de la boutique doit contenir entre 2 et 80 caractères.', 'nom de 81 caractères refusé avec le message clair');
-select pg_temp.erreur($$insert into boutiques (nom, slug, quartier, whatsapp) values (repeat('A', 120), 'nom-120', 'Centre', '+213555970003')$$,
+select pg_temp.erreur($$insert into boutiques (nom, slug, quartier, whatsapp, ville) values (repeat('A', 120), 'nom-120', 'Centre', '+213555970003', 'oran')$$,
   '23514', 'entre 2 et 80 caractères', 'nom de 120 caractères refusé (ancienne limite du formulaire)');
-select pg_temp.erreur($$insert into boutiques (nom, slug, quartier, whatsapp) values ('  A  ', 'nom-1', 'Centre', '+213555970004')$$,
+select pg_temp.erreur($$insert into boutiques (nom, slug, quartier, whatsapp, ville) values ('  A  ', 'nom-1', 'Centre', '+213555970004', 'oran')$$,
   '23514', 'entre 2 et 80 caractères', 'nom d''un caractère (espaces autour) refusé');
-insert into boutiques (id, nom, slug, quartier, whatsapp) values
-  ('d7000000-0000-0000-0000-000000000002', '  ' || repeat('B', 80) || '  ', 'nom-espaces', 'Centre', '+213555970005');
+insert into boutiques (id, nom, slug, quartier, whatsapp, ville) values
+  ('d7000000-0000-0000-0000-000000000002', '  ' || repeat('B', 80) || '  ', 'nom-espaces', 'Centre', '+213555970005', 'oran');
 select pg_temp.ok((select nom = repeat('B', 80) from boutiques where id = 'd7000000-0000-0000-0000-000000000002'), 'espaces autour retirés : 80 caractères acceptés');
 select pg_temp.erreur($$update boutiques set nom = repeat('C', 81) where id = 'd7000000-0000-0000-0000-000000000001'$$,
   '23514', 'entre 2 et 80 caractères', 'modification : 81 caractères refusés');
@@ -42,8 +42,8 @@ update boutiques set nom = 'Nouveau nom' where id = 'd7000000-0000-0000-0000-000
 select pg_temp.ok((select nom = 'Nouveau nom' from boutiques where id = 'd7000000-0000-0000-0000-000000000001'), 'modification valide acceptée');
 update boutiques set quartier = 'Akid Lotfi' where id = 'd7000000-0000-0000-0000-000000000001';
 select pg_temp.ok((select quartier = 'Akid Lotfi' from boutiques where id = 'd7000000-0000-0000-0000-000000000001'), 'autres colonnes : pas de contrôle du nom');
-insert into boutiques (id, nom, slug, quartier, whatsapp) values
-  ('d7000000-0000-0000-0000-000000000003', repeat('👗', 80), 'nom-emoji', 'Centre', '+213555970006');
+insert into boutiques (id, nom, slug, quartier, whatsapp, ville) values
+  ('d7000000-0000-0000-0000-000000000003', repeat('👗', 80), 'nom-emoji', 'Centre', '+213555970006', 'oran');
 select pg_temp.ok((select char_length(nom) = 80 from boutiques where id = 'd7000000-0000-0000-0000-000000000003'), '80 émojis acceptés (même compte que le site)');
 select pg_temp.ok((select count(*) = 0 from boutiques where char_length(nom) not between 2 and 80), 'aucune boutique hors limite');
 

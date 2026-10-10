@@ -40,11 +40,11 @@ insert into auth.users (id, email) values
   ('b4000000-0000-0000-0000-000000000001', 'attente-carte@test.dz'),
   ('b4000000-0000-0000-0000-000000000002', 'validee-carte@test.dz'),
   ('b4000000-0000-0000-0000-000000000003', 'suspendue-carte@test.dz');
-insert into boutiques (id, nom, slug, quartier, whatsapp, statut, latitude, longitude) values
-  ('d4000000-0000-0000-0000-000000000001', 'Carte Attente', 'carte-attente', 'Centre', '+213555940001', 'en_attente', null, null),
-  ('d4000000-0000-0000-0000-000000000002', 'Carte Validee', 'carte-validee', 'Akid Lotfi', '+213555940002', 'validee', 35.7303, -0.5784),
-  ('d4000000-0000-0000-0000-000000000003', 'Carte Suspendue', 'carte-suspendue', 'Centre', '+213555940003', 'suspendue', 35.70, -0.64),
-  ('d4000000-0000-0000-0000-000000000004', 'Carte Sans Position', 'carte-sans-position', 'Gambetta', '+213555940004', 'validee', null, null);
+insert into boutiques (id, nom, slug, quartier, whatsapp, statut, latitude, longitude, ville) values
+  ('d4000000-0000-0000-0000-000000000001', 'Carte Attente', 'carte-attente', 'Centre', '+213555940001', 'en_attente', null, null, 'oran'),
+  ('d4000000-0000-0000-0000-000000000002', 'Carte Validee', 'carte-validee', 'Akid Lotfi', '+213555940002', 'validee', 35.7303, -0.5784, 'oran'),
+  ('d4000000-0000-0000-0000-000000000003', 'Carte Suspendue', 'carte-suspendue', 'Centre', '+213555940003', 'suspendue', 35.70, -0.64, 'oran'),
+  ('d4000000-0000-0000-0000-000000000004', 'Carte Sans Position', 'carte-sans-position', 'Gambetta', '+213555940004', 'validee', null, null, 'oran');
 update profils set role = 'admin' where id = 'a4000000-0000-0000-0000-000000000001';
 update profils set role = 'ambassadeur' where id = 'a4000000-0000-0000-0000-000000000002';
 update profils set role = 'commercant', boutique_id = 'd4000000-0000-0000-0000-000000000001' where id = 'b4000000-0000-0000-0000-000000000001';
@@ -56,9 +56,9 @@ update profils set role = 'commercant', boutique_id = 'd4000000-0000-0000-0000-0
 -- ---------------------------------------------------------------------------
 select pg_temp.ok(not exists (select 1 from boutiques where latitude is not null and not (latitude between 35.33 and 35.92 and longitude between -1.15 and -0.10)),
   'bornes : aucune boutique existante hors de la wilaya');
-insert into boutiques (id, nom, slug, quartier, whatsapp, latitude, longitude) values
-  ('d4000000-0000-0000-0000-000000000010', 'Coin Sud Ouest', 'coin-sud-ouest', 'Centre', '+213555940010', 35.33, -1.15),
-  ('d4000000-0000-0000-0000-000000000011', 'Coin Nord Est', 'coin-nord-est', 'Centre', '+213555940011', 35.92, -0.10);
+insert into boutiques (id, nom, slug, quartier, whatsapp, latitude, longitude, ville) values
+  ('d4000000-0000-0000-0000-000000000010', 'Coin Sud Ouest', 'coin-sud-ouest', 'Centre', '+213555940010', 35.33, -1.15, 'oran'),
+  ('d4000000-0000-0000-0000-000000000011', 'Coin Nord Est', 'coin-nord-est', 'Centre', '+213555940011', 35.92, -0.10, 'oran');
 select pg_temp.ok((select count(*) = 2 from boutiques where id in ('d4000000-0000-0000-0000-000000000010', 'd4000000-0000-0000-0000-000000000011')),
   'bornes : les coins exacts du rectangle sont acceptés');
 select pg_temp.erreur(pg_temp.position('d4000000-0000-0000-0000-000000000010', '35.9201', '-0.64'), '23514', 'wilaya d''Oran', 'bornes : au nord (35,9201) refusé');
@@ -70,7 +70,7 @@ select pg_temp.erreur(pg_temp.position('d4000000-0000-0000-0000-000000000010', '
 select pg_temp.erreur(pg_temp.position('d4000000-0000-0000-0000-000000000010', '36.7538', '3.0588'), '23514', 'wilaya d''Oran', 'bornes : Alger refusé');
 select pg_temp.erreur(pg_temp.position('d4000000-0000-0000-0000-000000000010', '''NaN''', '''NaN'''), '23514', 'wilaya d''Oran', 'bornes : NaN refusé');
 select pg_temp.erreur(pg_temp.position('d4000000-0000-0000-0000-000000000010', '''Infinity''', '''-Infinity'''), '23514', 'wilaya d''Oran', 'bornes : infini refusé');
-select pg_temp.erreur($$insert into boutiques (nom, slug, quartier, whatsapp, latitude, longitude) values ('Hors Oran', 'hors-oran', 'Centre', '+213555940012', 36.75, 3.05)$$,
+select pg_temp.erreur($$insert into boutiques (nom, slug, quartier, whatsapp, latitude, longitude, ville) values ('Hors Oran', 'hors-oran', 'Centre', '+213555940012', 36.75, 3.05, 'oran')$$,
   '23514', 'wilaya d''Oran', 'bornes : création hors de la wilaya refusée');
 select pg_temp.erreur(pg_temp.position('d4000000-0000-0000-0000-000000000010', '35.69', 'null'), '23514', 'Saisissez la latitude et la longitude, ou aucune des deux.', 'complète : latitude sans longitude refusée');
 select pg_temp.erreur(pg_temp.position('d4000000-0000-0000-0000-000000000010', 'null', '-0.63'), '23514', 'ou aucune des deux', 'complète : longitude sans latitude refusée');
@@ -112,8 +112,8 @@ reset role;
 select pg_temp.ok((select latitude is null from boutiques where id = 'd4000000-0000-0000-0000-000000000001'),
   'droits : l''ambassadeur ne modifie pas une boutique après sa création (RLS)');
 set local role authenticated;
-insert into boutiques (id, nom, slug, quartier, whatsapp, latitude, longitude) values
-  ('d4000000-0000-0000-0000-000000000020', 'Placee Sur Place', 'placee-sur-place', 'Centre', '+213555940020', 35.6971, -0.6337);
+insert into boutiques (id, nom, slug, quartier, whatsapp, latitude, longitude, ville) values
+  ('d4000000-0000-0000-0000-000000000020', 'Placee Sur Place', 'placee-sur-place', 'Centre', '+213555940020', 35.6971, -0.6337, 'oran');
 reset role;
 select pg_temp.ok((select latitude = 35.6971 from boutiques where id = 'd4000000-0000-0000-0000-000000000020'),
   'droits : l''ambassadeur place la boutique à la création');
@@ -181,8 +181,8 @@ reset role;
 select pg_temp.compte(null) \g /dev/null
 select pg_temp.ok((select count(*) = 1 from public.boutiques_carte(1)), 'limite : 1 boutique demandée, 1 renvoyée');
 select pg_temp.ok((select count(*) = 1 from public.boutiques_carte(0)), 'limite : 0 ou moins devient 1');
-insert into boutiques (nom, slug, quartier, whatsapp, statut)
-  select 'Masse ' || i, 'masse-' || i, 'Centre', '+213555' || lpad(i::text, 6, '0'), 'validee' from generate_series(1, 510) i;
+insert into boutiques (nom, slug, quartier, whatsapp, statut, ville)
+  select 'Masse ' || i, 'masse-' || i, 'Centre', '+213555' || lpad(i::text, 6, '0'), 'validee', 'oran' from generate_series(1, 510) i;
 select pg_temp.ok((select count(*) = 500 from public.boutiques_carte(100000)), 'limite : jamais plus de 500 boutiques');
 select pg_temp.ok((select count(*) = 500 from public.boutiques_carte()), 'limite : 500 par défaut');
 select pg_temp.ok(has_function_privilege('anon', 'public.boutiques_carte(integer, text)', 'execute'), 'droits : appel anonyme permis');

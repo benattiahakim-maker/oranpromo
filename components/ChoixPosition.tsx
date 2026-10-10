@@ -6,27 +6,28 @@
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import {
-  arrondirCoordonnee, coordonneesDepuisTexte, dansOran, formaterPosition, lireCoordonnee, messageLecture,
-  MESSAGE_HORS_ORAN, MESSAGE_LOCALISATION_INDISPONIBLE, MESSAGE_LOCALISATION_INTROUVABLE, MESSAGE_LOCALISATION_REFUSEE,
-  OPTIONS_LOCALISATION_BOUTIQUE, textePrecision, type Position,
+  arrondirCoordonnee, coordonneesDepuisTexte, dansZone, formaterPosition, lireCoordonnee, messageHorsVille, messageLecture,
+  MESSAGE_LOCALISATION_INDISPONIBLE, MESSAGE_LOCALISATION_INTROUVABLE, MESSAGE_LOCALISATION_REFUSEE,
+  OPTIONS_LOCALISATION_BOUTIQUE, textePrecision, ZONE_ORAN, type Position, type ZoneVille,
 } from "@/lib/position";
 
 const CartePosition = dynamic(() => import("./CartePosition"), { ssr: false, loading: () => <div className="h-[200px] w-full border border-trait bg-[#F2F2F2]" aria-hidden="true" /> });
 
-export type ProprietesChoixPosition = { id: string; latitude: string; longitude: string; onChange: (latitude: string, longitude: string) => void; desactive?: boolean };
+// US-29.4 : « zone » = bornes et centre de la ville de la boutique (Oran par défaut, comme avant).
+export type ProprietesChoixPosition = { id: string; latitude: string; longitude: string; onChange: (latitude: string, longitude: string) => void; desactive?: boolean; zone?: ZoneVille };
 
-// Position affichable sur la carte : les deux champs lisibles et dans la wilaya d'Oran.
-export function positionDepuisChamps(latitude: string, longitude: string): Position | null {
+// Position affichable sur la carte : les deux champs lisibles et dans la wilaya de la zone (Oran par défaut).
+export function positionDepuisChamps(latitude: string, longitude: string, zone: ZoneVille = ZONE_ORAN): Position | null {
   const lat = lireCoordonnee(latitude), lng = lireCoordonnee(longitude);
-  return lat !== null && lng !== null && dansOran(lat, lng) ? { latitude: lat, longitude: lng } : null;
+  return lat !== null && lng !== null && dansZone(zone, lat, lng) ? { latitude: lat, longitude: lng } : null;
 }
 const enTexte = (valeur: number) => arrondirCoordonnee(valeur).toFixed(6);
 
-export default function ChoixPosition({ id, latitude, longitude, onChange, desactive = false }: ProprietesChoixPosition) {
+export default function ChoixPosition({ id, latitude, longitude, onChange, desactive = false, zone = ZONE_ORAN }: ProprietesChoixPosition) {
   const [etat, setEtat] = useState<{ type: "aucun" | "recherche" | "ok" | "erreur"; texte?: string; avertissement?: string | null }>({ type: "aucun" });
   const [lien, setLien] = useState("");
   const [messageLien, setMessageLien] = useState<{ ok: boolean; texte: string } | null>(null);
-  const position = positionDepuisChamps(latitude, longitude);
+  const position = positionDepuisChamps(latitude, longitude, zone);
 
   function placer(nouvelle: Position) { onChange(enTexte(nouvelle.latitude), enTexte(nouvelle.longitude)); }
 
@@ -37,7 +38,7 @@ export default function ChoixPosition({ id, latitude, longitude, onChange, desac
     navigator.geolocation.getCurrentPosition(
       trouvee => {
         const { latitude: lat, longitude: lng, accuracy } = trouvee.coords;
-        if (!dansOran(lat, lng)) { setEtat({ type: "erreur", texte: MESSAGE_HORS_ORAN }); return; }
+        if (!dansZone(zone, lat, lng)) { setEtat({ type: "erreur", texte: messageHorsVille(zone.nom) }); return; }
         placer({ latitude: lat, longitude: lng });
         const precision = textePrecision(accuracy);
         setEtat({ type: "ok", texte: precision.texte, avertissement: precision.avertissement });
@@ -48,14 +49,14 @@ export default function ChoixPosition({ id, latitude, longitude, onChange, desac
   }
 
   function lireLien() {
-    const lecture = coordonneesDepuisTexte(lien);
-    if (!lecture.ok) { setMessageLien({ ok: false, texte: messageLecture(lecture.raison) }); return; }
+    const lecture = coordonneesDepuisTexte(lien, zone);
+    if (!lecture.ok) { setMessageLien({ ok: false, texte: messageLecture(lecture.raison, zone) }); return; }
     placer(lecture); setEtat({ type: "aucun" });
     setMessageLien({ ok: true, texte: `Coordonnées lues dans le lien : ${formaterPosition(lecture)}. Vérifiez l’épingle sur la carte.` });
   }
 
   function deplacer(nouvelle: Position) {
-    if (!dansOran(nouvelle.latitude, nouvelle.longitude)) { setEtat({ type: "erreur", texte: MESSAGE_HORS_ORAN }); return; }
+    if (!dansZone(zone, nouvelle.latitude, nouvelle.longitude)) { setEtat({ type: "erreur", texte: messageHorsVille(zone.nom) }); return; }
     placer(nouvelle);
   }
 
@@ -68,7 +69,7 @@ export default function ChoixPosition({ id, latitude, longitude, onChange, desac
       {etat.type === "ok" ? <p>✓ {etat.texte}</p> : <p>{etat.texte}</p>}
       {etat.avertissement && <p className="mt-2 border border-noir px-3 py-2">⚠ {etat.avertissement}</p>}
     </div>}
-    <CartePosition position={position} deplacable={!desactive} onDeplacer={deplacer} libelle="Carte de la position de la boutique" />
+    <CartePosition position={position} deplacable={!desactive} onDeplacer={deplacer} libelle="Carte de la position de la boutique" zone={zone} />
     <p className="text-sm text-gris">{position ? "Déplacez l’épingle du doigt pour la mettre sur l’entrée de la boutique." : "Touchez la carte pour placer l’épingle."}</p>
     {position && <div className="flex items-center justify-between gap-3 text-sm"><span dir="ltr" data-testid={`${id}-coordonnees`}>{formaterPosition(position)}</span><button type="button" onClick={() => { onChange("", ""); setEtat({ type: "aucun" }); setMessageLien(null); }} className="min-h-[44px] underline">Retirer la position</button></div>}
     <p className="etiquette mt-2 text-center text-gris">ou</p>

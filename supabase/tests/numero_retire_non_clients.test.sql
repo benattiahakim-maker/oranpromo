@@ -43,8 +43,8 @@ insert into auth.users (id, email) values
   ('c6000000-0000-0000-0000-00000000000d', 'client-q@test.dz'),
   ('c6000000-0000-0000-0000-00000000000e', 'client-r@test.dz');
 update profils set role = 'admin' where id = 'a6000000-0000-0000-0000-000000000001';
-insert into boutiques (id, nom, slug, quartier, whatsapp, statut) values
-  ('d6000000-0000-0000-0000-000000000001', 'Boutique Relecture Cinq', 'boutique-relecture-cinq', 'Centre', '+213555960001', 'validee');
+insert into boutiques (id, nom, slug, quartier, whatsapp, statut, ville) values
+  ('d6000000-0000-0000-0000-000000000001', 'Boutique Relecture Cinq', 'boutique-relecture-cinq', 'Centre', '+213555960001', 'validee', 'oran');
 -- Numéros vérifiés par code (Supabase Auth : phone_change, puis phone + phone_confirmed_at).
 update auth.users set phone_change = '213555600001', phone_change_sent_at = now() where id = 'c6000000-0000-0000-0000-00000000000a';
 update auth.users set phone = '213555600001', phone_confirmed_at = now(), phone_change = '' where id = 'c6000000-0000-0000-0000-00000000000a';

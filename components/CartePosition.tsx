@@ -6,13 +6,14 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { fondDeCarte } from "@/lib/carte";
-import { CENTRE_ORAN, dansOran, type Position } from "@/lib/position";
+import { dansZone, ZONE_ORAN, type Position, type ZoneVille } from "@/lib/position";
 
-export type ProprietesCartePosition = { position: Position | null; deplacable: boolean; onDeplacer?: (position: Position) => void; libelle: string };
+// US-29.4 : « zone » = ville de la boutique (centre de départ, points acceptés) ; Oran par défaut.
+export type ProprietesCartePosition = { position: Position | null; deplacable: boolean; onDeplacer?: (position: Position) => void; libelle: string; zone?: ZoneVille };
 
 const epingle = L.divIcon({ className: "", html: '<span style="display:block;width:22px;height:22px;background:#0A0A0A;border:2px solid #FFFFFF;outline:1px solid #0A0A0A"></span>', iconSize: [22, 22], iconAnchor: [11, 11] });
 
-export default function CartePosition({ position, deplacable, onDeplacer, libelle }: ProprietesCartePosition) {
+export default function CartePosition({ position, deplacable, onDeplacer, libelle, zone = ZONE_ORAN }: ProprietesCartePosition) {
   const conteneur = useRef<HTMLDivElement>(null);
   const carte = useRef<L.Map | null>(null);
   const marqueur = useRef<L.Marker | null>(null);
@@ -25,14 +26,14 @@ export default function CartePosition({ position, deplacable, onDeplacer, libell
     const map = L.map(conteneur.current, { zoomControl: true, attributionControl: true, scrollWheelZoom: false });
     map.attributionControl.setPrefix(false);
     L.tileLayer(fond.url, { attribution: fond.attribution, subdomains: fond.sousDomaines, maxZoom: fond.zoomMax, minZoom: 10 }).addTo(map);
-    map.setView([CENTRE_ORAN.latitude, CENTRE_ORAN.longitude], 13);
+    map.setView([zone.centre_lat, zone.centre_lng], 13);
     if (deplacable) map.on("click", (evenement: L.LeafletMouseEvent) => {
       const { lat, lng } = evenement.latlng;
-      if (dansOran(lat, lng)) rappel.current?.({ latitude: lat, longitude: lng });
+      if (dansZone(zone, lat, lng)) rappel.current?.({ latitude: lat, longitude: lng });
     });
     carte.current = map;
     return () => { map.remove(); carte.current = null; marqueur.current = null; };
-  }, [deplacable]);
+  }, [deplacable, zone]);
 
   useEffect(() => {
     const map = carte.current;

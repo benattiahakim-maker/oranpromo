@@ -14,16 +14,34 @@ export const CENTRE_ORAN = { latitude: 35.6971, longitude: -0.6337 } as const;
 export const MESSAGE_HORS_ORAN = "La position doit être dans la wilaya d'Oran.";
 export const MESSAGE_POSITION_INCOMPLETE = 'Saisissez la latitude et la longitude, ou aucune des deux.';
 
-// true si le point est dans le rectangle de la wilaya d'Oran (bornes comprises). NaN et l'infini sont refusés.
-export function dansOran(latitude: number, longitude: number): boolean {
+// US-29.4 : zone d'une ville (ligne de la table villes) : bornes, centre et nom pour le message.
+export type ZoneVille = { nom: string; lat_min: number; lat_max: number; lng_min: number; lng_max: number; centre_lat: number; centre_lng: number };
+/** Oran : les mêmes valeurs qu'avant (BORNES_ORAN, CENTRE_ORAN), défaut de toutes les fonctions ci-dessous. */
+export const ZONE_ORAN: ZoneVille = {
+  nom: "Oran", lat_min: BORNES_ORAN.latMin, lat_max: BORNES_ORAN.latMax, lng_min: BORNES_ORAN.lngMin, lng_max: BORNES_ORAN.lngMax,
+  centre_lat: CENTRE_ORAN.latitude, centre_lng: CENTRE_ORAN.longitude,
+};
+
+/** « La position doit être dans la wilaya d'Oran. », « … de Tlemcen. » : même texte que la base (prive.de_ville, apostrophe droite). */
+export function messageHorsVille(nom: string): string {
+  return `La position doit être dans la wilaya ${/^[aeiouyàâäéèêëîïôöùûüh]/i.test(nom) ? `d'${nom}` : `de ${nom}`}.`;
+}
+
+// true si le point est dans le rectangle de la zone (bornes comprises). NaN et l'infini sont refusés.
+export function dansZone(zone: ZoneVille, latitude: number, longitude: number): boolean {
   return (
     Number.isFinite(latitude) &&
     Number.isFinite(longitude) &&
-    latitude >= BORNES_ORAN.latMin &&
-    latitude <= BORNES_ORAN.latMax &&
-    longitude >= BORNES_ORAN.lngMin &&
-    longitude <= BORNES_ORAN.lngMax
+    latitude >= zone.lat_min &&
+    latitude <= zone.lat_max &&
+    longitude >= zone.lng_min &&
+    longitude <= zone.lng_max
   );
+}
+
+// true si le point est dans le rectangle de la wilaya d'Oran (bornes comprises). NaN et l'infini sont refusés.
+export function dansOran(latitude: number, longitude: number): boolean {
+  return dansZone(ZONE_ORAN, latitude, longitude);
 }
 
 // ---------------------------------------------------------------------------
@@ -104,7 +122,7 @@ function versUrl(texte: string): URL | null {
 // Lit une position dans un lien Google Maps long ou dans deux nombres collés.
 // Tout se passe dans le navigateur, sur le texte seul : aucun lien n'est ouvert ni suivi (ni ici, ni par le serveur),
 // en particulier les liens courts (maps.app.goo.gl), qui ne contiennent pas la position.
-export function coordonneesDepuisTexte(texte: string): LecturePosition {
+export function coordonneesDepuisTexte(texte: string, zone: ZoneVille = ZONE_ORAN): LecturePosition {
   const propre = texte.replace(/[\u2212\u2013]/g, '-').trim();
   if (!propre) return { ok: false, raison: 'introuvable' };
   let position: Position | null = null;
@@ -135,23 +153,24 @@ export function coordonneesDepuisTexte(texte: string): LecturePosition {
     if (valeur) position = couple(valeur[1], valeur[2]);
   }
   if (!position) return { ok: false, raison: 'introuvable' };
-  if (!dansOran(position.latitude, position.longitude)) return { ok: false, raison: 'hors_oran' };
+  if (!dansZone(zone, position.latitude, position.longitude)) return { ok: false, raison: 'hors_oran' };
   return { ok: true, ...position };
 }
 
-export function messageLecture(raison: 'lien_court' | 'introuvable' | 'hors_oran'): string {
-  return raison === 'lien_court' ? MESSAGE_LIEN_COURT : raison === 'hors_oran' ? MESSAGE_HORS_ORAN : MESSAGE_LIEN_INTROUVABLE;
+export function messageLecture(raison: 'lien_court' | 'introuvable' | 'hors_oran', zone: ZoneVille = ZONE_ORAN): string {
+  return raison === 'lien_court' ? MESSAGE_LIEN_COURT : raison === 'hors_oran' ? messageHorsVille(zone.nom) : MESSAGE_LIEN_INTROUVABLE;
 }
 
 // Validation commune (écran et serveur) : les deux ou aucune, dans la wilaya d'Oran, arrondie à 6 décimales.
 export function validerPosition(
   latitude: number | null | undefined,
   longitude: number | null | undefined,
+  zone: ZoneVille = ZONE_ORAN,
 ): { ok: true; latitude: number | null; longitude: number | null } | { ok: false; message: string } {
   const vide = (valeur: unknown) => valeur === null || valeur === undefined;
   if (vide(latitude) && vide(longitude)) return { ok: true, latitude: null, longitude: null };
   if (vide(latitude) || vide(longitude)) return { ok: false, message: MESSAGE_POSITION_INCOMPLETE };
-  if (typeof latitude !== 'number' || typeof longitude !== 'number' || !dansOran(latitude, longitude)) return { ok: false, message: MESSAGE_HORS_ORAN };
+  if (typeof latitude !== 'number' || typeof longitude !== 'number' || !dansZone(zone, latitude, longitude)) return { ok: false, message: messageHorsVille(zone.nom) };
   return { ok: true, latitude: arrondirCoordonnee(latitude), longitude: arrondirCoordonnee(longitude) };
 }
 
