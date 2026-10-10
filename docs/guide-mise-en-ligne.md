@@ -18,7 +18,7 @@
    - ni les boutons « Confirmer » et « Mon QR code ».
    C'est l'étape 3 : à faire en priorité.
 2. **`VISITEURS_SECRET`** et son empreinte (`jeton_visiteurs`) sont indispensables. Sans eux, aucune statistique n'est enregistrée, et « Signaler cet article » répond « pas disponible » (étape 3).
-3. **Parrainage.** D'après le développeur (10/10), il a été **activé en production**. Pourtant `docs/ETAT.md` le décrit encore « fermé ». Vérifiez son état dès maintenant (étape 16.1) : les bons de 300 DA ne doivent circuler qu'une fois **l'accord écrit signé par chaque boutique** et le **budget** vérifié.
+3. **Parrainage : déjà ouvert en production.** L'interrupteur `parrainage` vaut `on` (vérifié le 10/10/2026 selon BOLOSS ; `docs/ETAT.md` corrigé par la PR #107). Les bons de 300 DA peuvent donc déjà être émis : faites signer **l'accord écrit** à chaque boutique (`docs/juridique/accord-boutiques-bons.md`) et vérifiez le **budget** au plus vite (étape 16).
 4. **Le domaine `bledeal.com` n'est pas encore acheté.** Les modèles WhatsApp à bouton, `NEXT_PUBLIC_SITE_URL`, les affiches et la clé CARTO en dépendent : achetez-le au début (étape 1).
 
 ## Avant de commencer : 7 règles
@@ -80,11 +80,10 @@ Chaque ligne renvoie à l'étape détaillée plus bas. Les étapes 0, 7 et 9 dé
 - [ ] 15.1 `bouton_confirmer` = `on`, après l'approbation de `oranpromo_nouvelle_commande_confirmer`.
 - [ ] 15.2 `bouton_retrait` = `on`, après l'approbation de `oranpromo_commande_prete_retrait`.
 - [ ] 15.3 `modeles_arabes` = `on`, après l'approbation des **4** modèles `_ar`.
-- [ ] 16 Parrainage :
-  - [ ] état vérifié ;
+- [ ] 16 Parrainage (déjà `on` en production depuis le 9/10) :
   - [ ] **accord écrit signé** par chaque boutique ;
-  - [ ] budget mensuel ;
-  - [ ] `parrainage` = `on` seulement ensuite.
+  - [ ] budget mensuel vérifié ;
+  - [ ] (facultatif) état revérifié par SQL (16.1).
 
 **Boutiques, villes et projet**
 - [ ] 17.1 Position sur la carte de chaque boutique.
@@ -638,17 +637,23 @@ insert into prive.reglages (cle, valeur) values ('modeles_arabes', 'on') on conf
 - Il n'est valable que si la commande est **remise par QR code**. Par code à 6 chiffres ou par « Remis sans QR code », ni bon ni parrainage (relecture n°6).
 - Le parrainage ne marche qu'avec la **connexion par code** (étape 14).
 
-### 16.1 Vérifier l'état actuel (à faire tout de suite)
-```sql
-select cle, valeur from prive.reglages where cle in ('parrainage', 'parrainage_budget_mois');
-```
-- Si `parrainage` vaut `on` alors que **les accords ne sont pas signés**, ou que la connexion par code n'est pas en service, **fermer** :
+### 16.1 État actuel : déjà ouvert en production
+- Le parrainage est **déjà ouvert** : `parrainage` vaut **`on`** en production (activé le 9/10 vers 20 h 38 à la demande du propriétaire ; vérifié le **10/10/2026** selon BOLOSS ; `docs/ETAT.md` corrigé par la PR #107).
+- Conséquence : des bons de 300 DA peuvent déjà être émis. Priorité : **accords signés** (16.2) et **budget** vérifié (16.3). L'étape 16.4 (ouvrir) est donc déjà faite.
+- **Vérification rapide (facultative)**, dans Supabase › SQL Editor :
+  ```sql
+  select cle, valeur from prive.reglages where cle in ('parrainage', 'parrainage_budget_mois');
+  ```
+  Attendu : `parrainage` = `on` ; `parrainage_budget_mois` = le budget en DA (30 000 au départ).
+- **Fermer** si une boutique n'a pas signé et qu'on ne peut pas la retirer des bons, ou si la connexion par code n'est pas en service :
   - `delete from prive.reglages where cle = 'parrainage';`
   - les bons déjà émis restent valables ;
   - pour ne plus en émettre du tout, mettre le budget à 0 (16.3).
-- **Vérifier** : `/parrainage` affiche « Le parrainage n’est pas encore ouvert. Reviens bientôt ! » quand il est fermé.
+- **Vérifier** : `/parrainage` affiche « Parraine tes amis » quand il est ouvert, et « Le parrainage n’est pas encore ouvert. Reviens bientôt ! » quand il est fermé.
 
-### 16.2 Accord écrit avec chaque boutique (avant d'ouvrir)
+### 16.2 Accord écrit avec chaque boutique (au plus vite : le parrainage est ouvert)
+Brouillon prêt à faire relire : `docs/juridique/accord-boutiques-bons.md`.
+
 Faire signer **à chaque boutique** un court accord qui dit :
 - la boutique accepte en caisse les **bons BleDeal de 300 DA**, **sur une commande remise par QR code** (pas par code à 6 chiffres) ;
 - BleDeal lui rembourse chaque mois les bons utilisés : relevé clôturé le **1er**, paiement **avant le 10** du mois suivant, par CCP, BaridiMob ou virement ;
@@ -665,8 +670,8 @@ Une boutique qui ne signe pas : `/admin/parrainages` › « Retirer la boutique 
 - Au-delà du budget, les bons attendent le 1er du mois suivant.
 - **0** = plus aucun nouveau bon.
 
-### 16.4 Ouvrir le parrainage
-**Seulement** quand les conditions sont réunies :
+### 16.4 Ouvrir le parrainage (déjà fait en production)
+À refaire seulement après une fermeture, et **seulement** quand les conditions sont réunies :
 - connexion par code en service (étape 14) ;
 - accords signés ;
 - budget vérifié.
@@ -774,7 +779,7 @@ Aucune n'est imprimée.
 - [ ] Statistiques et « Signaler » fonctionnent.
 - [ ] Carte : fond CARTO, pas OpenStreetMap.
 - [ ] Interrupteurs : chacun à `on` **seulement** si son modèle est approuvé (requête de l'en-tête).
-- [ ] Parrainage : fermé, ou ouvert avec accords signés et budget (étape 16).
+- [ ] Parrainage : ouvert (`on`) avec accords signés et budget vérifié, sinon fermé (étape 16).
 - [ ] Plafonds en place : Supabase Spend Cap, Rate Limits (20 à 30 codes/h), Twilio sans recharge automatique + alerte, Anthropic, consommation CARTO.
 - [ ] Logo « BleDeal » en français et en arabe.
 - [ ] Lien d'une boutique collé dans WhatsApp : aperçu « BleDeal ».
@@ -819,7 +824,7 @@ Feuille de route : Mostaganem, puis Ouest → Centre → Est.
   - limites de modification d'un modèle approuvé : reprises de `docs/architecture.md`.
 - **Facebook** : « @bledeal déjà pris » vient du propriétaire (pas de `docs/ETAT.md`) ; chemin exact de création d'une Page ; effet d'un nom de Page différent sur l'examen du nom affiché WhatsApp.
 - **CARTO** : libellés du tableau de bord tirés de la page publique ; l'écran connecté n'a pas été ouvert.
-- **Parrainage « activé en production »** : information du développeur, non vérifiée dans la base (aucune lecture de la base pour ce guide). `docs/ETAT.md` le dit fermé. D'où la vérification de l'étape 16.1.
+- **Parrainage ouvert en production** : vérifié le 10/10/2026 selon BOLOSS (`valeur = 'on'`), repris dans `docs/ETAT.md` par la PR #107 ; ce guide n'a pas lu la base lui-même (vérification facultative à l'étape 16.1).
 
 ## Sources (consultées les 9 et 10 octobre 2026)
 
