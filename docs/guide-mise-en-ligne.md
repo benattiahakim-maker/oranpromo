@@ -32,7 +32,7 @@
 3. **Fabriquer un secret** : générateur du gestionnaire de mots de passe, **40 caractères, lettres et chiffres seulement**. Pas d'espace, pas d'apostrophe `'`, pas de guillemet : une apostrophe casse la commande SQL de l'empreinte. Un secret différent pour chaque variable.
 4. **Respectez l'ordre des étapes.** Certaines, faites trop tôt, bloquent toutes les connexions (étape 12) ou envoient des messages refusés par Meta (étape 15).
 5. **Après chaque changement de variable sur Vercel, redéployez.** Vercel n'applique une variable qu'aux nouveaux déploiements ([doc Vercel](https://vercel.com/docs/environment-variables/managing-environment-variables)). Les variables `NEXT_PUBLIC_…` sont copiées dans le site à la construction.
-6. **Une seule base pour tout.** La preview et la production utilisent **le même projet Supabase**. Conséquences :
+6. **Une seule base pour tout** (tant que `docs/environnements.md` n'est pas fait ; ensuite la preview utilise le projet de dev `bledeal-dev` et ses propres secrets). La preview et la production utilisent **le même projet Supabase**. Conséquences :
    - les 4 secrets (`CRON_SECRET`, `VISITEURS_SECRET`, `CODES_TELEPHONE_SECRET`, `CONFIRMATION_SECRET`) ont **la même valeur en Production et en Preview** ;
    - une commande de test sur la preview est une **vraie ligne** dans la base, et ses messages WhatsApp partent vraiment ;
    - les **réglages de la base** valent pour les deux : `connexion_client`, `bouton_confirmer`, `bouton_retrait`, `modeles_arabes`, `parrainage`, `parrainage_budget_mois`.

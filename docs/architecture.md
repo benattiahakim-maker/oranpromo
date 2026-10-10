@@ -1061,6 +1061,8 @@ Règles :
 
 ## Variables d'environnement
 
+Valeurs différentes entre **Production** (projet Supabase `oranpromo`) et **Preview** (projet de dev `bledeal-dev`) une fois `docs/environnements.md` appliqué ; les tests de parcours imposent les leurs (`playwright.config.ts`).
+
 | Variable | Où | Rôle |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | navigateur et serveur | connexion à Supabase (clé publique) |
