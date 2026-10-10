@@ -35,18 +35,18 @@ describe("US-24 : chargement de Leaflet", () => {
   });
 
   it("l'accueil, le catalogue et l'en-tête n'importent aucun bloc de carte", () => {
-    const legers = sources.filter(({ chemin }) => chemin === "app/page.tsx" || chemin.startsWith("app/catalogue/") || chemin === "components/EntetePublic.tsx");
+    const legers = sources.filter(({ chemin }) => chemin === "app/page.tsx" || chemin === "app/[ville]/page.tsx" || chemin.startsWith("app/catalogue/") || chemin.startsWith("app/[ville]/catalogue/") || chemin === "components/EntetePublic.tsx");
     expect(legers.length).toBeGreaterThan(0);
     for (const { chemin, texte } of legers) expect(texte, chemin).not.toMatch(/leaflet|CartePosition|ChoixPosition|CarteLeaflet/);
   });
 
   it("US-24.3 : la carte publique n'a aucun moyen d'envoyer la position (ni action serveur, ni fetch, ni mesure, ni stockage)", () => {
-    for (const fichier of ["components/CarteBoutiques.tsx", "components/CarteLeaflet.tsx", "app/carte/page.tsx"]) {
+    for (const fichier of ["components/CarteBoutiques.tsx", "components/CarteLeaflet.tsx", "app/[ville]/carte/page.tsx"]) {
       const { texte } = sources.find(({ chemin }) => chemin === fichier)!;
       expect(texte, fichier).not.toMatch(/\/actions"|enregistrerMesure|EnregistrerVue|fetch\(|localStorage|sessionStorage|document\.cookie|XMLHttpRequest|sendBeacon/);
     }
     // La position ne passe jamais par l'adresse : seul l'univers y est écrit.
     const carte = sources.find(({ chemin }) => chemin === "components/CarteBoutiques.tsx")!.texte;
-    expect(carte.match(/replaceState\([^)]*\)/g)).toEqual(['replaceState(null, "", cle ? `/carte?univers=${cle}` : "/carte")']);
+    expect(carte.match(/replaceState\([^)]*\)/g)).toEqual(['replaceState(null, "", cle ? `${chemin}?univers=${cle}` : chemin)']);
   });
 });
