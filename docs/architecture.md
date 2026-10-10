@@ -827,6 +827,51 @@ Relevé du 10/10 sur `main` : « OranPromo » dans **93 lignes de 44 fichiers** 
 
 US-29 : migration `…_villes.sql` + `supabase/tests/villes.test.sql` ; `lib/ville.ts` (+ test : cookie, `deVille`, codes réservés, choix de la ville par défaut), `lib/villes.ts` (photos), `lib/position.ts` (bornes par ville), `lib/catalogue.ts`, `lib/carte.ts`, `lib/boutique.ts` ; `app/[ville]/layout.tsx`, `app/[ville]/page.tsx`, `app/[ville]/catalogue/page.tsx`, `app/[ville]/carte/page.tsx` ; `app/page.tsx`, `app/catalogue/page.tsx`, `app/carte/page.tsx` (redirections) ; `app/villes/page.tsx`, `app/ville/actions.ts`, `components/ChoixVille.tsx` ; `app/admin/villes/page.tsx` + `actions.ts` ; `components/EntetePublic.tsx`, `CarteLeaflet.tsx`, `CartePosition.tsx`, `ChoixPosition.tsx`, `Promos.tsx`, `NouvelleBoutique.tsx` ; types régénérés (`npm run db:types`). US-30 : fichiers de l'inventaire ci-dessus. Tests Vitest pour chaque fonction de `lib/`, les redirections et les pages ; tests SQL pour la migration (Oran identique).
 
+## Suivre une boutique et inscription en boutique (US-31) — conception, **à valider par le propriétaire**
+
+Stories : `docs/user-stories.md`, module 17. Maquette : `docs/maquettes/SuivreBoutique.dc.html`. Source : carte Trello « Commercial · Inscription des clients en boutique + « Suivre la boutique » ». **Aucun code, aucune migration** dans cette PR.
+
+**Principes** : on réutilise l'existant sans le modifier — numéro vérifié (US-21), lien et affiche de boutique (US-22), bons et relevés (US-27, étendus par US-33), file `messages_whatsapp` (US-20.5). Blocage, no-shows, contestation, vérification du numéro, `passer_commande` et `changer_statut_commande` **inchangés**.
+
+### Données (une migration en US-31.1, une en US-31.3)
+
+| Élément | Rôle | Points clés |
+| --- | --- | --- |
+| `abonnements_boutique` | qui suit quoi | clé (`profil_id`, `boutique_id`) ; `cree_le` ; `source` (`vitrine`, `inscription_boutique`) ; `alerte_whatsapp` (booléen, non par défaut) ; `alerte_consentie_le` ; RLS : le client lit ses lignes ; écriture : fonctions seulement ; aucun accès boutique ni public |
+| `suivre_boutique(boutique)`, `ne_plus_suivre(boutique)` | écrire | client connecté (`role = 'client'`), boutique `validee` ; 200 abonnements au plus par compte ; idempotent |
+| `abonnes_boutique()` | compteur de l'espace | boutique du commerçant connecté (`prive.ma_boutique()`) : `{ total, sept_jours }` ; jamais de liste |
+| `profils.inscrit_par_boutique`, `profils.inscrit_en_boutique_le` (US-31.3) | rattachement | posés une seule fois par `rattacher_inscription(slug)` : compte client créé depuis moins de 24 h, aucune commande, pas déjà rattaché ; protégés comme `code_parrainage` (déclencheur `prive.proteger_colonnes_parrainage` étendu, ou déclencheur frère) |
+| `prive.reglages` | réglages | `inscription_boutique_bon` (on / absent), `alertes_whatsapp` (on / absent), `alertes_plafond_mois` (nombre de messages, 0 = arrêt) |
+
+### Parcours de l'affiche (US-31.3)
+
+`/espace/affiche` → QR code `https://<domaine>/i/<slug>` → route `app/i/[slug]/route.ts` (comme `app/p/[code]/route.ts` du parrainage) : vérifie le format du slug, pose le cookie `inscription_boutique` (slug, httpOnly, SameSite=Lax, 24 h) **sans lire la base**, redirige (303) vers `/b/<slug>?bienvenue=1`. La vitrine affiche le bandeau si le cookie correspond. Après la connexion par téléphone (suite `/b/<slug>`, ajoutée à `cheminSuiteClient` dans `lib/connexion.ts`), l'action serveur appelle `rattacher_inscription(slug)` puis `suivre_boutique`. Le cookie est effacé ensuite. Pas de ville dans le lien (les liens `/b/` restent globaux, US-29).
+
+### Bon de l'inscription en boutique (US-31.4, après US-33)
+
+Un **programme** de bons de US-33 de type `inscription_boutique` (montant, minimum, validité, plafond par boutique et par mois, part de la boutique). Le bon est créé quand le compte rattaché a un **numéro vérifié** (le numéro n'a jamais reçu de bon de bienvenue : même empreinte que US-33) ; il porte `boutique_origine` et `utilisable_des` : `utiliser_bon` refuse ce bon **dans la boutique d'origine avant le lendemain** (heure d'Alger) et accepte ailleurs. À la remise **par QR code**, la ligne de relevé garde `montant` (déduit en caisse) et `part_boutique` ; **à rembourser = montant − part_boutique** dans la boutique d'origine, `montant` ailleurs. Le budget du programme compte la part BleDeal.
+
+### Alerte WhatsApp (US-31.5, plus tard)
+
+- Consentement : case séparée (jamais pré-cochée) → `alerte_whatsapp = true`, `alerte_consentie_le = now()` ; preuve gardée (loi 18-05, art. 33 : en cas de litige, l'e-fournisseur prouve le consentement).
+- Tâche `pg_cron` quotidienne (9 h 50 à Alger, juste avant la tâche d'envoi de 10 h du plan Hobby, US-20.5) : pour chaque client avec au moins un abonnement alerté et un numéro vérifié, compte les **promos créées ou réactivées depuis la veille** dans ses boutiques (au plus 1 par boutique) ; si > 0 et plafond du mois non atteint : **une** ligne dans `messages_whatsapp` (modèle `bledeal_nouvelles_promos`, catégorie **Marketing** ; paramètres : prénom, nombre de boutiques, nom de la première, lien `/compte/boutiques`, lien de désabonnement `/alertes/<jeton>`).
+- Désabonnement : `/alertes/<jeton>` (jeton HMAC du profil, comme les liens « Confirmer » de US-20.6, sans connexion) → `alerte_whatsapp = false` partout, page « Vous ne recevrez plus d'alertes. ». Pas de bouton de réponse rapide (il faudrait le webhook écarté en US-20.6).
+- Coût : grille Meta du 1er octobre 2026, Algérie = zone « Rest of Africa » : **Marketing 0,0225 $**, Utilitaire 0,004 $ par message remis (sources : developers.facebook.com/documentation/business-messaging/whatsapp/pricing ; relevés de la grille par faslacloud.com et chatmi.io, consultés le 10/10/2026). Le plafond mensuel borne la dépense.
+
+### Fichiers prévus (au moment du code)
+
+```
+supabase/migrations/…_abonnements_boutique.sql   US-31.1 (table, fonctions, tests SQL)
+supabase/migrations/…_inscription_boutique.sql   US-31.3 (colonnes profils, rattacher_inscription)
+lib/abonnements.ts (+ test)                      lecture, suivre / ne plus suivre, textes
+app/i/[slug]/route.ts (+ test)                   cookie et redirection
+app/compte/boutiques/page.tsx, actions.ts        « Mes boutiques »
+components/BoutonSuivre.tsx, MesBoutiques.tsx, AbonnesBoutique.tsx, BienvenueBoutique.tsx
+app/alertes/[jeton]/page.tsx                     US-31.5 seulement
+```
+
+**Aucune nouvelle dépendance**, aucune nouvelle variable d'environnement (le jeton de désabonnement réutilise `CONFIRMATION_SECRET` avec un préfixe différent, question technique à confirmer au code).
+
 ## Limites par visiteur (vues, clics, partages, signalements)
 
 Carte Trello « Sécurité · Limiter les envois en masse ». Migration `20261010180000_limites_visiteurs.sql`.
