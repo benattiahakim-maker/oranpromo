@@ -903,3 +903,110 @@ En tant que commerçant, je veux voir d'un coup d'œil ce que je dois confirmer,
 8. Montant de la ligne / colonne : **montant à encaisser** après le bon (`total − remise_bon`), avec l'étiquette « Bon −300 » ; le détail garde « Total … · Bon parrainage −300 DA · à encaisser … ».
 9. Recherche : numéro ou début du prénom ; **pas de chiffres du téléphone** dans les lignes.
 10. Étape ouverte par défaut : **la première non vide** (« À confirmer », puis « À préparer », puis « Prêtes », sinon « À confirmer »).
+
+## Module 16 — BleDeal, plusieurs villes (après le MVP)
+
+Source : décision du propriétaire du 10 octobre 2026 (4 h 16) : « renommer OranPromo en marque nationale **BleDeal** (écrit BleDeal dans le logo, domaine **bledeal.com** que le propriétaire achète ; proposition en écriture arabe **بليديل**, à valider) et rendre le site **multi-villes** : le client choisit une ville (wilaya) et le contenu s'adapte (catalogue, accueil, boutiques, `/carte`, compteurs) à cette ville. **Un seul site, une seule base, un seul code**, et plus tard d'autres pays du Maghreb. » **Conception seulement** : aucun code, aucune migration, aucune dépendance. Conception technique : `docs/architecture.md`, section « BleDeal, plusieurs villes (US-29, US-30) » ; maquette `docs/maquettes/ChoixVille.dc.html` (375 px, français et arabe de droite à gauche). **À valider par le propriétaire avant tout code** (questions en fin de module).
+
+**Aujourd'hui** : tout est pensé pour Oran : rectangle de la wilaya d'Oran dans la base (contrainte `boutiques_position_oran` et déclencheur `verifier_position_boutique`) et dans `lib/position.ts` (`BORNES_ORAN`, `CENTRE_ORAN`) ; titres « Les promos d'Oran », « 12 boutiques à Oran », « Carte des boutiques d'Oran » ; grande photo de Santa Cruz ; « OranPromo » dans l'en-tête, les métadonnées, les messages et les modèles WhatsApp (`oranpromo_*`).
+
+**Restent tels quels** : liens de boutique `/b/<slug>` et d'article `/a/<id>` (globaux, sans ville), panier, compte, commandes, retrait par QR code, parrainage (un seul programme pour tout le pays), espace commerçant et admin. **Aucune règle ne change** : statuts et stock des commandes, expiration, no-shows, contestation, **blocage**, **numéro vérifié**, numéros algériens seulement (`+213`), bons. Comportement d'Oran **identique** (mêmes bornes, même message d'erreur, mêmes boutiques).
+
+Livré en sous-stories, une PR chacune, dans cet ordre (US-30 peut passer avant si le domaine est prêt plus tôt, question 9) :
+
+| Story | Contenu | Écrans |
+| --- | --- | --- |
+| US-29.1 | Table `villes`, ville de chaque boutique, bornes par ville à la place du rectangle d'Oran, carte par ville (base seulement) | aucun |
+| US-29.2 | Choisir sa ville et la garder (cookie `ville`), adresses `/oran`, `/oran/catalogue`, `/oran/carte`, bouton « Oran ▾ » dans l'en-tête, page `/villes` | `/`, `/villes`, `/[ville]`, en-tête |
+| US-29.3 | Contenu filtré par ville : accueil, promos, catalogue (et ses filtres), carte, compteurs, textes « d'Oran » devenus « de {ville} » (français et arabe) | `/[ville]`, `/[ville]/catalogue`, `/[ville]/carte` |
+| US-29.4 | Ville choisie par l'admin et l'ambassadeur à la création d'une boutique, filtre par ville, ouvrir / fermer une ville | `/admin/boutiques`, `/admin/villes`, `/espace` (lecture seule) |
+| US-30.1 | Nouveau nom dans le site : logo « BleDeal », textes FR / arabe, métadonnées et aperçus, messages de la base affichés, noms de fichiers | tout le site |
+| US-30.2 | Nouveau nom dans le projet : `package.json`, README, `CLAUDE.md`, `AGENTS.md`, `docs/`, scripts `.bat` | aucun |
+| US-30.3 | Liste des actions du propriétaire (domaine, Vercel, Supabase, Meta, Twilio, Cloudflare, CARTO, GitHub, affiches) | aucun |
+
+### US-29 — Choisir sa ville (vue d'ensemble) — **à valider par le propriétaire**
+En tant que client, je veux choisir ma ville (wilaya) une fois, sans compte, afin de ne voir que les promos et les boutiques où je peux aller ; en tant que propriétaire, je veux ouvrir BleDeal ville par ville avec un seul site.
+
+### US-29.1 — Villes dans la base (aucun écran)
+- Nouvelle table **`villes`** : `code` (clé, ex. `oran`, minuscules et tirets, sert dans l'adresse et le cookie ; mots réservés refusés : `a`, `b`, `p`, `admin`, `api`, `auth`, `carte`, `catalogue`, `compte`, `confirmer`, `espace`, `langue`, `panier`, `parrainage`, `retrait`, `villes`, `visiteurs`…), `pays` (code ISO à 2 lettres, `DZ` par défaut — pour le Maghreb plus tard), `numero_wilaya` (31 pour Oran), `nom` (« Oran »), `nom_ar` (« وهران »), bornes `lat_min`, `lat_max`, `lng_min`, `lng_max`, centre `centre_lat`, `centre_lng`, `zoom` (12), **`ouverte`** (non par défaut), `ordre`, `cree_le`.
+- Oran ajoutée par la migration, **ouverte**, avec **exactement** le rectangle d'aujourd'hui (35,33 à 35,92 ; −1,15 à −0,10) et le centre d'aujourd'hui (place du 1er Novembre).
+- **`boutiques.ville`** (référence `villes.code`, obligatoire) : toutes les boutiques existantes passent à `oran`. Valeur par défaut `oran` le temps que le code envoie la ville (retirée en US-29.4, question 6).
+- La position d'une boutique est vérifiée **dans les bornes de sa ville** (déclencheur existant, étendu) ; la contrainte `boutiques_position_oran` est retirée. Message : « La position doit être dans la wilaya d'Oran. » (identique pour Oran), « … dans la wilaya de Tlemcen. », « … d'Alger. ». Changer la ville d'une boutique revérifie sa position. La ville d'une boutique publiée ne change qu'avec un admin (même règle que la position, le nom et le WhatsApp).
+- **`profils.ville`** (facultative) : ville d'un ambassadeur (question 5).
+- `boutiques_carte(ville)` : épingles **d'une ville**. Nouvelle lecture `villes_ouvertes()` : villes ouvertes avec leur nombre de boutiques validées (page `/villes`).
+- Tests SQL : Oran accepte et refuse **les mêmes points qu'avant** (bornes comprises, `NaN`, infini) avec le même message ; une boutique d'une autre ville est vérifiée avec les bornes de sa ville ; changer de ville revérifie ; ville inconnue refusée ; code réservé refusé ; ville fermée absente de `villes_ouvertes()` et de la carte publique ; un commerçant ne change pas la ville d'une boutique publiée ; un visiteur ne modifie pas `villes`.
+
+### US-29.2 — Choisir sa ville et la garder (pages `/`, `/villes`, `/[ville]`, en-tête)
+- **Adresse avec la ville** pour les pages dont le contenu dépend de la ville : `/oran` (accueil), `/oran/catalogue?…`, `/oran/carte`. Recommandé (comparaison dans `architecture.md`) : un lien partagé montre **la ville du lien**, et chaque ville a ses pages trouvables sur Google.
+- **Cookie `ville`** (comme `langue` : un an, sans compte) : posé seulement quand le client **choisit** une ville (page `/villes` ou bouton de l'en-tête). Ouvrir un lien `/alger/…` reçu ne change pas le choix gardé.
+- **Anciennes adresses** gardées : `/`, `/catalogue?…` et `/carte` renvoient (redirection temporaire) vers la même page de la ville gardée ; sans choix gardé : **Oran tant qu'elle est la seule ville ouverte**, ensuite la page de choix (question 2).
+- **En-tête** : à côté du logo, bouton « Oran ▾ » (« وهران ▾ » en arabe) qui ouvre `/villes`. Affiché seulement quand au moins 2 villes sont ouvertes (question 3).
+- **Page `/villes`** : « Choisissez votre ville », villes **ouvertes** seulement, avec leur nombre de boutiques, triées par `ordre` puis nom ; « Me localiser » (facultatif) propose la ville dont les bornes contiennent la position du téléphone (la position reste dans le téléphone, rien n'est envoyé) ; choisir une ville la garde et ouvre la même page dans cette ville (depuis le catalogue : le catalogue de la nouvelle ville, filtres gardés sauf le quartier).
+- Ville inconnue ou fermée dans l'adresse : page de choix avec « Cette ville n'est pas encore sur BleDeal. ».
+
+### US-29.3 — Contenu de la ville (pages `/[ville]`, `/[ville]/catalogue`, `/[ville]/carte`)
+- **Accueil** : « Les promos d'Oran » / « Les promos de Tlemcen » (« بروموات وهران ») ; « En ce moment » et « Voir plus » : promos des boutiques **de la ville** ; lien carte vers `/oran/carte` ; grande photo de la ville (question 7) ; tuiles des univers inchangées.
+- **Catalogue** : articles des boutiques validées **de la ville** ; filtre « Quartier » : quartiers de la ville seulement ; tailles / contenances proposées : celles de la ville ; « Pas encore d'articles à Tlemcen. » quand c'est vide.
+- **Carte** : épingles de la ville, carte centrée et limitée aux bornes de la ville ; « 12 boutiques à Oran » / « 12 حانوت في وهران » ; « Carte des boutiques d'Oran ».
+- **Fiche article, vitrine `/b/<slug>`, panier, compte, suivi, retrait** : globaux, sans filtre ; la vitrine et la fiche montrent « Akid Lotfi · Oran » ; l'itinéraire Google Maps sans position utilise « quartier, ville, Algérie ».
+- Textes avec la ville : tableau des textes ci-dessous (français et arabe, à valider).
+
+### US-29.4 — Ville des boutiques et villes ouvertes (pages `/admin/boutiques`, `/admin/villes`, `/espace`)
+- Création d'une boutique (admin et ambassadeur) : champ **« Ville (wilaya) »** (villes connues, ouvertes ou non) ; pour un ambassadeur avec une ville, elle est choisie d'office (question 5). La position est vérifiée dans les bornes de la ville choisie (écran, serveur, base) ; la petite carte de position s'ouvre sur le centre de la ville.
+- `/admin/boutiques` : colonne et filtre « Ville » ; l'admin peut changer la ville d'une boutique (la position est revérifiée).
+- **`/admin/villes`** (admin seulement) : liste des villes connues, nombre de boutiques (en attente / validées), interrupteur **« Ouverte »** (« Ouvrir Tlemcen ? Ses boutiques validées apparaîtront dans le choix des villes, l'accueil, le catalogue et la carte. »). Les bornes d'une nouvelle ville sont ajoutées **par migration** (lues dans OpenStreetMap, comme Oran, avec tests), pas saisies à la main.
+- `/espace` : « Ville : Oran » en lecture seule.
+- Une ville fermée : ses boutiques peuvent être créées, validées et préparées par l'ambassadeur ; elles n'apparaissent dans aucune liste publique ; leurs liens `/b/<slug>` restent ouverts (question 4).
+
+### US-30 — Le site s'appelle BleDeal (vue d'ensemble) — **à valider par le propriétaire**
+En tant que propriétaire, je veux que le site, ses messages et ses liens s'appellent BleDeal partout où le client et la boutique les voient, sans casser ce qui marche (paniers, liens déjà partagés, modèles WhatsApp).
+
+### US-30.1 — BleDeal dans le site (tout le site)
+- Logo **« BleDeal »** (Bodoni Moda, majuscules B et D, plus de capitales espacées) dans l'en-tête public, la page de retrait, la page « Confirmer », l'espace ; toujours en lettres latines, même en arabe (comme aujourd'hui, `dir="ltr"`).
+- Titre et description du site, aperçus de partage (`siteName`, image `/b/<slug>/apercu`), textes FR / arabe qui disent « OranPromo » (liste dans `architecture.md`, inventaire), messages préparés pour WhatsApp (réserver, question, partage, parrainage), noms de fichiers téléchargés (`bledeal-<slug>-qr.svg`, `bledeal-bons-2026-10.csv`), affiche (« BleDeal · Oran »).
+- Messages de la base qui disent « OranPromo » (compte bloqué, contestation) : **la base n'est pas modifiée** (fonctions de blocage et de no-show non touchées) ; le site les affiche avec « BleDeal » (même endroit que leur traduction arabe, `lib/textes/messages.ts`).
+- **Gardés tels quels** (invisibles pour les clients) : clés du navigateur `oranpromo:panier`, `oranpromo:article:modifier:…`, `oranpromo-son` (les changer viderait les paniers et les brouillons) ; réglage interne `oranpromo.traitement_systeme` et verrou `oranpromo:bons` de la base ; noms des modèles WhatsApp `oranpromo_*` (question 8) ; anciennes migrations (jamais modifiées).
+
+### US-30.2 — BleDeal dans le projet (aucun écran)
+- `package.json` (`bledeal`), `README.md`, `CLAUDE.md`, `AGENTS.md`, `docs/` (le journal `ETAT.md` garde l'histoire telle quelle), `installer-oranpromo.bat` (renommé `installer-bledeal.bat`, adresse du dépôt mise à jour après le renommage par le propriétaire), `lancer-site.bat`.
+
+### US-30.3 — Actions du propriétaire (aucun code)
+Checklist dans `architecture.md` (inventaire) puis dans `ETAT.md` au moment du code : domaine `bledeal.com` sur Vercel, `NEXT_PUBLIC_SITE_URL`, adresses de Supabase Auth, nom affiché WhatsApp chez Meta et textes des modèles, service Twilio Verify, Cloudflare Turnstile, clé CARTO, dépôt GitHub, nom des projets Vercel et Supabase (facultatif), affiches déjà imprimées.
+
+### Textes nouveaux ou modifiés (français / arabe, à valider)
+
+| # | Où | Français | Arabe (darja, à valider) |
+| --- | --- | --- | --- |
+| 1 | En-tête, bouton ville | « Oran ▾ » (lecteur d'écran : « Changer de ville, ville actuelle : Oran ») | « وهران ▾ » (« بدّل المدينة، المدينة دروك: وهران ») |
+| 2 | `/villes`, titre | Choisissez votre ville | اختار مدينتك |
+| 3 | `/villes`, texte | Les promos et les boutiques dépendent de la ville. Vous pourrez en changer à tout moment. | التخفيضات والحوانيت على حساب المدينة. تقدر تبدّلها وقتما حبيت. |
+| 4 | `/villes`, bouton | Me localiser | لقاني وين راني |
+| 5 | `/villes`, ligne | Oran · 12 boutiques | وهران · 12 حانوت |
+| 6 | `/villes`, hors des villes | Pas encore de boutiques BleDeal près de vous : choisissez une ville ci-dessous. | مازال ما كاش حوانت BleDeal قريب منك: اختار مدينة من هنا. |
+| 7 | `/villes`, ville fermée | Cette ville n'est pas encore sur BleDeal. | هاد المدينة مازالت ما راهيش في BleDeal. |
+| 8 | Accueil, titre | Les promos d'Oran · Les promos de Tlemcen | بروموات وهران |
+| 9 | Carte, compteur | 12 boutiques à Oran (1 boutique à Oran) | 12 حانوت في وهران |
+| 10 | Carte, titre | Carte des boutiques d'Oran | خريطة حوانت وهران |
+| 11 | Catalogue vide | Pas encore d'articles à Tlemcen. | مازال ما كاش سلعة في تلمسان. |
+| 12 | Parrainage, texte | Fais découvrir les promos des boutiques de ta ville. Quand ton ami récupère sa première commande en boutique, vous recevez chacun un bon de 300 DA. | عرّف صحابك بالتخفيضات تاع حوانيت مدينتك. كي صاحبك يدّي أول طلب من الحانوت، كل واحد فيكم يربح بون تاع 300 دج. |
+| 13 | Parrainage, partage | Je t'invite sur BleDeal, les promos des boutiques près de chez toi : {lien} | نعرضك لـ BleDeal، التخفيضات تاع الحوانيت اللي قراب ليك: {lien} |
+| 14 | Description du site | Les promos des boutiques près de chez vous, ville par ville. Réservez sur WhatsApp, payez en boutique. | — (métadonnées en français, comme aujourd'hui) |
+| 15 | Admin, position | La position doit être dans la wilaya d'Oran. (… de Tlemcen.) | — (admin en français) |
+| 16 | Admin, `/admin/villes` | Ouvrir Tlemcen ? Ses boutiques validées apparaîtront dans le choix des villes, l'accueil, le catalogue et la carte. | — |
+
+Les autres textes ne changent que par le nom : « OranPromo » devient « BleDeal » (en arabe aussi, question 10).
+
+### Questions au propriétaire (US-29 et US-30)
+1. **Adresses** : `/oran/…` + cookie (recommandé : liens partagés justes, pages par ville sur Google) ou cookie seul (plus simple, mais un lien partagé montre la ville de celui qui l'ouvre et Google ne voit qu'Oran) ?
+2. **Première visite** sans choix gardé, quand plusieurs villes sont ouvertes : page de choix (recommandé) ou Oran d'office avec le bouton « Oran ▾ » ?
+3. Bouton « Oran ▾ » dans l'en-tête : seulement à partir de 2 villes ouvertes (recommandé) ou dès maintenant ?
+4. **Ville fermée** : ses boutiques validées gardent-elles leur lien `/b/<slug>` ouvert (recommandé : la boutique peut se préparer et partager) et peut-on y commander ?
+5. **Ambassadeur** : limité à une ville (fixée par l'admin) pour créer des boutiques (recommandé), ou toutes les villes ?
+6. Retirer la valeur par défaut `oran` de `boutiques.ville` une fois US-29.4 en ligne (recommandé : oublier la ville devient une erreur) ?
+7. **Grande photo** de l'accueil : une photo par ville (à fournir, licence libre ou à vous), ou une photo neutre commune hors Oran en attendant ?
+8. **Modèles WhatsApp** : garder les noms `oranpromo_*` chez Meta (recommandé : le nom n'est jamais vu par le client, Meta ne permet pas de renommer, et supprimer un modèle approuvé bloque son nom 30 jours) en mettant « BleDeal » dans leurs **textes** ? Avez-vous déjà créé ou fait approuver certains modèles chez Meta ?
+9. **Ordre** : US-29 puis US-30 (recommandé si le domaine n'est pas encore à vous), ou US-30 d'abord ?
+10. **Nom en arabe** : « بليديل » dans les phrases arabes, ou garder « BleDeal » en lettres latines (comme « OranPromo » aujourd'hui, recommandé tant que l'arabe n'est pas validé) ? Le logo reste en lettres latines dans les deux cas.
+11. **Ancien nom** : possédez-vous `oranpromo.com` (ou un autre domaine) ou des affiches déjà imprimées avec un QR code ? Si oui, il faut rediriger l'ancien domaine vers `bledeal.com`.
+12. **Prochaines villes** et leur ordre (pour préparer leurs bornes) : Alger, Tlemcen, Mostaganem… ?
+13. Darja des textes arabes (parler oranais aujourd'hui) : la garder pour tout le pays (recommandé pour l'instant) ?

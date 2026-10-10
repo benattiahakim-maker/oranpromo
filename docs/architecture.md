@@ -647,6 +647,122 @@ Story : `docs/user-stories.md`, module 15 (contenu validé par le propriétaire 
 
 `app/espace/commandes/page.tsx` (modifiée), `app/espace/commandes/actions.ts` (+ `changerStatutCommandesBoutique`), `app/espace/commandes/etat/route.ts`, `app/espace/commandes/preparation/page.tsx`, `components/TableauCommandes.tsx` (lignes comprises), `components/MiseAJourCommandes.tsx`, `lib/tableau-commandes.ts` (`ETAPES`, `urgence`, `echapperMotif`, `lireRecherche`, `listerEtape`, `compterEtapes`, `chercherCommandes`, puis `grouperPreparation`, `listerAPreparer`, `lireEtatCommandes`, `empreinteEtat`), `components/VueCommandesRecues.tsx`, `components/VuePreparation.tsx`, textes français écrits dans les composants comme le reste de l'espace (l'espace est en français seulement ; pour l'arabe plus tard, ils passeront dans `lib/textes/fr.ts` et `lib/textes/ar.ts`, et le tableau devra se lire de droite à gauche : colonnes inversées par `dir="rtl"`, numéros et montants isolés par `<bdi>` comme en US-26). Tests Vitest pour chaque fonction de `lib/`, l'action groupée, la route d'état et les composants ; pas de test SQL (aucune migration en A).
 
+## BleDeal, plusieurs villes (US-29, US-30) — conception, **à valider par le propriétaire**
+
+Story : `docs/user-stories.md`, module 16 (13 questions). Maquette : `docs/maquettes/ChoixVille.dc.html` (375 px, français et arabe). Décision du propriétaire du 10/10 à 4 h 16 : nom **BleDeal**, domaine **bledeal.com**, site **multi-villes**, un seul site / une seule base / un seul code, Maghreb plus tard. Rien n'est codé : ce qui suit est le plan. **Aucune règle de blocage, de no-show, de numéro vérifié, de statut ni de stock ne change.** Aucune nouvelle dépendance.
+
+Docs Next.js 16 lues : `02-guides/internationalization.md` (sous-chemin `/fr/…` ou domaine, `app/[lang]`), `03-file-conventions/dynamic-routes.md` (`params` est une Promise), `04-functions/cookies.md` (lecture dans un composant serveur ; écriture **seulement** dans une action serveur ou un gestionnaire de route), `04-functions/redirect.md` (307 hors action serveur, 303 après un formulaire), `03-file-conventions/proxy.md` (`matcher` ; le `proxy.ts` actuel ne couvre que `/espace`, `/admin`, `/compte`, `/auth/callback`), `04-functions/generate-metadata.md` (`alternates.canonical`), `02-guides/multi-tenant.md`.
+
+### Modèle de données (US-29.1, une migration)
+
+```sql
+create table public.villes (
+  code text primary key check (code ~ '^[a-z][a-z-]{1,29}$' and code not in ('a','b','p','admin','api','auth','carte','catalogue','compte','confirmer','espace','langue','panier','parrainage','retrait','villes','visiteurs','apercu-local')),
+  pays text not null default 'DZ' check (pays ~ '^[A-Z]{2}$'),
+  numero_wilaya smallint,                       -- 31 pour Oran ; unique par pays
+  nom text not null, nom_ar text not null,       -- « Oran », « وهران »
+  lat_min double precision not null, lat_max double precision not null,
+  lng_min double precision not null, lng_max double precision not null,
+  centre_lat double precision not null, centre_lng double precision not null,
+  zoom smallint not null default 12,
+  ouverte boolean not null default false,
+  ordre smallint not null default 100,
+  cree_le timestamptz not null default now(),
+  check (lat_min < lat_max and lng_min < lng_max),
+  check (centre_lat between lat_min and lat_max and centre_lng between lng_min and lng_max),
+  unique (pays, numero_wilaya)
+);
+insert into public.villes (code, numero_wilaya, nom, nom_ar, lat_min, lat_max, lng_min, lng_max, centre_lat, centre_lng, ouverte, ordre)
+values ('oran', 31, 'Oran', 'وهران', 35.33, 35.92, -1.15, -0.10, 35.6971, -0.6337, true, 1);
+alter table public.boutiques add column ville text not null default 'oran' references public.villes (code);
+alter table public.profils add column ville text references public.villes (code);   -- ambassadeur (question 5)
+create index boutiques_ville_statut_idx on public.boutiques (ville, statut);
+alter table public.boutiques drop constraint boutiques_position_oran;
+```
+
+- **Pourquoi `code` comme clé** (et pas un uuid) : il est lisible dans l'adresse (`/oran`), le cookie et les requêtes (`boutiques.ville = 'oran'`), sans jointure. Un code ne change jamais (`on update` non prévu).
+- **Algérie : 69 wilayas** depuis la loi n° 26-06 du 4 avril 2026 (JO n° 25). On n'insère **pas** les 69 : une ville est ajoutée par migration quand elle est prête (bornes lues dans OpenStreetMap comme Oran, arrondies vers l'extérieur, testées), puis ouverte par l'admin.
+- **Bornes par ville** : `prive.verifier_position_boutique()` (déclencheur existant) lit les bornes de `new.ville` ; il s'exécute aussi sur `update of ville` ; message `'La position doit être dans la wilaya ' || (case when nom ~* '^[aeiouyàâéèêîïôûh]' then 'd''' else 'de ' end) || nom || '.'` → pour Oran **exactement** « La position doit être dans la wilaya d'Oran. » (même code `23514`). La contrainte `boutiques_position_oran` est remplacée par ce contrôle (une contrainte ne peut pas lire une autre table) ; le déclencheur s'applique à tous, clé de service comprise, comme la contrainte. `boutiques_position_complete` reste.
+- **Ville d'une boutique publiée** : ajoutée à la liste des colonnes réservées à l'admin dans `prive.proteger_coordonnees_boutique()` (nom, WhatsApp, slug, liens, position… et ville). Le contrôle du numéro WhatsApp (`+213`) n'est **pas** touché.
+- **Droits (RLS) de `villes`** : lecture publique des villes ouvertes (`ouverte or prive.est_admin()`) ; mise à jour par l'admin de `ouverte` et `ordre` seulement (`grant update (ouverte, ordre)`) ; pas d'insertion ni de suppression hors migration. Un ambassadeur et un commerçant lisent aussi les villes fermées dont ils ont besoin (la leur) : politique `code = (select ville from profils where id = auth.uid())` ou `code in (select ville from boutiques …)` — à préciser au code, testé.
+- **Ambassadeur avec une ville** (question 5) : politique d'insertion des boutiques complétée (`ville = profil.ville` quand `profils.ville` est renseignée). L'admin règle `profils.ville` (`/admin`).
+- **Lectures** : `boutiques_carte(ville text, limite integer default 500)` remplace `boutiques_carte(limite)` (mêmes colonnes, mêmes filtres publics, `and b.ville = ville and v.ouverte`) ; `villes_ouvertes()` (`security invoker`) : `code, nom, nom_ar, lat_min…, centre_lat, centre_lng, zoom, boutiques` (nombre de boutiques validées), triées par `ordre, nom`.
+- **Maghreb plus tard** : `pays` est prêt, rien d'autre. Un autre pays demandera une story à part, car il touche des règles **non modifiées ici** : numéros `+213` (WhatsApp des boutiques, numéros des clients, codes de connexion), dinar et `formaterPrix`, fuseau `Africa/Algiers` (Maroc : `Africa/Casablanca`), langue des modèles Meta, textes en darja algérienne. Les adresses pourraient alors devenir `/ma/casablanca` sans casser `/oran` (le code d'une ville est unique dans tous les pays).
+
+### Choisir et garder la ville (US-29.2) : adresse avec la ville ou cookie seul
+
+| | A. Cookie seul (comme la langue) | **B. Ville dans l'adresse + cookie (recommandé)** |
+| --- | --- | --- |
+| Adresses | `/`, `/catalogue`, `/carte` inchangées | `/oran`, `/oran/catalogue?…`, `/oran/carte` ; les anciennes redirigent |
+| Lien partagé (« regarde cette promo ») | montre la ville **de celui qui ouvre** : un lien de catalogue d'Alger ouvert à Oran montre Oran | montre **la ville du lien** |
+| Google | ne voit qu'une ville (le robot n'a pas de cookie) : les autres villes sont introuvables | chaque ville a ses pages, titres et descriptions (« Promos à Tlemcen · BleDeal »), `canonical` par ville |
+| Cache | pages différentes à la même adresse (déjà dynamiques aujourd'hui, `force-dynamic`) | une adresse = un contenu |
+| Code | petit : lire le cookie dans 3 pages | moyen : 3 pages déplacées sous `app/[ville]/`, 3 pages de redirection, codes réservés |
+| Risque | aucun changement d'adresse | un code de ville ne doit jamais prendre le nom d'une route (liste réservée dans la base + test) |
+
+**Recommandation : B.** Ce qui dépend de la ville est sous `app/[ville]/` : `page.tsx` (accueil), `catalogue/page.tsx`, `carte/page.tsx`, avec un `layout.tsx` qui lit `params.ville`, vérifie que la ville est ouverte (`villes_ouvertes()`), sinon renvoie vers `/villes?inconnue=<code>`. Tout le reste reste **global et sans ville** : `/a/[id]`, `/b/[slug]` (et son aperçu), `/panier`, `/compte`, `/parrainage`, `/p/[code]`, `/retrait/[jeton]`, `/confirmer/[jeton]`, `/espace`, `/admin`, `/api`. Les dossiers fixes existants (`app/catalogue`, `app/carte`…) sont des segments **statiques**, choisis avant le segment dynamique `[ville]` ; la liste des codes réservés l'assure en plus (test au code).
+- **Cookie `ville`** : `lib/ville.ts` (`COOKIE_VILLE = "ville"`, un an, `sameSite: "lax"`, `secure` en production, comme `COOKIE_LANGUE`) ; écrit **seulement** par l'action serveur `choisirVille` (`app/ville/actions.ts`, formulaire de `/villes`, marche sans JavaScript), qui redirige vers la page demandée dans la nouvelle ville. Ouvrir `/alger/…` ne change pas le cookie (un composant serveur ne peut pas écrire de cookie, et un lien reçu ne doit pas changer le choix du client).
+- **Anciennes adresses** : `app/page.tsx`, `app/catalogue/page.tsx`, `app/carte/page.tsx` deviennent de simples redirections (`redirect()`, 307, paramètres gardés) vers la ville du cookie si elle est ouverte ; sinon, une seule ville ouverte → elle (Oran aujourd'hui : même contenu qu'avant) ; plusieurs → `/villes` (question 2). Pas de `proxy.ts` pour ça (il resterait limité aux espaces connectés). Pas de redirection permanente : elle dépend du cookie.
+- **Page `/villes`** (`app/villes/page.tsx`, dossier fixe ; `villes` est un code réservé) : liste de `villes_ouvertes()` ; « Me localiser » (`components/ChoixVille.tsx`, client) utilise `navigator.geolocation` et compare avec les bornes reçues, **dans le téléphone** (aucune position envoyée, comme « Autour de moi » de la carte).
+- **En-tête** (`EntetePublic`) : logo vers `/<ville>` ; bouton « Oran ▾ » (lien vers `/villes?retour=<chemin>`) quand au moins 2 villes sont ouvertes (question 3). La ville affichée vient de l'adresse (`/[ville]`) ou, sur une page globale, du cookie.
+- **Métadonnées** : `generateMetadata` dans `app/[ville]/…` : « Promos à Oran », description avec la ville, `alternates.canonical` `/oran/catalogue`. Pas de `sitemap.ts` aujourd'hui ; à ajouter plus tard si le propriétaire le veut (villes ouvertes + boutiques validées).
+
+### Pages filtrées par ville (US-29.3)
+
+| Page / lecture | Aujourd'hui | Avec la ville |
+| --- | --- | --- |
+| Accueil `/[ville]` — `chargerPromos(client, page, maintenant)` | toutes les promos | `chargerPromos(client, ville, …)` : `.eq("boutiques.ville", ville)` (jointure `boutiques!inner` déjà là) ; « Voir plus » (`components/Promos.tsx`) passe la ville |
+| Catalogue `/[ville]/catalogue` — `chercherArticles`, `chargerOptionsCatalogue` (`lib/catalogue.ts`) | tous les articles ; quartiers de toutes les boutiques | même filtre `boutiques.ville` ; quartiers, tailles, contenances de la ville |
+| Carte `/[ville]/carte` — `boutiques_carte()` | 500 boutiques, rectangle d'Oran | `boutiques_carte(ville)` ; `CarteLeaflet` reçoit bornes, centre et zoom de la ville (au lieu de `BORNES_ORAN` / `CENTRE_ORAN`) |
+| Compteurs | « 12 boutiques à Oran » | « {n} boutiques à {ville} » (`remplir`, `lib/langue.ts`) |
+| Grande photo de l'accueil | Santa Cruz (Oran) | `lib/villes.ts` : photo et crédit par code de ville, photo commune à défaut (question 7) |
+| Fiche `/a/[id]`, vitrine `/b/[slug]` | « Akid Lotfi » | « Akid Lotfi · Oran » ; itinéraire sans position : `quartier, ville, Algérie` (`lib/vitrine.ts`) ; aperçu de partage « Akid Lotfi · Oran » |
+| Panier, compte, commandes, retrait, parrainage, espace, admin | — | **pas de filtre** (le parrainage reste national ; seul son texte ne nomme plus Oran) |
+
+Textes : `lib/textes/fr.ts` et `ar.ts` reçoivent `{ville}` (nom français ou arabe selon la langue, `villes.nom` / `nom_ar`) ; « d'Oran » / « de Tlemcen » par une petite fonction testée `deVille(nom)` (élision devant voyelle ou h). Dates et heures : `Africa/Algiers` pour toute l'Algérie (aucun changement ; les commentaires « heure d'Oran » deviennent « heure d'Algérie »).
+
+### Admin, ambassadeur, commerçant (US-29.4)
+- `lib/boutique.ts` : `SaisieBoutique.ville` ; `validerBoutique` et `validerPosition(position, ville)` utilisent les bornes de la ville (`lib/position.ts` : `dansVille(bornes, lat, lng)`, `messageHorsVille(nom)` ; `BORNES_ORAN`, `CENTRE_ORAN`, `dansOran` et `MESSAGE_HORS_ORAN` deviennent les valeurs de la ligne `oran`, gardées pour les tests de non-régression) ; reconnaissance de l'erreur de la base par le code `23514` + « wilaya ».
+- `/admin/boutiques` : champ « Ville (wilaya) », colonne et filtre `?ville=` ; `ChoixPosition` / `CartePosition` s'ouvrent sur le centre de la ville choisie.
+- Nouvelle page **`/admin/villes`** (`app/admin/villes/page.tsx`, `actions.ts`) : ouvrir / fermer, ordre ; confirmation avant d'ouvrir ou de fermer.
+- `/espace` : « Ville : Oran » en lecture seule.
+
+### WhatsApp et textes qui nomment Oran ou OranPromo
+- **Messages des commandes** (modèles Meta) : ils ne nomment **jamais la ville**, seulement la boutique et la marque. Rien à faire pour le multi-villes.
+- **Marque dans les modèles** : 11 noms `oranpromo_*` (`nouvelle_commande`, `nouvelle_commande_confirmer`, `commande_prete`, `commande_prete_retrait`, `commande_expiree`, `no_show`, `compte_bloque`, et 4 en `_ar`). Meta **ne renomme pas** un modèle ; on peut **modifier le texte** d'un modèle approuvé (nouvel examen, 1 fois par 24 h, 10 fois par 30 jours) ; supprimer un modèle approuvé bloque son nom **30 jours** (doc Meta « Template management »). Le nom n'apparaît jamais au client.
+  - **Recommandé : garder les noms `oranpromo_*`** et écrire « BleDeal » dans les **textes** chez Meta (modèles à créer : directement avec BleDeal ; modèles déjà approuvés : modifier le texte). Aucune migration, aucun changement des fonctions de la base.
+  - Autre choix : nouveaux modèles `bledeal_*` → migration (liste autorisée de `messages_whatsapp.modele`, fonctions qui écrivent dans la file, dont celle du **compte bloqué**) ou correspondance dans `lib/notifications/meta.ts`, et nouvelle approbation de tous les modèles. Non recommandé.
+  - La copie du texte gardée dans `messages_whatsapp.texte` (jamais affichée, jamais envoyée : Meta envoie son propre texte) garde « OranPromo » ; on ne réécrit pas ces fonctions pour ça.
+- **Nom affiché du numéro WhatsApp Business** (« OranPromo ») : à changer chez Meta (nouvel examen du nom). **Service Twilio Verify** nommé « OranPromo » : le renommer « BleDeal ».
+
+### Inventaire du renommage (US-30) : ce qui change maintenant, ce que fait le propriétaire
+
+Relevé du 10/10 sur `main` : « OranPromo » dans **93 lignes de 44 fichiers** de code (hors tests), 218 lignes de tests, 104 lignes de migrations, 211 lignes de docs.
+
+| Où | Exemples | US-30 (code) | Propriétaire |
+| --- | --- | --- | --- |
+| Logo | `EntetePublic.tsx` (`ORANPROMO`), `app/retrait/[jeton]/page.tsx`, `app/confirmer/[jeton]/page.tsx` | « BleDeal » | — |
+| Métadonnées et aperçus | `app/layout.tsx` (titre, modèle `%s · OranPromo`, description « boutiques de vêtements d'Oran »), `app/a/[id]/page.tsx`, `app/parrainage/page.tsx`, `lib/lien-boutique.ts` (`siteName`, description), `app/b/[slug]/apercu/route.tsx` (« quartier · Oran », « OranPromo ») | « BleDeal », ville de la boutique | — |
+| Textes FR / arabe | `lib/textes/fr.ts` (13 lignes : accueil, contestation, carte, parrainage) et `ar.ts` (9) ; `lib/textes/messages.ts` (7, traductions des messages de la base) | « BleDeal » ou `{ville}` | valider les textes |
+| Messages du site | `lib/clients.ts`, `lib/confirmation.ts`, `lib/retrait.ts`, `lib/position.ts`, `lib/parrainage.ts`, `app/compte/actions.ts`, `components/BonsBoutique.tsx`, `RetraitBoutique.tsx`, `CommandesRecues.tsx`, `PositionEspace.tsx`, `ChoixPosition.tsx`, `app/espace/affiche/page.tsx` | « BleDeal » | — |
+| Messages WhatsApp préparés (liens `wa.me`) | `lib/whatsapp.ts` (« vu sur OranPromo »…), `lib/lien-boutique.ts`, `lib/parrainage.ts` | « BleDeal » | — |
+| Messages de la base (erreurs) | blocage, contestation (`passer_commande`, `numero_verifie`, `contestation_regles`…) | **base non modifiée** ; affichés avec « BleDeal » par `lib/textes/messages.ts` | — |
+| Noms de fichiers | `oranpromo-<slug>-qr.svg`, `oranpromo-bons-<mois>.csv` | `bledeal-…` | — |
+| Identifiants internes | `oranpromo:panier`, `oranpromo:article:modifier:…`, `oranpromo-son`, `oranpromo.traitement_systeme`, `oranpromo:bons`, `oranpromo.invalid` | **gardés** (invisibles ; les changer viderait paniers et brouillons) | — |
+| Modèles WhatsApp | 11 `oranpromo_*` | noms **gardés** | textes avec « BleDeal » dans WhatsApp Manager ; nom affiché du numéro |
+| Projet | `package.json` (`oranpromo`), `README.md`, `CLAUDE.md`, `AGENTS.md`, `docs/`, `installer-oranpromo.bat`, `lancer-site.bat`, commentaire de `globals.css` | « BleDeal » (le journal `ETAT.md` garde l'histoire) | — |
+| Domaine | `NEXT_PUBLIC_SITE_URL` (liens, QR codes, aperçus, boutons WhatsApp `/confirmer`, `/retrait`) | — | acheter `bledeal.com`, l'ajouter dans Vercel (+ `www` redirigé), `NEXT_PUBLIC_SITE_URL=https://bledeal.com` sur Vercel, redéployer |
+| Supabase | projet `oranpromo` (nom affiché seulement ; adresse `iloyliuzsflzbkhpvxjt` inchangée) | — | Authentication › URL Configuration : Site URL `https://bledeal.com`, ajouter `https://bledeal.com/**` aux adresses de retour ; nom de l'expéditeur et textes des e-mails s'ils disent OranPromo ; renommer le projet (facultatif) |
+| Vercel | nom du projet | — | renommer (facultatif) ; l'ancienne adresse `*.vercel.app` change si on renomme |
+| GitHub | dépôt `benattiahakim-maker/oranpromo` | adresse dans `installer-*.bat` après le renommage | renommer en `bledeal` (GitHub redirige l'ancienne adresse ; le lien Vercel suit) |
+| Meta / Twilio | nom affiché WhatsApp, service Verify « OranPromo » | — | renommer (examen Meta pour le nom affiché) |
+| Cloudflare Turnstile, CARTO | domaines autorisés | — | ajouter `bledeal.com` |
+| Affiches et QR codes | QR = `NEXT_PUBLIC_SITE_URL/b/<slug>` | régénérés automatiquement | réimprimer ; si un ancien domaine a été imprimé, le rediriger vers `bledeal.com` (question 11) |
+
+### Fichiers prévus (au moment du code)
+
+US-29 : migration `…_villes.sql` + `supabase/tests/villes.test.sql` ; `lib/ville.ts` (+ test : cookie, `deVille`, codes réservés, choix de la ville par défaut), `lib/villes.ts` (photos), `lib/position.ts` (bornes par ville), `lib/catalogue.ts`, `lib/carte.ts`, `lib/boutique.ts` ; `app/[ville]/layout.tsx`, `app/[ville]/page.tsx`, `app/[ville]/catalogue/page.tsx`, `app/[ville]/carte/page.tsx` ; `app/page.tsx`, `app/catalogue/page.tsx`, `app/carte/page.tsx` (redirections) ; `app/villes/page.tsx`, `app/ville/actions.ts`, `components/ChoixVille.tsx` ; `app/admin/villes/page.tsx` + `actions.ts` ; `components/EntetePublic.tsx`, `CarteLeaflet.tsx`, `CartePosition.tsx`, `ChoixPosition.tsx`, `Promos.tsx`, `NouvelleBoutique.tsx` ; types régénérés (`npm run db:types`). US-30 : fichiers de l'inventaire ci-dessus. Tests Vitest pour chaque fonction de `lib/`, les redirections et les pages ; tests SQL pour la migration (Oran identique).
+
 ## Limites par visiteur (vues, clics, partages, signalements)
 
 Carte Trello « Sécurité · Limiter les envois en masse ». Migration `20261010180000_limites_visiteurs.sql`.
