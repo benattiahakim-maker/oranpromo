@@ -129,7 +129,7 @@ describe("US-27 : bon et parrain au panier", () => {
   it("bon disponible : case cochée par défaut, « À payer en boutique 8 400 DA », commande avec le bon", async () => {
     commanderPanier.mockResolvedValue({ id: "c1" });
     render(<PanierCommande profil={complet} parrainage={{ bonDisponible: true, choix: null }} />);
-    expect(screen.getByRole("checkbox", { name: "Utiliser mon bon parrainage (−300 DA)" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /^Utiliser mon bon parrainage \(−300\sDA\)$/ })).toBeChecked();
     expect(screen.getByText("À payer en boutique").nextSibling).toHaveTextContent(/8\s400\sDA/);
     fireEvent.click(screen.getByRole("button", { name: "Commander" }));
     await waitFor(() => expect(commanderPanier).toHaveBeenCalledWith("b1", expect.any(Array), "", true, []));

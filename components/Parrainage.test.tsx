@@ -92,7 +92,7 @@ describe("US-27.3 : « Mon parrainage » et « Mes bons »", () => {
     expect(screen.getByText("Réservé pour la commande n° 128")).toBeInTheDocument();
     expect(screen.getByText("Utilisé le 12/10 chez Maison Ilyes")).toBeInTheDocument();
     expect(screen.getByText("Ton bon arrive le 1er novembre (budget du mois atteint).")).toBeInTheDocument();
-    expect(screen.getByText(fr.parrainage.aideBons)).toBeInTheDocument();
+    expect(screen.getByText(/^À utiliser au panier : 300\sDA de moins, payés par BleDeal à la boutique\.$/)).toBeInTheDocument();
   });
   it("encadré « Merci ! » avec le lien WhatsApp du client", () => {
     render(<MerciParrainage whatsapp="https://wa.me/?text=x" />);
@@ -136,7 +136,7 @@ describe("US-27.4 : bon au panier et sur le QR code", () => {
   it("case cochée : Total, Bon parrainage −300 DA, À payer en boutique", () => {
     const changer = vi.fn();
     render(<BonPanier total={3500} utiliser onChange={changer} />);
-    expect(screen.getByRole("checkbox", { name: "Utiliser mon bon parrainage (−300 DA)" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /^Utiliser mon bon parrainage \(−300\sDA\)$/ })).toBeChecked();
     expect(screen.getByText("À payer en boutique").nextSibling).toHaveTextContent(/3\s200\sDA/);
     expect(screen.getByText("Bon parrainage").nextSibling).toHaveTextContent(/−300\sDA/);
     fireEvent.click(screen.getByRole("checkbox"));
@@ -157,7 +157,7 @@ describe("US-27.4 : bon au panier et sur le QR code", () => {
   });
   it("en arabe : case et total (textes 17 et 18)", () => {
     render(<FournisseurTextes langue="ar" textes={ar}><BonPanier total={3500} utiliser onChange={vi.fn()} /></FournisseurTextes>);
-    expect(screen.getByRole("checkbox", { name: "خدم بالبون نتاعي (−300 دج)" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /^خدم بالبون نتاعي \(−\u2066?300\u2069?\sدج\)$/ })).toBeChecked();
     expect(screen.getByText("تخلّص في الحانوت")).toBeInTheDocument();
   });
 });

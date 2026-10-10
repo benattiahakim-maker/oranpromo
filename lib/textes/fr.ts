@@ -506,7 +506,8 @@ export const fr = {
     expire: "Expiré le {date}", // 23
     enFile: "Ton bon arrive le {date} (budget du mois atteint).", // 20
     annule: "Annulé",
-    aideBons: "À utiliser au panier : 300 DA de moins, payés par BleDeal à la boutique.",
+    aideBons: "À utiliser au panier : {montant} de moins, payés par BleDeal à la boutique.", // montant réel du bon (« 150 DA », « 150 DA ou 300 DA »)
+    ouMontant: " ou ",
     // Accueil et suivi (US-27.3)
     accueilTitre: "Parraine tes amis", // 13
     accueilTexte: "300 DA chacun", // 13
@@ -515,7 +516,7 @@ export const fr = {
     merciTexte: "Fais découvrir BleDeal à un ami : 300 DA chacun après sa première commande.", // 14
     partagerMonLien: "Partager mon lien",
     // Panier et suivi (US-27.4)
-    utiliserBon: "Utiliser mon bon parrainage (−300 DA)", // 17
+    utiliserBon: "Utiliser mon bon parrainage (−{montant})", // 17
     ligneBon: "Bon parrainage",
     aPayerBoutique: "À payer en boutique", // 18
     sousMinimum: "Ton bon s’utilise dès 1 000 DA d’achat.", // 19

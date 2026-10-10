@@ -1,4 +1,5 @@
 "use client";
+import { remplir } from "@/lib/langue";
 import { formaterPrix } from "@/lib/prix";
 import { aEncaisser, estBonProgramme, MINIMUM_COMMANDE_BON, MONTANT_BON, type BonClient, type OptionBon, type RaisonBonPanier } from "@/lib/bons";
 import { libelleUtiliserBon, nomDuBon, texteRaisonBon } from "@/lib/bons-affichage";
@@ -34,7 +35,7 @@ export default function BonPanier({ total, utiliser, onChange, desactive, bon = 
     {choix}
     <label className="flex min-h-12 cursor-pointer items-center gap-3 border border-noir px-3">
       <input type="checkbox" checked={utiliser} disabled={desactive} onChange={e => onChange(e.target.checked)} className="h-5 w-5 shrink-0 accent-noir" />
-      <span className="text-sm">{bon ? libelleUtiliserBon(bon, t, langue) : t.utiliserBon}</span>
+      <span className="text-sm">{bon ? libelleUtiliserBon(bon, t, langue) : remplir(t.utiliserBon, { montant: formaterPrix(MONTANT_BON, langue) })}</span>
     </label>
     {utiliser && <dl className="mt-3 text-sm">
       <div className="flex justify-between py-1"><dt>{tPanier.total}</dt><dd>{formaterPrix(total, langue)}</dd></div>
