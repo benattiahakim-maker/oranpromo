@@ -18,38 +18,47 @@ const bon = (x: Partial<BonClient>): BonClient => ({ id: "b", montant: 300, stat
 const avis = bon({ id: "a", montant: 150, origine: "avis", minimum_achat: 1500, nom_fr: "Avis", nom_ar: "راي" } as Partial<BonClient>);
 const campagne = bon({ id: "c", montant: 500, origine: "campagne", minimum_achat: 4000, nom_fr: "Aïd 2026", nom_ar: "عيد 2026" } as Partial<BonClient>);
 
-describe("aideMesBons", () => {
-  it("un montant, plusieurs montants (sans doublon, du plus petit au plus grand), aucun", () => {
-    expect(aideMesBons([150], fr.parrainage, "fr")).toBe(`À utiliser au panier : 150${NB}DA de moins, payés par BleDeal à la boutique.`);
-    expect(aideMesBons([500, 150, 300, 150], fr.parrainage, "fr")).toBe(`À utiliser au panier : 150${NB}DA ou 300${NB}DA ou 500${NB}DA de moins, payés par BleDeal à la boutique.`);
+const inscription = bon({ id: "i", montant: 500, origine: "inscription_boutique", minimum_achat: 3000, nom_fr: "Bienvenue boutique", nom_ar: "مرحبا" } as Partial<BonClient>);
+const bienvenue = bon({ id: "w", montant: 300, origine: "bienvenue", minimum_achat: 2000, nom_fr: "Bienvenue", nom_ar: "مرحبا" } as Partial<BonClient>);
+const MAINTENANT = new Date("2026-10-20T10:00:00Z");
+
+describe("aideMesBons : bon par bon, montant réel et qui paie", () => {
+  it("parrainage, bienvenue, campagne, avis : « payé par BleDeal » ; du plus petit au plus grand ; doublons une fois", () => {
+    expect(aideMesBons([campagne, bon({}), avis, bienvenue, avis], fr.parrainage, "fr")).toBe(
+      `À utiliser au panier. Bon Avis : 150${NB}DA de moins, payé par BleDeal. Bon parrainage : 300${NB}DA de moins, payé par BleDeal. `
+      + `Bon de bienvenue : 300${NB}DA de moins, payé par BleDeal. Bon Aïd 2026 : 500${NB}DA de moins, payé par BleDeal.`);
+  });
+  it("bon de l'inscription en boutique (US-31.4) : « payé par BleDeal et la boutique où vous vous êtes inscrit »", () => {
+    expect(aideMesBons([inscription], fr.parrainage, "fr")).toBe(
+      `À utiliser au panier. Bon de bienvenue : 500${NB}DA de moins, payé par BleDeal et la boutique où vous vous êtes inscrit.`);
     expect(aideMesBons([], fr.parrainage, "fr")).toBeNull();
   });
-  it("en arabe : montants en دج", () => {
-    const t = aideMesBons([150, 300], ar.parrainage, "ar")!;
-    expect(t).toMatch(/^تخدم بيه في السلة: .*150.*\u00a0دج ولا .*300.*\u00a0دج أقل، BleDeal تخلّصها للحانوت\.$/);
-    expect(t).not.toContain("{montant}");
+  it("en arabe : mêmes règles, montants en دج, aucun {champ} oublié", () => {
+    const t = aideMesBons([avis, inscription], ar.parrainage, "ar")!;
+    expect(t).toMatch(/^تخدم بيهم في السلة\. بون راي: .*150.*\u00a0دج أقل، تخلّصو BleDeal\. بون مرحبا: .*500.*\u00a0دج أقل، تخلّصو BleDeal والحانوت اللي تسجّلت فيه\.$/);
+    expect(t).not.toMatch(/[{}]/);
   });
 });
 
-describe("« Mes bons » : phrase d'aide avec le montant réel", () => {
-  it("bon « avis » seul : 150 DA (et plus 300 DA)", () => {
-    render(<MesBons bons={[avis]} maintenant={new Date("2026-10-20T10:00:00Z")} />);
-    expect(screen.getByText(/^À utiliser au panier : 150\sDA de moins, payés par BleDeal à la boutique\.$/)).toBeInTheDocument();
+describe("« Mes bons » : phrase d'aide bon par bon", () => {
+  it("bon « avis » seul : 150 DA, payé par BleDeal (plus aucun 300 DA)", () => {
+    render(<MesBons bons={[avis]} maintenant={MAINTENANT} />);
+    expect(screen.getByText(/^À utiliser au panier\. Bon Avis : 150\sDA de moins, payé par BleDeal\.$/)).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/300\sDA/);
   });
-  it("150, 300 et 500 DA ; un bon utilisé ou expiré n'entre pas dans la phrase", () => {
-    render(<MesBons bons={[avis, bon({ id: "p" }), campagne, bon({ id: "u", montant: 1000, statut: "utilise", commande: "d", numero: 3, utilise_le: "2026-10-12T10:00:00Z", boutique: "X" })]} maintenant={new Date("2026-10-20T10:00:00Z")} />);
-    expect(screen.getByText(/^À utiliser au panier : 150\sDA ou 300\sDA ou 500\sDA de moins, payés par BleDeal à la boutique\.$/)).toBeInTheDocument();
+  it("avis, parrainage, inscription ; un bon utilisé n'entre pas dans la phrase", () => {
+    render(<MesBons bons={[inscription, avis, bon({ id: "p" }), bon({ id: "u", montant: 1000, statut: "utilise", commande: "d", numero: 3, utilise_le: "2026-10-12T10:00:00Z", boutique: "X" })]} maintenant={MAINTENANT} />);
+    const aide = screen.getByText(/^À utiliser au panier\./);
+    expect(aide.textContent).toMatch(/Bon Avis : 150\sDA de moins, payé par BleDeal\. Bon parrainage : 300\sDA de moins, payé par BleDeal\. Bon de bienvenue : 500\sDA de moins, payé par BleDeal et la boutique où vous vous êtes inscrit\.$/);
+    expect(aide.textContent).not.toMatch(/1\s000/);
   });
-  it("aucun bon utilisable : pas de phrase « à utiliser au panier »", () => {
-    render(<MesBons bons={[bon({ statut: "utilise", commande: "d", numero: 3, utilise_le: "2026-10-12T10:00:00Z", boutique: "X" })]} maintenant={new Date("2026-10-20T10:00:00Z")} />);
+  it("aucun bon utilisable : pas de phrase", () => {
+    render(<MesBons bons={[bon({ statut: "utilise", commande: "d", numero: 3, utilise_le: "2026-10-12T10:00:00Z", boutique: "X" })]} maintenant={MAINTENANT} />);
     expect(screen.queryByText(/À utiliser au panier/)).toBeNull();
   });
-  it("en arabe : 150 دج", () => {
-    render(<FournisseurTextes langue="ar" textes={ar}><MesBons bons={[avis]} maintenant={new Date("2026-10-20T10:00:00Z")} /></FournisseurTextes>);
-    const aide = screen.getByText(/^تخدم بيه في السلة/);
-    expect(aide.textContent).toMatch(/150.*دج أقل/);
-    expect(aide.textContent).not.toMatch(/300/);
+  it("en arabe", () => {
+    render(<FournisseurTextes langue="ar" textes={ar}><MesBons bons={[inscription]} maintenant={MAINTENANT} /></FournisseurTextes>);
+    expect(screen.getByText(/^تخدم بيهم في السلة/).textContent).toMatch(/500.*دج أقل، تخلّصو BleDeal والحانوت اللي تسجّلت فيه\.$/);
   });
 });
 

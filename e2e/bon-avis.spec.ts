@@ -57,7 +57,7 @@ test("bon « avis » : mention sur la vitrine → retrait par QR code → avis 2
     await expect(bons).toContainText("Bon Avis");
     await expect(bons).toContainText(/150\sDA dès 1\s500\sDA d’achat · jusqu’au \d{1,2}\/\d{1,2}/);
     // Phrase d'aide avec le montant réel du bon (demande de BOLOSS du 10/10), plus de « 300 DA » écrit en dur.
-    await expect(bons).toContainText(/À utiliser au panier : 150\sDA de moins, payés par BleDeal à la boutique\./);
+    await expect(bons).toContainText(/À utiliser au panier\. Bon Avis : 150\sDA de moins, payé par BleDeal\./);
     await expect(bons).not.toContainText(/300\sDA/);
   });
 
