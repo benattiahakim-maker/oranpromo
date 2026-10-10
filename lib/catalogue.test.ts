@@ -40,7 +40,7 @@ describe("visibilité publique des listes", () => {
     expect(appels).toContainEqual(["gte", "promos.date_fin", jour.toISOString()]);
     expect(appels).toContainEqual(["range", 20, 39]);
     expect(appels).toContainEqual(["eq", "boutiques.ville", "oran"]);
-    expect(String(appels.find(a => a[0] === "select")?.[1])).toContain("boutiques!inner(nom, quartier, statut, ville)");
+    expect(String(appels.find(a => a[0] === "select")?.[1])).toContain("boutiques!inner(id, nom, quartier, statut, ville)");
     expect(carte).toEqual({ id: "1", titre: "Polo", description: null, categorie: "T-shirts et polos", genre: "homme", prix: 3500, cree_le: "2026-10-08", boutique: { nom: "Test", quartier: "Centre" }, photo: "a-v", tailles: ["M"], promo: { prixPromo: 2000, dateFin: "2026-11-01" } });
   });
   it("catalogue : mêmes filtres de visibilité, filtres exacts en base et lecture bornée", async () => {

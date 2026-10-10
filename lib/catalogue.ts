@@ -3,7 +3,7 @@ import type { Database } from "./supabase/types";
 import { prixAffiche, promoActive, type Promo } from "./prix";
 import { CATEGORIES_ARTICLE, CATEGORIES_BEAUTE, CATEGORIES_MODE, TAILLES_ARTICLE, TAILLE_UNIQUE, UNIVERS, estCategorieBeaute, type CleUnivers } from "./article";
 
-export type CarteArticle = { id: string; titre: string; description: string | null; categorie: string; genre: string; prix: number; cree_le: string; boutique: { nom: string; quartier: string }; photo: string | null; tailles: string[]; promo: Promo | null };
+export type CarteArticle = { id: string; titre: string; description: string | null; categorie: string; genre: string; prix: number; cree_le: string; boutique: { id?: string; nom: string; quartier: string }; photo: string | null; tailles: string[]; promo: Promo | null };
 
 // Visibilité publique, identique à prive.article_visible() : boutique validée, article disponible ou
 // réservé, confirmé il y a moins de 21 jours. Filtrer explicitement évite qu'un admin (qui lit tout)
@@ -18,13 +18,13 @@ export function limiteConfirmation(maintenant = new Date()): string {
   return new Date(maintenant.getTime() - JOURS_VISIBILITE * 24 * 60 * 60 * 1000).toISOString();
 }
 
-const COLONNES_CARTE = "id, titre, description, categorie, genre, prix, cree_le, boutiques!inner(nom, quartier, statut, ville), photos(adresse, adresse_vignette, ordre), tailles(libelle, disponible)";
+const COLONNES_CARTE = "id, titre, description, categorie, genre, prix, cree_le, boutiques!inner(id, nom, quartier, statut, ville), photos(adresse, adresse_vignette, ordre), tailles(libelle, disponible)";
 
-type LigneCarte = Omit<CarteArticle, "boutique" | "photo" | "tailles" | "promo"> & { boutiques: { nom: string; quartier: string }; photos: { adresse: string; adresse_vignette: string | null; ordre: number }[]; tailles: { libelle: string; disponible: boolean }[]; promos: { prix_promo: number; date_fin: string } | null };
+type LigneCarte = Omit<CarteArticle, "boutique" | "photo" | "tailles" | "promo"> & { boutiques: { id?: string; nom: string; quartier: string }; photos: { adresse: string; adresse_vignette: string | null; ordre: number }[]; tailles: { libelle: string; disponible: boolean }[]; promos: { prix_promo: number; date_fin: string } | null };
 
 function versCarte(article: LigneCarte): CarteArticle {
   const photo = [...article.photos].sort((a, b) => a.ordre - b.ordre)[0];
-  return { id: article.id, titre: article.titre, description: article.description, categorie: article.categorie, genre: article.genre, prix: article.prix, cree_le: article.cree_le, boutique: { nom: article.boutiques.nom, quartier: article.boutiques.quartier }, photo: photo?.adresse_vignette ?? photo?.adresse ?? null, tailles: article.tailles.filter(t => t.disponible).map(t => t.libelle), promo: article.promos ? { prixPromo: article.promos.prix_promo, dateFin: article.promos.date_fin } : null };
+  return { id: article.id, titre: article.titre, description: article.description, categorie: article.categorie, genre: article.genre, prix: article.prix, cree_le: article.cree_le, boutique: { ...(article.boutiques.id ? { id: article.boutiques.id } : {}), nom: article.boutiques.nom, quartier: article.boutiques.quartier }, photo: photo?.adresse_vignette ?? photo?.adresse ?? null, tailles: article.tailles.filter(t => t.disponible).map(t => t.libelle), promo: article.promos ? { prixPromo: article.promos.prix_promo, dateFin: article.promos.date_fin } : null };
 }
 
 // US-29.3 : « ville » (code) = promos des boutiques de cette ville seulement.

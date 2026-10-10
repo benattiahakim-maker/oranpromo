@@ -12,6 +12,10 @@ import { remplir } from "@/lib/langue";
 import type { Position } from "@/lib/position";
 import { useLangue, useTextes } from "./FournisseurTextes";
 import { deVilleEnLangue, nomVille, VILLE_ORAN, type Ville } from "@/lib/ville";
+import { trierMieuxNotees, type ResumeAvis } from "@/lib/avis";
+import NoteBoutique, { texteNote } from "./NoteBoutique";
+
+type NoteCarte = Pick<ResumeAvis, "nombre" | "moyenne">;
 
 const CarteLeaflet = dynamic(() => import("./CarteLeaflet"), { ssr: false, loading: () => <div className="h-[340px] w-full border-y border-trait bg-[#F2F2F2]" aria-hidden="true" /> });
 
@@ -19,13 +23,15 @@ type EtatLocalisation = "aucun" | "recherche" | "actif" | "refus" | "introuvable
 
 // US-29.2 : « chemin » = adresse de la carte de la ville (/oran/carte), pour les liens du filtre.
 // US-29.3 : « ville » = nom (compteur, nom de la carte), bornes, centre et zoom de la carte (Oran par défaut).
-export default function CarteBoutiques({ boutiques, univers: universInitial, chemin = "/carte", ville = VILLE_ORAN }: { boutiques: BoutiqueCarte[]; univers: CleUnivers | null; chemin?: string; ville?: Ville }) {
+// US-32.3 : « notes » = note de chaque boutique (mini-fiche, liste) et tri « Mieux notées » (boutiques sous le seuil à la fin).
+export default function CarteBoutiques({ boutiques, notes = {}, univers: universInitial, chemin = "/carte", ville = VILLE_ORAN }: { boutiques: BoutiqueCarte[]; notes?: Record<string, NoteCarte>; univers: CleUnivers | null; chemin?: string; ville?: Ville }) {
   const t = useTextes(), langue = useLangue(), c = t.carteBoutiques;
   const [univers, setUnivers] = useState<CleUnivers | null>(universInitial);
   const [selection, setSelection] = useState<string | null>(null);
   const [origine, setOrigine] = useState<Position | null>(null);
   const [localisation, setLocalisation] = useState<EtatLocalisation>("aucun");
   const [indisponible, setIndisponible] = useState(false);
+  const [mieuxNotees, setMieuxNotees] = useState(false);
 
   const filtrees = useMemo(() => filtrerParUnivers(boutiques, univers), [boutiques, univers]);
   const placees = useMemo(() => filtrees.filter(aPosition), [filtrees]);
@@ -33,7 +39,8 @@ export default function CarteBoutiques({ boutiques, univers: universInitial, che
   const parDistance = useMemo(() => (origine ? trierParDistance(placees, origine) : null), [placees, origine]);
   const distances = useMemo(() => new Map(parDistance?.map(b => [b.id, b.distance]) ?? []), [parDistance]);
   const proches = useMemo(() => parDistance?.slice(0, 3) ?? [], [parDistance]);
-  const liste = parDistance ?? placees;
+  const resumes = useMemo(() => new Map(Object.entries(notes).map(([id, r]) => [id, { ...r, criteres: { accueil: 0, article_conforme: 0, rapidite: 0 } }])), [notes]);
+  const liste = mieuxNotees ? trierMieuxNotees(parDistance ?? placees, b => b.id, resumes) : parDistance ?? placees;
   const choisie = selection ? filtrees.find(b => b.id === selection) ?? null : null;
 
   const textePromos = useCallback((n: number) => (n === 0 ? c.aucunePromo : remplir(n === 1 ? c.promosUne : c.promos, { n })), [c]);
@@ -78,6 +85,8 @@ export default function CarteBoutiques({ boutiques, univers: universInitial, che
         <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="1.5" fill="currentColor" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /></svg>{localisation === "actif" ? c.autourActif : c.autourDeMoi}
       </button>
       <p className="mt-2 text-center text-xs text-gris">{c.confidentialite}</p>
+      {Object.keys(notes).length > 0 && <button type="button" onClick={() => setMieuxNotees(v => !v)} aria-pressed={mieuxNotees}
+        className={`etiquette mt-3 flex min-h-11 w-full items-center justify-center border px-4 ${mieuxNotees ? "border-noir bg-noir text-blanc" : "border-trait"}`}>{c.mieuxNotees}</button>}
       {localisation === "recherche" && <p role="status" className="mt-2 text-center text-sm">{c.recherche}</p>}
       {localisation === "refus" && <p role="alert" className="mt-2 text-center text-sm">{c.refus}</p>}
       {localisation === "introuvable" && <div role="alert" className="mt-2 text-center text-sm"><p>{c.introuvable}</p><button type="button" onClick={autourDeMoi} className="etiquette mt-2 min-h-11 border border-noir px-4">{c.reessayer}</button></div>}
@@ -92,6 +101,7 @@ export default function CarteBoutiques({ boutiques, univers: universInitial, che
           <p className="etiquette text-gris">{choisie.quartier}{texteDistance(choisie.id) ? ` · ${texteDistance(choisie.id)}` : ""}</p>
           <h2 className="break-words font-titre text-2xl font-normal">{choisie.nom}</h2>
           <p className="text-sm">{textePromos(choisie.promos)}</p>
+          {notes[choisie.id] && <p className="text-sm"><NoteBoutique resume={notes[choisie.id]} t={t.avis} /></p>}
         </div>
         <button type="button" onClick={() => setSelection(null)} aria-label={c.fermer} className="inline-flex min-h-11 min-w-11 items-center justify-center text-xl">×</button>
       </div>
@@ -106,18 +116,18 @@ export default function CarteBoutiques({ boutiques, univers: universInitial, che
         <p>{univers ? c.aucuneUnivers : c.aucune}</p>
         {univers && <a href={chemin} onClick={evenement => choisirUnivers(evenement, null)} className="etiquette mt-4 inline-flex min-h-11 items-center border border-noir px-4">{c.voirToutes}</a>}
       </div> : <>
-        {liste.length > 0 && <><h2 className="etiquette text-gris">{parDistance ? c.listeProches : c.listeParNom}</h2>
-          <ul className="mt-2">{liste.map(b => <LigneBoutique key={b.id} boutique={b} promos={textePromos(b.promos)} distance={distances.get(b.id) === undefined ? null : formaterDistance(distances.get(b.id)!, langue)} />)}</ul></>}
+        {liste.length > 0 && <><h2 className="etiquette text-gris">{mieuxNotees ? c.listeMieuxNotees : parDistance ? c.listeProches : c.listeParNom}</h2>
+          <ul className="mt-2">{liste.map(b => <LigneBoutique key={b.id} boutique={b} promos={textePromos(b.promos)} note={notes[b.id]?.moyenne != null ? texteNote({ resume: notes[b.id], t: t.avis }) : null} distance={distances.get(b.id) === undefined ? null : formaterDistance(distances.get(b.id)!, langue)} />)}</ul></>}
         {sansPosition.length > 0 && <><h2 className="etiquette mt-8 text-gris">{remplir(c.sansPosition, { n: sansPosition.length })}</h2>
-          <ul className="mt-2">{sansPosition.map(b => <LigneBoutique key={b.id} boutique={b} promos={textePromos(b.promos)} distance={null} />)}</ul></>}
+          <ul className="mt-2">{sansPosition.map(b => <LigneBoutique key={b.id} boutique={b} promos={textePromos(b.promos)} note={notes[b.id]?.moyenne != null ? texteNote({ resume: notes[b.id], t: t.avis }) : null} distance={null} />)}</ul></>}
       </>}
     </section>
   </>;
 }
 
-function LigneBoutique({ boutique, promos, distance }: { boutique: BoutiqueCarte; promos: string; distance: string | null }) {
+function LigneBoutique({ boutique, promos, note, distance }: { boutique: BoutiqueCarte; promos: string; note: string | null; distance: string | null }) {
   return <li className="border-b border-trait"><Link href={`/b/${boutique.slug}`} className="flex min-h-14 items-center justify-between gap-3 py-3">
-    <span className="min-w-0"><span className="block break-words font-titre text-lg">{boutique.nom}</span><span className="block text-sm text-gris">{boutique.quartier} · {promos}</span></span>
+    <span className="min-w-0"><span className="block break-words font-titre text-lg">{boutique.nom}</span><span className="block text-sm text-gris">{boutique.quartier} · {promos}</span>{note && <span className="block text-sm" dir="auto">{note}</span>}</span>
     <span className="shrink-0 text-sm" dir="auto">{distance ?? <span aria-hidden="true" className="rtl:rotate-180 inline-block">›</span>}</span>
   </Link></li>;
 }

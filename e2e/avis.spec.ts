@@ -1,7 +1,7 @@
 // US-32 : avis clients sur les boutiques. Commande retirée par QR code → « Donner mon avis » dans « Mes commandes »
 // → filtre de contenu (numéro refusé) → avis publié → note affichée, plus de bouton. Toujours sur Supabase local.
 import { expect, test } from "@playwright/test";
-import { creerArticle, creerBoutique, creerCompte, fermerBase, sql } from "./outils/donnees";
+import { creerArticle, creerBoutique, creerCompte, fermerBase, sql, unique } from "./outils/donnees";
 import { avancerCommande, commanderArticle, connecterEspace, lireJetonRetrait, remettre } from "./outils/parcours";
 
 test.afterAll(fermerBase);
@@ -71,5 +71,79 @@ test("avis : retrait par QR code → « Donner mon avis » → filtre → avis p
     await page.goto(`/compte/commandes/${id}/avis`);
     await expect(page.getByRole("button", { name: "Publier mon avis" })).toHaveCount(0);
   });
+  await test.step("vitrine : sous le seuil, « Pas encore assez d'avis », le commentaire s'affiche déjà", async () => {
+    await page.goto(`/b/${boutique.slug}`);
+    const avis = page.getByRole("region", { name: "Avis clients" });
+    await expect(avis).toContainText("Pas encore assez d’avis");
+    await expect(avis).toContainText("Amine B.");
+    await expect(avis).toContainText("Très bon accueil, la robe est comme sur la photo.");
+    await expect(avis.getByRole("img", { name: "4 étoiles sur 5" })).toBeVisible();
+  });
   await espace.context().close();
+});
+
+/** Avis posé directement dans la base locale (commande récupérée par QR code), comme après le parcours ci-dessus. */
+async function avisDirect(boutique: string, note: number, nom: string, criteres: string[], commentaire: string | null) {
+  const client = await creerCompte({ nom });
+  const texte = commentaire === null ? "null" : `'${commentaire.replace(/'/g, "''")}'`;
+  // Déclencheurs de commande coupés le temps de poser l'état final (seul l'avis compte ici).
+  await sql(`begin; set local session_replication_role = replica;
+    with c as (insert into commandes (client_id, boutique_id, statut, client_nom, client_telephone, total, mode_remise, terminee_le)
+      values ('${client.id}', '${boutique}', 'recuperee', '${nom.replace(/'/g, "''")}', '${client.telephone}', 3500, 'qr', now() - interval '1 day') returning id)
+    insert into avis (commande_id, boutique_id, client_id, note, criteres, commentaire)
+      select id, '${boutique}', '${client.id}', ${note}, '{${criteres.join(",")}}', ${texte} from c;
+    commit;`);
+}
+
+test("avis affichés : vitrine (note à partir de 3 avis, critères), fiche, catalogue « Mieux notées », arabe", async ({ page }) => {
+  test.setTimeout(120_000);
+  const u = unique();
+  const notee = await creerBoutique({ nom: `Boutique Nour ${u}` });
+  const articleNote = await creerArticle(notee.id, { titre: `Abaya ${u} notée` });
+  const sansAvis = await creerBoutique({ nom: `Kids Style ${u}` });
+  await creerArticle(sansAvis.id, { titre: `Abaya ${u} récente` });
+  await avisDirect(notee.id, 5, "Amine Benali", ["accueil"], "Très bon accueil.");
+  await avisDirect(notee.id, 4, "Sara Kaci", ["accueil", "rapidite"], "Un peu d'attente au retrait.");
+  await avisDirect(notee.id, 4, "Nadia Mansouri", [], null);
+  const mois = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric", timeZone: "Africa/Algiers" }).format(new Date(Date.now() - 24 * 3600 * 1000));
+
+  await test.step("vitrine : « ★ 4,3 · 3 avis », critères les plus cités, derniers avis (prénom et initiale, mois)", async () => {
+    await page.goto(`/b/${notee.slug}`);
+    await expect(page.getByRole("link", { name: "★ 4,3 · 3 avis" })).toHaveAttribute("href", "#avis");
+    const avis = page.getByRole("region", { name: "Avis clients" });
+    await expect(avis).toContainText("Bon accueil · 2");
+    await expect(avis).toContainText("Rapide · 1");
+    await expect(avis).toContainText("Sara K.");
+    await expect(avis).toContainText("Nadia M.");
+    await expect(avis).toContainText(mois);
+    await expect(avis).not.toContainText("Kaci");
+    await expect(avis.getByRole("link", { name: "Voir tous les avis" })).toHaveCount(0);
+  });
+
+  await test.step("fiche article : « Boutique Nour · ★ 4,3 (3 avis) » vers les avis de la vitrine", async () => {
+    await page.goto(`/a/${articleNote.id}`);
+    await expect(page.getByRole("link", { name: `${notee.nom} · ★ 4,3 (3 avis)` })).toHaveAttribute("href", `/b/${notee.slug}#avis`);
+  });
+
+  await test.step("catalogue : « Mieux notées » met la boutique notée devant, la boutique sans avis à la fin", async () => {
+    const titres = async () => page.getByRole("main").getByRole("heading", { level: 3 }).allInnerTexts();
+    await page.goto(`/oran/catalogue?q=${u}`);
+    expect(await titres()).toEqual([`Abaya ${u} récente`, `Abaya ${u} notée`]);
+    await page.getByLabel("Trier").selectOption({ label: "Mieux notées" });
+    await page.getByRole("button", { name: "Rechercher", exact: true }).click();
+    await expect(page).toHaveURL(/tri=notes/);
+    expect(await titres()).toEqual([`Abaya ${u} notée`, `Abaya ${u} récente`]);
+    await expect(page.getByText("★ 4,3 · 3 avis")).toBeVisible();
+  });
+
+  await test.step("en arabe : « ★ 4,3 · 3 راي », « مازال ما كاينش بزاف تاع الآراء » sous le seuil", async () => {
+    await page.goto("/villes");
+    await page.getByRole("form", { name: "Langue" }).getByRole("button", { name: "العربية" }).click();
+    await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+    await page.goto(`/b/${notee.slug}`);
+    await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+    await expect(page.getByRole("region", { name: "آراء الكليان" })).toContainText("★ 4,3 · 3 راي");
+    await page.goto(`/b/${sansAvis.slug}`);
+    await expect(page.getByRole("region", { name: "آراء الكليان" })).toContainText("مازال ما كاينش بزاف تاع الآراء");
+  });
 });

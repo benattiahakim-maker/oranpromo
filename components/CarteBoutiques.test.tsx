@@ -144,3 +144,31 @@ describe("US-24.3 : page /carte", () => {
     expect(screen.getByText("ما عندهمش بلاصة في الخريطة (1)")).toBeInTheDocument();
   });
 });
+
+describe("US-32.3 : notes et tri « Mieux notées » sur la carte", () => {
+  const notes = { ilyes: { nombre: 18, moyenne: 4.6 }, amine: { nombre: 2, moyenne: null } };
+  const avecNotes = (langue: "fr" | "ar" = "fr") => render(<FournisseurTextes langue={langue} textes={textesDe(langue)}><CarteBoutiques boutiques={boutiques} notes={notes} univers={null} /></FournisseurTextes>);
+  it("mini-fiche : « ★ 4,6 · 18 avis » ; sous le seuil : « Pas encore assez d'avis »", () => {
+    avecNotes();
+    fireEvent.click(screen.getByRole("button", { name: "Épingle Maison Ilyes" }));
+    expect(within(screen.getByRole("region", { name: "Maison Ilyes" })).getByText("★ 4,6 · 18 avis")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Épingle Boutique Amine" }));
+    expect(within(screen.getByRole("region", { name: "Boutique Amine" })).getByText("Pas encore assez d’avis")).toBeInTheDocument();
+  });
+  it("« Mieux notées » : la boutique notée passe d'abord, sous le seuil ensuite ; la liste le dit", () => {
+    avecNotes();
+    const noms = () => screen.getAllByRole("link").map(l => l.textContent ?? "").filter(t => /Boutique Amine|Maison Ilyes/.test(t));
+    expect(noms()[0]).toContain("Boutique Amine");
+    fireEvent.click(screen.getByRole("button", { name: "Mieux notées" }));
+    expect(screen.getByRole("button", { name: "Mieux notées" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("Les boutiques · mieux notées d’abord")).toBeInTheDocument();
+    expect(noms()[0]).toContain("Maison Ilyes"); expect(noms()[0]).toContain("★ 4,6 · 18 avis");
+  });
+  it("sans notes : pas de bouton « Mieux notées » ; en arabe : « الأحسن في النقاط »", () => {
+    tout();
+    expect(screen.queryByRole("button", { name: "Mieux notées" })).toBeNull();
+    cleanup();
+    avecNotes("ar");
+    expect(screen.getByRole("button", { name: "الأحسن في النقاط" })).toBeInTheDocument();
+  });
+});

@@ -126,6 +126,10 @@ export const fr = {
     pagination: "Pagination du catalogue",
     precedent: "Précédent",
     suivant: "Suivant",
+    // US-32.3 : tri (texte n° 13 du module 18).
+    tri: "Trier",
+    recents: "Plus récents",
+    mieuxNotees: "Mieux notées",
   },
   fiche: {
     retour: "Retour",
@@ -394,6 +398,9 @@ export const fr = {
     fermer: "Fermer",
     listeParNom: "Les boutiques · par nom",
     listeProches: "Les boutiques · les plus proches d’abord",
+    // US-32.3 : tri « Mieux notées » de la liste.
+    listeMieuxNotees: "Les boutiques · mieux notées d’abord",
+    mieuxNotees: "Mieux notées",
     sansPosition: "Sans position sur la carte ({n})",
     aucuneUnivers: "Aucune boutique de cet univers pour le moment.",
     voirToutes: "Voir toutes les boutiques",
@@ -537,6 +544,20 @@ export const fr = {
     plusPossible: "Un avis est possible seulement sur une commande récupérée avec votre QR code, dans les 14 jours.",
     retourCommande: "Retour à la commande",
     impossible: "Impossible de publier votre avis. Réessayez.",
+    // US-32.3 : affichage (textes n° 9, 10 et 13 du module 18).
+    resume: "★ {note} · {n} avis",
+    resumeFiche: "★ {note} ({n} avis)",
+    pasAssez: "Pas encore assez d’avis",
+    titreSection: "Avis clients",
+    noteSur: "{n} étoiles sur 5",
+    reponseBoutique: "Réponse de la boutique : {reponse}",
+    voirTous: "Voir tous les avis",
+    tousLesAvis: "Avis sur {boutique}",
+    aucun: "Aucun avis pour le moment.",
+    precedents: "Avis plus récents",
+    suivants: "Avis plus anciens",
+    retourBoutique: "Retour à la boutique",
+    chargementImpossible: "Impossible de charger les avis. Réessayez.",
   },
 };
 
