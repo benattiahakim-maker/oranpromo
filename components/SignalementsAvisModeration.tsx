@@ -34,9 +34,10 @@ function GroupeAvis({ groupe }: { groupe: GroupeSignalementsAvis }) {
     verrou.current = true; setEnCours(true); setErreur(""); setMessage("");
     try {
       const resultat = await traiterSignalementsAvis(groupe.avisId, groupe.signalements.map(s => s.id), action);
+      // Succès : pas d'actualisation, sinon l'avis traité quitte la liste et la confirmation disparaît avec lui
+      // (« Décisions enregistrées. » doit rester lisible). Échec : actualisation pour montrer l'état réel.
       if (resultat.succes) { setTermine(true); setConfirmation(null); setMessage(resultat.message); }
-      else setErreur(resultat.message);
-      router.refresh();
+      else { setErreur(resultat.message); router.refresh(); }
     } catch { setErreur("Impossible de traiter les signalements. Réessayez."); }
     finally { verrou.current = false; setEnCours(false); }
   }
