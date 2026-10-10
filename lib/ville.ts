@@ -1,5 +1,6 @@
 // US-29.2 : ville choisie par le client (adresse /oran/… et cookie « ville », comme la langue, sans compte).
 // Fonctions pures (serveur et navigateur) ; la lecture de la base est dans lib/ville-serveur.ts.
+import { cheminSuite } from "./connexion";
 
 export const COOKIE_VILLE = "ville";
 /** Le choix est gardé un an (comme la langue). */
@@ -61,10 +62,13 @@ export function villeDeLaPosition<V extends Pick<Ville, "lat_min" | "lat_max" | 
   return villes.find(v => latitude >= v.lat_min && latitude <= v.lat_max && longitude >= v.lng_min && longitude <= v.lng_max) ?? null;
 }
 
-/** Chemin interne sûr (« /… » mais pas « //… » ni « /\… »), sinon null. */
+/**
+ * Chemin interne sûr, sinon null. Relecture n°6, point 3 : même contrôle que la connexion (`cheminSuite`) : ni « //… »,
+ * ni « /\… », ni caractère de contrôle ou espace (« /\t/evil.com » devenait « //evil.com » pour le navigateur), même encodé
+ * (« /%09/evil.com »), et l'origine doit rester celle du site.
+ */
 function cheminInterne(chemin: string | null | undefined): string | null {
-  if (!chemin || !chemin.startsWith("/") || chemin.startsWith("//") || chemin.startsWith("/\\")) return null;
-  return chemin;
+  return chemin ? cheminSuite(chemin) : null;
 }
 
 /**
