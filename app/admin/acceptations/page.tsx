@@ -1,5 +1,6 @@
 import { creerClientServeur } from "@/lib/supabase/server";
 import { verifierAdministrateur } from "@/lib/moderation";
+import Numero from "@/components/Numero";
 import { fr } from "@/lib/textes/fr";
 import { formaterVersion } from "@/lib/juridique";
 import { formaterDate } from "@/lib/donnees-compte";
@@ -32,7 +33,7 @@ export default async function RegistreAcceptations({ searchParams }: { searchPar
       </form>
       {q !== undefined && comptes === null && !erreur && <p className="mt-3 text-sm">Écrivez au moins 3 caractères.</p>}
       {comptes && (comptes.length ? <ul aria-label="Comptes" className="mt-4">{comptes.map(c => <li key={c.id} className="border-t border-trait py-4">
-        <p className="text-[15px]">{c.nom ?? "Sans nom"} · <bdi dir="ltr">{c.telephone ?? "sans numéro"}</bdi> · {c.role}</p>
+        <p className="text-[15px]">{c.nom ?? "Sans nom"} · {c.telephone ? <Numero telephone={c.telephone} /> : "sans numéro"} · {c.role}</p>
         {c.accords.length ? <ul className="mt-2">{c.accords.map((a, i) => <li key={i} className="py-1 text-sm">
           {titres[a.document]}, version du {formaterVersion(a.version)} · accepté le {formaterDate(a.accepteLe)} {CONTEXTES[a.contexte] ?? a.contexte}</li>)}</ul>
           : <p className="mt-2 text-sm text-gris">Aucune acceptation.</p>}

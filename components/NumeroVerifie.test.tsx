@@ -11,6 +11,7 @@ describe("numéro dans /compte (US-21.2)", () => {
     render(<NumeroVerifie telephone="+213555123456" verifie verificationActive />);
     expect(screen.getByText("Téléphone vérifié")).toBeInTheDocument();
     expect(screen.getByText("0555 12 34 56")).toBeInTheDocument();
+    expect(screen.getByText("0555 12 34 56").closest("bdi")).toHaveAttribute("dir", "ltr"); // page en arabe : pas inversé
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Changer de numéro" }));
     expect(screen.getByText(/Formulaire de code \(verification\)/)).toBeInTheDocument();

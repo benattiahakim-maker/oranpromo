@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { telephoneLisible } from "@/lib/clients";
+import Numero from "@/components/Numero";
 import CodeTelephone from "./CodeTelephone";
 import { useTextes } from "./FournisseurTextes";
 
@@ -12,7 +12,7 @@ export default function NumeroVerifie({ telephone, verifie, verificationActive }
   const [changer, setChanger] = useState(false);
   if (verifie && telephone) return <section aria-labelledby="titre-numero" className="mt-6 border border-trait p-4">
     <h2 id="titre-numero" className="etiquette m-0 text-xs">{t.verifie}</h2>
-    <p dir="ltr" className="mb-0 mt-2 text-start text-base"><bdi>{telephoneLisible(telephone)}</bdi></p>
+    <p className="mb-0 mt-2 text-start text-base"><Numero telephone={telephone} lisible /></p>
     <p className="m-0 text-[13px] text-gris">{textes.profil.contact}</p>
     {verificationActive && (changer
       ? <div className="mt-4"><CodeTelephone usage="verification" onVerifie={() => setChanger(false)} /></div>
