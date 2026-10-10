@@ -1025,3 +1025,80 @@ Les autres textes ne changent que par le nom : « OranPromo » devient « BleDea
 11. Ancien domaine ou affiches (réponse du propriétaire, 10/10 à 4 h 25) : **rien n'a été acheté** (pas d'`oranpromo.com`, pas d'affiches imprimées) : **aucune redirection** à prévoir.
 12. Prochaines villes (réponse du propriétaire, 10/10 à 4 h 25) — **feuille de route** : l'**Ouest** d'abord (Oran, Mostaganem, Relizane, Tlemcen), puis le **Centre** (Alger, Tizi Ouzou, Béjaïa), puis l'**Est** (Annaba, Constantine). Les 9 villes sont créées dès US-29.1 (codes `oran`, `mostaganem`, `relizane`, `tlemcen`, `alger`, `tizi-ouzou`, `bejaia`, `annaba`, `constantine`, noms français et arabes, numéros de wilaya, bornes OpenStreetMap + environ 1 km) ; **seule Oran est ouverte**, l'admin ouvre les autres. Bornes, sources et marche à suivre pour ajouter une ville : `architecture.md`.
 13. Darja oranaise gardée pour tout le pays.
+
+## Module 17 — Suivre une boutique et inscription en boutique (après le MVP)
+
+Source : carte Trello « Commercial · Inscription des clients en boutique + « Suivre la boutique » » (idée du propriétaire du 9/10 : « les vendeurs en magasin font inscrire leurs clients, qui ont une réduction sur leur 1re commande » ; bouton « Suivre », alerte WhatsApp à chaque nouvelle promo, nombre d'abonnés dans `/espace`). Demande du 10/10 : conception seulement. **Conception seulement** : aucun code, aucune migration, aucune dépendance. Conception technique : `docs/architecture.md`, section « Suivre une boutique et inscription en boutique (US-31) » ; maquette `docs/maquettes/SuivreBoutique.dc.html` (375 px, français et arabe de droite à gauche). **À valider par le propriétaire** (questions en fin de module).
+
+**Ordre conseillé** (la carte dit « à faire après la carte Bons de réduction ») : US-31.1 à US-31.3 (suivre, « Mes boutiques », compteur, page d'inscription en boutique) **ne dépendent de rien** et peuvent être codées tout de suite ; le **bon de bienvenue de l'inscription en boutique** (US-31.4) se code **après US-33** (bons de réduction : il en est un cas particulier) ; l'**alerte WhatsApp** (US-31.5) se code **après US-34** (conditions et confidentialité en ligne, consentement enregistré) et l'approbation d'un modèle **Marketing** par Meta.
+
+**Ce qui ne change pas** : blocage, no-shows, contestation, vérification du numéro (US-20.4, US-21), commandes, retrait, parrainage. Suivre une boutique ne donne aucun droit de plus (ni commande en plus, ni priorité). La boutique ne voit **jamais** qui la suit (seulement un nombre).
+
+| Story | Contenu | Écrans |
+| --- | --- | --- |
+| US-31.1 | Table des abonnements, fonctions suivre / ne plus suivre, compteur (base) | aucun |
+| US-31.2 | Bouton « Suivre » sur la vitrine, rubrique « Mes boutiques » dans le compte | `/b/[slug]`, `/compte`, `/compte/boutiques` |
+| US-31.3 | Compteur d'abonnés dans l'espace ; inscription en boutique par le QR code de l'affiche | `/espace`, `/espace/affiche`, `/i/[slug]` |
+| US-31.4 | Bon de bienvenue de l'inscription en boutique (garde-fous), signaux admin | `/i/[slug]`, `/compte`, `/panier`, `/admin/remboursements` |
+| US-31.5 | (plus tard, facultatif) Alerte WhatsApp « nouvelles promos » : consentement séparé, un message par jour au plus, désabonnement en un clic | `/b/[slug]`, `/compte/boutiques`, `/alertes/[jeton]` |
+
+### US-31 — Suivre une boutique (vue d'ensemble) — **à valider**
+En tant que client, je veux suivre les boutiques que j'aime, afin de retrouver vite leurs promos ; en tant que commerçant, je veux faire inscrire mes clients sur place et savoir combien de clients me suivent.
+
+### US-31.1 — Abonnements dans la base (aucun écran)
+- Nouvelle table **`abonnements_boutique`** : `profil_id`, `boutique_id` (clé à deux colonnes : on suit une boutique une fois), `cree_le`, `source` (`vitrine`, `inscription_boutique`), `alerte_whatsapp` (non par défaut), `alerte_consentie_le` (date du consentement, vide sinon). Lecture : le client **ses** abonnements ; ni la boutique ni le public ne lisent la table ; l'admin lit tout.
+- Fonctions : `suivre_boutique(boutique)` (client connecté, boutique **validée**, même dans une ville fermée si on vient de son lien), `ne_plus_suivre(boutique)`, `abonnes_boutique()` (la boutique du commerçant connecté : un nombre, et le nombre de nouveaux sur 7 jours). Au plus **200 boutiques suivies** par compte (garde-fou).
+- Un compte bloqué peut suivre et ne plus suivre (rien ne change pour le blocage : il ne peut toujours pas commander).
+- Tests SQL : un client suit et ne suit plus ; deux fois = une seule ligne ; boutique en attente ou suspendue refusée ; un client ne lit pas les abonnements des autres ; la boutique ne lit pas la table et ne connaît que le nombre ; un visiteur sans compte ne peut rien.
+
+### US-31.2 — Suivre depuis la vitrine, « Mes boutiques » (pages `/b/[slug]`, `/compte`, `/compte/boutiques`)
+- **Vitrine** : bouton **« Suivre »** sous le nom de la boutique ; une fois suivie : **« ✓ Suivie »** (toucher = « Ne plus suivre ? » avec confirmation). Sans compte : la page de connexion, puis retour sur la vitrine et la boutique est suivie (la suite de connexion accepte aussi `/b/<slug>`, en plus de `/compte` et `/panier`).
+- **`/compte`** : ligne « Mes boutiques (3) » qui ouvre **`/compte/boutiques`** : une ligne par boutique (nom, quartier · ville, « 2 nouvelles promos cette semaine » ou « Pas de nouvelle promo »), lien vers la vitrine, « Ne plus suivre ». Vide : « Vous ne suivez encore aucune boutique. Touchez « Suivre » sur la page d'une boutique. »
+- Une boutique suspendue disparaît de la liste (l'abonnement reste et revient si elle est réactivée).
+- Français et arabe (textes en fin de module).
+
+### US-31.3 — Compteur dans l'espace, inscription en boutique (pages `/espace`, `/espace/affiche`, `/i/[slug]`)
+- **`/espace`** : bloc « **23 clients suivent votre boutique** · +4 cette semaine » ; jamais de nom ni de numéro.
+- **Affiche** (`/espace/affiche`, US-22) : le QR code mène à **`/i/<slug>`** au lieu de `/b/<slug>` (même affiche, texte ajouté : « Inscrivez-vous et suivez la boutique »). Les affiches déjà imprimées (QR vers `/b/<slug>`) restent valables.
+- **`/i/<slug>`** (lien de l'affiche) : pose un cookie **`inscription_boutique`** (slug seul, httpOnly, 24 h) puis ouvre la vitrine avec un bandeau : « **Bienvenue chez Boutique Nour.** Créez votre compte BleDeal avec votre numéro WhatsApp pour suivre la boutique et réserver ses promos. » et le bouton « Créer mon compte ».
+- Après la connexion (numéro vérifié par code, US-21) : la boutique est **suivie** (source `inscription_boutique`) et, si le compte est **nouveau** (créé dans les 24 h, aucune commande), il est **rattaché à la boutique** (`profils.inscrit_par_boutique`, une seule fois, jamais modifiable par le client). Un compte ancien ne se rattache pas (il suit seulement).
+- Slug inconnu ou boutique non validée : vitrine habituelle ou page « Boutique introuvable », sans cookie.
+
+### US-31.4 — Bon de bienvenue de l'inscription en boutique (après US-33)
+- Le client rattaché à une boutique reçoit le **bon de bienvenue** de US-33 (1re commande, numéro vérifié, minimum d'achat), avec les garde-fous de la carte :
+  - **pas utilisable le jour même dans la boutique qui a inscrit** (dès le lendemain, heure d'Alger ; tout de suite dans une autre boutique) ;
+  - **coût partagé** pour une utilisation dans la boutique qui a inscrit (exemple de la carte : bon de 500 DA = 250 DA BleDeal + 250 DA la boutique ; la boutique déduit 500 DA en caisse et BleDeal lui rembourse 250 DA) ; dans une autre boutique, BleDeal rembourse tout ;
+  - **plafond** d'inscriptions récompensées par boutique et par mois (exemple : 20) ; au-delà, l'inscription marche mais sans bon ;
+  - **minimum d'achat** et **remise par QR code** obligatoires (règles des bons, US-27 / US-33).
+- **Prime du vendeur** (pas du patron), versée à la **2e commande** récupérée du client : **pas dans cette version** (il faudrait identifier le vendeur : question 4).
+- Signaux admin (`/admin/remboursements`, jamais bloquants) : inscrits d'une boutique qui n'achètent jamais ailleurs ; beaucoup d'inscriptions sans commande ; commande récupérée moins de 30 minutes après sa création ; inscriptions groupées à la même minute.
+
+### US-31.5 — Alerte WhatsApp « nouvelles promos » (plus tard, facultatif)
+- Case **séparée et non cochée** : « Recevoir sur WhatsApp les nouvelles promos des boutiques que je suis (un message par jour au plus). Je peux arrêter à tout moment. » ; date du consentement gardée. Suivre une boutique **ne vaut pas** consentement (loi 18-05, art. 31 ; loi 18-07, art. 37 : pas de prospection par message sans consentement préalable).
+- **Un seul message par jour et par client**, tous abonnements confondus (résumé : « 3 boutiques que vous suivez ont de nouvelles promos »), envoyé le matin (avec la tâche d'envoi quotidienne de 10 h, heure d'Alger) seulement s'il y a du nouveau ; au plus **1 promo par boutique et par jour** comptée ; plafond mensuel de messages réglable par l'admin (0 = arrêt).
+- **Désabonnement en un clic** : lien `/alertes/<jeton>` dans chaque message (jeton signé, sans connexion) → « Vous ne recevrez plus d'alertes. » ; effet immédiat (la loi 18-05, art. 32, demande au plus 24 h et un accusé de réception : la page en fait office) ; aussi dans `/compte/boutiques`.
+- Modèle **Marketing** chez Meta (nouveau nom `bledeal_nouvelles_promos`) : coût d'environ **0,0225 $ par message remis** en Algérie (grille Meta du 1er octobre 2026, zone « Rest of Africa ») contre 0,004 $ pour un message Utilitaire, soit environ 3 DA par message ; 1 000 clients alertés chaque jour ≈ 30 000 messages par mois ≈ 675 $. Meta peut refuser ou limiter les messages Marketing (qualité, plafonds par utilisateur).
+
+### Textes nouveaux (français / arabe, à valider)
+
+| # | Où | Français | Arabe (darja, à valider) |
+| --- | --- | --- | --- |
+| 1 | Vitrine, bouton | Suivre | **تبّع** |
+| 2 | Vitrine, bouton suivi | ✓ Suivie | ✓ راك **تتبّع** |
+| 3 | Vitrine, confirmation | Ne plus suivre Boutique Nour ? | **ما تبقاش** تتبّع Boutique Nour؟ |
+| 4 | Compte, ligne | Mes boutiques (3) | **الحوانت** نتاعي (3) |
+| 5 | Mes boutiques, ligne | 2 nouvelles promos cette semaine | 2 **بروموات** جداد هاد **السمانة** |
+| 6 | Mes boutiques, vide | Vous ne suivez encore aucune boutique. Touchez « Suivre » sur la page d'une boutique. | **مازال** ما راك تتبّع حتى حانوت. **دوز** على « تبّع » في صفحة الحانوت. |
+| 7 | `/i/<slug>`, bandeau | Bienvenue chez Boutique Nour. Créez votre compte BleDeal avec votre numéro WhatsApp pour suivre la boutique et réserver ses promos. | **مرحبا** بيك عند Boutique Nour. **دير** الحساب نتاعك في BleDeal **بنمرة** الواتساب باش تتبّع الحانوت و**تحجز** البروموات نتاعو. |
+| 8 | `/i/<slug>`, bouton | Créer mon compte | **دير** الحساب نتاعي |
+| 9 | Alerte, case | Recevoir sur WhatsApp les nouvelles promos des boutiques que je suis (un message par jour au plus). Je peux arrêter à tout moment. | **نحب** يجيني على الواتساب **البروموات الجداد** تاع الحوانت اللي نتبّعهم (**ميساج** واحد في النهار **على الأكثر**). **نقدر نحبّس** وقتما **حبيت**. |
+| 10 | Désabonnement | Vous ne recevrez plus d'alertes. | **ما عادش** يجيوك الميساجات. |
+
+L'espace commerçant reste en français (US-23) : « 23 clients suivent votre boutique · +4 cette semaine » ; affiche : « Inscrivez-vous et suivez la boutique ».
+
+### Questions au propriétaire (US-31)
+1. **Nombre d'abonnés public** sur la vitrine (« 120 abonnés ») ou seulement dans `/espace` (recommandé au début : un petit nombre fait fuir) ? Proposition : public à partir de 50.
+2. **Bon de l'inscription en boutique** : montant (500 DA ?), **coût partagé** (250 BleDeal + 250 boutique ?) — la boutique doit l'accepter par écrit (accord comme pour le parrainage) —, plafond de **20** inscriptions récompensées par boutique et par mois ?
+3. **Pas le jour même dans la boutique qui a inscrit** : d'accord (recommandé) ?
+4. **Prime du vendeur** : plus tard (recommandé : il faut un code par vendeur sur l'affiche et un suivi des paiements), ou dès la première version ?
+5. **Alerte WhatsApp** : un **résumé par jour au plus** (recommandé, coût maîtrisé) ou un message par promo ? Plafond mensuel de départ (ex. 5 000 messages ≈ 110 $) ? À coder seulement après US-34 et l'approbation Meta.
