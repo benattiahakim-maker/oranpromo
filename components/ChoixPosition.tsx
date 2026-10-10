@@ -4,14 +4,15 @@
 // Rien n'est envoyé au serveur ici : le bloc ne fait que remplir deux nombres, enregistrés par le formulaire parent.
 // Un lien Google Maps est lu dans le navigateur, sur le texte seul : il n'est jamais ouvert (ni ici, ni par le serveur).
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import Coordonnees from "./Coordonnees";
+import { remplirAvec } from "./Numero";
 import {
-  arrondirCoordonnee, coordonneesDepuisTexte, dansZone, formaterPosition, lireCoordonnee, messageHorsVille, messageLecture,
+  arrondirCoordonnee, coordonneesDepuisTexte, dansZone, lireCoordonnee, messageHorsVille, messageLecture,
   MESSAGE_LOCALISATION_INDISPONIBLE, MESSAGE_LOCALISATION_INTROUVABLE, MESSAGE_LOCALISATION_REFUSEE,
   OPTIONS_LOCALISATION_BOUTIQUE, textePrecision, ZONE_ORAN, type Position, type ZoneVille,
 } from "@/lib/position";
 import { fr } from "@/lib/textes/fr";
-import { remplir } from "@/lib/langue";
 
 const CartePosition = dynamic(() => import("./CartePosition"), { ssr: false, loading: () => <div className="h-[200px] w-full border border-trait bg-[#F2F2F2]" aria-hidden="true" /> });
 
@@ -30,7 +31,7 @@ const enTexte = (valeur: number) => arrondirCoordonnee(valeur).toFixed(6);
 export default function ChoixPosition({ id, latitude, longitude, onChange, desactive = false, zone = ZONE_ORAN, t = fr.espace.position, traduireMessage: m = x => x }: ProprietesChoixPosition) {
   const [etat, setEtat] = useState<{ type: "aucun" | "recherche" | "ok" | "erreur"; texte?: string; avertissement?: string | null }>({ type: "aucun" });
   const [lien, setLien] = useState("");
-  const [messageLien, setMessageLien] = useState<{ ok: boolean; texte: string } | null>(null);
+  const [messageLien, setMessageLien] = useState<{ ok: boolean; texte: ReactNode } | null>(null);
   const position = positionDepuisChamps(latitude, longitude, zone);
 
   function placer(nouvelle: Position) { onChange(enTexte(nouvelle.latitude), enTexte(nouvelle.longitude)); }
@@ -56,7 +57,7 @@ export default function ChoixPosition({ id, latitude, longitude, onChange, desac
     const lecture = coordonneesDepuisTexte(lien, zone);
     if (!lecture.ok) { setMessageLien({ ok: false, texte: m(messageLecture(lecture.raison, zone)) }); return; }
     placer(lecture); setEtat({ type: "aucun" });
-    setMessageLien({ ok: true, texte: remplir(t.lue, { position: formaterPosition(lecture) }) });
+    setMessageLien({ ok: true, texte: remplirAvec(t.lue, { position: <Coordonnees position={lecture} /> }) });
   }
 
   function deplacer(nouvelle: Position) {
@@ -75,7 +76,7 @@ export default function ChoixPosition({ id, latitude, longitude, onChange, desac
     </div>}
     <CartePosition position={position} deplacable={!desactive} onDeplacer={deplacer} libelle={t.carte} zone={zone} />
     <p className="text-sm text-gris">{position ? t.deplacez : t.touchez}</p>
-    {position && <div className="flex items-center justify-between gap-3 text-sm"><span dir="ltr" data-testid={`${id}-coordonnees`}>{formaterPosition(position)}</span><button type="button" onClick={() => { onChange("", ""); setEtat({ type: "aucun" }); setMessageLien(null); }} className="min-h-[44px] underline">{t.retirer}</button></div>}
+    {position && <div className="flex items-center justify-between gap-3 text-sm"><Coordonnees position={position} testId={`${id}-coordonnees`} /><button type="button" onClick={() => { onChange("", ""); setEtat({ type: "aucun" }); setMessageLien(null); }} className="min-h-[44px] underline">{t.retirer}</button></div>}
     <p className="etiquette mt-2 text-center text-gris">{t.ou}</p>
     <label className="etiquette" htmlFor={`${id}-lien`}>{t.collerLien}</label>
     <div className="flex gap-2"><input id={`${id}-lien`} type="url" inputMode="url" value={lien} onChange={evenement => { setLien(evenement.target.value); setMessageLien(null); }} onKeyDown={evenement => { if (evenement.key === "Enter") { evenement.preventDefault(); lireLien(); } }} placeholder="https://www.google.com/maps/…/@35.69…" dir="ltr" className="min-h-[44px] min-w-0 flex-1 border border-trait bg-blanc px-3 py-2 text-base text-noir" /><button type="button" onClick={lireLien} className="etiquette min-h-[44px] border border-noir px-4">{t.lire}</button></div>

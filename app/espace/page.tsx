@@ -67,9 +67,7 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
       {profil?.boutique_id && <Link href="/espace/statistiques" className="etiquette my-6 flex min-h-[44px] items-center justify-center border border-noir px-4">{t.mesStatistiques}</Link>}
       {resumeAvis && <Link href="/espace/avis" aria-label={remplir(t.avisClientsLibelle, { resume: texteResumeEspace(resumeAvis, langue) })} className="mb-6 flex min-h-[44px] flex-col items-center justify-center border border-trait p-4 text-center"><span className="etiquette text-gris">{t.avisClients}</span><span className="mt-1 text-sm">{texteResumeEspace(resumeAvis, langue)}</span></Link>}
       {abonnes && <AbonnesBoutique abonnes={abonnes} langue={langue} />}
-      {/* US-35 : bloc des bons gardé en français (composant non traduit pour le moment), sens gauche-droite. */}
-      {langue !== "fr" && (releves.length > 0 || plafonds.length > 0) && <p className="mb-2 text-xs text-gris">{t.bonsEnFrancais}</p>}
-      <div dir="ltr" lang="fr"><BonsBoutique releves={releves} noms={nomsProgrammes} plafonds={plafonds} /></div>
+      <BonsBoutique releves={releves} noms={nomsProgrammes} plafonds={plafonds} langue={langue} />
       {position && <PositionEspace {...position} />}
       {partage && <div className="pb-10"><PartagerBoutique partage={partage} /></div>}
     </div>

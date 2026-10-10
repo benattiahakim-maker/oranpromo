@@ -27,7 +27,7 @@ describe("US-35 : textes de l'espace", () => {
     for (const [cle, texte] of textesFr) expect(variables(textesAr.get(cle)!), cle).toEqual(variables(texte));
   });
   it("chaque texte arabe contient de l'arabe (sauf les marques et symboles gardés tels quels)", () => {
-    const gardes = new Set(["carte.whatsapp", "retrait.bonBleDeal"]); // « WhatsApp », « {bon} BleDeal » : noms gardés
+    const gardes = new Set(["carte.whatsapp", "retrait.bonBleDeal", "bons.resume"]); // « WhatsApp », « {bon} BleDeal » : noms gardés ; « {bons} · {montant} » : que des valeurs
     for (const [cle, texte] of textesAr) if (!gardes.has(cle) && /[A-Za-zÀ-ÿ]{3}/.test(textesFr.get(cle)!)) expect(texte, cle).toMatch(ARABE);
   });
   it("le commerçant n'est pas tutoyé en français (« vous »)", () => {

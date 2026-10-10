@@ -7,7 +7,8 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ChoixPosition from "@/components/ChoixPosition";
 import { enregistrerPositionMaBoutique } from "@/app/espace/actions";
-import { formaterPosition, lireCoordonnee, validerPosition, ZONE_ORAN, type ZoneVille } from "@/lib/position";
+import Coordonnees from "./Coordonnees";
+import { lireCoordonnee, validerPosition, ZONE_ORAN, type ZoneVille } from "@/lib/position";
 import type { Enums } from "@/lib/supabase/types";
 import { useLangue, useTextes } from "@/components/FournisseurTextes";
 import { remplir } from "@/lib/langue";
@@ -50,7 +51,7 @@ export default function PositionEspace({ statut, latitude, longitude, zone = ZON
       <ChoixPosition id="position-espace" zone={zone} t={t} traduireMessage={m} latitude={lat} longitude={lng} onChange={(a, b) => { setLat(a); setLng(b); }} desactive={enCours} />
       <button type="button" onClick={() => void enregistrer()} disabled={enCours} className="etiquette mt-4 min-h-[54px] w-full bg-noir px-4 text-blanc">{enCours ? textes.espace.commun.enregistrement : t.enregistrer}</button>
     </> : <>
-      {position ? <><CartePosition position={position} deplacable={false} libelle={t.carte} zone={zone} /><p className="mt-2 text-sm" dir="ltr">{formaterPosition(position)}</p></> : <p className="text-sm">{t.aucune}</p>}
+      {position ? <><CartePosition position={position} deplacable={false} libelle={t.carte} zone={zone} /><p className="mt-2 text-sm"><Coordonnees position={position} /></p></> : <p className="text-sm">{t.aucune}</p>}
       <p className="mt-3 text-sm">{t.contacter}</p>
     </>}
     {message && <p role="status" className="mt-4">{message}</p>}{erreur && <p role="alert" className="mt-4">{erreur}</p>}

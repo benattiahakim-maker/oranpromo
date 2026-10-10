@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
 import { MINIMUM_PREMIERE_COMMANDE, moisAlger, nomMois } from "./bons";
 import { aRembourserLigne, origineLigne } from "./bons-boutique";
+import { remplir } from "./langue";
+import { fr } from "./textes/fr";
 
 // US-27.5 : administration du parrainage (budget, parrainages et signaux, relevés des boutiques, export CSV).
 // Les règles (budget, annulation, exclusion, relevé payé figé…) sont dans la base ; ici : lecture, signaux, mise en forme.
@@ -322,14 +324,19 @@ export async function lireRelevesBoutique(client: Client, boutiqueId: string): P
 }
 
 /** Ligne d'un relevé côté boutique : « Septembre : 2 400 DA · payé le 05/10, réf. CCP-1234 » ou « à payer avant le 10/10 ». */
-export function etatReleveBoutique(r: Pick<ReleveBoutique, "mois" | "montant" | "statut" | "paye_le" | "reference_paiement">): string {
-  const n = nomMois(r.mois, "fr");
-  const debut = `${n.charAt(0).toUpperCase()}${n.slice(1)} : ${montantDA(r.montant)}`;
-  if (r.statut === "paye" && r.paye_le) return `${debut} · payé le ${r.paye_le.slice(8, 10)}/${r.paye_le.slice(5, 7)}${r.reference_paiement ? `, réf. ${r.reference_paiement}` : ""}`;
+/** US-35 : cas de l'état d'un relevé de boutique et sa date (« 05/10 »), pour le français et l'arabe. */
+export function casReleveBoutique(r: Pick<ReleveBoutique, "mois" | "statut" | "paye_le" | "reference_paiement">): { cas: "paye" | "payeReference" | "aPayer" | "enCours"; date: string } {
+  if (r.statut === "paye" && r.paye_le) return { cas: r.reference_paiement ? "payeReference" : "paye", date: `${r.paye_le.slice(8, 10)}/${r.paye_le.slice(5, 7)}` };
   if (r.statut === "a_payer") {
     const [a, m] = r.mois.split("-").map(Number);
     const suivant = new Date(Date.UTC(a, m, 10));
-    return `${debut} · à payer avant le 10/${String(suivant.getUTCMonth() + 1).padStart(2, "0")}`;
+    return { cas: "aPayer", date: `10/${String(suivant.getUTCMonth() + 1).padStart(2, "0")}` };
   }
-  return `${debut} · en cours`;
+  return { cas: "enCours", date: "" };
+}
+
+export function etatReleveBoutique(r: Pick<ReleveBoutique, "mois" | "montant" | "statut" | "paye_le" | "reference_paiement">): string {
+  const n = nomMois(r.mois, "fr");
+  const { cas, date } = casReleveBoutique(r);
+  return remplir(fr.espace.bons[cas], { mois: `${n.charAt(0).toUpperCase()}${n.slice(1)}`, montant: montantDA(r.montant), date, reference: r.reference_paiement ?? "" });
 }
