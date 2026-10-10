@@ -92,7 +92,7 @@ describe("US-27.3 : « Mon parrainage » et « Mes bons »", () => {
     expect(screen.getByText("Réservé pour la commande n° 128")).toBeInTheDocument();
     expect(screen.getByText("Utilisé le 12/10 chez Maison Ilyes")).toBeInTheDocument();
     expect(screen.getByText("Ton bon arrive le 1er novembre (budget du mois atteint).")).toBeInTheDocument();
-    expect(screen.getByText(/^À utiliser au panier : 300\sDA de moins, payés par BleDeal à la boutique\.$/)).toBeInTheDocument();
+    expect(screen.getByText(/^À utiliser au panier\. Bon parrainage : 300\sDA de moins, payé par BleDeal\.$/)).toBeInTheDocument();
   });
   it("encadré « Merci ! » avec le lien WhatsApp du client", () => {
     render(<MerciParrainage whatsapp="https://wa.me/?text=x" />);

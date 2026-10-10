@@ -506,8 +506,10 @@ export const fr = {
     expire: "Expiré le {date}", // 23
     enFile: "Ton bon arrive le {date} (budget du mois atteint).", // 20
     annule: "Annulé",
-    aideBons: "À utiliser au panier : {montant} de moins, payés par BleDeal à la boutique.", // montant réel du bon (« 150 DA », « 150 DA ou 300 DA »)
-    ouMontant: " ou ",
+    // Phrase d'aide de « Mes bons », bon par bon : montant réel et qui paie (BOLOSS du 10/10, validé par le propriétaire).
+    aideBons: "À utiliser au panier.",
+    aideBonBleDeal: "{nom} : {montant} de moins, payé par BleDeal.", // parrainage, bienvenue, campagne, avis
+    aideBonInscription: "{nom} : {montant} de moins, payé par BleDeal et la boutique où vous vous êtes inscrit.", // US-31.4
     // Accueil et suivi (US-27.3)
     accueilTitre: "Parraine tes amis", // 13
     accueilTexte: "300 DA chacun", // 13

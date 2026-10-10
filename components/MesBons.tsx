@@ -11,8 +11,8 @@ import { useLangue, useTextes } from "./FournisseurTextes";
 export default function MesBons({ bons, maintenant }: { bons: BonClient[]; maintenant?: Date }) {
   const t = useTextes().parrainage;
   const langue = useLangue();
-  // Montant réel de chaque bon encore utilisable (disponible, réservé, en file) : 150 DA, 300 DA, 500 DA…
-  const aide = aideMesBons(bons.filter(b => etatBon(b, langue, maintenant).actif).map(b => b.montant), t, langue);
+  // Bon par bon (disponible, réservé, en file) : montant réel et qui paie (BleDeal, ou BleDeal et la boutique d'inscription).
+  const aide = aideMesBons(bons.filter(b => etatBon(b, langue, maintenant).actif), t, langue);
   return <section aria-labelledby="titre-mes-bons" className="mt-8 border-t border-trait pt-6">
     <h2 id="titre-mes-bons" className="etiquette text-xs text-gris">{t.mesBons}</h2>
     <ul className="mt-1">{bons.map(bon => {

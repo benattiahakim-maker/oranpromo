@@ -36,12 +36,14 @@ export function libelleUtiliserBon(bon: BonClient, t: TextesBons, langue: Langue
   return remplir(t.utiliserBon, { montant: formaterPrix(bon.montant, langue) });
 }
 
-/** Phrase d'aide de « Mes bons » avec le montant réel des bons encore utilisables : « 150 DA », « 150 DA ou 300 DA »
- *  (montants différents, du plus petit au plus grand). null : aucun bon utilisable, pas de phrase. */
-export function aideMesBons(montants: number[], t: TextesBons, langue: Langue): string | null {
-  const uniques = [...new Set(montants.filter(m => m > 0))].sort((a, b) => a - b);
-  if (!uniques.length) return null;
-  return remplir(t.aideBons, { montant: uniques.map(m => formaterPrix(m, langue)).join(t.ouMontant) });
+/** Phrase d'aide de « Mes bons », bon par bon (bons encore utilisables) : nom, montant réel et qui paie.
+ *  Bon de l'inscription en boutique (US-31.4) : BleDeal et la boutique d'origine ; tous les autres : BleDeal.
+ *  Bons identiques (même nom, montant, payeur) une seule fois, du plus petit au plus grand. null : aucun bon, pas de phrase. */
+export function aideMesBons(bons: Pick<BonClient, "origine" | "montant" | "nom_fr" | "nom_ar">[], t: TextesBons, langue: Langue): string | null {
+  const phrases = [...bons].filter(b => b.montant > 0).sort((x, y) => x.montant - y.montant)
+    .map(b => remplir(b.origine === "inscription_boutique" ? t.aideBonInscription : t.aideBonBleDeal, { nom: nomDuBon(b, t, langue), montant: formaterPrix(b.montant, langue) }));
+  const uniques = [...new Set(phrases)];
+  return uniques.length ? [t.aideBons, ...uniques].join(" ") : null;
 }
 
 /** US-33.3 : raison affichée au panier quand un bon ne s'applique pas (textes n° 10 à 13). */

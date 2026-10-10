@@ -497,8 +497,9 @@ export const ar: Textes = {
     expire: "فات وقتو نهار {date}", // 23
     enFile: "البون نتاعك يجيك نهار {date} (الميزانية تاع الشهر كملت).", // 20
     annule: "تلغى",
-    aideBons: "تخدم بيه في السلة: {montant} أقل، BleDeal تخلّصها للحانوت.",
-    ouMontant: " ولا ",
+    aideBons: "تخدم بيهم في السلة.", // à valider
+    aideBonBleDeal: "{nom}: {montant} أقل، تخلّصو BleDeal.", // à valider
+    aideBonInscription: "{nom}: {montant} أقل، تخلّصو BleDeal والحانوت اللي تسجّلت فيه.", // à valider
     accueilTitre: "عرّض صحابك", // 13
     accueilTexte: "300 دج لكل واحد", // 13
     accueilLien: "شوف",

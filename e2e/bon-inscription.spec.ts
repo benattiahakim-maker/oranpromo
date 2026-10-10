@@ -40,6 +40,8 @@ test("US-31.4 : affiche → bon de bienvenue → dès demain dans la boutique �
     await expect(bons).toContainText("Bon de bienvenue");
     await expect(bons).toContainText(/500\sDA dès 4\s000\sDA d’achat/);
     await expect(bons).toContainText(new RegExp(`Chez ${boutique.nom} : dès le \\d{1,2}/\\d{1,2}\\. Ailleurs : tout de suite\\.`));
+    // Qui paie (BOLOSS du 10/10) : BleDeal et la boutique d'inscription.
+    await expect(bons).toContainText(/Bon de bienvenue : \d[\d\s]*\sDA de moins, payé par BleDeal et la boutique où vous vous êtes inscrit\./);
   });
 
   await test.step("panier dans la boutique d'origine le jour même : « Dans cette boutique, dès demain », pas de case", async () => {
