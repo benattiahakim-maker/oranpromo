@@ -1362,7 +1362,7 @@ L'espace commerçant reste en français.
 
 ## Module 21 — Espace commerçant en arabe (après le MVP)
 
-### US-35 — Voir l'espace commerçant en arabe — **textes à valider par le propriétaire**
+### US-35 — Voir l'espace commerçant en arabe — **fait** (code) ; **textes à valider par le propriétaire**
 Décision du propriétaire (10/10, par BOLOSS) : l'espace commerçant est traduit en arabe ; l'administration et la page « Confirmer » restent en français.
 En tant que commerçant d'Oran qui lit plus facilement l'arabe, je veux choisir l'arabe dans mon espace, afin de gérer mes articles, mes commandes, le retrait, les avis, les statistiques et la position de ma boutique sans effort.
 - **Pages** : `/espace` (mes articles, partage, position, clients qui suivent), ajout et modification d'un article (formulaire, photos, description arabe, promo, stock), commandes reçues (étapes, tableau, détail, mise à jour automatique, liste de préparation), scanner et retrait, avis (réponse, signalement), statistiques, connexion, demande d'accord sur les conditions commerçants (habillage seulement), navigation, messages d'erreur du serveur liés.

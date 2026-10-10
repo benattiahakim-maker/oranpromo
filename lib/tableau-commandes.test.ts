@@ -38,7 +38,7 @@ describe("US-28.1 : étapes", () => {
 
 describe("US-28.1 : urgence (seuils validés : 30 min, 2 h, 3 h)", () => {
   it("formate les durées", () => {
-    expect([0.5, 1, 42, 60, 130, 125].map(formaterDuree)).toEqual(["moins d’1 min", "1 min", "42 min", "1 h", "2 h 10", "2 h 05"]);
+    expect([0.5, 1, 42, 60, 130, 125].map(m => formaterDuree(m))).toEqual(["moins d’1 min", "1 min", "42 min", "1 h", "2 h 10", "2 h 05"]);
   });
   it("à confirmer : rouge à partir de 30 min d’attente", () => {
     expect(urgence(c("demandee", { cree_le: ilYa(29) }), MAINTENANT)).toEqual({ texte: "attend depuis 29 min", rouge: false });

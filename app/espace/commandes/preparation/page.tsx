@@ -3,8 +3,10 @@ import { creerClientServeur } from "@/lib/supabase/server";
 import { CATEGORIES_ARTICLE } from "@/lib/article";
 import { grouperPreparation, listerAPreparer, type Preparation } from "@/lib/tableau-commandes";
 import VuePreparation from "@/components/VuePreparation";
+import { getLangue, getTextes } from "@/lib/langue-serveur";
+import { traduireMessage } from "@/lib/textes/messages";
 
-export const metadata = { title: "Liste de préparation", robots: { index: false, follow: false } };
+export async function generateMetadata() { return { title: (await getTextes()).espace.preparation.titre, robots: { index: false, follow: false } }; }
 
 async function charger(): Promise<{ boutique: string; maintenant: number; preparation: Preparation | null; erreur: string | null }> {
   const client = await creerClientServeur();
@@ -20,5 +22,6 @@ async function charger(): Promise<{ boutique: string; maintenant: number; prepar
 
 // US-28.3 : liste de préparation imprimable (commandes confirmées seulement, décision 6).
 export default async function PagePreparation() {
-  return <VuePreparation {...await charger()} />;
+  const [donnees, langue] = await Promise.all([charger(), getLangue()]);
+  return <VuePreparation {...donnees} erreur={donnees.erreur && traduireMessage(donnees.erreur, langue)} langue={langue} />;
 }

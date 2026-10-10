@@ -51,7 +51,7 @@ test("en arabe : numéros du compte, de « Mes données » et des commandes reç
     const espace = await connecterEspace(browser, marchand.email);
     await passerEnArabe(espace);
     await espace.goto("/espace/commandes?etape=a_confirmer");
-    await espace.getByRole("button", { name: /N° \d+ · Lina/ }).click();
+    await espace.getByRole("button", { name: /رقم \d+ · Lina/ }).click(); // US-35 : espace en arabe
     await verifierSens(espace.locator("[data-numero]").filter({ hasText: lisible }).first(), lisible);
     await espace.context().close();
   });

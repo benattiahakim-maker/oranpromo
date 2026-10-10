@@ -1,4 +1,5 @@
 "use server";
+import { enLangue } from "@/lib/langue-serveur";
 import { after } from "next/server";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { envoyerMessagesCommande } from "@/lib/notifications";
@@ -9,7 +10,8 @@ import { NOTE_REMISE_SANS_QR } from "@/lib/retrait";
 
 export type ResultatAction = { succes: boolean; message: string };
 
-export async function changerStatutCommandeBoutique(id: string, statut: StatutCommande, motif: MotifBoutique | null, note: string): Promise<ResultatAction> {
+export async function changerStatutCommandeBoutique(...a: Parameters<typeof changerStatutCommandeBoutiqueInterne>): Promise<ResultatAction> { return enLangue(await changerStatutCommandeBoutiqueInterne(...a)); }
+async function changerStatutCommandeBoutiqueInterne(id: string, statut: StatutCommande, motif: MotifBoutique | null, note: string): Promise<ResultatAction> {
   try {
     if (typeof id !== "string" || typeof statut !== "string" || typeof note !== "string") throw new Error("Demande invalide.");
     const client = await creerClientServeur();
@@ -27,7 +29,8 @@ export async function changerStatutCommandeBoutique(id: string, statut: StatutCo
 }
 
 /** « Client pas venu » (relecture point 11, option C) : compte un no-show et avertit le client par WhatsApp. */
-export async function declarerClientPasVenu(id: string): Promise<ResultatAction> {
+export async function declarerClientPasVenu(...a: Parameters<typeof declarerClientPasVenuInterne>): Promise<ResultatAction> { return enLangue(await declarerClientPasVenuInterne(...a)); }
+async function declarerClientPasVenuInterne(id: string): Promise<ResultatAction> {
   try {
     if (typeof id !== "string") throw new Error("Demande invalide.");
     const client = await creerClientServeur();
@@ -47,7 +50,8 @@ export async function declarerClientPasVenu(id: string): Promise<ResultatAction>
  * chaque commande passe, de la plus ancienne à la plus récente, par les mêmes contrôles que le bouton d'une commande
  * et par la même fonction de la base (`changer_statut_commande`), dans sa propre transaction : un refus n'annule pas les autres.
  */
-export async function changerStatutCommandesBoutique(ids: unknown, statut: unknown): Promise<ResultatGroupe> {
+export async function changerStatutCommandesBoutique(...a: Parameters<typeof changerStatutCommandesBoutiqueInterne>): Promise<ResultatGroupe> { return enLangue(await changerStatutCommandesBoutiqueInterne(...a)); }
+async function changerStatutCommandesBoutiqueInterne(ids: unknown, statut: unknown): Promise<ResultatGroupe> {
   try {
     const demande = lireDemandeGroupee(ids, statut);
     if ("refus" in demande) return { succes: false, message: demande.refus, reussies: [], echecs: [] };

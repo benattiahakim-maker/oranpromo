@@ -19,14 +19,15 @@ export default async function Affiche() {
   const { data: boutique } = profil?.boutique_id ? await supabase.from("boutiques").select("nom, slug, statut, villes(nom)").eq("id", profil.boutique_id).maybeSingle() : { data: null };
   // US-30.1 : « BleDeal · <ville de la boutique> » (Oran si illisible).
   const partage = boutique ? await preparerPartageBoutique({ ...boutique, ville: villeLue(boutique.villes)?.nom }) : null;
-  if (!partage?.qrCode) return <main className="mx-auto w-full max-w-[390px] px-6 py-10 text-center">
+  // US-35 : l'affiche imprimée pour les clients reste en français (sens gauche-droite), même si l'espace est en arabe.
+  if (!partage?.qrCode) return <main dir="ltr" lang="fr" className="mx-auto w-full max-w-[390px] px-6 py-10 text-center">
     <h1 className="font-titre text-[28px]">Affiche de ma boutique</h1>
     <p role="alert" className="mt-4 text-sm">{!boutique ? "Votre compte n’est rattaché à aucune boutique." : "L’affiche sera disponible dès que votre boutique sera validée par BleDeal."}</p>
     <Link href="/espace" className="etiquette mt-6 flex min-h-11 items-center justify-center border border-noir">Retour à mon espace</Link>
   </main>;
   const lien = lienInscription(partage.slug);
   const qrCode = adresseDonneesSvg(await qrCodeSvg(lien));
-  return <main className="mx-auto flex w-full max-w-[390px] flex-col items-center px-6 py-8 text-center print:max-w-none print:py-0">
+  return <main dir="ltr" lang="fr" className="mx-auto flex w-full max-w-[390px] flex-col items-center px-6 py-8 text-center print:max-w-none print:py-0">
     <style>{"@page { size: A4; margin: 18mm; }"}</style>
     <section aria-label="Affiche" className="flex w-full flex-col items-center border border-noir px-6 py-10 print:min-h-[250mm] print:justify-center print:border-2">
       <p className="etiquette text-gris">BleDeal · {partage.ville}</p>

@@ -148,7 +148,8 @@ export async function compterCommandesAConfirmer(client: SupabaseClient<Database
 }
 
 /** Refus de confirmation de la base quand le stock ne suffit plus (relecture point 1). */
-export function estStockInsuffisant(message: string): boolean { return message.startsWith("Stock insuffisant"); }
+/** Vrai aussi pour le message traduit en arabe (US-35). */
+export function estStockInsuffisant(message: string): boolean { return message.startsWith("Stock insuffisant") || message.startsWith("السطوك ما يكفيش"); }
 
 // --- No-shows déclarés par la boutique (relecture point 11, option C) ---------
 /** « Client pas venu » : commande expirée, ou prête depuis plus de 24 h, et pas encore signalée. */

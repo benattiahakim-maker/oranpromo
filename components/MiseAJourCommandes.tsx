@@ -5,6 +5,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTextes } from "@/components/FournisseurTextes";
+import { remplir } from "@/lib/langue";
 import { DUREE_NOUVEAU_MS, empreinteEtat, heureOran, INTERVALLE_ERREUR_MS, INTERVALLE_MS, type EtatCommandes } from "@/lib/tableau-commandes";
 
 export const URL_ETAT = "/espace/commandes/etat";
@@ -121,26 +123,29 @@ export function useEstNouvelle(): (commande: { numero: number; cree_le: string }
 /** « À jour · 14 h 05 · Actualiser · Activer le son » ou « Connexion perdue, nouvel essai… ». */
 export function EtatMiseAJour() {
   const v = useContext(Contexte);
+  const textes = useTextes(), t = textes.espace.miseAJour;
   if (!v) return null;
+  const heure = heureOran(v.aJour, textes.espace.tableau);
   const lien = "min-h-6 underline";
   return <p className={`mt-0.5 text-xs ${v.erreur ? "text-erreur" : "text-gris"}`} aria-live="polite">
-    {v.erreur ? <>Connexion perdue, nouvel essai… · dernière mise à jour à {heureOran(v.aJour)}</> : <>À jour · {heureOran(v.aJour)}</>}
-    {" · "}<button type="button" onClick={v.actualiser} className={`${lien} text-noir`}>Actualiser</button>
+    {remplir(v.erreur ? t.perdue : t.aJour, { heure })}
+    {" · "}<button type="button" onClick={v.actualiser} className={`${lien} text-noir`}>{t.actualiser}</button>
     {!v.erreur && (v.son
-      ? <> · <span aria-hidden="true">🔊</span> Son activé · <button type="button" onClick={v.couperSon} className={lien}>Couper</button></>
-      : <> · <button type="button" onClick={v.activerSon} className={lien}><span aria-hidden="true">🔈 </span>Activer le son</button></>)}
+      ? <> · <span aria-hidden="true">🔊</span> {t.sonActive} · <button type="button" onClick={v.couperSon} className={lien}>{t.couper}</button></>
+      : <> · <button type="button" onClick={v.activerSon} className={lien}><span aria-hidden="true">🔈 </span>{t.activerSon}</button></>)}
   </p>;
 }
 
 /** Bandeau « Nouvelle commande n° 134 ». */
 export function BanniereNouvelle() {
   const v = useContext(Contexte);
+  const textes = useTextes(), t = textes.espace.miseAJour;
   if (!v?.nouvelle) return null;
   const { numero, nombre } = v.nouvelle;
   return <div role="status" className="mx-4 mb-2 flex items-center gap-2.5 bg-noir px-3.5 py-2.5 text-blanc lg:mx-8">
     <span aria-hidden="true" className="text-lg">🔔</span>
-    <span className="flex-1 text-sm">{nombre > 1 ? `${nombre} nouvelles commandes · la dernière : n° ${numero}` : `Nouvelle commande n° ${numero}`}</span>
-    <Link href="/espace/commandes?etape=a_confirmer" onClick={v.fermer} className="flex min-h-11 items-center text-[13px] underline">Voir</Link>
-    <button type="button" onClick={v.fermer} aria-label="Fermer" className="min-h-11 min-w-8 text-base">×</button>
+    <span className="flex-1 text-sm">{remplir(nombre > 1 ? t.nouvelles : t.nouvelle, { n: nombre, numero })}</span>
+    <Link href="/espace/commandes?etape=a_confirmer" onClick={v.fermer} className="flex min-h-11 items-center text-[13px] underline">{textes.espace.commun.voir}</Link>
+    <button type="button" onClick={v.fermer} aria-label={textes.espace.commun.fermer} className="min-h-11 min-w-8 text-base">×</button>
   </div>;
 }

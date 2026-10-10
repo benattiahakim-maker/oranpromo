@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+// US-35 : langue de la requête (cookie) : français dans ces tests.
+vi.mock("@/lib/langue-serveur", async () => { const { textesDe } = await import("@/lib/textes"); return { getLangue: async () => "fr", getTextes: async () => textesDe("fr"), enLangue: async <T,>(r: T) => r }; });
 import { cleanup, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import EspaceLayout from "./layout";
@@ -36,9 +38,9 @@ describe("US-34.3 : espace fermé tant que les conditions ne sont pas acceptées
     render(await EspaceLayout({ children: <p>Mes articles</p> }));
     expect(screen.getByText("Mes articles")).toBeInTheDocument();
   });
-  it("revue RTL : l’espace (en français) reste de gauche à droite même si le site est en arabe", async () => {
+  it("US-35 : l’espace ne force plus le français ni le sens gauche-droite (il suit la langue de <html>)", async () => {
     const { container } = render(await EspaceLayout({ children: <p>Mes articles</p> }));
     const racine = container.firstElementChild!;
-    expect(racine.getAttribute("dir")).toBe("ltr"); expect(racine.getAttribute("lang")).toBe("fr");
+    expect(racine.hasAttribute("dir")).toBe(false); expect(racine.hasAttribute("lang")).toBe(false);
   });
 });

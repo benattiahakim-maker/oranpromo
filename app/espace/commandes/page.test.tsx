@@ -1,5 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+// US-35 : langue de la requête (cookie) : français dans ces tests.
+vi.mock("@/lib/langue-serveur", async () => { const { textesDe } = await import("@/lib/textes"); return { getLangue: async () => "fr", getTextes: async () => textesDe("fr"), enLangue: async <T,>(r: T) => r }; });
 import Page from "./page";
 
 const etat = vi.hoisted(() => ({ compteurs: {} as Record<string, number>, lignes: [] as unknown[], appels: [] as unknown[][] }));

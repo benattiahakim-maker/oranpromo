@@ -4,6 +4,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Tables } from "./supabase/types";
 import { formaterPrix } from "./prix";
+import { remplir, type Langue } from "./langue";
+import { textesDe } from "./textes";
 
 export const CRITERES_AVIS = ["accueil", "article_conforme", "rapidite"] as const;
 export type CritereAvis = (typeof CRITERES_AVIS)[number];
@@ -191,11 +193,12 @@ export async function lireResumeMaBoutique(client: SupabaseClient<Database>): Pr
 }
 
 /** Texte du bloc de l'espace : « ★ 4,6 · 18 avis · 2 sans réponse » ; « 2 avis · 1 sans réponse » sous le seuil. */
-export function texteResumeEspace(resume: ResumeEspace): string {
-  if (!resume.nombre) return "Pas encore d’avis";
-  const parties = [`${resume.nombre} avis`];
+export function texteResumeEspace(resume: ResumeEspace, langue: Langue = "fr"): string {
+  const t = textesDe(langue).espace.resumeAvis;
+  if (!resume.nombre) return t.aucun;
+  const parties = [remplir(t.nombre, { n: resume.nombre })];
   if (resume.moyenne !== null) parties.unshift(`★ ${formaterMoyenne(resume.moyenne)}`);
-  if (resume.sansReponse) parties.push(`${resume.sansReponse} sans réponse`);
+  if (resume.sansReponse) parties.push(remplir(t.sansReponse, { n: resume.sansReponse }));
   return parties.join(" · ");
 }
 

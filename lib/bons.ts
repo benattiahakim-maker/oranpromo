@@ -73,9 +73,12 @@ export function nomMois(mois: string, langue: Langue = "fr"): string {
 }
 
 /** « relevé de novembre », « relevé d’octobre » (espace commerçant, en français). */
-export function releveDuMois(mois: string): string {
-  const nom = nomMois(mois, "fr");
-  return /^[aeiouâéèêhy]/i.test(nom) ? `relevé d’${nom}` : `relevé de ${nom}`;
+/** US-35 : `modeles` en arabe (« كشف {mois} ») ; sans modèles, le français d’avant. */
+export function releveDuMois(mois: string, langue: Langue = "fr", modeles?: { releve: string; releveVoyelle: string }): string {
+  const nom = nomMois(mois, langue);
+  const voyelle = /^[aeiouâéèêhy]/i.test(nom);
+  if (modeles) return (voyelle ? modeles.releveVoyelle : modeles.releve).replace("{mois}", nom);
+  return voyelle ? `relevé d’${nom}` : `relevé de ${nom}`;
 }
 
 /** Un bon tel que le renvoie mes_bons() (jamais d'autre compte). */

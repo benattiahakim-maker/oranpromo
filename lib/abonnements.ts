@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./supabase/types";
 import { formaterPrix, promoActive } from "./prix";
 import { villeLue } from "./ville";
+import { remplir, type Langue } from "./langue";
+import { textesDe } from "./textes";
 
 /** US-31.2 : suivre une boutique (table abonnements_boutique, fonctions suivre_boutique et ne_plus_suivre). */
 
@@ -105,7 +107,15 @@ export async function lireAbonnesBoutique(client: Client): Promise<NombreAbonnes
 }
 
 /** « 12 clients suivent votre boutique · +3 cette semaine » (espace commerçant, en français). */
-export function texteAbonnes({ total, sept_jours, inscrits = 0 }: NombreAbonnes): string {
+export function texteAbonnes({ total, sept_jours, inscrits = 0 }: NombreAbonnes, langue: Langue = "fr"): string {
+  if (langue !== "fr") {
+    // US-35 : même règle, textes de l'espace dans la langue choisie.
+    const t = textesDe(langue).espace.abonnes;
+    if (total <= 0) return t.aucun;
+    const base = total === 1 ? t.un : remplir(t.plusieurs, { n: total });
+    const semaine = sept_jours > 0 ? remplir(t.semaine, { base, n: sept_jours }) : base;
+    return inscrits > 0 ? remplir(inscrits > 1 ? t.inscrits : t.inscrit, { base: semaine, n: inscrits }) : semaine;
+  }
   if (total <= 0) return "Aucun client ne suit encore votre boutique.";
   const base = total === 1 ? "1 client suit votre boutique" : `${total} clients suivent votre boutique`;
   const semaine = sept_jours > 0 ? `${base} · +${sept_jours} cette semaine` : base;
@@ -114,8 +124,13 @@ export function texteAbonnes({ total, sept_jours, inscrits = 0 }: NombreAbonnes)
 }
 
 /** US-31.4 : « Bons de bienvenue des inscrits ce mois : 3 / 20. Votre part : 250 DA par bon utilisé chez vous. » (null : programme fermé). */
-export function texteBonsInscription(a: NombreAbonnes): string | null {
+export function texteBonsInscription(a: NombreAbonnes, langue: Langue = "fr"): string | null {
   if (a.bons_inscription_mois == null || a.montant_bon_inscription == null) return null;
+  if (langue !== "fr") {
+    const t = textesDe(langue).espace.abonnes;
+    const plafond = a.plafond_inscriptions_mois ? ` / ${a.plafond_inscriptions_mois}` : "";
+    return remplir(t.bonsInscription, { n: a.bons_inscription_mois, plafond }) + (a.part_boutique ? remplir(t.part, { montant: formaterPrix(a.part_boutique, langue) }) : "");
+  }
   const plafond = a.plafond_inscriptions_mois ? ` / ${a.plafond_inscriptions_mois}` : "";
   const part = a.part_boutique ? ` Votre part : ${formaterPrix(a.part_boutique)} par bon utilisé chez vous (déduite du remboursement).` : "";
   return `Bons de bienvenue des inscrits ce mois : ${a.bons_inscription_mois}${plafond}.${part}`;

@@ -1,5 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+// US-35 : langue de la requête (cookie) : français dans ces tests.
+vi.mock("@/lib/langue-serveur", async () => { const { textesDe } = await import("@/lib/textes"); return { getLangue: async () => "fr", getTextes: async () => textesDe("fr"), enLangue: async <T,>(r: T) => r }; });
 import Espace from "./page";
 import { deconnecter } from "./actions";
 const { getUser, signOut, redirect, from, eqProfil, eqArticles, eqBoutique, eqReleves } = vi.hoisted(() => ({ eqReleves: vi.fn(), getUser: vi.fn(), signOut: vi.fn(), redirect: vi.fn((chemin: string): never => { throw new Error(`redirection:${chemin}`); }), from: vi.fn(), eqProfil: vi.fn(), eqArticles: vi.fn(), eqBoutique: vi.fn() }));

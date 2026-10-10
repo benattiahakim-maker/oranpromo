@@ -12,12 +12,17 @@ import { villeLue } from "@/lib/ville";
 import AbonnesBoutique from "@/components/AbonnesBoutique";
 import { lireAbonnesBoutique, type NombreAbonnes } from "@/lib/abonnements";
 import { lireResumeMaBoutique, texteResumeEspace, type ResumeEspace } from "@/lib/avis";
+import { getLangue } from "@/lib/langue-serveur";
+import { remplir } from "@/lib/langue";
+import { textesDe } from "@/lib/textes";
 
 export default async function Espace({ searchParams }: { searchParams: Promise<{ erreur?: string }> }) {
   const supabase = await creerClientServeur();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) redirect("/espace/connexion");
   const { erreur } = await searchParams;
+  const langue = await getLangue();
+  const e = textesDe(langue).espace, t = e.accueil;
   const { data: profil, error: erreurProfil } = await supabase.from("profils").select("boutique_id").eq("id", user.id).maybeSingle();
   let articles = null;
   let erreurListe = Boolean(erreurProfil);
@@ -54,15 +59,17 @@ export default async function Espace({ searchParams }: { searchParams: Promise<{
   }
 
   return <main className="mx-auto w-full max-w-[390px] bg-blanc text-noir">
-    <header className="border-b border-trait px-6 pb-5 pt-6 text-center"><p className="etiquette text-gris">Mon espace</p><h1 className="font-titre text-[28px] font-normal">Mes articles</h1></header>
+    <header className="border-b border-trait px-6 pb-5 pt-6 text-center"><p className="etiquette text-gris">{e.commun.monEspace}</p><h1 className="font-titre text-[28px] font-normal">{e.commun.mesArticles}</h1></header>
     <div className="px-6">
-      {erreurListe ? <p role="alert" className="py-6">Impossible de charger vos articles. Réessayez.</p> : !profil?.boutique_id ? <div className="py-6"><p>Votre compte n&apos;est rattaché à aucune boutique</p><Link href="/compte/commandes" className="etiquette mt-4 flex min-h-[44px] items-center justify-center border border-noir">Mes commandes</Link></div> : <MesArticles articles={articles ?? []} />}
-      {profil?.boutique_id && <Link href="/espace/articles/nouveau" className="etiquette mt-6 flex min-h-[54px] items-center justify-center bg-noir px-4 text-blanc">+ Ajouter un article</Link>}
-      {erreur === "deconnexion" && <p role="alert" className="mt-4">Impossible de vous déconnecter. Réessayez.</p>}
-      {profil?.boutique_id && <Link href="/espace/statistiques" className="etiquette my-6 flex min-h-[44px] items-center justify-center border border-noir px-4">Mes statistiques</Link>}
-      {resumeAvis && <Link href="/espace/avis" aria-label={`Avis clients : ${texteResumeEspace(resumeAvis)}`} className="mb-6 flex min-h-[44px] flex-col items-center justify-center border border-trait p-4 text-center"><span className="etiquette text-gris">Avis clients</span><span className="mt-1 text-sm">{texteResumeEspace(resumeAvis)}</span></Link>}
-      {abonnes && <AbonnesBoutique abonnes={abonnes} />}
-      <BonsBoutique releves={releves} noms={nomsProgrammes} plafonds={plafonds} />
+      {erreurListe ? <p role="alert" className="py-6">{t.articlesImpossible}</p> : !profil?.boutique_id ? <div className="py-6"><p>{e.commun.sansBoutique}</p><Link href="/compte/commandes" className="etiquette mt-4 flex min-h-[44px] items-center justify-center border border-noir">{t.mesCommandes}</Link></div> : <MesArticles articles={articles ?? []} />}
+      {profil?.boutique_id && <Link href="/espace/articles/nouveau" className="etiquette mt-6 flex min-h-[54px] items-center justify-center bg-noir px-4 text-blanc">{t.ajouterArticle}</Link>}
+      {erreur === "deconnexion" && <p role="alert" className="mt-4">{t.deconnexionImpossible}</p>}
+      {profil?.boutique_id && <Link href="/espace/statistiques" className="etiquette my-6 flex min-h-[44px] items-center justify-center border border-noir px-4">{t.mesStatistiques}</Link>}
+      {resumeAvis && <Link href="/espace/avis" aria-label={remplir(t.avisClientsLibelle, { resume: texteResumeEspace(resumeAvis, langue) })} className="mb-6 flex min-h-[44px] flex-col items-center justify-center border border-trait p-4 text-center"><span className="etiquette text-gris">{t.avisClients}</span><span className="mt-1 text-sm">{texteResumeEspace(resumeAvis, langue)}</span></Link>}
+      {abonnes && <AbonnesBoutique abonnes={abonnes} langue={langue} />}
+      {/* US-35 : bloc des bons gardé en français (composant non traduit pour le moment), sens gauche-droite. */}
+      {langue !== "fr" && (releves.length > 0 || plafonds.length > 0) && <p className="mb-2 text-xs text-gris">{t.bonsEnFrancais}</p>}
+      <div dir="ltr" lang="fr"><BonsBoutique releves={releves} noms={nomsProgrammes} plafonds={plafonds} /></div>
       {position && <PositionEspace {...position} />}
       {partage && <div className="pb-10"><PartagerBoutique partage={partage} /></div>}
     </div>

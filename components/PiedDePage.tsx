@@ -4,15 +4,16 @@ import { usePathname } from "next/navigation";
 import { useTextes } from "./FournisseurTextes";
 import type { Textes } from "@/lib/textes";
 
-/** Pages en français seulement (espace, administration, lien « Confirmer ») : le pied de page y reste en français, en ltr. */
+/** Pages en français seulement (administration, lien « Confirmer », affiche imprimée de l'espace) : le pied de page y reste
+ * en français, en ltr. US-35 : le reste de l'espace commerçant suit la langue choisie, son pied de page aussi. */
 export function pageEnFrancais(chemin: string | null): boolean {
-  return /^\/(espace|admin|confirmer)(\/|$)/.test(chemin ?? "");
+  return /^\/(admin|confirmer|espace\/affiche)(\/|$)/.test(chemin ?? "");
 }
 
 type LiensJuridiques = Pick<Textes["juridique"], "piedDePage" | "conditions" | "commercants" | "confidentialite">;
 
 // US-34.1 : liens juridiques en bas de toutes les pages (« Contact » viendra avec l'adresse de contact de la société).
-// Revue RTL (10/10) : sous l'espace, l'administration et « Confirmer », libellés français (`francais`) et sens gauche-droite.
+// Revue RTL (10/10), US-35 : sous l'administration, « Confirmer » et l'affiche, libellés français (`francais`) et sens gauche-droite.
 export default function PiedDePage({ francais }: { francais?: LiensJuridiques }) {
   const textes = useTextes().juridique;
   const chemin = usePathname();

@@ -25,9 +25,9 @@ export function tailleEpuisee(taille: { quantite: number }): boolean {
 }
 
 /** Texte court pour la liste du commerçant : « 3 pièces », « 1 pièce », « Épuisé ». */
-export function libelleStock(quantite: number): string {
-  if (quantite <= 0) return "Épuisé";
-  return quantite === 1 ? "1 pièce" : `${quantite} pièces`;
+export function libelleStock(quantite: number, t: { epuise: string; piece: string; pieces: string } = { epuise: "Épuisé", piece: "1 pièce", pieces: "{n} pièces" }): string {
+  if (quantite <= 0) return t.epuise;
+  return quantite === 1 ? t.piece : t.pieces.replace("{n}", String(quantite));
 }
 
 /** Enregistre la quantité d’une taille ; renvoie la quantité gardée par la base et le statut de l’article. */
