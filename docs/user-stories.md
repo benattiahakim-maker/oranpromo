@@ -593,7 +593,7 @@ Livrée en 4 sous-stories, dans cet ordre (une PR chacune), après validation :
 | 10 | Proche, consigne | Montrez ce QR code au vendeur, ou donnez-lui le code à 6 chiffres : | **ورّي** هاد QR للبيّاع، **ولا عطيه** الرقم تاع 6 أرقام: | أظهر الرمز للبائع أو أعطه الرقم: |
 | 11 | Boutique, bouton | Scanner un QR code client | **سكاني** QR تاع الزبون | امسح رمز QR للزبون |
 | 12 | Boutique, consigne | Placez le QR code du client dans le cadre. | **حط** QR تاع الزبون وسط الكادر. | ضع رمز الزبون داخل الإطار. |
-| 13 | Boutique, code | La caméra ne marche pas ? Tapez le code à 6 chiffres | **ما خدمتش** الكاميرا؟ **اكتب** الرقم تاع 6 أرقام | الكاميرا لا تعمل؟ أدخل الرمز المكوّن من 4 أرقام |
+| 13 | Boutique, code | La caméra ne marche pas ? Tapez le code à 6 chiffres | **ما خدمتش** الكاميرا؟ **اكتب** الرقم تاع 6 أرقام | الكاميرا لا تعمل؟ أدخل الرمز المكوّن من 6 أرقام |
 | 14 | Boutique, montant | À encaisser en espèces | **اقبض** كاش | المبلغ الواجب تحصيله نقدًا |
 | 15 | Boutique, bouton | Remis au client | **سلّمت** الطلبية للزبون | تم التسليم للزبون |
 | 16 | Boutique, succès | Commande remise | الطلبية **تسلّمت** | تم تسليم الطلب |
