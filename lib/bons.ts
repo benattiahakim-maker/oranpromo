@@ -79,7 +79,7 @@ export function releveDuMois(mois: string): string {
 }
 
 /** Un bon tel que le renvoie mes_bons() (jamais d'autre compte). */
-export type OrigineBon = "parrainage_filleul" | "parrainage_parrain" | "bienvenue" | "campagne" | "inscription_boutique";
+export type OrigineBon = "parrainage_filleul" | "parrainage_parrain" | "bienvenue" | "campagne" | "inscription_boutique" | "avis";
 export type BonClient = {
   id: string; montant: number; statut: StatutBon; origine: OrigineBon;
   cree_le: string; expire_le: string | null; utilise_le: string | null; commande: string | null; numero: number | null; boutique: string | null;
@@ -95,9 +95,9 @@ export function bonDisponible(bons: BonClient[], maintenant: Date = new Date()):
     .sort((a, b) => a.expire_le!.localeCompare(b.expire_le!))[0] ?? null;
 }
 
-/** US-33.2 : bon d'un programme (bienvenue, campagne) ou de parrainage. */
+/** US-33.2 : bon d'un programme (bienvenue, campagne ; avis US-32.5) ou de parrainage. */
 export function estBonProgramme(bon: Pick<BonClient, "origine">): boolean {
-  return bon.origine === "bienvenue" || bon.origine === "campagne" || bon.origine === "inscription_boutique";
+  return bon.origine === "bienvenue" || bon.origine === "campagne" || bon.origine === "inscription_boutique" || bon.origine === "avis";
 }
 
 /** Achat minimum d'un bon (parrainage : 1 000 DA, fixé par la base ; programmes : copié du programme). */

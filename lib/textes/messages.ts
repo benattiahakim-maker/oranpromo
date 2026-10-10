@@ -162,6 +162,8 @@ const MODELES: [RegExp, string][] = [
   // US-25.4 : produits de beauté (« 100 ml » reste tel quel dans le message).
   [/^Il ne reste que (\d+) pièce\(s\) en contenance (.+) pour « (.+) »\.$/, "بقاو غير $1 في الحجم $2 لـ « $3 »."],
   [/^La contenance (.+) de « (.+) » n'existe plus : retirez-la du panier\.$/, "الحجم $1 تاع « $2 » ما بقاش: نحّيه من السلة."],
+  // US-32.5 : bon « avis » (traduction à valider).
+  [/^Votre bon de (.+)\sDA est dans votre compte\.$/, "البون نتاعك تاع $1\u00a0دج راهو في حسابك."],
   [/^Changement de statut impossible : la commande est déjà « (.+) »\.$/, "ما نقدروش نبدّلو الطلب: راهو « $1 »."],
 ];
 

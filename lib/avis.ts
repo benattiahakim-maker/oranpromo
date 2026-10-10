@@ -3,6 +3,7 @@
 // afficher le bouton, la vérification de la saisie avant l'envoi, et les messages.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Tables } from "./supabase/types";
+import { formaterPrix } from "./prix";
 
 export const CRITERES_AVIS = ["accueil", "article_conforme", "rapidite"] as const;
 export type CritereAvis = (typeof CRITERES_AVIS)[number];
@@ -17,6 +18,8 @@ export const MESSAGES_AVIS = {
   impossible: "Impossible de publier votre avis. Réessayez.",
   session: "Votre session a expiré. Reconnectez-vous.",
 } as const;
+/** US-32.5 : message après l'envoi quand un bon « avis » a été donné (montant en DA, format français). */
+export const messageBonAvis = (montant: number) => `Votre bon de ${formaterPrix(montant)} est dans votre compte.`;
 
 type CommandeNotable = Pick<Tables<"commandes">, "statut" | "mode_remise" | "terminee_le">;
 
@@ -52,14 +55,16 @@ export function messageErreurAvis(error: ErreurBase, defaut: string = MESSAGES_A
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Publie l'avis du client connecté sur sa commande ; renvoie l'identifiant de l'avis. */
-export async function donnerAvis(client: SupabaseClient<Database>, commande: string, saisie: unknown): Promise<string> {
+/** Publie l'avis du client connecté sur sa commande ; renvoie l'identifiant de l'avis et le montant du bon
+ *  « avis » donné (US-32.5), ou null (récompense inactive, plafond, budget, numéro non vérifié…). */
+export async function donnerAvis(client: SupabaseClient<Database>, commande: string, saisie: unknown): Promise<{ id: string; bon: number | null }> {
   if (typeof commande !== "string" || !UUID.test(commande)) throw new Error("Commande introuvable.");
   const { note, criteres, commentaire } = verifierSaisieAvis(saisie);
   const { data, error } = await client.rpc("donner_avis", { commande, note, criteres, commentaire: commentaire ?? undefined });
   const id = (data as { avis?: unknown } | null)?.avis;
   if (error || typeof id !== "string") throw new Error(messageErreurAvis(error));
-  return id;
+  const bon = (data as { bon?: unknown }).bon;
+  return { id, bon: typeof bon === "number" && Number.isInteger(bon) && bon > 0 ? bon : null };
 }
 
 /** Notes déjà données par le client connecté, par commande (la base ne lui montre que ses avis). */
@@ -201,4 +206,16 @@ export function formaterJourMois(date: string): string {
   const parties = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "numeric", timeZone: "Africa/Algiers" }).formatToParts(d);
   const nombre = (type: string) => Number(parties.find(p => p.type === type)?.value);
   return `${nombre("day")}/${nombre("month")}`;
+}
+
+// ---------------------------------------------------------------------------
+// US-32.5 : mention publique de la vitrine (texte n° 11), affichée seulement quand la récompense est active
+// (programme « avis » ouvert et budget du mois suffisant : recompense_avis() de la base).
+// ---------------------------------------------------------------------------
+export type RecompenseAvis = { montant: number; minimum: number };
+export async function lireRecompenseAvis(client: SupabaseClient<Database>): Promise<RecompenseAvis | null> {
+  const { data, error } = await client.rpc("recompense_avis");
+  if (error || !data || typeof data !== "object" || Array.isArray(data)) return null;
+  const { montant, minimum } = data as { montant?: unknown; minimum?: unknown };
+  return typeof montant === "number" && typeof minimum === "number" ? { montant, minimum } : null;
 }

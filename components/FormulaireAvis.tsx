@@ -14,6 +14,7 @@ export default function FormulaireAvis({ commande }: { commande: string }) {
   const [commentaire, setCommentaire] = useState("");
   const [erreur, setErreur] = useState("");
   const [publie, setPublie] = useState("");
+  const [bon, setBon] = useState("");
   const [enCours, setEnCours] = useState(false);
   const verrou = useRef(false);
 
@@ -24,13 +25,13 @@ export default function FormulaireAvis({ commande }: { commande: string }) {
     verrou.current = true; setEnCours(true); setErreur("");
     try {
       const r = await donnerMonAvis(commande, { note, criteres, commentaire });
-      if (r.succes) setPublie(r.message); else setErreur(r.message);
+      if (r.succes) { setPublie(r.message); setBon(r.bon ?? ""); } else setErreur(r.message);
     } catch { setErreur(t.impossible); }
     finally { verrou.current = false; setEnCours(false); }
   }
 
   if (publie) return <div className="py-6 text-center">
-    <p role="status" className="border border-noir p-4 text-[15px]">{publie}</p>
+    <div role="status" className="border border-noir p-4 text-[15px]"><p>{publie}</p>{bon && <p className="mt-2 font-medium">{bon}</p>}</div>
     <Link href={`/compte/commandes/${commande}`} className="etiquette mt-6 flex min-h-11 items-center justify-center border border-noir">{t.retourCommande}</Link>
   </div>;
 

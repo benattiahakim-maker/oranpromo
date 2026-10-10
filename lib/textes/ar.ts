@@ -594,6 +594,7 @@ export const ar: Textes = {
     plusPossible: "تقدر تعطي رايك غير على طلب ديتو بالـ QR code نتاعك، في 14 يوم.",
     retourCommande: "رجوع للطلب",
     impossible: "ما قدرناش ننشرو رايك. عاود جرّب.",
+    mentionBon: "الكليان ياخذو بون صغير على كل راي، مهما كانت النقطة.", // 11 (US-32.5)
     resume: "★ {note} · {n} راي",
     resumeFiche: "★ {note} ({n} راي)",
     pasAssez: "مازال ما كاينش بزاف تاع الآراء",

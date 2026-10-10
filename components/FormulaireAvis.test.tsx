@@ -76,3 +76,21 @@ describe("US-32.2 : en arabe (textes n° 3 à 6 du module 18)", () => {
     expect(traduireMessage(FILTRE, "ar")).toBe("ما تقدرش تكتب لينك، ولا نمرة تيليفون، ولا كلام خايب.");
   });
 });
+
+describe("US-32.5 : bon donné avec l'avis", () => {
+  it("« Votre bon de 150 DA est dans votre compte. » sous le merci", async () => {
+    donnerMonAvis.mockResolvedValue({ succes: true, message: "Merci, votre avis est publié.", bon: "Votre bon de 150\u00a0DA est dans votre compte." });
+    render(<FormulaireAvis commande="c1" />);
+    fireEvent.click(screen.getByRole("radio", { name: "2 sur 5" }));
+    fireEvent.click(screen.getByRole("button", { name: "Publier mon avis" }));
+    const statut = await screen.findByRole("status");
+    expect(statut).toHaveTextContent("Merci, votre avis est publié.");
+    expect(statut.textContent).toBe("Merci, votre avis est publié.Votre bon de 150\u00a0DA est dans votre compte.");
+  });
+  it("sans bon : le merci seul", async () => {
+    render(<FormulaireAvis commande="c1" />);
+    fireEvent.click(screen.getByRole("radio", { name: "5 sur 5" }));
+    fireEvent.click(screen.getByRole("button", { name: "Publier mon avis" }));
+    expect((await screen.findByRole("status")).textContent).toBe("Merci, votre avis est publié.");
+  });
+});
