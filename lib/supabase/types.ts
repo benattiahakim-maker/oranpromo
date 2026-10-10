@@ -169,6 +169,70 @@ export type Database = {
           },
         ]
       }
+      avis: {
+        Row: {
+          boutique_id: string
+          client_id: string
+          commande_id: string
+          commentaire: string | null
+          cree_le: string
+          criteres: string[]
+          id: string
+          note: number
+          reponse: string | null
+          reponse_le: string | null
+          statut: string
+        }
+        Insert: {
+          boutique_id: string
+          client_id: string
+          commande_id: string
+          commentaire?: string | null
+          cree_le?: string
+          criteres?: string[]
+          id?: string
+          note: number
+          reponse?: string | null
+          reponse_le?: string | null
+          statut?: string
+        }
+        Update: {
+          boutique_id?: string
+          client_id?: string
+          commande_id?: string
+          commentaire?: string | null
+          cree_le?: string
+          criteres?: string[]
+          id?: string
+          note?: number
+          reponse?: string | null
+          reponse_le?: string | null
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avis_boutique_id_fkey"
+            columns: ["boutique_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avis_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avis_commande_id_fkey"
+            columns: ["commande_id"]
+            isOneToOne: true
+            referencedRelation: "commandes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bons: {
         Row: {
           commande_id: string | null
@@ -1293,6 +1357,18 @@ export type Database = {
         Returns: number
       }
       annuler_no_show: { Args: { commande: string }; Returns: undefined }
+      avis_boutique: {
+        Args: { boutique: string; decalage?: number; limite?: number }
+        Returns: {
+          auteur: string
+          commentaire: string
+          criteres: string[]
+          id: string
+          mois: string
+          note: number
+          reponse: string
+        }[]
+      }
       bloquer_client: { Args: { client: string }; Returns: undefined }
       boutiques_carte: {
         Args: { code_ville?: string; limite?: number }
@@ -1351,6 +1427,15 @@ export type Database = {
           document: string
           version: string
         }[]
+      }
+      donner_avis: {
+        Args: {
+          commande: string
+          commentaire?: string
+          criteres?: string[]
+          note: number
+        }
+        Returns: Json
       }
       enregistrer_envoi_code: {
         Args: { jeton: string; numero: string }
@@ -1438,6 +1523,15 @@ export type Database = {
           succes: boolean
         }
         Returns: undefined
+      }
+      resume_avis: {
+        Args: { boutiques: string[] }
+        Returns: {
+          boutique_id: string
+          criteres: Json
+          moyenne: number
+          nombre: number
+        }[]
       }
       retirer_boutique_des_bons: {
         Args: { boutique: string; retiree: boolean }
