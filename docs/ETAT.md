@@ -1,4 +1,4 @@
-# État du projet OranPromo
+# État du projet BleDeal (anciennement OranPromo)
 
 > À lire en premier pour reprendre le travail. Mis à jour le 9 octobre 2026.
 > Tableau des tâches : https://trello.com/b/w1W1Amkb/oranpromo
@@ -135,6 +135,7 @@ Travail fait sur une copie du projet hors du PC, par pull request sur GitHub, fu
    - **US-29.4** (PR « US-29.4 », migration `20261014090000_villes_admin.sql`, appliquée en production) : page **`/admin/villes`** (admin seulement) pour **ouvrir ou fermer** une ville avec confirmation, et donner une ville à chaque ambassadeur ; **plus de ville « oran » par défaut** dans la base : le formulaire « Nouvelle boutique » demande la « Ville (wilaya) » (Oran présélectionnée tant qu'elle est la seule ouverte ; l'ambassadeur d'une ville ne peut choisir que la sienne) ; position vérifiée dans les bornes de la ville choisie (Oran : mêmes bornes, même message) ; `/admin/boutiques` : filtre par ville, « Changer de ville » (admin) ; `/espace` : « Ville : Oran ». Codes `favicon` et `images` réservés. Toutes les boutiques existantes restent à Oran.
    - **US-30.1** (PR « US-30.1 », aucune migration) : le site s'appelle **BleDeal** : logo « BleDeal » (en-tête, retrait, confirmer, image d'aperçu), titre et description du site (« Les promos des boutiques près de chez vous, ville par ville. … »), aperçus de partage (`siteName`), tous les textes FR / arabe et messages du site, messages WhatsApp pré-remplis (« vu sur BleDeal », partage « nos promos à <ville> », parrainage « les promos des boutiques près de chez toi »), affiche « BleDeal · Oran », fichiers `bledeal-…-qr.svg` et `bledeal-bons-….csv`. Messages de la base (blocage, contestation) affichés avec « BleDeal » sans toucher la base. Clés du navigateur et noms des modèles WhatsApp `oranpromo_*` gardés.
    - **US-30.2** (PR « US-30.2 », aucun écran) : le projet s'appelle BleDeal : `package.json` (`bledeal`), `README.md`, `CLAUDE.md`, `AGENTS.md`, `installer-bledeal.bat` (ancien `installer-oranpromo.bat`), `lancer-site.bat`, docs (guide de mise en ligne avec les textes des modèles Meta en « BleDeal », tests manuels, architecture, user stories). Ce journal garde l'histoire telle quelle ; les maquettes datées ne sont pas modifiées.
+   - **US-30.3** (PR « US-30.3 », aucun code) : liste complète des actions du propriétaire pour BleDeal dans la section « BleDeal : à faire par le propriétaire (US-30.3) » ci-dessous (domaine, `NEXT_PUBLIC_SITE_URL`, Supabase Auth, Meta, Twilio, Turnstile, CARTO, GitHub, affiches, ouverture de la ville suivante).
 
 Outils mis en place : connecteurs Supabase, Trello et GitHub (`gh`) côté Grok Bot.
 
@@ -148,6 +149,29 @@ Reste à faire côté propriétaire : **messages WhatsApp en arabe (US-23)** : 1
    Quand le nom du client manque, {{1}} vaut « خويا ».
 
 Reste à faire côté propriétaire : **bouton « Confirmer » de WhatsApp (US-20.6)** : 1) avec le domaine définitif, créer dans WhatsApp Manager le modèle **`oranpromo_nouvelle_commande_confirmer`** (catégorie Utilitaire, langue `fr`), texte « Nouvelle commande n° {{1}} sur OranPromo : {{2}}, {{3}} article(s), {{4}}. Touchez Confirmer, ou confirmez-la dans votre espace OranPromo, rubrique Commandes. », bouton « Visiter le site » dynamique, libellé **« Confirmer »**, adresse `https://<domaine>/confirmer/{{1}}`, et attendre **l'approbation de Meta** ; 2) **`CONFIRMATION_SECRET`** (32 caractères aléatoires au moins) dans `.env.local` et sur Vercel, puis `insert into prive.reglages (cle, valeur) values ('jeton_confirmation', encode(sha256(convert_to('<CONFIRMATION_SECRET>', 'UTF8')), 'hex')) on conflict (cle) do update set valeur = excluded.valeur;` ; 3) seulement après l'approbation : `insert into prive.reglages (cle, valeur) values ('bouton_confirmer', 'on') on conflict (cle) do update set valeur = excluded.valeur;` ; Reste à faire côté propriétaire : **`VISITEURS_SECRET`** (32 caractères aléatoires au moins) dans `.env.local` sur le PC et sur Vercel, puis son empreinte dans l'éditeur SQL Supabase : `insert into prive.reglages (cle, valeur) values ('jeton_visiteurs', encode(sha256(convert_to('<VISITEURS_SECRET>', 'UTF8')), 'hex')) on conflict (cle) do update set valeur = excluded.valeur;` (sans lui : plus de statistiques ni de signalements) ; plafond de dépenses dans la console Anthropic ; tester en vrai tout ce qui précède ; régler `NEXT_PUBLIC_SITE_URL` à la mise en ligne (**avant d'imprimer des affiches** : le lien et le QR code des boutiques en dépendent) ; configurer la connexion par téléphone (ci-dessous).
+
+## BleDeal : à faire par le propriétaire (US-30.3)
+
+Le code est prêt (US-29.1 à 29.4, US-30.1 et 30.2) : le site s'appelle BleDeal, Oran est la seule ville ouverte et se comporte comme avant. Il reste ces actions, **dans l'ordre**, que seul le propriétaire peut faire (comptes et paiements). Aucun ancien domaine ni aucune affiche n'a été acheté ou imprimé : **aucune redirection à prévoir**.
+
+1. **Domaine** : acheter `bledeal.com`. Dans Vercel › projet › Settings › Domains : ajouter `bledeal.com` et `www.bledeal.com` (`www` redirigé vers `bledeal.com`), puis créer chez le vendeur du domaine les enregistrements DNS que Vercel affiche.
+2. **`NEXT_PUBLIC_SITE_URL=https://bledeal.com`** dans Vercel › Settings › Environment Variables (Production), puis **Redeploy**. Les liens de boutique, les QR codes, les affiches, les aperçus et les boutons WhatsApp (`/confirmer`, `/retrait`) en dépendent. Sur le PC, `.env.local` garde `http://localhost:3000`.
+3. **Supabase** › Authentication › URL Configuration : **Site URL** `https://bledeal.com` ; ajouter `https://bledeal.com/**` aux **Redirect URLs** (garder `http://127.0.0.1:3000/**` et `http://localhost:3000/**`). Si un SMTP est configuré : **Sender name** `BleDeal` ; relire les modèles d'e-mails (Authentication › Emails) s'ils disent « OranPromo ».
+4. **Meta (WhatsApp Manager)** :
+   - **nom affiché** du numéro : demander « BleDeal » (nouvel examen par Meta) ;
+   - **modèles** : garder les **noms** `oranpromo_*` (ne pas les supprimer : un nom supprimé est bloqué 30 jours) ; pour chaque modèle déjà approuvé, **modifier le texte** pour écrire « BleDeal » (1 modification par 24 h et 10 par 30 jours par modèle) ; les modèles pas encore créés : les créer directement avec les textes « BleDeal » du `docs/guide-mise-en-ligne.md` ;
+   - boutons « Visiter le site » (`oranpromo_nouvelle_commande_confirmer`, `oranpromo_commande_prete_retrait`) : adresse `https://bledeal.com/confirmer/{{1}}` et `https://bledeal.com/retrait/{{1}}` ;
+   - facultatif : nom du portefeuille d'entreprise et de l'application Meta « BleDeal ».
+5. **Twilio** : Verify › Services : renommer le service « BleDeal » (son nom peut apparaître dans le message du code) ; Messaging › Services : « BleDeal codes » (facultatif).
+6. **Cloudflare Turnstile** : dans le widget, ajouter les domaines `bledeal.com` (et `test.bledeal.com` si un site de test est prévu).
+7. **CARTO** : restreindre la clé `NEXT_PUBLIC_CARTO_CLE` au domaine `bledeal.com` (ajouter le domaine dans les domaines autorisés de la clé).
+8. **GitHub** : renommer le dépôt `benattiahakim-maker/oranpromo` en `bledeal` (Settings › General › Repository name ; GitHub redirige l'ancienne adresse, Vercel suit). Ensuite, demander à l'agent de mettre la nouvelle adresse dans `installer-bledeal.bat` et `git remote set-url origin https://github.com/benattiahakim-maker/bledeal` sur le PC.
+9. **Facultatif** : renommer le projet Vercel (l'adresse `*.vercel.app` change) et le nom affiché du projet Supabase (l'adresse `iloyliuzsflzbkhpvxjt.supabase.co` ne change pas) ; nom de l'espace de travail de la console Claude.
+10. **Affiches** : aucune n'est imprimée. Les imprimer **après** l'étape 2 (le QR code mène à `NEXT_PUBLIC_SITE_URL/b/<slug>`) : `/espace/affiche` affiche « BleDeal · Oran ».
+11. **Vérifier en vrai** après la mise en ligne : logo « BleDeal » en français et en arabe, partage d'une boutique dans WhatsApp (aperçu « BleDeal »), message « vu sur BleDeal » au moment de réserver, invitation de parrainage.
+12. **Ouvrir la ville suivante** (Mostaganem, feuille de route Ouest → Centre → Est) quand elle a quelques boutiques validées, un ambassadeur et des affiches : `/admin/villes` › « Fermée » › « Ouvrir ». Le bouton « Oran ▾ » de l'en-tête apparaît alors (2 villes ouvertes).
+
+Restent « OranPromo », sans effet pour les clients : clés du navigateur (`oranpromo:panier`, `oranpromo:article:modifier:…`, `oranpromo-son`), noms des modèles `oranpromo_*`, réglages internes de la base, copie des textes dans `messages_whatsapp.texte` (jamais envoyée), anciennes migrations.
 
 ## US-21 : à configurer par le propriétaire
 
@@ -288,7 +312,7 @@ Mode d'emploi (Supabase > SQL Editor) :
   - clients en mode `telephone` : code par WhatsApp uniquement (Twilio Verify, US-21) ou lien e-mail ; à configurer (voir plus haut) ;
   - les URL de redirection autorisées sont `http://127.0.0.1:3000/**` et `http://localhost:3000/**` ;
   - il faudra ajouter le vrai domaine à la mise en ligne.
-- **GitHub** : `benattiahakim-maker/oranpromo` (privé).
+- **GitHub** : `benattiahakim-maker/oranpromo` (privé) ; à renommer `bledeal` par le propriétaire (liste BleDeal, étape 8).
 - **Hébergement** : pas encore en ligne. Prévu sur Vercel ; offre Pro nécessaire pour un usage commercial.
 
 ## Prochaines étapes (Trello « À faire »)
@@ -307,7 +331,7 @@ Mode d'emploi (Supabase > SQL Editor) :
 12. **Retrait par QR code (US-26)** : **codé** (US-26.1 à 26.4, PR #70 à #73). Le propriétaire fait approuver le modèle Meta `oranpromo_commande_prete_retrait` puis active `bouton_retrait` (checklist au point 22 du journal) ; tester en vrai le scanner sur Android et sur iPhone.
 13. **Parrainage (US-27)** : **codé** (US-27.1 à US-27.5, point 23 du journal), interrupteur fermé. Avant d'activer `parrainage` : accord écrit signé par chaque boutique, budget vérifié (30 000 DA), connexion par code (US-21) en service.
 14. ~~**Tableau des commandes (US-28)**~~ : fait le 9/10 (US-28.1 à 28.4, point 25 du journal). Plus tard si demandé : Supabase Realtime (option B de `architecture.md`), textes dans `lib/textes` pour l’arabe.
-15. **BleDeal et plusieurs villes (US-29, US-30)** : conception validée le 10/10 à 4 h 22 (point 26 du journal) ; code en cours. Ensuite : US-29.1 à 29.4 puis US-30.1 à 30.3 (une PR chacune). À préparer par le propriétaire : achat de `bledeal.com`. **Feuille de route des villes** (10/10) : Ouest (Oran, Mostaganem, Relizane, Tlemcen), puis Centre (Alger, Tizi Ouzou, Béjaïa), puis Est (Annaba, Constantine) ; les 9 sont créées, seule Oran est ouverte ; ouvrir une ville = l'admin (`/admin/villes`). Aucun ancien domaine ni affiche imprimée : pas de redirection.
+15. **BleDeal et plusieurs villes (US-29, US-30)** : **codé** le 10/10 (US-29.1 à 29.4, US-30.1 à 30.3, point 27 du journal). Au propriétaire : la liste « BleDeal : à faire par le propriétaire (US-30.3) » (achat de `bledeal.com` en premier). **Feuille de route des villes** (10/10) : Ouest (Oran, Mostaganem, Relizane, Tlemcen), puis Centre (Alger, Tizi Ouzou, Béjaïa), puis Est (Annaba, Constantine) ; les 9 sont créées, seule Oran est ouverte ; ouvrir une ville = l'admin (`/admin/villes`). Aucun ancien domaine ni affiche imprimée : pas de redirection.
 
 Backlog : mise en ligne (Vercel, domaine, envoi d'e-mails), environnements prod et dev (Vercel + second projet Supabase), suppression des données de test, conditions d'utilisation, marketing.
 
