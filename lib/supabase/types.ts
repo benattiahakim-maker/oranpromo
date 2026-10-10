@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      abonnements_boutique: {
+        Row: {
+          boutique_id: string
+          cree_le: string
+          profil_id: string
+          source: string
+        }
+        Insert: {
+          boutique_id: string
+          cree_le?: string
+          profil_id: string
+          source?: string
+        }
+        Update: {
+          boutique_id?: string
+          cree_le?: string
+          profil_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "abonnements_boutique_boutique_id_fkey"
+            columns: ["boutique_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abonnements_boutique_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appels_ia: {
         Row: {
           date: string
@@ -1051,6 +1087,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      abonnes_boutique: { Args: never; Returns: Json }
       annuler_bons_parrainage: {
         Args: { filleul: string; motif: string }
         Returns: number
@@ -1164,6 +1201,7 @@ export type Database = {
       }
       mon_code_parrainage: { Args: never; Returns: string }
       mon_parrainage: { Args: never; Returns: Json }
+      ne_plus_suivre: { Args: { boutique: string }; Returns: boolean }
       parrainage_ouvert: { Args: never; Returns: boolean }
       passer_commande: {
         Args: { boutique: string; lignes: Json; note?: string }
@@ -1219,6 +1257,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      suivre_boutique: { Args: { boutique: string }; Returns: boolean }
       utiliser_bon: { Args: { commande: string }; Returns: string }
       valider_no_show: { Args: { commande: string }; Returns: undefined }
       villes_ouvertes: {

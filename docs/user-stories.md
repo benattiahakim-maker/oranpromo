@@ -1026,7 +1026,7 @@ Les autres textes ne changent que par le nom : « OranPromo » devient « BleDea
 12. Prochaines villes (réponse du propriétaire, 10/10 à 4 h 25) — **feuille de route** : l'**Ouest** d'abord (Oran, Mostaganem, Relizane, Tlemcen), puis le **Centre** (Alger, Tizi Ouzou, Béjaïa), puis l'**Est** (Annaba, Constantine). Les 9 villes sont créées dès US-29.1 (codes `oran`, `mostaganem`, `relizane`, `tlemcen`, `alger`, `tizi-ouzou`, `bejaia`, `annaba`, `constantine`, noms français et arabes, numéros de wilaya, bornes OpenStreetMap + environ 1 km) ; **seule Oran est ouverte**, l'admin ouvre les autres. Bornes, sources et marche à suivre pour ajouter une ville : `architecture.md`.
 13. Darja oranaise gardée pour tout le pays.
 
-## Module 17 — Suivre une boutique et inscription en boutique (après le MVP)
+## Module 17 — Suivre une boutique et inscription en boutique (après le MVP) — décisions du 10/10 ci-dessous, US-31.1 à 31.3 en cours de code
 
 Source : carte Trello « Commercial · Inscription des clients en boutique + « Suivre la boutique » » (idée du propriétaire du 9/10 : « les vendeurs en magasin font inscrire leurs clients, qui ont une réduction sur leur 1re commande » ; bouton « Suivre », alerte WhatsApp à chaque nouvelle promo, nombre d'abonnés dans `/espace`). Demande du 10/10 : conception seulement. **Conception seulement** : aucun code, aucune migration, aucune dépendance. Conception technique : `docs/architecture.md`, section « Suivre une boutique et inscription en boutique (US-31) » ; maquette `docs/maquettes/SuivreBoutique.dc.html` (375 px, français et arabe de droite à gauche). **À valider par le propriétaire** (questions en fin de module).
 
@@ -1095,6 +1095,14 @@ En tant que client, je veux suivre les boutiques que j'aime, afin de retrouver v
 | 10 | Désabonnement | Vous ne recevrez plus d'alertes. | **ما عادش** يجيوك الميساجات. |
 
 L'espace commerçant reste en français (US-23) : « 23 clients suivent votre boutique · +4 cette semaine » ; affiche : « Inscrivez-vous et suivez la boutique ».
+
+### Décisions du propriétaire (US-31, 10/10 à 9 h 24 : valeurs par défaut, « enchaîner toutes les fonctionnalités »)
+1. **Nombre d'abonnés** : visible **seulement par la boutique**, dans `/espace` ; **jamais public** (pas de « 120 abonnés » sur la vitrine).
+2. **Inscription en boutique** : la boutique de l'affiche est **suivie automatiquement** (source `inscription_boutique`) ; un compte nouveau y est rattaché (une seule fois).
+3. **Pas de bon de bienvenue pour l'instant** : US-31.4 attend les bons de US-33 (codés à part). Point d'accroche laissé : `profils.inscrit_par_boutique` et `profils.inscrit_en_boutique_le` (US-31.3) ; le programme `inscription_boutique` de US-33 les lira. Aucune table de bons n'est touchée par US-31.
+4. **Pas de prime du vendeur** pour l'instant.
+5. **Pas d'alerte WhatsApp** pour l'instant (US-31.5 : plus tard, après les conditions US-34) ; les colonnes d'alerte et de consentement ne sont pas créées.
+6. Codage : US-31.1 (base), US-31.2 (vitrine, « Mes boutiques »), US-31.3 (compteur, affiche, `/i/<slug>`), une PR chacune.
 
 ### Questions au propriétaire (US-31)
 1. **Nombre d'abonnés public** sur la vitrine (« 120 abonnés ») ou seulement dans `/espace` (recommandé au début : un petit nombre fait fuir) ? Proposition : public à partir de 50.

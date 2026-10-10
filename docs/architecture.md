@@ -827,7 +827,10 @@ Relevé du 10/10 sur `main` : « OranPromo » dans **93 lignes de 44 fichiers** 
 
 US-29 : migration `…_villes.sql` + `supabase/tests/villes.test.sql` ; `lib/ville.ts` (+ test : cookie, `deVille`, codes réservés, choix de la ville par défaut), `lib/villes.ts` (photos), `lib/position.ts` (bornes par ville), `lib/catalogue.ts`, `lib/carte.ts`, `lib/boutique.ts` ; `app/[ville]/layout.tsx`, `app/[ville]/page.tsx`, `app/[ville]/catalogue/page.tsx`, `app/[ville]/carte/page.tsx` ; `app/page.tsx`, `app/catalogue/page.tsx`, `app/carte/page.tsx` (redirections) ; `app/villes/page.tsx`, `app/ville/actions.ts`, `components/ChoixVille.tsx` ; `app/admin/villes/page.tsx` + `actions.ts` ; `components/EntetePublic.tsx`, `CarteLeaflet.tsx`, `CartePosition.tsx`, `ChoixPosition.tsx`, `Promos.tsx`, `NouvelleBoutique.tsx` ; types régénérés (`npm run db:types`). US-30 : fichiers de l'inventaire ci-dessus. Tests Vitest pour chaque fonction de `lib/`, les redirections et les pages ; tests SQL pour la migration (Oran identique).
 
-## Suivre une boutique et inscription en boutique (US-31) — conception, **à valider par le propriétaire**
+## Suivre une boutique et inscription en boutique (US-31) — **décisions du propriétaire du 10/10** (`docs/user-stories.md`, module 17) ; US-31.1 à 31.3 codées, US-31.4 et 31.5 plus tard
+
+**US-31.1 codée** : migration `20261016090000_abonnements_boutique.sql`, tests `supabase/tests/abonnements_boutique.test.sql`. Écart voulu avec le tableau ci-dessous : **pas** de colonnes `alerte_whatsapp` / `alerte_consentie_le` (alertes repoussées, elles viendront avec US-31.5). Fonction interne `prive.ajouter_abonnement(compte, boutique, origine)` (verrou sur le profil, plafond 200), appelée par `suivre_boutique` (source `vitrine`) et plus tard par le rattachement de l'inscription en boutique (source `inscription_boutique`). Codes d'erreur : `42501` (pas connecté, pas client, pas commerçant), `P0002` (boutique non validée ou inconnue), `54000` (plafond).
+
 
 Stories : `docs/user-stories.md`, module 17. Maquette : `docs/maquettes/SuivreBoutique.dc.html`. Source : carte Trello « Commercial · Inscription des clients en boutique + « Suivre la boutique » ». **Aucun code, aucune migration** dans cette PR.
 
