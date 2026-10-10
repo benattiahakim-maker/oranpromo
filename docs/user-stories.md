@@ -1,6 +1,6 @@
-# User stories — MVP OranPromo
+# User stories — MVP BleDeal
 
-Source : document « OranPromo — Cadrage du projet », onglet Spécifications détaillées.
+Source : document « BleDeal — Cadrage du projet », onglet Spécifications détaillées.
 Une story = une tâche pour un agent. Chaque critère d'acceptation doit être vérifié avant de dire « terminé ».
 
 **Définition de « terminé »** (toutes les stories) :
@@ -44,7 +44,7 @@ En tant que client, je veux voir sur la page d'accueil les promos en cours à Or
 - Les articles s'affichent par pages de 20, avec chargement de la suite au défilement.
 - En haut : les univers Femme · Homme · Enfant · Beauté, chacun vers le catalogue filtré (`/catalogue?univers=…`).
 - Une grande photo d'accueil avec la phrase « Les promos d'Oran » et un bouton « Voir les promos » (`/catalogue?promo=1`) : photo réelle d'Oran (fort de Santa Cruz au-dessus du port) sous licence libre, avec voile sombre et crédit visible (auteur, licence, source, avec liens).
-- Des tuiles carrées (image + mot) pour les univers et les pièces phares ; image = visuel couleur de la marque (images générées par IA pour OranPromo), mot en dessous sur fond blanc. Images servies par le site (`public/images/accueil/`), jamais chargées depuis un autre site (maquette `docs/maquettes/Accueil.dc.html` pour la mise en page ; décision du propriétaire du 9 octobre 2026 : des images couleur inspirées d'Oran plutôt que les photos d'articles).
+- Des tuiles carrées (image + mot) pour les univers et les pièces phares ; image = visuel couleur de la marque (images générées par IA pour BleDeal), mot en dessous sur fond blanc. Images servies par le site (`public/images/accueil/`), jamais chargées depuis un autre site (maquette `docs/maquettes/Accueil.dc.html` pour la mise en page ; décision du propriétaire du 9 octobre 2026 : des images couleur inspirées d'Oran plutôt que les photos d'articles).
 
 ### US-05 — Filtrer le catalogue (page `/catalogue`)
 En tant que client, je veux filtrer les articles de toutes les boutiques, afin de trouver ce qui me correspond.
@@ -68,12 +68,12 @@ En tant que client, je veux taper un mot (« polo », « jean »), afin de trouv
 En tant que client, je veux réserver un article en un clic, afin que la boutique le mette de côté pour moi.
 - La fiche demande de choisir une taille avant d'activer le bouton « Réserver sur WhatsApp » (sauf article en taille unique).
 - Étant donné une taille choisie, quand je clique, alors WhatsApp s'ouvre vers le numéro de la boutique avec un message pré-rempli. → utiliser `lienReservation()` de `lib/whatsapp.ts`.
-- Le message contient le titre, la taille, le prix affiché, le lien de la fiche et la mention « vu sur OranPromo », par exemple : « Bonjour, je souhaite réserver : Polo bleu marine, taille M, 3 500 DA. https://oranpromo.com/a/1234 (vu sur OranPromo) ».
+- Le message contient le titre, la taille, le prix affiché, le lien de la fiche et la mention « vu sur BleDeal », par exemple : « Bonjour, je souhaite réserver : Polo bleu marine, taille M, 3 500 DA. https://oranpromo.com/a/1234 (vu sur BleDeal) ».
 - Le lien fonctionne sur téléphone (application WhatsApp) et sur ordinateur (WhatsApp Web).
 - Sous le bouton, un texte rappelle : « La boutique confirme la disponibilité sur WhatsApp. Paiement en boutique. »
 
 ### US-08 — Compter les demandes de réservation
-En tant que commerçant, je veux savoir combien de clients ont cliqué sur « Réserver », afin de mesurer ce qu'OranPromo m'apporte.
+En tant que commerçant, je veux savoir combien de clients ont cliqué sur « Réserver », afin de mesurer ce que BleDeal m'apporte.
 - Chaque clic sur le bouton est enregistré (table `evenements`, type `clic_reserver`) avec l'article, la taille et la date, sans donnée personnelle du client.
 - Ces clics alimentent les statistiques de US-13.
 
@@ -120,7 +120,7 @@ En tant que commerçant, je veux mettre un article en promo, afin d'attirer des 
 - Je peux choisir un badge : « −X % » (par défaut) ou « Promo flash ».
 
 ### US-13 — Voir mes statistiques (page `/espace/statistiques`)
-En tant que commerçant, je veux voir combien de personnes ont vu mes articles et cliqué sur « Réserver », afin de juger ce que m'apporte OranPromo.
+En tant que commerçant, je veux voir combien de personnes ont vu mes articles et cliqué sur « Réserver », afin de juger ce que m'apporte BleDeal.
 - Je vois, sur 7 jours et 30 jours : vues de la vitrine, vues des articles, clics « Réserver ».
 - Je vois mes 5 articles les plus consultés.
 - Les chiffres s'affichent en gros, lisibles sur téléphone, sans graphique complexe.
@@ -255,7 +255,7 @@ En tant que boutique et client, je veux être prévenu sur WhatsApp, afin de ne 
 
 ### US-20.6 — Confirmer une commande depuis WhatsApp (message « nouvelle commande », page `/confirmer/[jeton]`)
 En tant que boutique, je veux confirmer une nouvelle commande directement depuis le message WhatsApp, sans ouvrir mon espace ni me connecter, afin de répondre vite au client.
-- Le message « nouvelle commande » reçu par la boutique a un bouton **« Confirmer »** (bouton lien du modèle WhatsApp). Le texte reste le même, avec en plus : « Touchez Confirmer, ou confirmez-la dans votre espace OranPromo, rubrique Commandes. »
+- Le message « nouvelle commande » reçu par la boutique a un bouton **« Confirmer »** (bouton lien du modèle WhatsApp). Le texte reste le même, avec en plus : « Touchez Confirmer, ou confirmez-la dans votre espace BleDeal, rubrique Commandes. »
 - Le bouton ouvre une page du site **sans connexion** : `/confirmer/<lien>`. Elle montre la commande (numéro, prénom du client, articles avec taille et quantité, total, note du client) et **un seul gros bouton « Confirmer la commande »**, puis « Commande confirmée : le stock est mis à jour. Pensez à la préparer. » et un lien vers l'espace (« Voir mes commandes »). Pas de numéro de téléphone du client sur cette page.
 - Ouvrir la page **ne confirme rien** : seule la touche « Confirmer la commande » confirme (2 touches en tout depuis WhatsApp). Raison : des applications (aperçus de liens, antivirus, navigateur de WhatsApp) ouvrent parfois un lien toutes seules ; une confirmation à l'ouverture pourrait se faire sans la boutique.
 - **Mêmes règles que le bouton « Confirmer » du site** : seulement une commande « demandée » ; le stock baisse ; refus « Stock insuffisant pour … » si une taille ne suffit plus (la page propose alors d'ouvrir l'espace pour corriger le stock ou annuler). Le suivi de la commande indique « Confirmée depuis WhatsApp » (auteur : la boutique).
@@ -264,7 +264,7 @@ En tant que boutique, je veux confirmer une nouvelle commande directement depuis
   - commande déjà confirmée (par le lien ou dans l'espace), prête ou récupérée : « Cette commande est déjà confirmée. » ;
   - commande annulée (par le client ou la boutique) : « Cette commande a été annulée : il n'y a rien à confirmer. » ;
   - commande expirée : « Cette commande a expiré : il n'y a rien à confirmer. » ;
-  - lien de plus de 24 heures : « Ce lien a expiré. Confirmez la commande dans votre espace OranPromo, rubrique Commandes. » ;
+  - lien de plus de 24 heures : « Ce lien a expiré. Confirmez la commande dans votre espace BleDeal, rubrique Commandes. » ;
   - lien abîmé, modifié ou inconnu : « Ce lien n'est pas valide. » (même message, qu'il s'agisse d'une commande qui n'existe pas ou d'une signature fausse).
 - Si la boutique est connectée à son espace sur ce téléphone, rien ne change (le lien suffit).
 - Choix « sans connexion » proposé et codé ; le propriétaire peut le remettre en cause à la relecture (analyse dans `docs/architecture.md`, « Confirmer depuis WhatsApp (US-20.6) »).
@@ -347,11 +347,11 @@ En tant que commerçant, je veux un lien court et lisible vers ma vitrine, à me
 - Chaque boutique a une adresse courte, lisible et stable : `https://<site>/b/<slug>`, avec un slug tiré du nom (`Boutique Nour` → `boutique-nour`). Format imposé par la base : minuscules sans accents, chiffres, tirets simples entre les mots (ni au début, ni à la fin, ni doublés), 2 à 60 caractères ; unique. Un nom déjà pris donne `-2`, `-3`… ; un nom sans lettre latine (arabe seul) donne `boutique`, `boutique-2`…
 - Le slug ne change plus une fois la boutique publiée (seul un admin peut le changer : règle existante) : le lien imprimé ou mis en bio reste valable.
 - Seule une boutique **validée** est joignable par son lien ; en attente ou suspendue → « Boutique indisponible », sans aperçu, non indexée.
-- Le lien collé dans WhatsApp, Facebook, Instagram ou X affiche un aperçu : nom de la boutique, quartier et nombre d'articles disponibles, et une image (grande photo du dernier article disponible ; sans article, une image générée en noir et blanc avec le nom de la boutique et « OranPromo »). Balises Open Graph et Twitter (`summary_large_image`), adresse canonique.
+- Le lien collé dans WhatsApp, Facebook, Instagram ou X affiche un aperçu : nom de la boutique, quartier et nombre d'articles disponibles, et une image (grande photo du dernier article disponible ; sans article, une image générée en noir et blanc avec le nom de la boutique et « BleDeal »). Balises Open Graph et Twitter (`summary_large_image`), adresse canonique.
 - Dans `/espace`, un bloc « Partager ma boutique » montre le lien et propose : « Copier le lien » (message « Lien copié »), « Partager sur WhatsApp » (`https://wa.me/?text=…` avec un message pré-rempli et le lien), le QR code du lien, « Télécharger le QR code » (fichier SVG) et « Imprimer l'affiche ».
 - `/espace/affiche` : affiche à imprimer (A4, noir et blanc) avec le nom de la boutique, le QR code, le lien et « Scannez pour voir nos articles et nos promos » ; bouton « Imprimer » (masqué à l'impression). Réservée au commerçant de la boutique.
 - Le QR code est généré côté serveur, sans service externe ni payant.
-- Boutique pas encore validée : le bloc affiche « Votre lien sera actif dès que votre boutique sera validée par OranPromo. » sans bouton de partage ni QR code ; boutique suspendue : « Votre boutique est suspendue : son lien affiche « Boutique indisponible ». ».
+- Boutique pas encore validée : le bloc affiche « Votre lien sera actif dès que votre boutique sera validée par BleDeal. » sans bouton de partage ni QR code ; boutique suspendue : « Votre boutique est suspendue : son lien affiche « Boutique indisponible ». ».
 - Tests Vitest : slug (format, suffixe, nom arabe), lien absolu, message et lien WhatsApp, description de l'aperçu, QR code, bloc de partage selon le statut, métadonnées de la vitrine ; tests SQL : format du slug refusé par la base.
 
 ## Module 10 — Langues (après le MVP)
@@ -391,7 +391,7 @@ En tant que cliente d'Oran qui lit plus facilement l'arabe, je veux choisir l'ar
 Source : carte Trello « Carte · Carte des boutiques » (demande du propriétaire du 9 octobre 2026). À coder **après l'arabe (US-23)**, et seulement après validation des maquettes par le propriétaire. Conception : `docs/architecture.md`, section « Carte des boutiques (US-24) ». Maquettes : `docs/maquettes/Carte.dc.html` et `docs/maquettes/PositionBoutique.dc.html`.
 
 ### US-24 — Trouver les boutiques sur une carte (vue d'ensemble) — **à valider par le propriétaire avant tout code**
-En tant que cliente à Oran, je veux voir sur une carte où sont les boutiques OranPromo, et lesquelles sont près de moi, afin d'aller essayer sans chercher l'adresse.
+En tant que cliente à Oran, je veux voir sur une carte où sont les boutiques BleDeal, et lesquelles sont près de moi, afin d'aller essayer sans chercher l'adresse.
 Livrée en 3 sous-stories, dans cet ordre (une PR chacune) :
 
 | Story | Contenu | Écrans |
@@ -416,7 +416,7 @@ En tant qu'admin, ambassadeur ou commerçant, je veux placer la boutique sur la 
 - **Liens courts** (`maps.app.goo.gl/…`, `goo.gl/maps/…`) : **jamais suivis**, ni côté serveur (un serveur qui suit un lien envoyé par un utilisateur peut être dirigé vers n'importe quelle adresse : risque SSRF), ni dans le navigateur. Message : « Ce lien court ne contient pas la position. Ouvrez-le dans Google Maps, puis copiez l'adresse complète depuis la barre du navigateur (elle contient « @35,… »), ou utilisez « Je suis dans la boutique ». ». Lien non reconnu : « Coordonnées introuvables dans ce lien. ».
 - Une **petite carte** (environ 200 px de haut) montre l'épingle ; on la **déplace du doigt** pour ajuster ; les coordonnées s'affichent sous la carte (6 décimales, environ 10 cm). « Retirer la position » vide les deux champs (la boutique passe dans « sans position »).
 - Position hors de la wilaya d'Oran : refusée tout de suite à l'écran, puis par le serveur et la base, avec « La position doit être dans la wilaya d'Oran. ».
-- Boutique publiée, côté commerçant : position en lecture seule, avec « Pour déplacer votre boutique sur la carte, contactez OranPromo. ».
+- Boutique publiée, côté commerçant : position en lecture seule, avec « Pour déplacer votre boutique sur la carte, contactez BleDeal. ».
 - Textes en français seulement : l'espace commerçant et l'administration ne sont pas traduits (US-23). La maquette montre quand même le bloc en arabe, prêt pour une future story.
 - Tests Vitest : lecture des liens Google Maps (formats longs, `!3d!4d` prioritaire sur `@`, liens courts refusés sans aucun appel réseau, texte quelconque, coordonnées hors d'Oran), validation de la position (`lib/boutique.ts`), messages, bloc de position (géolocalisation acceptée, précision affichée, avertissement > 100 m, refus), actions serveur (position enregistrée, retirée, refus de la base traduit en message).
 
@@ -646,12 +646,12 @@ En tant que client, je veux ouvrir mon QR code depuis le message WhatsApp « com
 
 ## Module 14 — Parrainage (après le MVP)
 
-Source : demande du propriétaire du 9 octobre 2026 (« une section ou une page pour promouvoir le parrainage ; à l'inscription, un client peut donner le numéro WhatsApp de son parrain pour gagner des promos »). Conception (PR #67) puis **décisions du propriétaire du 9/10 à 19 h 16** (ci-dessous) : récompense **A, bon OranPromo de 300 DA**. Conception technique : `docs/architecture.md`, section « Parrainage (US-27) ». Maquette : `docs/maquettes/Parrainage.dc.html`. (Le module 13 est le retrait par QR code, US-26.)
+Source : demande du propriétaire du 9 octobre 2026 (« une section ou une page pour promouvoir le parrainage ; à l'inscription, un client peut donner le numéro WhatsApp de son parrain pour gagner des promos »). Conception (PR #67) puis **décisions du propriétaire du 9/10 à 19 h 16** (ci-dessous) : récompense **A, bon BleDeal de 300 DA**. Conception technique : `docs/architecture.md`, section « Parrainage (US-27) ». Maquette : `docs/maquettes/Parrainage.dc.html`. (Le module 13 est le retrait par QR code, US-26.)
 
 **Ordre** : US-27 se code **après US-26** (retrait par QR code), car le parrainage n'est validé, et un bon n'est remboursé, que sur une commande remise par **QR code ou code à 4 chiffres**. Rien n'est codé pour l'instant.
 
 **Décisions du propriétaire (9 octobre 2026, 19 h 16)** :
-1. **Récompense : option A**. Un **bon OranPromo de 300 DA** pour le parrain **et** un pour le filleul, déduit **en caisse** sur une commande suivante, puis **remboursé chaque mois par OranPromo à la boutique**. Les options B (bon offert par la boutique) et C (Club) sont abandonnées.
+1. **Récompense : option A**. Un **bon BleDeal de 300 DA** pour le parrain **et** un pour le filleul, déduit **en caisse** sur une commande suivante, puis **remboursé chaque mois par BleDeal à la boutique**. Les options B (bon offert par la boutique) et C (Club) sont abandonnées.
 2. Le parrain se donne **dans les 7 jours** après l'inscription et **avant la première commande**.
 3. Le premier retrait du filleul doit avoir lieu **dans les 60 jours** après son inscription.
 4. Au plus **5 parrainages récompensés par parrain et par mois**.
@@ -663,7 +663,7 @@ Source : demande du propriétaire du 9 octobre 2026 (« une section ou une page 
 10. Textes arabes : **validés tels que proposés** (les textes du bon, n° 15 à 24, sont nouveaux : à relire).
 
 ### US-27 — Parrainer un ami et être parrainé (vue d'ensemble) — **décisions prises le 9/10, en cours de code (US-26 fusionnée)**
-En tant que client, je veux inviter mes amis sur OranPromo avec mon lien ou mon numéro WhatsApp, et qu'on reçoive chacun un bon de 300 DA quand ils viennent chercher leur première commande, afin de faire connaître le site autour de moi.
+En tant que client, je veux inviter mes amis sur BleDeal avec mon lien ou mon numéro WhatsApp, et qu'on reçoive chacun un bon de 300 DA quand ils viennent chercher leur première commande, afin de faire connaître le site autour de moi.
 En tant que propriétaire, je veux que le parrainage fasse venir de **vrais clients qui viennent en boutique**, avec une **dépense plafonnée**, des boutiques **remboursées sans erreur**, et sans révéler qui est inscrit.
 
 Livrée en 5 sous-stories, dans cet ordre (une PR chacune) :
@@ -683,7 +683,7 @@ Livrée en 5 sous-stories, dans cet ordre (une PR chacune) :
 - **Qui peut être parrainé** : un **nouveau** compte client avec un numéro vérifié, inscrit depuis **7 jours au plus**, **sans aucune commande**, dont le numéro vérifié n'a **jamais** servi à un autre filleul.
 - **Un seul parrain par compte**. On peut corriger sa saisie **2 fois** (3 saisies au plus) tant qu'aucune commande n'est passée ; ensuite c'est figé (l'admin peut corriger).
 - **Refusés** : son propre numéro ou son propre code (« C'est ton propre numéro : choisis le numéro d'un ami. ») ; un parrain qui est le filleul de son filleul (boucle A ↔ B) : refus **silencieux**.
-- **Pas d'énumération** : la réponse est **la même** que le numéro soit celui d'un client ou non : « C'est noté. Si ce numéro est celui d'un client OranPromo, il deviendra ton parrain après ton premier retrait en boutique. ». Un numéro qui ne correspond à aucun parrain possible **n'est pas enregistré**. OranPromo **n'écrit jamais** au numéro saisi.
+- **Pas d'énumération** : la réponse est **la même** que le numéro soit celui d'un client ou non : « C'est noté. Si ce numéro est celui d'un client BleDeal, il deviendra ton parrain après ton premier retrait en boutique. ». Un numéro qui ne correspond à aucun parrain possible **n'est pas enregistré**. BleDeal **n'écrit jamais** au numéro saisi.
 - **Validation** : seule la **première commande récupérée** du filleul compte. Le parrainage est **validé** si elle est remise **par QR code ou par code à 4 chiffres** (US-26, `commandes.mode_remise` = `qr` ou `code` ; `manuel` = « Remis sans QR code »), avec un **total d'au moins 2 000 DA**, au plus **60 jours** après l'inscription. Si cette première commande récupérée ne remplit pas ces conditions (remise « sans QR code », moins de 2 000 DA, après 60 jours), le parrainage passe `non_valide` : une commande suivante ne le rattrape pas. Une commande annulée ou expirée ne compte pas (le parrainage reste en attente tant que le délai de 60 jours court). Inscription seule : rien.
 - **Récompense** : à la validation, la base crée **un bon de 300 DA pour le filleul** et **un bon de 300 DA pour le parrain**, sauf :
   - parrain au **plafond** (5 parrainages récompensés ce mois civil, heure d'Alger) : bon du filleul seulement, statut `plafond` ;
@@ -692,12 +692,12 @@ Livrée en 5 sous-stories, dans cet ordre (une PR chacune) :
 - **Interrupteur** : réglage `parrainage` dans `prive.reglages`, désactivé par défaut ; il ne sert qu'en mode téléphone (US-21). Budget à 0 = aucun nouveau bon (les parrainages restent comptés et les bons en file).
 
 **Le bon de 300 DA** (règles, détail dans `docs/architecture.md`) :
-- **Valable 60 jours** après sa création, dans **toutes les boutiques** OranPromo validées (sauf une boutique que l'admin a retirée des bons), **attaché au compte** (pas transférable, pas de code à recopier : il ne s'utilise que sur une commande passée par ce compte).
+- **Valable 60 jours** après sa création, dans **toutes les boutiques** BleDeal validées (sauf une boutique que l'admin a retirée des bons), **attaché au compte** (pas transférable, pas de code à recopier : il ne s'utilise que sur une commande passée par ce compte).
 - **Un seul bon par commande**, sur une commande d'au moins **1 000 DA** (proposition, voir « Question restante ») ; jamais de monnaie rendue ni de reste : 300 DA de moins sur le total, c'est tout. Pas de bon sur sa première commande (le filleul n'en a pas encore).
 - **Choisi au panier** : « Utiliser mon bon parrainage (−300 DA) », coché par défaut quand le client a un bon et que le total atteint 1 000 DA ; le panier affiche « Total 3 500 DA · Bon parrainage −300 DA · À payer en boutique 3 200 DA ». Le bon le plus proche de sa fin est utilisé en premier.
 - **Réservé** dès la commande (il ne peut pas servir deux fois en même temps) ; **rendu** au client si la commande est annulée ou expire (avec au moins 7 jours de validité restante : sa fin est repoussée si besoin) ; **utilisé** seulement quand la commande est remise **par QR code ou code**.
 - **Commande remise « sans QR code »** : le bon **ne s'applique pas** ; la confirmation le dit à la boutique (« Sans QR code ni code, le bon ne s'applique pas : encaissez 3 500 DA. Le bon reste au client. ») ; le bon est rendu au client ; rien à rembourser.
-- La boutique voit le bon **partout où elle voit la commande** : liste des commandes (« Bon parrainage −300 DA · à encaisser 3 200 DA »), résumé du scan (« Sous-total 3 500 DA · Bon parrainage OranPromo −300 DA · **À encaisser en espèces : 3 200 DA** » et « Ces 300 DA vous sont remboursés par OranPromo sur le relevé de novembre. »). Le client et le proche le voient sur le QR code (« À payer en espèces : 3 200 DA (bon −300 DA déduit) »).
+- La boutique voit le bon **partout où elle voit la commande** : liste des commandes (« Bon parrainage −300 DA · à encaisser 3 200 DA »), résumé du scan (« Sous-total 3 500 DA · Bon parrainage BleDeal −300 DA · **À encaisser en espèces : 3 200 DA** » et « Ces 300 DA vous sont remboursés par BleDeal sur le relevé de novembre. »). Le client et le proche le voient sur le QR code (« À payer en espèces : 3 200 DA (bon −300 DA déduit) »).
 - **Remboursement** : chaque bon utilisé devient une ligne du **relevé mensuel** de la boutique (mois de la remise, heure d'Alger). Le 1er du mois, le relevé du mois passé est **clôturé** ; l'admin l'exporte en CSV, fait le virement (CCP, BaridiMob, en dehors du site), puis **« Marquer comme payé »** avec la référence du virement. La boutique voit ses relevés dans `/espace`. Objectif : payé avant le 10 du mois.
 - Messages WhatsApp : **aucun nouveau modèle**. Le message « nouvelle commande » à la boutique (modèle existant, Utilitaire) garde son texte ; son 4e paramètre (le total) devient « 3 200 DA à encaisser (bon parrainage −300 DA) » pour une commande avec bon : information sur la commande, pas de promotion.
 
@@ -711,9 +711,9 @@ En tant que propriétaire, je veux que les règles du parrainage et des bons soi
 - Tests SQL : énumération (même résultat pour numéro inconnu, de commerçant, compte bloqué, client valide), propre numéro, boucle, un seul parrain, 3 saisies, 7 jours, commande déjà passée, numéro déjà filleul ; validation seulement à la remise par QR code ou code de la **première** commande ≥ 2 000 DA (pas à `prete`, pas « sans QR code », pas < 2 000 DA, pas après 60 jours) ; plafond de 5 ; budget (file, création le 1er dans l'ordre) ; un bon par commande, 1 000 DA minimum, bon d'un autre compte refusé, bon réservé non réutilisable, rendu à l'annulation / expiration / remise sans QR code, expiré non utilisable ; ligne de relevé créée seulement à la remise par QR code ou code ; relevé payé non modifiable ; `passer_commande`, `changer_statut_commande` et toutes les règles de blocage / no-show / vérification **inchangées** (définitions comparées par `pg_get_functiondef`).
 
 ### US-27.2 — Donner le numéro de mon parrain (pages `/compte`, `/panier`, `/p/[code]`) — **codée**
-En tant que nouveau client, je veux indiquer le numéro WhatsApp (ou le code) de l'ami qui m'a fait connaître OranPromo, afin qu'on reçoive chacun un bon.
+En tant que nouveau client, je veux indiquer le numéro WhatsApp (ou le code) de l'ami qui m'a fait connaître BleDeal, afin qu'on reçoive chacun un bon.
 - Champ **« Ton parrain (facultatif) : son numéro WhatsApp ou son code »** sur le formulaire « Nom » demandé avant la première commande (`/panier`) et dans `/compte` (bloc « Ton parrain ») tant que les règles le permettent (7 jours, aucune commande) ; ensuite le bloc disparaît.
-- Lien **`/p/<code>`** : cookie `parrain` (code seul, 30 jours), puis `/parrainage` avec « Un ami t'invite sur OranPromo » ; champ pré-rempli, le client touche quand même « Valider ». Code inconnu ou mal formé : même page.
+- Lien **`/p/<code>`** : cookie `parrain` (code seul, 30 jours), puis `/parrainage` avec « Un ami t'invite sur BleDeal » ; champ pré-rempli, le client touche quand même « Valider ». Code inconnu ou mal formé : même page.
 - Après « Valider » : toujours « C'est noté… » ; « Parrain enregistré » et « Modifier » (2 fois au plus, avant la première commande).
 - Rappel sous le champ : « Ton bon et celui de ton parrain arrivent après ta première commande d'au moins 2 000 DA, récupérée en boutique avec ton QR code. »
 - Tests Vitest : normalisation numéro / code, cookie de `/p/<code>`, champ pré-rempli, même message pour tout numéro valide, bloc masqué après une commande.
@@ -722,9 +722,9 @@ En tant que nouveau client, je veux indiquer le numéro WhatsApp (ou le code) de
 En tant que client, je veux comprendre le parrainage en 10 secondes, partager mon lien sur WhatsApp et voir mes bons, afin d'inviter mes amis et d'utiliser ce que j'ai gagné.
 - **`/parrainage`** (publique) : « Parraine tes amis », les 3 étapes (1. Partage ton lien ; 2. Ton ami s'inscrit avec son numéro WhatsApp et te choisit comme parrain ; 3. Quand il récupère sa première commande d'au moins 2 000 DA en boutique avec son QR code, **vous recevez chacun un bon de 300 DA**), les règles courtes (numéro vérifié, pas soi-même, 5 amis récompensés par mois, bon valable 60 jours, un bon par commande d'au moins 1 000 DA, à déduire en boutique). Connecté avec un numéro vérifié : code, lien `/p/<code>`, « Copier le lien », « Partager sur WhatsApp » (`wa.me/?text=…` sans numéro), QR code du lien. Non connecté : « Connecte-toi pour avoir ton lien ».
 - **`/compte`, « Mon parrainage »** : code, Copier / Partager, compteurs (« 2 amis ont fait leur premier retrait · 1 en attente »), liste des parrainages validés (« Samir B. · 12 oct. · bon de 300 DA ») ; « plafond du mois atteint » quand c'est le cas.
-- **`/compte`, « Mes bons »** : chaque bon (« Bon parrainage · 300 DA · valable jusqu'au 11 décembre »), état (disponible, réservé pour la commande n° 128, utilisé le … chez …, expiré), bons en file (« arrive le 1er novembre ») ; phrase : « À utiliser au panier : 300 DA de moins, payés par OranPromo à la boutique. ».
+- **`/compte`, « Mes bons »** : chaque bon (« Bon parrainage · 300 DA · valable jusqu'au 11 décembre »), état (disponible, réservé pour la commande n° 128, utilisé le … chez …, expiré), bons en file (« arrive le 1er novembre ») ; phrase : « À utiliser au panier : 300 DA de moins, payés par BleDeal à la boutique. ».
 - **Accueil** : bloc texte « Parraine tes amis · 300 DA chacun » sous « Les boutiques sur la carte ».
-- **Après un retrait** : encadré « Merci ! Fais découvrir OranPromo à un ami : 300 DA chacun » sur le suivi d'une commande récupérée. Rien dans les messages WhatsApp.
+- **Après un retrait** : encadré « Merci ! Fais découvrir BleDeal à un ami : 300 DA chacun » sur le suivi d'une commande récupérée. Rien dans les messages WhatsApp.
 - En arabe (US-23) : textes du tableau ci-dessous, de droite à gauche.
 - Tests Vitest : lien et message de partage, code seulement pour un numéro vérifié, compteurs, liste sans numéro, « Mes bons » (états, dates), bloc d'accueil, encadré seulement sur une commande récupérée, textes fr / ar (mêmes clés).
 
@@ -733,17 +733,17 @@ En tant que client, je veux que mon bon soit déduit sans rien avoir à dire en 
 - **Panier** : case « Utiliser mon bon parrainage (−300 DA) » (cochée par défaut si un bon est disponible et le total ≥ 1 000 DA ; absente sinon, avec « Ton bon s'utilise dès 1 000 DA d'achat. » si le total est plus bas). Lignes « Total », « Bon parrainage −300 DA », « **À payer en boutique** ». À la commande, l'action serveur appelle `passer_commande` puis `utiliser_bon` ; si le bon n'a pas pu être appliqué (expiré entre-temps…), la commande reste valable au prix plein et le suivi l'affiche (« Bon non appliqué : il a expiré. ») — le client peut annuler s'il le souhaite.
 - **Suivi de commande et QR code** (client et proche, US-26) : « Bon parrainage −300 DA » et « À payer en espèces : 3 200 DA ».
 - **Boutique, liste des commandes** : sous le total, « Bon parrainage −300 DA · à encaisser 3 200 DA ».
-- **Boutique, résumé du scan** (US-26.3) : lignes, « Sous-total 3 500 DA », « Bon parrainage OranPromo −300 DA », **« À encaisser en espèces : 3 200 DA »** en grand, et « Ces 300 DA vous sont remboursés par OranPromo (relevé de novembre). ». « Remis au client » : le bon est utilisé, la ligne de relevé est créée.
+- **Boutique, résumé du scan** (US-26.3) : lignes, « Sous-total 3 500 DA », « Bon parrainage BleDeal −300 DA », **« À encaisser en espèces : 3 200 DA »** en grand, et « Ces 300 DA vous sont remboursés par BleDeal (relevé de novembre). ». « Remis au client » : le bon est utilisé, la ligne de relevé est créée.
 - **Boutique, « Remis sans QR code »** sur une commande avec bon : confirmation propre : « Sans QR code ni code, le bon ne s'applique pas : encaissez 3 500 DA. Le bon reste au client. » ; après la remise, le bon est rendu au client.
 - Tests Vitest : case du panier (cochée, absente, sous 1 000 DA), montants, appel `utiliser_bon` après `passer_commande` (et commande gardée si le bon échoue), affichage client / proche / boutique / scan, confirmation « sans QR code ».
 
 ### US-27.5 — Rembourser les boutiques et suivre le parrainage (pages `/admin/parrainages`, `/admin/remboursements`, `/espace`) — **codée**
-En tant qu'admin, je veux savoir chaque mois combien rembourser à chaque boutique, l'exporter, noter que c'est payé, et repérer la triche ; en tant que commerçant, je veux voir ce qu'OranPromo me doit.
+En tant qu'admin, je veux savoir chaque mois combien rembourser à chaque boutique, l'exporter, noter que c'est payé, et repérer la triche ; en tant que commerçant, je veux voir ce que BleDeal me doit.
 - **`/admin/remboursements`** : choix du mois ; une ligne par boutique : nombre de bons, montant (« 4 bons · 1 200 DA »), état (`en_cours` pour le mois courant, `a_payer` après clôture le 1er, `paye` avec date et référence), signaux. Détail d'un relevé : commandes (n°, date de remise, QR code ou code, client prénom + initiale, total, bon). Boutons :
   - **« Exporter CSV »** (un mois, toutes les boutiques ou une seule) ;
   - **« Marquer comme payé »** (référence du virement obligatoire, date ; confirmation ; un relevé payé n'est plus modifiable) ;
   - **« Mettre de côté »** une ligne suspecte (motif) : elle sort du relevé à payer et attend une décision (« Rembourser » la remet sur le relevé suivant, « Refuser » la retire, motif gardé).
-- **Budget du mois** (en haut de `/admin/remboursements` et de `/admin/parrainages`) : « Budget d'octobre : 9 600 DA émis sur 30 000 DA » ; champ « Budget mensuel (DA) » + « Enregistrer » (admin) ; 0 = plus de nouveau bon. Les bons émis comptent (pas seulement les bons utilisés) : c'est le plafond de ce qu'OranPromo peut avoir à payer.
+- **Budget du mois** (en haut de `/admin/remboursements` et de `/admin/parrainages`) : « Budget d'octobre : 9 600 DA émis sur 30 000 DA » ; champ « Budget mensuel (DA) » + « Enregistrer » (admin) ; 0 = plus de nouveau bon. Les bons émis comptent (pas seulement les bons utilisés) : c'est le plafond de ce que BleDeal peut avoir à payer.
 - **`/admin/parrainages`** : liste (parrain et filleul : nom, numéro masqué ; inscription, validation ; boutique, total, mode de remise ; statut `en_attente`, `valide`, `plafond`, `en_file`, `non_valide`, `expire`, `refuse`, `annule`), signaux, actions « Annuler les bons » (seulement s'ils ne sont pas utilisés ; motif), « Exclure du parrainage », « Retirer la boutique des bons » (ses nouvelles commandes ne peuvent plus porter de bon ; elle est prévenue par l'admin hors du site).
 - **`/espace`, bloc « Bons parrainage à rembourser »** (commerçant) : mois en cours (« 4 bons · 1 200 DA »), relevés passés (« Septembre : 2 400 DA · payé le 05/10, réf. … » ou « à payer avant le 10/10 »), lien vers le détail (commandes de sa boutique seulement).
 - Tests Vitest et SQL : relevé = somme des bons utilisés du mois par boutique (heure d'Alger), clôture le 1er, CSV (colonnes, séparateur, montants), « Marquer comme payé » réservé à l'admin et définitif, ligne mise de côté hors du total, budget (lecture, réglage admin seulement), bloc commerçant limité à sa boutique.
@@ -760,12 +760,12 @@ En tant qu'admin, je veux savoir chaque mois combien rembourser à chaque boutiq
 | 6 | Bouton | Partager sur WhatsApp | **ابعث** على واتساب | شارك عبر واتساب |
 | 7 | Bouton | Copier le lien | انسخ الرابط | انسخ الرابط |
 | 8 | Champ | Ton parrain (facultatif) : son numéro WhatsApp ou son code | **اللي عرضك** (**إلا حبيت**): **النمرة** نتاع الواتساب **ولا** الكود | العرّاب (اختياري): رقم واتساب أو الرمز |
-| 9 | Après « Valider » | C'est noté. Si ce numéro est celui d'un client OranPromo, il deviendra ton parrain après ton premier retrait en boutique. | **تسجّلت**. **إلا** كانت هاد **النمرة** نتاع زبون في OranPromo، **يولّي** هو **اللي عرضك** من بعد أول طلب **تدّيه** من **الحانوت**. | تم التسجيل. إذا كان هذا الرقم لزبون في OranPromo، فسيصبح عرّابك بعد أول استلام من المحل. |
+| 9 | Après « Valider » | C'est noté. Si ce numéro est celui d'un client BleDeal, il deviendra ton parrain après ton premier retrait en boutique. | **تسجّلت**. **إلا** كانت هاد **النمرة** نتاع زبون في BleDeal، **يولّي** هو **اللي عرضك** من بعد أول طلب **تدّيه** من **الحانوت**. | تم التسجيل. إذا كان هذا الرقم لزبون في BleDeal، فسيصبح عرّابك بعد أول استلام من المحل. |
 | 10 | Erreur | C'est ton propre numéro : choisis le numéro d'un ami. | هادي **نمرتك** أنت: **ختار** **نمرة** صاحبك. | هذا رقمك أنت: اختر رقم صديقك. |
 | 11 | `/compte` | 2 amis ont fait leur premier retrait · 1 en attente | 2 صحاب **دّاو** أول طلب · 1 **مازال** | صديقان استلما أول طلب · 1 في الانتظار |
-| 12 | Invitation | Un ami t'invite sur OranPromo | صاحبك **عرضك** لـ OranPromo | صديقك يدعوك إلى OranPromo |
+| 12 | Invitation | Un ami t'invite sur BleDeal | صاحبك **عرضك** لـ BleDeal | صديقك يدعوك إلى BleDeal |
 | 13 | Accueil, bloc (nouveau) | Parraine tes amis · 300 DA chacun | **عرّض** صحابك · 300 دج لكل واحد | ادعُ أصدقاءك · 300 دج لكل واحد |
-| 14 | Après un retrait | Merci ! Fais découvrir OranPromo à un ami. | **يعطيك الصحة**! **عرّف** صاحبك بـ OranPromo. | شكرًا! عرّف صديقك على OranPromo. |
+| 14 | Après un retrait | Merci ! Fais découvrir BleDeal à un ami. | **يعطيك الصحة**! **عرّف** صاحبك بـ BleDeal. | شكرًا! عرّف صديقك على BleDeal. |
 | 15 | `/compte`, titre | Mes bons | **البونات** نتاعي | قسائمي |
 | 16 | Bon | Bon parrainage · 300 DA · valable jusqu'au 11 décembre | **بون** العرضة · 300 دج · صالح حتى 11 ديسمبر | قسيمة الدعوة · 300 دج · صالحة حتى 11 ديسمبر |
 | 17 | Panier, case | Utiliser mon bon parrainage (−300 DA) | **خدم** بالبون نتاعي (−300 دج) | استعمل قسيمتي (−300 دج) |
@@ -783,7 +783,7 @@ L'espace commerçant et l'administration restent en français (US-23).
 1. Montant minimum d'une commande pour **utiliser** un bon : 1 000 DA (proposé) ?
 2. Budget mensuel de départ : combien ? (proposé : **30 000 DA**, soit 50 parrainages complets par mois ; à 0, aucun bon n'est créé)
 3. Coordonnées de virement des boutiques (CCP, RIB, BaridiMob) : gardées **hors du site** par le propriétaire au lancement (proposé : aucune donnée bancaire dans la base) ?
-4. Accord écrit avec chaque boutique (elle accepte les bons, OranPromo rembourse avant le 10 du mois suivant, OranPromo peut refuser une ligne suspecte) : à préparer par le propriétaire avant d'activer `parrainage` (proposé).
+4. Accord écrit avec chaque boutique (elle accepte les bons, BleDeal rembourse avant le 10 du mois suivant, BleDeal peut refuser une ligne suspecte) : à préparer par le propriétaire avant d'activer `parrainage` (proposé).
 
 ## Module 15 — Tableau des commandes de la boutique (après le MVP)
 

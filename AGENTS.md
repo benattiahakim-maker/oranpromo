@@ -8,6 +8,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# Règles du projet OranPromo
+# Règles du projet BleDeal
 
 Tout agent (ChatGPT/Codex, Claude Code, Cline…) doit lire et appliquer **CLAUDE.md** avant de coder : une story à la fois, ne rien inventer, vérifier build + tests + lint, un commit par story.

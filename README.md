@@ -1,9 +1,9 @@
-# OranPromo
+# BleDeal
 
-Le click & collect des boutiques de vêtements d'Oran : les promos des boutiques en ligne, la réservation par WhatsApp, l'essai et le paiement en boutique.
+Le click & collect des boutiques de vêtements, ville par ville (anciennement OranPromo ; Oran d'abord) : les promos des boutiques en ligne, la réservation par WhatsApp, l'essai et le paiement en boutique.
 
 - **Site** : Next.js 16 (TypeScript, Tailwind)
-- **Base, connexion, photos** : Supabase (projet `oranpromo`, région Paris)
+- **Base, connexion, photos** : Supabase (projet nommé `oranpromo` dans le tableau de bord, région Paris)
 - **IA** : API Claude, côté serveur
 
 ## Installer sur un nouvel ordinateur
@@ -36,8 +36,10 @@ Pour lancer la version de production en local : `npm.cmd run build`, puis `npm.c
 
 | Page | Adresse | Accès |
 | --- | --- | --- |
-| Promos du moment | `/` | Public |
-| Recherche et catalogue | `/catalogue` | Public |
+| Choix de la ville | `/villes` | Public |
+| Promos du moment | `/<ville>` (ex. `/oran`) ; `/` ouvre la ville choisie | Public |
+| Recherche et catalogue | `/<ville>/catalogue` ; `/catalogue` redirige | Public |
+| Carte des boutiques | `/<ville>/carte` ; `/carte` redirige | Public |
 | Fiche article | `/a/<id>` | Public, selon la visibilité de l’article |
 | Vitrine boutique | `/b/<slug>` | Public, boutique validée |
 | Connexion par lien e-mail | `/espace/connexion` | Public |
@@ -47,6 +49,7 @@ Pour lancer la version de production en local : `npm.cmd run build`, puis `npm.c
 | Statistiques | `/espace/statistiques` | Boutique propriétaire |
 | Tableau de bord | `/admin` | Administrateur |
 | Gestion des boutiques | `/admin/boutiques` | Administrateur ou ambassadeur |
+| Villes (ouvrir, fermer, ville des ambassadeurs) | `/admin/villes` | Administrateur |
 | Modération | `/admin/moderation` | Administrateur |
 
 Les pages publiques partagent le logo et le lien Rechercher. Les espaces commerçant et administrateur disposent de leur menu. Les adresses inconnues affichent « Page introuvable » ; une erreur inattendue propose « Réessayer ».

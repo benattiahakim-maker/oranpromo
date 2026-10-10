@@ -1,4 +1,4 @@
-# Guide de mise en ligne d'OranPromo (pour le propriétaire)
+# Guide de mise en ligne de BleDeal (pour le propriétaire)
 
 > Pour qui : le propriétaire, sans connaissances en développement.
 > Rédigé le 9 octobre 2026, d'après `docs/ETAT.md` et `docs/architecture.md` (branche `main`) et la documentation officielle de chaque service, consultée le même jour (liens en fin de guide).
@@ -48,7 +48,7 @@ Les étapes 6 et 8 dépendent de Meta : commencez-les tôt, et continuez le rest
 **Pourquoi** : sans entreprise vérifiée, Meta limite les envois WhatsApp et le nombre de numéros (2 au plus par portefeuille non vérifié) ; la vérification prend souvent 1 à 2 semaines, parfois plus ([Twilio, Self Sign-up](https://www.twilio.com/docs/whatsapp/self-sign-up) ; [Twilio, Bring your own sender](https://www.twilio.com/docs/verify/whatsapp/byo) ; [Twilio, limites de numéros](https://www.twilio.com/docs/whatsapp/api)).
 
 **Quoi faire**
-1. Ouvrir **Meta Business Suite** (business.facebook.com) avec votre compte Facebook. Créer un **portefeuille d'entreprise** (Business Portfolio) « OranPromo » s'il n'existe pas.
+1. Ouvrir **Meta Business Suite** (business.facebook.com) avec votre compte Facebook. Créer un **portefeuille d'entreprise** (Business Portfolio) « BleDeal » s'il n'existe pas.
 2. Dans le portefeuille : **Paramètres** (roue dentée) > **Centre de sécurité** (Security Center) > **Vérification de l'entreprise** > **Commencer**, puis fournir les documents demandés (registre de commerce, justificatif d'adresse, site web, e-mail sur le domaine).
 
 **Vérifier** : le Centre de sécurité affiche « Vérifiée ».
@@ -65,7 +65,7 @@ Les étapes 6 et 8 dépendent de Meta : commencez-les tôt, et continuez le rest
 **Pourquoi** : le site doit avoir une adresse définitive ; elle est utilisée par les liens de connexion, les liens et QR codes des boutiques, l'aperçu des liens partagés et le bouton « Confirmer » de WhatsApp.
 
 ### 1.1 Choisir le plan Vercel
-Le plan gratuit **Hobby est réservé à un usage personnel, non commercial** ([Vercel, plan Hobby](https://vercel.com/docs/plans/hobby)). OranPromo étant commercial, passer en **Pro** avant le lancement : tableau de bord Vercel > **Settings** > **Billing** > **Upgrade**.
+Le plan gratuit **Hobby est réservé à un usage personnel, non commercial** ([Vercel, plan Hobby](https://vercel.com/docs/plans/hobby)). BleDeal étant commercial, passer en **Pro** avant le lancement : tableau de bord Vercel > **Settings** > **Billing** > **Upgrade**.
 Les étapes ci-dessous fonctionnent aussi en Hobby pour les essais.
 
 ### 1.2 Créer le projet
@@ -113,7 +113,7 @@ Les liens de connexion ne marchent que sur l'adresse écrite dans `NEXT_PUBLIC_S
   2. Désactiver le **suivi des clics** (click tracking) du domaine : il réécrit les liens et peut casser les liens de connexion ([Supabase](https://supabase.com/docs/guides/deployment/going-into-prod)).
   3. **API Keys** > **Create API Key** (droit « Sending access », limité à ce domaine).
 - Supabase : **Authentication** > **Emails** > **SMTP Settings** > activer **Custom SMTP** ([Resend](https://resend.com/docs/send-with-supabase-smtp)) :
-  - Sender email : `no-reply@<votre-domaine>` ; Sender name : `OranPromo` ;
+  - Sender email : `no-reply@<votre-domaine>` ; Sender name : `BleDeal` ;
   - Host `smtp.resend.com`, Port `465`, Username `resend`, Password : la clé API Resend.
 - Puis **Authentication** > **Rate Limits** : avec un SMTP personnel, la limite d'e-mails est d'abord de **30 par heure** ; la monter (par exemple 100 par heure) ([doc](https://supabase.com/docs/guides/auth/rate-limits)).
 - Vérifier : demander un lien de connexion avec une adresse **qui n'est pas** membre de l'équipe Supabase (par exemple une adresse Gmail personnelle) ; l'e-mail arrive, expéditeur `no-reply@<votre-domaine>`.
@@ -194,7 +194,7 @@ Puis **Deployments** > dernier déploiement de production > menu **⋯** > **Red
 
 ## Étape 5 — Anthropic (IA) : clé et plafond de dépenses
 
-1. Console Claude (anciennement console.anthropic.com) > **Settings** > **Workspaces** : créer un espace de travail « OranPromo » (les plafonds ne peuvent pas être posés sur l'espace par défaut).
+1. Console Claude (anciennement console.anthropic.com) > **Settings** > **Workspaces** : créer un espace de travail « BleDeal » (les plafonds ne peuvent pas être posés sur l'espace par défaut).
 2. Dans cet espace : régler un **plafond de dépenses mensuel** (par exemple 20 $), puis **API Keys** > créer une clé → `ANTHROPIC_API_KEY` (étape 4).
 3. **Settings** > **Billing** > **Spend limits** > **Set limit** : plafond pour toute l'organisation ([doc](https://docs.claude.com/en/api/rate-limits)). Si une recharge automatique des crédits est proposée, la laisser **désactivée**.
 
@@ -212,8 +212,8 @@ Pourquoi deux : Twilio demande un compte WhatsApp Business (WABA) **créé par T
 Chaque numéro : **jamais utilisé dans l'application WhatsApp** (ou supprimé de WhatsApp avant), capable de recevoir un SMS ou un appel (code de Meta).
 
 ### 6.1 Application Meta et compte WhatsApp
-1. developers.facebook.com > **My Apps** > **Create App** > cas d'usage **« Connect with customers through WhatsApp »** > choisir le portefeuille OranPromo > **Create app** ([doc](https://developers.facebook.com/documentation/business-messaging/whatsapp/get-started)).
-2. **Start using the API** > page **API Setup** : relier ou créer le compte WhatsApp Business, puis **ajouter le numéro B** (« Add phone number »), nom affiché **OranPromo**, et le vérifier par le code reçu.
+1. developers.facebook.com > **My Apps** > **Create App** > cas d'usage **« Connect with customers through WhatsApp »** > choisir le portefeuille BleDeal > **Create app** ([doc](https://developers.facebook.com/documentation/business-messaging/whatsapp/get-started)).
+2. **Start using the API** > page **API Setup** : relier ou créer le compte WhatsApp Business, puis **ajouter le numéro B** (« Add phone number »), nom affiché **BleDeal**, et le vérifier par le code reçu.
 3. Noter le **Phone number ID** affiché sur API Setup → `WHATSAPP_PHONE_NUMBER_ID`.
 4. **Enregistrer le numéro pour l'API** : Meta n'accepte cet enregistrement **que par une commande** (pas par l'écran) ([doc Meta](https://developers.facebook.com/docs/whatsapp/cloud-api/reference/registration/)) : `POST https://graph.facebook.com/v23.0/<WHATSAPP_PHONE_NUMBER_ID>/register` avec `{"messaging_product":"whatsapp","pin":"<6 chiffres choisis>"}` et le jeton de 6.2. Demander au développeur de la lancer avec vous si besoin (le jeton ne doit pas lui être envoyé par chat : il la lance sur votre PC ou vous la lancez). Garder le PIN dans le gestionnaire de mots de passe.
 5. Ajouter un **moyen de paiement** au compte WhatsApp dans **Billing Hub** de Meta Business Suite : sans lui, les messages payants ne partent pas ([tarifs Meta](https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing)). L'Algérie est dans la zone « Rest of Africa ».
@@ -231,12 +231,12 @@ Où : **WhatsApp Manager** > **Modèles de messages** (Message templates) > **Cr
 
 | Nom | Texte (à copier tel quel) | Exemples de variables |
 |---|---|---|
-| `oranpromo_nouvelle_commande` | Nouvelle commande n° {{1}} sur OranPromo : {{2}}, {{3}} article(s), {{4}}. Confirmez-la dans votre espace OranPromo, rubrique Commandes. | 12 · Amina · 2 · 7 000 DA |
+| `oranpromo_nouvelle_commande` | Nouvelle commande n° {{1}} sur BleDeal : {{2}}, {{3}} article(s), {{4}}. Confirmez-la dans votre espace BleDeal, rubrique Commandes. | 12 · Amina · 2 · 7 000 DA |
 | `oranpromo_commande_prete` | Bonjour {{1}}, votre commande n° {{2}} est prête chez {{3}}. Vous pouvez la récupérer jusqu'au {{4}}. | Amina · 12 · Boutique Nour · samedi 18 octobre à 17 h |
 | `oranpromo_commande_expiree` | Bonjour {{1}}, votre commande n° {{2}} chez {{3}} n'a pas été récupérée dans les 24 heures : elle est annulée et les articles sont remis en vente. Merci de ne commander que ce que vous viendrez chercher. | Amina · 12 · Boutique Nour |
-| `oranpromo_no_show` | Bonjour {{1}}, {{2}} nous signale que vous n'êtes pas venu(e) chercher votre commande n° {{3}}. C'est votre {{4}}e commande non récupérée : encore {{5}} et votre compte OranPromo sera bloqué. Merci de ne commander que ce que vous viendrez chercher. | Amina · Boutique Nour · 12 · 2 · 3 |
-| `oranpromo_compte_bloque` | Bonjour {{1}}, votre compte OranPromo est bloqué après 5 commandes non récupérées. Pour le débloquer, contactez OranPromo. | Amina |
-| `oranpromo_nouvelle_commande_confirmer` | Nouvelle commande n° {{1}} sur OranPromo : {{2}}, {{3}} article(s), {{4}}. Touchez Confirmer, ou confirmez-la dans votre espace OranPromo, rubrique Commandes. | 12 · Amina · 2 · 7 000 DA |
+| `oranpromo_no_show` | Bonjour {{1}}, {{2}} nous signale que vous n'êtes pas venu(e) chercher votre commande n° {{3}}. C'est votre {{4}}e commande non récupérée : encore {{5}} et votre compte BleDeal sera bloqué. Merci de ne commander que ce que vous viendrez chercher. | Amina · Boutique Nour · 12 · 2 · 3 |
+| `oranpromo_compte_bloque` | Bonjour {{1}}, votre compte BleDeal est bloqué après 5 commandes non récupérées. Pour le débloquer, contactez BleDeal. | Amina |
+| `oranpromo_nouvelle_commande_confirmer` | Nouvelle commande n° {{1}} sur BleDeal : {{2}}, {{3}} article(s), {{4}}. Touchez Confirmer, ou confirmez-la dans votre espace BleDeal, rubrique Commandes. | 12 · Amina · 2 · 7 000 DA |
 
 Pour **`oranpromo_nouvelle_commande_confirmer`** (US-20.6) en plus : section **Boutons** > **Visiter le site web** (Visit website), type **dynamique**, libellé **`Confirmer`**, adresse `https://<votre-domaine>/confirmer/{{1}}` (le domaine **définitif**, sans `www` si votre adresse principale n'en a pas). Exemple de fin d'adresse : `exemple`. Ce modèle se crée **une fois le domaine définitif connu** ; l'activation est l'étape 14.
 
@@ -287,11 +287,11 @@ Décision du propriétaire : **code par WhatsApp uniquement, aucun SMS** (US-21.
 ### 8.2 Expéditeur WhatsApp (numéro A)
 ([Twilio Self Sign-up](https://www.twilio.com/docs/whatsapp/self-sign-up) ; [Bring your own sender](https://www.twilio.com/docs/verify/whatsapp/byo))
 1. Console > **Messaging** > **Senders** > **WhatsApp Senders** > **Create new sender**.
-2. Choisir le numéro A (un numéro Twilio acheté dans **Phone Numbers**, ou le vôtre), **Continue with Facebook**, choisir le portefeuille OranPromo, **créer un nouveau compte WhatsApp Business** (ne pas choisir celui du numéro B), nom affiché « OranPromo », vérifier le numéro, **Confirm**.
-3. Console > **Messaging** > **Services** > créer un **Messaging Service** « OranPromo codes » et y ajouter cet expéditeur. Noter son identifiant `MG…`.
+2. Choisir le numéro A (un numéro Twilio acheté dans **Phone Numbers**, ou le vôtre), **Continue with Facebook**, choisir le portefeuille BleDeal, **créer un nouveau compte WhatsApp Business** (ne pas choisir celui du numéro B), nom affiché « BleDeal », vérifier le numéro, **Confirm**.
+3. Console > **Messaging** > **Services** > créer un **Messaging Service** « BleDeal codes » et y ajouter cet expéditeur. Noter son identifiant `MG…`.
 
 ### 8.3 Service Verify
-1. Console > **Verify** > **Services** > **Create new** : nom « OranPromo », code à **6 chiffres**, canal **WhatsApp** ; **Fraud Guard** : activé ([doc Fraud Guard](https://www.twilio.com/docs/verify/preventing-toll-fraud/sms-fraud-guard)). Noter le **Service SID** (`VA…`).
+1. Console > **Verify** > **Services** > **Create new** : nom « BleDeal », code à **6 chiffres**, canal **WhatsApp** ; **Fraud Guard** : activé ([doc Fraud Guard](https://www.twilio.com/docs/verify/preventing-toll-fraud/sms-fraud-guard)). Noter le **Service SID** (`VA…`).
 2. Dans le service, onglet **WhatsApp** : choisir le Messaging Service `MG…` de 8.2 ([doc](https://www.twilio.com/docs/verify/whatsapp/byo)).
 3. **Désactiver le canal SMS et la voix** dans la configuration du service. ⚠️ Essentiel : quand le canal SMS est actif, Twilio **bascule de WhatsApp vers le SMS** en cas d'échec et facture un SMS ([doc](https://www.twilio.com/docs/verify/fallback-scenarios)). Si la console ne permet pas de le désactiver, n'autoriser **aucun pays** pour le SMS (point suivant).
 4. Console > **Verify** > **Settings** > **Geo permissions** : SMS et voix **désactivés partout sauf l'Algérie** (ou désactivés partout), **Save** ([doc](https://www.twilio.com/docs/verify/preventing-toll-fraud/verify-geo-permissions)). WhatsApp n'a pas de blocage par pays chez Twilio, mais la base refuse déjà tout numéro non algérien.
@@ -317,7 +317,7 @@ Décision du propriétaire : **code par WhatsApp uniquement, aucun SMS** (US-21.
 
 ## Étape 10 — Cloudflare Turnstile (anti-robot)
 
-1. dash.cloudflare.com > **Turnstile** > **Add widget** ([doc](https://developers.cloudflare.com/turnstile/get-started/widget-management/dashboard/)) : nom « OranPromo » ; domaines : `<votre-domaine>`, `test.<votre-domaine>`, `127.0.0.1`, `localhost` ; mode **Managed** ; **Create**.
+1. dash.cloudflare.com > **Turnstile** > **Add widget** ([doc](https://developers.cloudflare.com/turnstile/get-started/widget-management/dashboard/)) : nom « BleDeal » ; domaines : `<votre-domaine>`, `test.<votre-domaine>`, `127.0.0.1`, `localhost` ; mode **Managed** ; **Create**.
 2. Copier la **clé de site** (Site key, publique) → `NEXT_PUBLIC_TURNSTILE_SITE_KEY` sur Vercel (Production **et** Preview) et dans `.env.local` ; redéployer **les deux**.
 3. Garder la **clé secrète** pour l'étape 11 (gestionnaire de mots de passe).
 
