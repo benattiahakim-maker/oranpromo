@@ -19,6 +19,8 @@ describe("bons de parrainage (US-27)", () => {
     expect(resultatBon("applique")).toBe("applique");
     expect(resultatBon("minimum")).toBe("minimum");
     expect(resultatBon("autre")).toBeNull();
+    // US-33.1 : nouvelles raisons des bons de bienvenue et de campagne.
+    expect(["univers", "ville", "plafond_boutique"].map(resultatBon)).toEqual(["univers", "ville", "plafond_boutique"]);
     expect(resultatBon(null)).toBeNull();
   });
 

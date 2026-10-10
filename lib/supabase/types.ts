@@ -175,39 +175,51 @@ export type Database = {
           cree_le: string
           expire_le: string | null
           id: string
+          minimum_achat: number
           montant: number
           origine: string
           parrainage_id: string | null
           profil_id: string
+          programme_id: string | null
           releve_id: string | null
           statut: string
+          univers: string | null
           utilise_le: string | null
+          villes: string[]
         }
         Insert: {
           commande_id?: string | null
           cree_le?: string
           expire_le?: string | null
           id?: string
+          minimum_achat?: number
           montant?: number
           origine: string
           parrainage_id?: string | null
           profil_id: string
+          programme_id?: string | null
           releve_id?: string | null
           statut?: string
+          univers?: string | null
           utilise_le?: string | null
+          villes?: string[]
         }
         Update: {
           commande_id?: string | null
           cree_le?: string
           expire_le?: string | null
           id?: string
+          minimum_achat?: number
           montant?: number
           origine?: string
           parrainage_id?: string | null
           profil_id?: string
+          programme_id?: string | null
           releve_id?: string | null
           statut?: string
+          univers?: string | null
           utilise_le?: string | null
+          villes?: string[]
         }
         Relationships: [
           {
@@ -229,6 +241,13 @@ export type Database = {
             columns: ["profil_id"]
             isOneToOne: false
             referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bons_programme_id_fkey"
+            columns: ["programme_id"]
+            isOneToOne: false
+            referencedRelation: "programmes_bons"
             referencedColumns: ["id"]
           },
           {
@@ -611,6 +630,8 @@ export type Database = {
           montant: number
           motif: string | null
           numero_commande: number
+          origine: string | null
+          programme_id: string | null
           releve_id: string
           remise_le: string
           statut: string
@@ -626,6 +647,8 @@ export type Database = {
           montant: number
           motif?: string | null
           numero_commande: number
+          origine?: string | null
+          programme_id?: string | null
           releve_id: string
           remise_le: string
           statut?: string
@@ -641,6 +664,8 @@ export type Database = {
           montant?: number
           motif?: string | null
           numero_commande?: number
+          origine?: string | null
+          programme_id?: string | null
           releve_id?: string
           remise_le?: string
           statut?: string
@@ -666,6 +691,13 @@ export type Database = {
             columns: ["commande_id"]
             isOneToOne: false
             referencedRelation: "commandes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lignes_releve_programme_id_fkey"
+            columns: ["programme_id"]
+            isOneToOne: false
+            referencedRelation: "programmes_bons"
             referencedColumns: ["id"]
           },
           {
@@ -902,6 +934,74 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "villes"
             referencedColumns: ["code"]
+          },
+        ]
+      }
+      programmes_bons: {
+        Row: {
+          actif: boolean
+          budget: number
+          code: string | null
+          cree_le: string
+          cree_par: string | null
+          debut: string
+          fin: string | null
+          id: string
+          minimum_achat: number
+          montant: number
+          nom_ar: string
+          nom_fr: string
+          plafond_par_boutique: number | null
+          type: string
+          univers: string | null
+          validite_jours: number
+          villes: string[]
+        }
+        Insert: {
+          actif?: boolean
+          budget?: number
+          code?: string | null
+          cree_le?: string
+          cree_par?: string | null
+          debut?: string
+          fin?: string | null
+          id?: string
+          minimum_achat?: number
+          montant: number
+          nom_ar: string
+          nom_fr: string
+          plafond_par_boutique?: number | null
+          type: string
+          univers?: string | null
+          validite_jours?: number
+          villes?: string[]
+        }
+        Update: {
+          actif?: boolean
+          budget?: number
+          code?: string | null
+          cree_le?: string
+          cree_par?: string | null
+          debut?: string
+          fin?: string | null
+          id?: string
+          minimum_achat?: number
+          montant?: number
+          nom_ar?: string
+          nom_fr?: string
+          plafond_par_boutique?: number | null
+          type?: string
+          univers?: string | null
+          validite_jours?: number
+          villes?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programmes_bons_cree_par_fkey"
+            columns: ["cree_par"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1366,7 +1466,10 @@ export type Database = {
         Returns: undefined
       }
       suivre_boutique: { Args: { boutique: string }; Returns: boolean }
-      utiliser_bon: { Args: { commande: string }; Returns: string }
+      utiliser_bon: {
+        Args: { bon?: string; commande: string }
+        Returns: string
+      }
       valider_no_show: { Args: { commande: string }; Returns: undefined }
       villes_ouvertes: {
         Args: never

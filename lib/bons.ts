@@ -24,12 +24,12 @@ export function bonApplicable(total: number, bonDisponible: boolean): boolean {
 }
 
 /** Réponses de utiliser_bon(). */
-export type ResultatBon = "applique" | "aucun_bon" | "minimum" | "boutique_exclue" | "deja";
+// US-33.1 : « univers », « ville », « plafond_boutique » pour les bons de bienvenue et de campagne.
+export const RESULTATS_BON = ["applique", "aucun_bon", "minimum", "boutique_exclue", "deja", "univers", "ville", "plafond_boutique"] as const;
+export type ResultatBon = (typeof RESULTATS_BON)[number];
 
 export function resultatBon(valeur: unknown): ResultatBon | null {
-  return valeur === "applique" || valeur === "aucun_bon" || valeur === "minimum" || valeur === "boutique_exclue" || valeur === "deja"
-    ? valeur
-    : null;
+  return (RESULTATS_BON as readonly unknown[]).includes(valeur) ? (valeur as ResultatBon) : null;
 }
 
 export type StatutBon = "en_file" | "disponible" | "reserve" | "utilise" | "expire" | "annule";
@@ -78,9 +78,12 @@ export function releveDuMois(mois: string): string {
 }
 
 /** Un bon tel que le renvoie mes_bons() (jamais d'autre compte). */
+export type OrigineBon = "parrainage_filleul" | "parrainage_parrain" | "bienvenue" | "campagne";
 export type BonClient = {
-  id: string; montant: number; statut: StatutBon; origine: "parrainage_filleul" | "parrainage_parrain";
+  id: string; montant: number; statut: StatutBon; origine: OrigineBon;
   cree_le: string; expire_le: string | null; utilise_le: string | null; commande: string | null; numero: number | null; boutique: string | null;
+  /** US-33.1 : règles copiées du programme (parrainage : 1 000 DA sur le total, sans univers ni ville). */
+  minimum_achat?: number; univers?: string | null; villes?: string[]; nom_fr?: string | null; nom_ar?: string | null;
 };
 
 /** Bon utilisable au panier : disponible, pas expiré ; celui qui finit le plus tôt d'abord (comme utiliser_bon). */

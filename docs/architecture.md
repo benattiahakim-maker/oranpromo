@@ -929,7 +929,7 @@ app/admin/moderation/…                          onglet « Avis »
 
 ## Bons de réduction : bienvenue et campagnes (US-33) — conception, **à valider par le propriétaire**
 
-Stories : `docs/user-stories.md`, module 19. Maquette : `docs/maquettes/BonsReduction.dc.html`. Source : carte Trello « Marketing · Bons de réduction (1re commande + campagnes Aïd / rentrée) ». **Aucun code, aucune migration** dans cette PR.
+Stories : `docs/user-stories.md`, module 19. Maquette : `docs/maquettes/BonsReduction.dc.html`. **Codé** (10/10) : US-33.1 (migration `20261018090000_programmes_bons.sql` : `programmes_bons`, colonnes de `bons` et `lignes_releve`, `prive.numeros_programmes`, `prive.donner_bon_programme`, `prive.raison_bon`, `prive.montant_univers`, `utiliser_bon(commande, bon)` ; écarts avec la conception : `nom_fr` / `nom_ar`, pas de `part_boutique` pour l'instant). Source : carte Trello « Marketing · Bons de réduction (1re commande + campagnes Aïd / rentrée) ». **Aucun code, aucune migration** dans cette PR.
 
 **Principe** : extension de US-27 (section « Parrainage » plus haut). Tables `bons`, `releves_bons`, `lignes_releve`, déclencheur de bon sur les statuts de commande, tâche `parrainage-quotidien`, pages `/admin/remboursements` et export CSV **réutilisés**. Ce qui change dans l'existant est **petit et testé** : `prive.bons_emis` filtré par origine, `utiliser_bon` qui choisit parmi des bons aux règles différentes, `lignes_releve` qui garde l'origine et la part boutique. `passer_commande`, `changer_statut_commande`, `remettre_commande`, blocage, no-shows **inchangés**.
 

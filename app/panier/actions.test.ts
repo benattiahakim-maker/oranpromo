@@ -5,7 +5,7 @@ const { getUser, passer, definirLangue, after, envoyer, utiliser, ordre } = vi.h
   const ordre: string[] = [];
   return { ordre, getUser: vi.fn(), passer: vi.fn(), definirLangue: vi.fn(), after: vi.fn((tache: () => unknown) => { ordre.push("after"); void tache(); }), envoyer: vi.fn(), utiliser: vi.fn(async () => { ordre.push("utiliser_bon"); return "applique"; }) };
 });
-vi.mock("@/lib/bons", () => ({ utiliserBon: utiliser }));
+vi.mock("@/lib/bons", async (original) => ({ ...(await original<typeof import("@/lib/bons")>()), utiliserBon: utiliser }));
 vi.mock("next/server", () => ({ after }));
 const { cookie } = vi.hoisted(() => ({ cookie: { langue: "fr" } }));
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: (nom: string) => (nom === "langue" ? { value: cookie.langue } : undefined) }) }));
@@ -92,7 +92,7 @@ describe("US-27.4 : bon parrainage au panier", () => {
     await commanderPanier("b1", [ligne], "");
     expect(utiliser).not.toHaveBeenCalled();
   });
-  it.each([["aucun_bon", "aucun_bon"], ["minimum", "minimum"], ["boutique_exclue", "boutique_exclue"], ["deja", "erreur"], ["erreur", "erreur"]])("bon non posé (%s) : commande gardée au prix plein, raison « %s »", async (reponse, raison) => {
+  it.each([["aucun_bon", "aucun_bon"], ["minimum", "minimum"], ["boutique_exclue", "boutique_exclue"], ["deja", "erreur"], ["erreur", "erreur"], ["univers", "erreur"], ["ville", "erreur"], ["plafond_boutique", "erreur"]])("bon non posé (%s) : commande gardée au prix plein, raison « %s »", async (reponse, raison) => {
     utiliser.mockResolvedValueOnce(reponse);
     expect(await commanderPanier("b1", [ligne], "", true)).toEqual({ id: "c1", bon: raison });
     expect(after).toHaveBeenCalledTimes(1);

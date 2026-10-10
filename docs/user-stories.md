@@ -1218,6 +1218,7 @@ En tant que BleDeal, je veux offrir un bon sur la 1re commande et lancer des cam
 - `bons` reçoit : `programme_id`, `minimum_achat`, `univers`, `villes` (copiés à la création : changer le programme ne change pas les bons déjà donnés), `part_boutique` (0 sauf US-31.4). Nouvelles valeurs d'`origine` : `bienvenue`, `campagne` (puis `avis`, `inscription_boutique`).
 - **Budget par programme** : le budget du parrainage ne compte que les bons de parrainage (petit changement de `prive.bons_emis`, testé : rien ne change tant qu'il n'y a que des bons de parrainage) ; chaque programme compte ses propres bons. Budget atteint : plus de nouveau bon (les bons déjà donnés restent valables).
 - **Un numéro vérifié = un bon par programme** (empreinte du numéro, gardée même si le compte est supprimé, comme `prive.numeros_parraines`).
+- **Codé le 10/10** (migration `20261018090000_programmes_bons.sql`, en production) : types `bienvenue` et `campagne` seulement (`avis`, `inscription_boutique` plus tard), `nom_fr` / `nom_ar` à la place de `nom`, pas encore de `part_boutique` (US-31.4). Programme « Bienvenue » créé **inactif, budget 0 DA** (300 DA dès 2 000 DA, 30 jours). Bon d'un programme perdu si le client annule ou ne vient pas, rendu si la boutique ou l'admin annule ; parrainage inchangé.
 
 ### US-33.2 — Bon de bienvenue (pages `/compte`, `/panier`)
 - Donné **quand le numéro est vérifié** (US-21) à un compte client qui n'a **jamais eu de commande récupérée**, si le programme est actif et que ce numéro n'a jamais eu de bon de bienvenue.
